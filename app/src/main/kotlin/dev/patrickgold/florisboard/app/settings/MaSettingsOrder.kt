@@ -23,7 +23,7 @@ package dev.patrickgold.florisboard.app.settings
  */
 enum class MaSettingsEntry(val id: String, val title: String, val summary: String?) {
     LITTLE_MAN("little_man", "Little Man AI Assistant", "His buttons, their prompts, and what he remembers"),
-    FEATURE_ROW("feature_row", "Feature row", "Drag the nine keys into the order you want"),
+    FEATURE_ROW("feature_row", "Feature row", "Drag the keys into the order you want"),
     DEFAULT_VIEW("default_view", "Opening view", "Which view the keyboard shows when it appears"),
     MACROS("macros", "Macro bar", "Buttons that type text or press keys"),
     DB("db", "db", "The dashboard: what is on it, and how to open it"),

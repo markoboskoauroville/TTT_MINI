@@ -69,7 +69,6 @@ import dev.patrickgold.florisboard.dictate.ui.DictateInputLayout
 import dev.patrickgold.florisboard.dictate.ui.LegacyDictateLayout
 import dev.patrickgold.florisboard.dictate.ui.LegacyLayoutState
 import dev.patrickgold.florisboard.dictate.ui.legacySwipeToggle
-import dev.patrickgold.florisboard.dictate.reader.MaReaderLayout
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
@@ -283,7 +282,6 @@ private fun ImeInnerWindow() {
                 ImeUiMode.HISTORY -> ProvideActualLayoutDirection { DictateHistoryLayout() }
                 ImeUiMode.GIF -> ProvideActualLayoutDirection { GifPanel() }
                 // LLL: the reader. Leavable by its own close key, like every other panel here.
-                ImeUiMode.READER -> ProvideActualLayoutDirection { MaReaderLayout() }
                 // Voice Type: the microphone opens the original record-first layout, which already
                 // surrounds the record bar with the editing keys that voice typing still needs.
                 ImeUiMode.TRANSCRIBE -> ProvideActualLayoutDirection {

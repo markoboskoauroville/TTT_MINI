@@ -92,6 +92,31 @@ This is the largest single deletion in the fork, about 3,200 lines.
 
 ---
 
+## 2b. Decisions Marko has since made — these override §2.2 and §3
+
+Answered on 10 August 2026. Where this section and the sections below disagree, this one wins;
+the text below is left as written so the reasoning behind the questions is still readable.
+
+**The microphone key stays, as a record button, and becomes switchable off.** Not a door to a view
+any more: tap to start, tap to stop and send, calling `DictateController.onMicClick(context)`. It is
+drawn as a red dot — `0xFF9B3B33`, lit while recording, dark when idle. Colour as state, and nothing
+pulses.
+
+**And it comes out of `MaFeatureOrder.ALWAYS_ON`.** That set exists to stop the editor hiding a key
+with no substitute anywhere. `MIC` was in it because it was the only on-screen route to dictation;
+once it is a record button and volume up does the same job, that argument is spent. Marko asked for
+it to be editable like every other key and the consequence was put to him plainly: hidden key plus
+dead volume rocker means no way to record. He wants the choice. `BACKSPACE` and `ENTER` stay locked,
+because nothing else on a folded keyboard can delete a character or end a line.
+
+Do not add `MIC` back to `ALWAYS_ON` on the reasoning in §3. That reasoning was correct about the
+old key and is about a key that no longer exists.
+
+**Rewording goes.** §2.2 left it open. It is cut: `applyPrompt`, `rewordingModel`, and with them the
+Anthropic and Gemini presets. Dictation only.
+
+---
+
 ## 3. The one decision that needs Marko before you cut
 
 **Removing the transcribe view removes every on-screen way to start a recording.**

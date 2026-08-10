@@ -6,7 +6,11 @@
 package dev.patrickgold.florisboard.dictate
 
 /**
- * The nine keys of the feature row, as data, and the order they are drawn in.
+ * The keys of the feature row, as data, and the order they are drawn in.
+ *
+ * The count is deliberately not written down anywhere, here or on screen. It has been wrong twice
+ * already, once by a key being added and once by this fork removing several, and a number in prose
+ * is the one part of a document nothing ever recompiles.
  *
  * The order has been corrected by hand twice, at builds 139 and 146, from screenshots with arrows
  * drawn on them. Both corrections went the opposite way to what looked sensible from inside the
@@ -26,7 +30,6 @@ enum class MaFeatureKey(val id: String, val label: String) {
     SELECT_ALL("select_all", "Select all"),
     BACKSPACE("backspace", "Backspace"),
     MIC("mic", "Microphone, and the way back"),
-    BOOK("book", "Reader"),
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),
     ZONE_3("zone3", "3, the copy row"),
@@ -90,7 +93,6 @@ object MaFeatureOrder {
         MaFeatureKey.SELECT_ALL,
         MaFeatureKey.BACKSPACE,
         MaFeatureKey.MIC,
-        MaFeatureKey.BOOK,
         MaFeatureKey.ZONE_1,
         MaFeatureKey.ZONE_2,
         MaFeatureKey.ZONE_3,
@@ -112,7 +114,7 @@ object MaFeatureOrder {
     val DEFAULT_HIDDEN_RAW: String = serializeHidden(DEFAULT_HIDDEN)
 
     /**
-     * Parses a stored order, and **always returns all nine keys**.
+     * Parses a stored order, and **always returns every key in the enum**.
      *
      * Unknown ids are dropped, duplicates collapse to their first appearance, and anything missing is
      * appended in default order. That last part is what makes this safe to change later: a tenth key

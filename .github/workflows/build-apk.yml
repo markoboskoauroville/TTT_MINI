@@ -12,13 +12,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # submodules: the reader engine is still mounted as a Gradle module at this point in the
-      # fork. Without this the build fails on a module whose directory is empty, and the error
-      # points nowhere near the cause. This flag comes out with the reader itself.
+      # No submodules any more. The reader engine left with the reader, and with it the class of
+      # failure where a forgotten checkout flag produced an empty module directory and an error
+      # that pointed nowhere near the cause.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: recursive
 
       - uses: actions/setup-java@v4
         with:

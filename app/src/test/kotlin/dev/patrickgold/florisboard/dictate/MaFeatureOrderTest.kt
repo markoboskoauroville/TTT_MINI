@@ -11,7 +11,7 @@ import io.kotest.matchers.shouldBe
 
 /**
  * The feature row order, and mostly one question asked nine ways: **can a damaged preference ever
- * produce a row with fewer than nine keys?**
+ * produce a row with fewer than the full set of keys?**
  *
  * It matters more than it looks. This row is the one that survives when every other row is folded
  * away, so it is the only route to backspace, to enter and to the microphone. A parse that dropped a
@@ -29,7 +29,7 @@ class MaFeatureOrderTest : FunSpec({
     }
 
     // Every one of these once had a plausible way of losing a key. None of them may.
-    test("every damaged preference still yields all nine keys") {
+    test("every damaged preference still yields every key") {
         val damaged = listOf(
             null,
             "",
@@ -106,12 +106,12 @@ class MaFeatureOrderTest : FunSpec({
     }
 
     test("switching a key off removes it from the row and nothing else") {
-        val hidden = setOf(MaFeatureKey.BOOK)
+        val hidden = setOf(MaFeatureKey.ALL_PASTE)
         val visible = MaFeatureOrder.visible(MaFeatureOrder.DEFAULT, hidden)
         visible.size shouldBe MaFeatureOrder.DEFAULT.size - 1
-        (MaFeatureKey.BOOK in visible) shouldBe false
+        (MaFeatureKey.ALL_PASTE in visible) shouldBe false
         // Order of the survivors is untouched.
-        visible shouldBe MaFeatureOrder.DEFAULT.filter { it != MaFeatureKey.BOOK }
+        visible shouldBe MaFeatureOrder.DEFAULT.filter { it != MaFeatureKey.ALL_PASTE }
     }
 
     test("the little man starts switched off so no row silently gains a key") {

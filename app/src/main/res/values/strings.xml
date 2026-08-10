@@ -808,7 +808,6 @@
     <string name="setup__provider__intro">{app_name} turns speech into text using an online service, which needs your own API key.</string>
     <string name="setup__provider__what_is_key">An API key is a personal password that lets {app_name} use a service on your behalf.</string>
     <string name="setup__provider__recommended">We recommend <b>Groq</b> — it\'s fast and free for everyday dictation.</string>
-    <string name="setup__provider__steps_groq">1. Tap the button below to open Groq.\n2. Sign in with Google or your email address.\n3. Tap “Create API Key”, give it any name, and confirm.\n4. Copy the key (it begins with “gsk_”).\n5. Come back here and tap “Paste API key” below.</string>
     <string name="setup__provider__steps_generic">1. Tap the button below to open {provider}.\n2. Create an account if you don\'t have one yet.\n3. Create a new API key and copy it.\n4. Come back here and tap “Paste API key” below.</string>
     <string name="setup__provider__open_btn" comment="{provider} is the provider name, e.g. Groq">Open {provider} &amp; create a key</string>
     <string name="setup__provider__paste_btn">Paste API key</string>
@@ -909,20 +908,8 @@
     <string name="clip__clear_history">Clear history</string>
     <string name="clip__unpin_item">Unpin item</string>
     <string name="clip__edit_item">Edit</string>
-    <string name="ma__feature_lll">Reader</string>
     <string name="ma__feature_mic">Dictation view</string>
     <string name="ma__feature_keyboard">Keyboard view</string>
-    <string name="lll__empty">Copy some text, then press the clipboard key below. Reading starts on its own.</string>
-    <string name="lll__close">Close the reader</string>
-    <string name="lll__previous">Previous sentence</string>
-    <string name="lll__next">Next sentence</string>
-    <string name="lll__play">Read</string>
-    <string name="lll__pause">Pause</string>
-    <string name="lll__voice">Change voice</string>
-    <string name="lll__load">Read what is on the clipboard</string>
-    <string name="lll__screenshot">Screenshot</string>
-    <string name="lll__nothing_to_read">Nothing on the clipboard to read</string>
-    <string name="lll__preparing">Preparing the voice…</string>
     <string name="ma__feature_file">Transcribe an audio file</string>
     <string name="ma__feature_longform">Long recordings</string>
     <string name="ma__feature_rewording">Rewording</string>
@@ -1580,7 +1567,6 @@
     <string name="dictate__title" comment="Title of the Dictate settings screen and home tile">Dictate</string>
     <string name="dictate__provider_title" comment="Label for the transcription provider selector">Transcription provider</string>
     <string name="dictate__provider__openai" translatable="false">OpenAI</string>
-    <string name="dictate__provider__groq" translatable="false">Groq</string>
     <string name="dictate__provider__custom" comment="Label for a user-defined OpenAI-compatible provider">Custom (OpenAI-compatible)</string>
     <string name="dictate__api_key_title" comment="Label for the API key field">API key</string>
     <string name="dictate__api_key_placeholder" translatable="false">sk-…</string>

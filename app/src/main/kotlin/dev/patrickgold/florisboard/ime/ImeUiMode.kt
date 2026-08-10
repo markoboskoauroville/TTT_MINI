@@ -25,10 +25,7 @@ enum class ImeUiMode(val value: Int) {
     GIF(5),
 
     /** MA TWIST: the dictation screen the microphone key opens. */
-    TRANSCRIBE(6),
-
-    /** LLL: the reader, which speaks a text and lights each word as it is said. */
-    READER(7);
+    TRANSCRIBE(6);
 
     companion object {
         fun fromInt(int: Int) = entries.firstOrNull { it.value == int } ?: TEXT

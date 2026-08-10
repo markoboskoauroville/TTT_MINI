@@ -66,7 +66,6 @@ object ProviderRegistry {
     private val CHAT_ONLY = ProviderCapabilities(chat = true, transcription = false)
     private val CHAT_AND_STT = ProviderCapabilities(chat = true, transcription = true)
     private val STT_ONLY = ProviderCapabilities(chat = false, transcription = true)
-    private val TTS_ONLY = ProviderCapabilities(chat = false, transcription = false, tts = true)
 
     val OPENAI = ProviderPreset(
         id = "openai",
@@ -97,23 +96,6 @@ object ProviderRegistry {
         curatedRealtimeModels = listOf(
             "gpt-live-transcribe", "gpt-realtime-whisper", "gpt-transcribe",
             "gpt-4o-transcribe", "gpt-4o-mini-transcribe",
-        ),
-    )
-
-    val GROQ = ProviderPreset(
-        id = "groq",
-        displayName = "Groq",
-        baseUrl = "https://api.groq.com/openai/v1/",
-        capabilities = CHAT_AND_STT,
-        supportsDynamicModels = true,
-        apiKeyUrl = "https://console.groq.com/keys",
-        defaultChatModel = "llama-3.3-70b-versatile",
-        defaultTranscriptionModel = "whisper-large-v3-turbo",
-        curatedChatModels = listOf(
-            "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it",
-        ),
-        curatedTranscriptionModels = listOf(
-            "whisper-large-v3-turbo", "whisper-large-v3", "distil-whisper-large-v3-en",
         ),
     )
 
@@ -356,32 +338,6 @@ object ProviderRegistry {
         curatedTranscriptionModels = listOf(OpenAiCompatibleClient.SYNC_MODEL),
     )
 
-    /**
-     * Speechify: the reader's voice, and the only provider here that speaks rather than listens.
-     *
-     * It is a text to speech company and has **no speech to text endpoint at all**. That is written
-     * down in HANDOFF.md and repeated here because the confusion has cost two research passes: their
-     * own "best speech to text APIs" article recommends other companies and reads like a product
-     * page. Nothing may ever point a transcription role at this preset, which is what [TTS_ONLY]
-     * enforces: the keys screen only offers a role a provider can actually perform.
-     *
-     * The wire format has nothing in common with OpenAI's, so it is not handled by
-     * [OpenAiCompatibleClient]; see [MaSpeechify], which is the only place that talks to it.
-     * `supportsDynamicModels` is false because the model list is three names and a live catalog call
-     * on a keyboard settings screen buys nothing.
-     *
-     * The default model is English only, deliberately. Croatian is on the coming-soon list rather
-     * than the supported one, so the reader keeps the Edge voice for Croatian; see [MaSpeechify].
-     */
-    val SPEECHIFY = ProviderPreset(
-        id = "speechify",
-        displayName = "Speechify",
-        baseUrl = MaSpeechify.BASE_URL,
-        capabilities = TTS_ONLY,
-        supportsDynamicModels = false,
-        apiKeyUrl = "https://console.speechify.ai/api-keys",
-    )
-
     val XAI = ProviderPreset(
         id = "xai",
         displayName = "xAI (Grok)",
@@ -436,16 +392,17 @@ object ProviderRegistry {
     )
 
     /** All built-in presets in display order. The custom option is added by the UI on top of these. */
-    // MA TWIST: three cloud providers plus the on-device engine, nothing else. LOCAL is the
-    // offline Whisper/Parakeet runner that needs no key and no network. The other presets stay
-    // defined above so code referencing them by name still compiles, they are simply not offered.
-    // GROQ joins the list at build 155 so the reader can send a screenshot to its vision model. The
-    // preset existed all along but was never listed, and byId() only looks here, which meant
-    // MaKeyImport skipped it silently: Groq keys in the keyring file were parsed and then dropped
-    // because no preset answered to "groq". Being in this list is what gives it the key manager, the
-    // multi key ring, the tester and the parser, all of it for free.
+    // MA TWIST: what this app can actually use, and nothing else. ASSEMBLYAI transcribes, LOCAL is
+    // the offline Whisper runner that needs no key and no network. The other presets stay defined
+    // above so code referencing them by name still compiles, they are simply not offered.
+    //
+    // Being in this list is what gives a provider the key manager, the multi key ring, the tester
+    // and the parser, all of it for free — and byId() only looks here, so a provider that is not
+    // listed has its keys silently dropped on import. That cost a build once. It is also exactly
+    // why the list is short: a provider offered but unusable is a line that has to be read and
+    // then ruled out, every time.
     val presets: List<ProviderPreset> = listOf(
-        ASSEMBLYAI, SPEECHIFY, GROQ, GEMINI, ANTHROPIC, LOCAL,
+        ASSEMBLYAI, GEMINI, ANTHROPIC, LOCAL,
     )
 
     fun byId(id: String): ProviderPreset? = presets.firstOrNull { it.id == id }

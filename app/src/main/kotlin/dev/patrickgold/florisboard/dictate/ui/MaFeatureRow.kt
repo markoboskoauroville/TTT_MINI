@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.RecordVoiceOver
@@ -59,7 +58,7 @@ import org.florisboard.lib.compose.stringRes
 import dev.patrickgold.florisboard.R
 
 /**
- * The feature row: one row, nine keys, drawn by both views and the last row standing when everything
+ * The feature row: one row, drawn by both views and the last row standing when everything
  * above it is folded away.
  *
  * `AP · select-all · backspace · mic · book · 1 2 3 · enter`, **by default**. The order now lives in a
@@ -216,20 +215,6 @@ fun MaFeatureRow(modifier: Modifier = Modifier) {
                     ) {
                         keyboardManager.activeState.imeUiMode =
                             if (inTranscribe) ImeUiMode.TEXT else ImeUiMode.TRANSCRIBE
-                    }
-                }
-
-                MaFeatureKey.BOOK -> {
-                    // The reader. LLL: it speaks the clipboard and lights each word as it is said. Beside the
-                    // microphone, because listening and dictating are the two halves of what this app is for.
-                    ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = Icons.AutoMirrored.Filled.MenuBook,
-                        contentDescription = stringRes(R.string.ma__feature_lll),
-                        modifier = keyMod,
-                        onLongClick = fold,
-                    ) {
-                        keyboardManager.activeState.imeUiMode = ImeUiMode.READER
                     }
                 }
 

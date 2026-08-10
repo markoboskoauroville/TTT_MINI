@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
@@ -53,7 +52,7 @@ import kotlinx.coroutines.launch
 val ROW_HEIGHT = 64.dp
 
 /**
- * Settings, Mantra, Feature row: the nine keys, in a list, dragged into whatever order suits.
+ * Settings, Mantra, Feature row: the keys, in a list, dragged into whatever order suits.
  *
  * This row's order has been corrected by hand twice, at builds 139 and 146, both times from a
  * screenshot with arrows drawn on it, and both times in the direction opposite to what looked
@@ -239,13 +238,6 @@ private fun MaFeatureIcon(key: MaFeatureKey) {
             Icon(Icons.Default.Backspace, contentDescription = null, tint = tint, modifier = size)
         MaFeatureKey.MIC ->
             Icon(Icons.Default.Mic, contentDescription = null, tint = tint, modifier = size)
-        MaFeatureKey.BOOK ->
-            Icon(
-                Icons.AutoMirrored.Filled.MenuBook,
-                contentDescription = null,
-                tint = tint,
-                modifier = size,
-            )
         MaFeatureKey.ZONE_1, MaFeatureKey.ZONE_2, MaFeatureKey.ZONE_3 -> Box(
             modifier = size,
             contentAlignment = Alignment.Center,

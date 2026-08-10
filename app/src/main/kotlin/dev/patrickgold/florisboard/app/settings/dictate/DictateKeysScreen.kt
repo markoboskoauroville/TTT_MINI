@@ -72,7 +72,6 @@ import dev.patrickgold.florisboard.dictate.provider.DictateApiException
 import dev.patrickgold.florisboard.dictate.provider.MaAssemblyStats
 import dev.patrickgold.florisboard.dictate.provider.MaKeyRing
 import dev.patrickgold.florisboard.dictate.provider.MaKeys
-import dev.patrickgold.florisboard.dictate.provider.MaSpeechify
 import dev.patrickgold.florisboard.dictate.provider.MaUsage
 import dev.patrickgold.florisboard.dictate.provider.OpenAiCompatibleClient
 import dev.patrickgold.florisboard.dictate.provider.ProviderAccount
@@ -235,46 +234,6 @@ fun DictateKeysScreen() = FlorisScreen {
             MaKeyRingStore.forget(context, preset.id, key)
             return scope.launch {
                 val status = withContext(Dispatchers.IO) {
-                    // Speechify speaks rather than listens, so there is no model list to count and
-                    // nothing in OpenAiCompatibleClient that fits. It is probed by synthesising two
-                    // characters, which is the only test that answers the real question: not "does
-                    // this string authenticate" but "will this key make audio when the reader asks".
-                    // A key whose balance is gone lists voices perfectly well and then fails.
-                    if (preset.capabilities.tts) {
-                        val probe = MaSpeechify.probe(key)
-                        // The probe was billed, so it goes in the ledger like any other call. A
-                        // meter that quietly excludes its own traffic is a meter that drifts.
-                        if (probe.billableCharacters > 0) {
-                            MaUsageStore.record(
-                                context, preset.id, key,
-                                probe.billableCharacters.toLong(), MaUsage.Unit.CHARACTER,
-                            )
-                        }
-                        // The verdict goes into the ring as well as onto the screen, so what the
-                        // key manager learns is the same thing the reader will act on. Two places
-                        // holding two opinions about the same key is how a green light ends up
-                        // above a key nothing will ever use.
-                        val ring = MaKeyRingStore.load(context, preset.id)
-                        // Pulled into a local first. Kotlin will not smart-cast a nullable property
-                        // that lives in another module, because that module could in principle
-                        // change it between the check and the use, and dictate-core is a separate
-                        // module. A null check on probe.kind alone therefore does not compile.
-                        val probeKind = probe.kind
-                        val updated = when {
-                            probe.ok -> MaKeyRing.onSuccess(ring, key, probe.detail)
-                            probeKind != null -> MaKeyRing.onFailure(ring, key, probeKind, probe.detail)
-                            else -> ring
-                        }
-                        if (updated !== ring) MaKeyRingStore.save(context, preset.id, updated)
-                        return@withContext when {
-                            probe.ok -> KeyStatus(KeyHealth.WORKING, probe.detail)
-                            probe.kind == DictateApiException.Kind.INVALID_API_KEY ->
-                                KeyStatus(KeyHealth.REJECTED, probe.detail)
-                            probe.kind == DictateApiException.Kind.QUOTA_EXCEEDED ->
-                                KeyStatus(KeyHealth.NO_QUOTA, probe.detail)
-                            else -> KeyStatus(KeyHealth.OFFLINE, probe.detail)
-                        }
-                    }
                     try {
                         val count = OpenAiCompatibleClient
                             .from(
