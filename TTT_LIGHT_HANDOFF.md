@@ -115,6 +115,19 @@ old key and is about a key that no longer exists.
 **Rewording goes.** §2.2 left it open. It is cut: `applyPrompt`, `rewordingModel`, and with them the
 Anthropic and Gemini presets. Dictation only.
 
+**A gear key, opening settings where he left them.** New feature key `SETTINGS`, in the row,
+orderable and switchable off like the rest of them. It opens the settings app — and not at the top.
+The last settings screen he was on, scrolled to where he was on it.
+
+Both halves are needed or it is not worth building. Landing on the settings home when he was three
+levels into the key manager is the same as remembering nothing, and landing on the right screen at
+the top of it still costs a scroll on a page he was at the bottom of. Store the route and the offset
+together and apply the offset **only when the route matches the one it was saved against** — a
+remembered offset applied to a different screen scrolls to a position that means nothing, and on a
+short screen it will simply look broken.
+
+He works by voice with low vision. Reaching a setting is the expensive part for him, not changing it.
+
 ---
 
 ## 3. The one decision that needs Marko before you cut
