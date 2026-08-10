@@ -230,7 +230,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     // repeat and swipes to select, which is the behaviour it has everywhere else in
                     // this app, and a key that repeats cannot also mean something else when held.
                     LegacyActionKey(
-                        action = when (key) {
+                        action = when (button.key) {
                             MaFeatureKey.ALL_PASTE -> LegacyEditAction.ALL_PASTE
                             MaFeatureKey.SELECT_ALL -> LegacyEditAction.SELECT_ALL
                             MaFeatureKey.ALL_CLEAR -> LegacyEditAction.ALL_CLEAR
