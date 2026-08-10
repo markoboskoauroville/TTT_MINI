@@ -189,9 +189,10 @@ fun TextInputLayout(
             val maFeatureRowShown by prefs.dictate.maFeatureRowShown.collectAsState()
             if (maFeatureRowShown) {
                 MaFeatureRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(FlorisImeSizing.smartbarHeight),
+                    modifier = Modifier.fillMaxWidth(),
+                    // Per row, not for the block. There can be any number of rows now and the count
+                    // changes while the keyboard is open, so the height cannot be decided here.
+                    rowHeight = FlorisImeSizing.smartbarHeight,
                 )
             }
         }

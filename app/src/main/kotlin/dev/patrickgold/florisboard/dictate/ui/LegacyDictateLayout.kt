@@ -389,7 +389,8 @@ fun LegacyDictateLayout(
                 val maFeatureRowShown by prefs.dictate.maFeatureRowShown.collectAsState()
                 if (maFeatureRowShown) {
                     MaFeatureRow(
-                        modifier = Modifier.fillMaxWidth().height(EditRowHeight),
+                        modifier = Modifier.fillMaxWidth(),
+                        rowHeight = EditRowHeight,
                     )
                 }
             }

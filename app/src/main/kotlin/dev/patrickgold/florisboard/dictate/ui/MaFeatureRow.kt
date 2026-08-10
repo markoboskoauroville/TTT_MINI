@@ -43,6 +43,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.unit.Dp
+import dev.patrickgold.florisboard.dictate.MaRows
+import dev.patrickgold.florisboard.dictate.MaMacroSyntax
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -110,7 +116,7 @@ import dev.patrickgold.florisboard.R
  * on the three keys that are switches so their positions are readable without pressing them.
  */
 @Composable
-fun MaFeatureRow(modifier: Modifier = Modifier) {
+fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
     val prefs by FlorisPreferenceStore
@@ -144,35 +150,74 @@ fun MaFeatureRow(modifier: Modifier = Modifier) {
     val editorContent by editorInstance.activeContentFlow.collectAsState()
     val hasSelection = editorContent.selection.isSelectionMode
 
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    // Every row the user has, drawn one under another. The height is per row rather than for the
+    // whole block, so the stack is as tall as it needs to be and the caller does not have to know
+    // how many rows there are — which it cannot, since the number is a preference and changes while
+    // the keyboard is open.
+    val rowsRaw by prefs.dictate.maRows.collectAsState()
+    val rows = remember(rowsRaw) {
+        MaRows.parse(rowsRaw).ifEmpty { MaRows.defaultRows() }
+    }
+
+    // The one-time carry across from the two old systems.
+    //
+    // Blank means not migrated, not "no rows", which is why the fallback above is defaultRows()
+    // rather than nothing: the keyboard has to draw during the moment between reading a blank value
+    // and the write landing, and an empty keyboard in that gap is a keyboard somebody is looking at.
+    //
+    // It runs from here rather than from application start because this is the first place that
+    // knows the value is blank, and because a migration that runs before the preference store has
+    // loaded reads a blank source and writes an empty result — which is exactly the bug that would
+    // wipe his macros instead of moving them.
+    val orderRaw by prefs.dictate.maFeatureRowOrder.collectAsState()
+    val hiddenRaw by prefs.dictate.maFeatureRowHidden.collectAsState()
+    val macroRaw by prefs.dictate.maMacroBar.collectAsState()
+    LaunchedEffect(rowsRaw) {
+        if (rowsRaw.isBlank()) {
+            val migrated = MaRows.migrate(orderRaw, hiddenRaw, macroRaw)
+                .ifEmpty { MaRows.defaultRows() }
+            prefs.dictate.maRows.set(MaRows.serialize(migrated))
+        }
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+      rows.forEach { rowButtons ->
+        Row(
+            modifier = Modifier.fillMaxWidth().height(rowHeight),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
         val keyMod = Modifier.weight(1f).fillMaxHeight()
 
-        // THE ORDER IS THE USER'S, read from a preference and rearranged in Settings, Mantra,
-        // Feature row. It was corrected by hand twice, at builds 139 and 146, both times from a
-        // screenshot with arrows drawn on it and both times in the direction opposite to what looked
-        // sensible from inside this file. That is the argument for the editor: the person holding the
-        // keyboard should not have to send a picture and wait for a build to move a key.
+        // THE ARRANGEMENT IS THE USER'S. It was corrected by hand twice, at builds 139 and 146,
+        // both times from a screenshot with arrows drawn on it and both times in the direction
+        // opposite to what looked sensible from inside this file. That is the argument for the
+        // editor: the person holding the keyboard should not have to send a picture and wait for a
+        // build to move a key.
         //
-        // parse() always returns all nine, whatever is stored. Order is the only thing the editor can
-        // change, and that is a safety rule rather than a simplification: this row is the one that
-        // survives when every other row is folded away, so it is the only route to backspace, to
-        // enter and to the microphone. Rearranging cannot lock anybody out of anything. Hiding could.
-        val orderRaw by prefs.dictate.maFeatureRowOrder.collectAsState()
-        val hiddenRaw by prefs.dictate.maFeatureRowHidden.collectAsState()
-        // visible() subtracts ALWAYS_ON itself, so backspace, enter and the microphone survive any
-        // stored value at all, including one edited by hand or restored from an old backup.
-        val order = remember(orderRaw, hiddenRaw) {
-            MaFeatureOrder.visible(
-                MaFeatureOrder.parse(orderRaw),
-                MaFeatureOrder.parseHidden(hiddenRaw),
-            )
-        }
+        // The old ALWAYS_ON guarantee is gone with the fixed row, and it has to be. It could promise
+        // backspace and enter survived because the row held every key there was and hiding was the
+        // only edit; now a row is a list somebody builds, and a list can be built without them. What
+        // replaces it is the editor warning before saving a set of rows with no way to delete or to
+        // record, which is a warning about a real arrangement rather than a rule that makes some
+        // arrangements unreachable.
+        rowButtons.forEach { button ->
+          when (button) {
+            // A macro key: what the user wrote, on the face of it, running what he attached to it.
+            //
+            // Long press folds the row like every other key here, which means a macro cannot also
+            // use a long press for anything of its own. That is the right trade: folding has to
+            // work from anywhere on the row or the row cannot be got rid of, and a macro that
+            // needed two gestures would need explaining.
+            is MaRows.Button.Macro -> ThemedTextKey(
+                label = button.label,
+                modifier = keyMod,
+                tint = null,
+                onLongClick = fold,
+            ) {
+                MaMacroSyntax.run(button.macro, FlorisImeService.currentInputConnection())
+            }
 
-        order.forEach { key ->
-            when (key) {
+            is MaRows.Button.Builtin -> when (button.key) {
                 MaFeatureKey.ALL_PASTE, MaFeatureKey.SELECT_ALL, MaFeatureKey.BACKSPACE,
                 MaFeatureKey.ALL_CLEAR, MaFeatureKey.SPACE -> {
                     // The five borrowed from the copy row, drawn by that row's own code rather than
@@ -300,7 +345,10 @@ fun MaFeatureRow(modifier: Modifier = Modifier) {
                     )
                 }
             }
+          }
         }
+        }
+      }
     }
 }
 

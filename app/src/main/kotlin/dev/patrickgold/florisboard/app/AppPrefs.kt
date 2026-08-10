@@ -959,9 +959,22 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__ma_action_row_v20_applied",
             default = false,
         )
+        // Every row above the keyboard, built-in keys and macros together, serialized by MaRows.
+        //
+        // Empty means "not migrated yet" rather than "no rows": MaRowsMigration fills it once from
+        // the two preferences below plus the old feature row order, and after that this is the only
+        // one that is read. The old three are left in place and unread rather than deleted, because
+        // a migration that runs against an empty source produces an empty keyboard, and that is the
+        // shape of bug that only shows up on the one install that mattered.
+        val maRows = string(
+            key = "dictate__ma_rows",
+            default = "",
+        )
         // The macro bar: every preset, serialized by MaMacros. One string because that is all a
         // macro bar is, and because a control-character encoding lets a macro contain commas,
         // quotes, newlines and braces without any escaping to get wrong.
+        //
+        // Read once by the migration into maRows, and not at runtime any more.
         val maMacroBar = string(
             key = "dictate__ma_macro_bar",
             default = "",
