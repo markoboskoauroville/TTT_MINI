@@ -3,7 +3,7 @@
          override it with the old fork name, so a phone set to Croatian or German showed
          "Dictate" on the launcher no matter what this file said. They have been removed and
          this is marked untranslatable so they cannot come back through a translation import. -->
-    <string name="app_name" translatable="false">TTT (light)</string>
+    <string name="app_name" translatable="false">TTT mini</string>
 
     <string name="key__phone_pause" comment="Label for the Pause key in the telephone keyboard layout">Pause</string>
     <string name="key__phone_wait" comment="Label for the Wait key in the telephone keyboard layout">Wait</string>
@@ -908,8 +908,11 @@
     <string name="clip__clear_history">Clear history</string>
     <string name="clip__unpin_item">Unpin item</string>
     <string name="clip__edit_item">Edit</string>
-    <string name="ma__feature_mic">Dictation view</string>
-    <string name="ma__feature_keyboard">Keyboard view</string>
+    <string name="ma__feature_record">Start recording</string>
+    <string name="ma__feature_record_stop">Stop recording and send</string>
+    <string name="ma__feature_settings">Settings</string>
+    <string name="dictate__legacy_action_all_clear">Select all and delete</string>
+    <string name="dictate__legacy_action_space">Space</string>
     <string name="ma__feature_file">Transcribe an audio file</string>
     <string name="ma__feature_longform">Long recordings</string>
     <string name="ma__feature_rewording">Rewording</string>

@@ -59,7 +59,21 @@ enum class LegacyEditAction {
     // Back to the typing keyboard. Placed where the microphone sits in the other view, so one spot
     // on the screen means "swap view" whichever view is showing and the thumb stops hunting.
     KEYBOARD,
-    BACKSPACE;
+    BACKSPACE,
+
+    // Select all, delete, and stop there. AP without the paste.
+    //
+    // The name is Marko's and the C does not mean cut: nothing reaches the clipboard, and that is
+    // the point of having it as its own key rather than reusing CUT. Cut would overwrite whatever
+    // is being carried, which on a keyboard driven by voice is usually the thing about to be
+    // pasted. This empties the field and leaves the clipboard alone.
+    ALL_CLEAR,
+
+    // A spacebar, in the action row.
+    //
+    // Not a duplicate of the one on the keyboard: with zone two folded away there is no keyboard on
+    // screen at all, and a dictated sentence still needs a space before the next one starts.
+    SPACE;
 
     val icon: ImageVector
         get() = when (this) {
@@ -80,6 +94,14 @@ enum class LegacyEditAction {
             ALL_PASTE -> Icons.Default.ContentPaste
             KEYBOARD -> Icons.Default.Keyboard
             BACKSPACE -> Icons.Default.Backspace
+            // Neither of these two ever shows an icon: AC is drawn as its letters, the way AP is,
+            // and the spacebar is drawn as a bar. The getter is exhaustive though, so both need a
+            // value, and both reuse an icon with proven usages in this repo rather than reaching
+            // for Icons.Default.SpaceBar, which has none. Zero usages is the signal: the icon may
+            // exist in the documentation and still not be in the artifact this project resolves,
+            // and that costs a build to discover.
+            ALL_CLEAR -> Icons.Default.Backspace
+            SPACE -> Icons.Default.Keyboard
         }
 
     @get:StringRes
@@ -103,6 +125,8 @@ enum class LegacyEditAction {
             KEYBOARD -> R.string.dictate__legacy_action_keyboard
             // Reuses the existing backspace content-description string (already localised everywhere).
             BACKSPACE -> R.string.dictate__legacy_backspace
+            ALL_CLEAR -> R.string.dictate__legacy_action_all_clear
+            SPACE -> R.string.dictate__legacy_action_space
         }
 
     companion object {

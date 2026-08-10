@@ -39,6 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.runtime.DisposableEffect
+import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -177,6 +179,22 @@ class FlorisAppActivity : ComponentActivity() {
     private fun AppContent() {
         val navController = rememberNavController()
         val previewFieldController = rememberPreviewFieldController()
+
+        // Where he is standing in settings, recorded as he moves, so the gear key on the feature row
+        // can put him back here rather than at the top of the settings home.
+        //
+        // The listener rather than a call in each screen: there are more than thirty of these and a
+        // screen added later that forgot to report itself would be a hole nobody notices until the
+        // gear key sends them somewhere stale. The graph already knows where it is.
+        val resumeContext = LocalContext.current
+        DisposableEffect(navController) {
+            val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+                MaSettingsResume.pathFor(destination.route)
+                    ?.let { MaSettingsResume.rememberRoute(resumeContext, it) }
+            }
+            navController.addOnDestinationChangedListener(listener)
+            onDispose { navController.removeOnDestinationChangedListener(listener) }
+        }
 
         val isImeSetUp by prefs.internal.isImeSetUp.collectAsState()
 

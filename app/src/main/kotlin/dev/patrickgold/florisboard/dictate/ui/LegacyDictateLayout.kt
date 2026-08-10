@@ -634,6 +634,55 @@ internal fun LegacyActionKey(
             )
         }
 
+        // AC: select all, delete, stop. AP without the paste, and deliberately not CUT.
+        //
+        // The delays are the same ones AP needs and for the same reason. performContextMenuAction
+        // and commitText are two round trips to another process, and firing the second before the
+        // first has landed deletes a selection that does not exist yet, which reads as "the key did
+        // nothing" rather than as a race. The connection is fetched again at each step rather than
+        // held: the field can be replaced underneath a macro, and a stale connection writes into
+        // nothing at all.
+        //
+        // Nothing here touches the clipboard. That is the whole reason this is its own key.
+        LegacyEditAction.ALL_CLEAR -> ThemedKey(
+            code = KeyCode.NOOP,
+            modifier = modifier,
+            onClick = {
+                actionScope.launch {
+                    keyboardManager.activeState.isManualSelectionMode = false
+                    delay(MA_MACRO_LEAD_MS)
+                    FlorisImeService.currentInputConnection()
+                        ?.performContextMenuAction(android.R.id.selectAll)
+                    delay(MA_MACRO_LEAD_MS)
+                    FlorisImeService.currentInputConnection()?.commitText("", 1)
+                }
+            },
+        ) { fg ->
+            Text(
+                text = "AC",
+                color = fg,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+
+        // The spacebar, as an action. Goes through tapKey like every other real key so that it
+        // reaches the same place a space from the keyboard proper does: word committal, the
+        // suggestion strip, double-space-for-full-stop and auto-capitalisation all hang off that
+        // path, and a raw commitText(" ") would silently skip every one of them.
+        LegacyEditAction.SPACE -> ThemedKey(
+            code = KeyCode.SPACE,
+            modifier = modifier,
+            onClick = { keyboardManager.tapKey(KeyCode.SPACE) },
+        ) { fg ->
+            Text(
+                text = "\u2013\u2013\u2013",
+                color = fg,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+
         // Select-all toggles: with a selection it becomes "deselect" and collapses the cursor.
         LegacyEditAction.SELECT_ALL -> ThemedIconKey(
             code = KeyCode.CLIPBOARD_SELECT_ALL,

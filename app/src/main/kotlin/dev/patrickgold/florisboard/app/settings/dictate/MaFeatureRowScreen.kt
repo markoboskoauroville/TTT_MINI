@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.Checkbox
@@ -238,6 +239,16 @@ private fun MaFeatureIcon(key: MaFeatureKey) {
             Icon(Icons.Default.Backspace, contentDescription = null, tint = tint, modifier = size)
         MaFeatureKey.MIC ->
             Icon(Icons.Default.Mic, contentDescription = null, tint = tint, modifier = size)
+        // Drawn exactly as the row draws them. The editor showing an idea of a key rather than the
+        // key is the mismatch this whole preview exists to avoid.
+        MaFeatureKey.ALL_CLEAR -> Box(modifier = size, contentAlignment = Alignment.Center) {
+            Text(text = "AC", color = tint, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+        }
+        MaFeatureKey.SPACE -> Box(modifier = size, contentAlignment = Alignment.Center) {
+            Text(text = "\u2013\u2013\u2013", color = tint, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+        }
+        MaFeatureKey.SETTINGS ->
+            Icon(Icons.Default.Settings, contentDescription = null, tint = tint, modifier = size)
         MaFeatureKey.ZONE_1, MaFeatureKey.ZONE_2, MaFeatureKey.ZONE_3 -> Box(
             modifier = size,
             contentAlignment = Alignment.Center,

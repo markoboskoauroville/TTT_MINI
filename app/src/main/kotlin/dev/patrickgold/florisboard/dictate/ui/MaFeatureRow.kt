@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Dashboard
@@ -48,6 +49,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaFeatureOrder
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import dev.patrickgold.florisboard.dictate.DictateController
+import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.keyboardManager
@@ -171,19 +173,23 @@ fun MaFeatureRow(modifier: Modifier = Modifier) {
 
         order.forEach { key ->
             when (key) {
-                MaFeatureKey.ALL_PASTE, MaFeatureKey.SELECT_ALL, MaFeatureKey.BACKSPACE -> {
-                    // The three borrowed from the copy row, drawn by that row's own code rather than
-                    // rebuilt here. AP and select-all are its two most used keys, and backspace is
-                    // the one key from the keyboard proper that nothing else can stand in for: with
-                    // zone two closed there is no other way to delete a character.
+                MaFeatureKey.ALL_PASTE, MaFeatureKey.SELECT_ALL, MaFeatureKey.BACKSPACE,
+                MaFeatureKey.ALL_CLEAR, MaFeatureKey.SPACE -> {
+                    // The five borrowed from the copy row, drawn by that row's own code rather than
+                    // rebuilt here, so a fix to AP or to backspace lands in both places at once.
+                    // Backspace and space are the two keys from the keyboard proper that nothing
+                    // else stands in for: with zone two closed there is no other way to delete a
+                    // character, and no other way to put a space between two dictated sentences.
                     //
-                    // These three do not fold the row on a long press, and must not. Backspace holds
-                    // to repeat and swipes to select, which is the behaviour it has everywhere else
-                    // in this app, and a key that repeats cannot also mean something else when held.
+                    // None of these fold the row on a long press, and must not. Backspace holds to
+                    // repeat and swipes to select, which is the behaviour it has everywhere else in
+                    // this app, and a key that repeats cannot also mean something else when held.
                     LegacyActionKey(
                         action = when (key) {
                             MaFeatureKey.ALL_PASTE -> LegacyEditAction.ALL_PASTE
                             MaFeatureKey.SELECT_ALL -> LegacyEditAction.SELECT_ALL
+                            MaFeatureKey.ALL_CLEAR -> LegacyEditAction.ALL_CLEAR
+                            MaFeatureKey.SPACE -> LegacyEditAction.SPACE
                             else -> LegacyEditAction.BACKSPACE
                         },
                         modifier = keyMod,
@@ -193,28 +199,45 @@ fun MaFeatureRow(modifier: Modifier = Modifier) {
                 }
 
                 MaFeatureKey.MIC -> {
-                    // The two ways out of this view, side by side: the microphone to the dictation screen and
-                    // the book to the reader. They moved here from the far end at Marko's instruction, and
-                    // grouping them is the point rather than a side effect. They are the same kind of key, the
-                    // only two that change which view you are looking at, and a pair that does one kind of thing
-                    // is easier to find by feel than two keys of the same kind at opposite ends of a row.
+                    // The record button. It was a door to the transcribe view until that view was
+                    // removed; now it is the recording control itself, in the same place the thumb
+                    // already knows. onMicClick is the same entry point volume up uses, so the two
+                    // routes cannot drift apart: start when idle, stop and send when recording.
                     //
-                    // The microphone is also the reason the keyboard can be folded away entirely. With zone two
-                    // closed there is no key left anywhere that reaches the dictation screen, so the way between
-                    // the two views has to live in the row that always survives. Wherever this row is rearranged
-                    // in future, the microphone stays in it.
-                    val inTranscribe = keyboardManager.activeState.imeUiMode == ImeUiMode.TRANSCRIBE
+                    // Lit red while recording, dark otherwise. Colour is state here, not decoration,
+                    // and this is the recording red the lamp and the level meter already use. It
+                    // does not pulse and must not: a light that moves says "look at me" over and
+                    // over, and this one only has to say whether the microphone is open.
+                    val recording = DictateController.state.collectAsState().value is
+                        DictateController.UiState.Recording
                     ThemedIconKey(
                         code = KeyCode.NOOP,
-                        icon = if (inTranscribe) Icons.Default.Keyboard else Icons.Default.Mic,
+                        icon = Icons.Default.Mic,
                         contentDescription = stringRes(
-                            if (inTranscribe) R.string.ma__feature_keyboard else R.string.ma__feature_mic,
+                            if (recording) R.string.ma__feature_record_stop else R.string.ma__feature_record,
                         ),
+                        modifier = keyMod,
+                        tint = if (recording) MaRecordRed else null,
+                        onLongClick = fold,
+                    ) {
+                        DictateController.onMicClick(context)
+                    }
+                }
+
+                MaFeatureKey.SETTINGS -> {
+                    // Settings, reopened where they were left rather than at the top.
+                    //
+                    // Reaching a setting is the expensive part on a phone driven by voice; changing
+                    // it once you are there is not. MaSettingsResume remembers the screen and how
+                    // far down it he was, and hands back a deep link to both.
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        icon = Icons.Default.Settings,
+                        contentDescription = stringRes(R.string.ma__feature_settings),
                         modifier = keyMod,
                         onLongClick = fold,
                     ) {
-                        keyboardManager.activeState.imeUiMode =
-                            if (inTranscribe) ImeUiMode.TEXT else ImeUiMode.TRANSCRIBE
+                        MaSettingsResume.open(context)
                     }
                 }
 
@@ -304,3 +327,13 @@ private fun ThemedTextKey(
         )
     }
 }
+
+/**
+ * The recording red, the same value the lamp, the level meter and the history's destructive actions
+ * already use. Declared here rather than imported from LegacyDictateLayout because that file is
+ * being deleted and a colour is cheaper to repeat than to route around.
+ *
+ * Colour is state in this app and never decoration. This one says the microphone is open, and it
+ * neither pulses nor breathes while it says it.
+ */
+private val MaRecordRed = Color(0xFF9B3B33)

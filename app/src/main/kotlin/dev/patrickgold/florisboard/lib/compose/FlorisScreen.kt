@@ -36,6 +36,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
+import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -150,8 +154,47 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
             bottomBar = bottomBar,
             floatingActionButton = fab,
         ) { innerPadding ->
+            // The other half of the gear key: how far down this screen he was.
+            //
+            // Owned here rather than left to florisVerticalScroll's own remembered state, because
+            // the position has to be readable to save it and writable to put it back. Every settings
+            // screen in the app goes through this scaffold, so hooking it once here covers all of
+            // them and covers any screen added later without that screen having to know.
+            //
+            // Restoring is deliberately not automatic. consumeScroll hands the offset back only when
+            // the gear key armed it and only when the route matches the one it was measured on, so
+            // tapping down through the settings normally still opens each screen at its top, which
+            // is what anybody expects. A list that never starts where you are looking is worse than
+            // one that forgets.
+            val maScrollState = rememberScrollState()
+            val maRoutePath = MaSettingsResume.pathFor(
+                LocalNavController.current.currentDestination?.route,
+            )
+            if (scrollable && maRoutePath != null) {
+                LaunchedEffect(maRoutePath) {
+                    MaSettingsResume.consumeScroll(context, maRoutePath)?.let {
+                        // scrollTo, not animateScrollTo: this is where the screen opens, not a
+                        // journey to watch. An animation here would also race the first layout pass
+                        // and land short on a list whose full height is not known yet.
+                        maScrollState.scrollTo(it)
+                    }
+                }
+                // Written when the scroll settles, not while it moves. Deliberately not debounce():
+                // that is a preview API in some versions of the coroutines library and an opt-in
+                // annotation is a build failure named after a file nobody was editing. Watching the
+                // in-progress flag needs nothing beyond what is already imported, and settling is
+                // the moment worth recording anyway.
+                LaunchedEffect(maRoutePath) {
+                    snapshotFlow { maScrollState.isScrollInProgress }
+                        .collect { moving ->
+                            if (!moving) {
+                                MaSettingsResume.rememberScroll(context, maRoutePath, maScrollState.value)
+                            }
+                        }
+                }
+            }
             val scrollModifier = if (scrollable) {
-                Modifier.florisVerticalScroll()
+                Modifier.florisVerticalScroll(maScrollState)
             } else {
                 Modifier
             }

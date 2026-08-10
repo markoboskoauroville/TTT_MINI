@@ -29,7 +29,33 @@ enum class MaFeatureKey(val id: String, val label: String) {
     ALL_PASTE("ap", "Paste all"),
     SELECT_ALL("select_all", "Select all"),
     BACKSPACE("backspace", "Backspace"),
-    MIC("mic", "Microphone, and the way back"),
+
+    /**
+     * AC: select all and delete, without going near the clipboard.
+     *
+     * Marko's name and his distinction. The C is not cut: cutting would overwrite whatever is being
+     * carried, which on a keyboard driven by voice is usually the very thing about to be pasted.
+     */
+    ALL_CLEAR("ac", "Clear all"),
+
+    /**
+     * A spacebar, in the row that survives folding.
+     *
+     * Not a duplicate of the keyboard's own. With zone two closed there is no keyboard on screen,
+     * and a dictated sentence still needs a space before the next one begins.
+     */
+    SPACE("space", "Space"),
+
+    /**
+     * The record key. Tap to start, tap to stop and send, lit red while recording.
+     *
+     * It was a door to the transcribe view until that view was removed. The id stays "mic" so that
+     * a stored row order written before the change still finds it.
+     */
+    MIC("mic", "Record"),
+
+    /** Settings, reopened where they were left. */
+    SETTINGS("settings", "Settings"),
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),
     ZONE_3("zone3", "3, the copy row"),
@@ -61,15 +87,18 @@ object MaFeatureOrder {
      * The three keys that can be moved but never switched off.
      *
      * This row is the one that survives when every other row is folded away. `BACKSPACE` and `ENTER`
-     * are the only keys from the keyboard proper with no substitute anywhere once zone two is shut,
-     * and `MIC` is the only route to the dictation screen and therefore back out of it. Hiding any of
-     * the three leaves a keyboard that cannot delete a character, cannot end a line, or cannot reach
-     * the feature the app is named after, with no way back except the settings app.
+     * are the only keys from the keyboard proper with no substitute anywhere once zone two is shut:
+     * hiding either leaves a keyboard that cannot delete a character or cannot end a line.
+     *
+     * `MIC` was in this set and is deliberately no longer. It was locked because it was the only
+     * on-screen route to dictation; now that it is the record button and volume up does the same
+     * job, that argument is spent, and Marko asked for it to be editable like every other key. He
+     * was told what it costs — hidden key plus a dead volume rocker means no way to record — and
+     * chose it. Do not put it back on the old reasoning: that reasoning was about a different key.
      *
      * Rearranging can never lock anybody out of anything. Switching off can, and this is the line.
      */
     val ALWAYS_ON: Set<MaFeatureKey> = setOf(
-        MaFeatureKey.MIC,
         MaFeatureKey.BACKSPACE,
         MaFeatureKey.ENTER,
     )
@@ -92,11 +121,14 @@ object MaFeatureOrder {
         MaFeatureKey.ALL_PASTE,
         MaFeatureKey.SELECT_ALL,
         MaFeatureKey.BACKSPACE,
+        MaFeatureKey.ALL_CLEAR,
         MaFeatureKey.MIC,
+        MaFeatureKey.SPACE,
         MaFeatureKey.ZONE_1,
         MaFeatureKey.ZONE_2,
         MaFeatureKey.ZONE_3,
         MaFeatureKey.ENTER,
+        MaFeatureKey.SETTINGS,
         MaFeatureKey.LITTLE_MAN,
     )
 
