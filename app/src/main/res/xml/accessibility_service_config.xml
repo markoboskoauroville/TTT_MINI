@@ -10,6 +10,12 @@
   caused visible typing jank. Focus never moves on a content change, so nothing is lost by ignoring it.
   notificationTimeout stays at zero: the service itself coalesces the only high-frequency event
   (typeViewTextSelectionChanged), while focus and window changes must reach the bubble immediately.
+  canPerformGestures is what lets the pointer click. dispatchGesture sends a real touch into whichever
+  app is in front, so that app reacts exactly as it would to a finger: menus open, dialogs appear,
+  lists scroll. That liveness is the whole reason the feature is built around a pointer rather than
+  around watching the user's own finger, which Android does not permit while the app underneath is
+  still responding.
+
   The description is shown verbatim in the system Accessibility settings as the user-facing disclosure.
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
@@ -17,6 +23,7 @@
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagReportViewIds|flagInputMethodEditor"
     android:canRetrieveWindowContent="true"
+    android:canPerformGestures="true"
     android:notificationTimeout="0"
     android:description="@string/dictate__accessibility_service_description"
     android:summary="@string/dictate__accessibility_service_summary" />

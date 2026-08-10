@@ -577,6 +577,17 @@ class DictateAccessibilityService : AccessibilityService() {
         val isRunning: Boolean
             get() = instance != null
 
+        /**
+         * The running service, for dispatching pointer clicks, or null when it is not enabled.
+         *
+         * Handed out rather than wrapping every gesture call, because MaClickPlayer needs the
+         * service itself: dispatchGesture is an instance method and the screen size it converts
+         * against comes from the same instance's resources. Returning null rather than throwing is
+         * the point — the service is switched on by hand in the system settings and may simply not
+         * be, and every caller has to say so out loud instead of clicking nothing.
+         */
+        fun gestureService(): AccessibilityService? = instance
+
         private val _editableFocused = MutableStateFlow(false)
 
         /** Whether an editable text field currently holds input focus anywhere on screen. */
