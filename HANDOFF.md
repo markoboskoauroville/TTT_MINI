@@ -1,8 +1,13 @@
-# TTT&LLL — handoff and development plan
+# TTT (light) — handoff and development plan
 
-Written at build 88, updated at build 160. Sixteen builds went by without an update once, so
-check `git log -- HANDOFF.md` against `git log` before trusting it. Read this first, then
-`git log --oneline -20` to see anything newer.
+> **This repository is TTT (light), a fork.** Only the identity table below has been rewritten so
+> far. Everything after it still describes the parent app, TTT&LLL, and will be wrong about this
+> one until the deletions in `TTT_LIGHT_HANDOFF.md` are finished and step 7 rewrites this document.
+> Read `TTT_LIGHT_HANDOFF.md` first. Where the two disagree, that one is the plan and this one is
+> history.
+
+Written at build 88, updated at build 160, forked at build 160. Sixteen builds went by without an
+update once, so check `git log -- HANDOFF.md` against `git log` before trusting it.
 
 ---
 
@@ -14,8 +19,10 @@ keyboard engine underneath is largely intact.
 
 | | |
 |---|---|
-| Repo | `markoboskoauroville/DictateKeyboard` |
-| Package | `com.mantraproductions.voicetype` |
+| Repo | `markoboskoauroville/TTT_LIGHT` (forked from `markoboskoauroville/DictateKeyboard`) |
+| Package | `com.mantraproductions.tttlight` — **never** `com.mantraproductions.voicetype`, which would replace the full app instead of sitting beside it |
+| Signing | its own keystore, secrets `TTT_LIGHT_KEYSTORE` and `TTT_LIGHT_KEYSTORE_PASSWORD`. Different app, different key |
+| APK | `ttt-light-build-N.apk`, no ampersand in the name |
 | Build | push to `main` → GitHub Actions → signed APK on the releases page |
 | Owner | Marko Boško, Mantra Productions |
 | Theme pack | `markoboskoauroville/auroville-florisboard-theme`, published v2.0.0 |

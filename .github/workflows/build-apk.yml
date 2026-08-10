@@ -1,4 +1,4 @@
-name: Build TTT&LLL APK
+name: Build TTT (light) APK
 
 on:
   workflow_dispatch:
@@ -12,9 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # submodules: the reader engine is a separate repository mounted as a Gradle module.
-      # Without this the build fails on a module whose directory is empty, and the error
-      # points nowhere near the cause.
+      # submodules: the reader engine is still mounted as a Gradle module at this point in the
+      # fork. Without this the build fails on a module whose directory is empty, and the error
+      # points nowhere near the cause. This flag comes out with the reader itself.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -36,28 +36,28 @@ jobs:
 
       # One permanent key, kept as an encrypted repository secret. Every build is then signed
       # identically, so a new version installs straight over the old one and Android never asks
-      # anyone to uninstall anything. A throwaway key per build was what forced that before.
+      # anyone to uninstall anything. This is a different key from the full app's on purpose:
+      # different app, different id, different key, and neither can ever overwrite the other.
       - name: Restore the signing key
         env:
-          KS: ${{ secrets.VOICE_TYPE_KEYSTORE }}
-          KS_PW: ${{ secrets.VOICE_TYPE_KEYSTORE_PASSWORD }}
+          KS: ${{ secrets.TTT_LIGHT_KEYSTORE }}
+          KS_PW: ${{ secrets.TTT_LIGHT_KEYSTORE_PASSWORD }}
         run: |
           if [ -z "$KS" ]; then
             echo "No keystore secret found, this build would not be upgradable in place."
             exit 1
           fi
-          echo "$KS" | base64 -d > voicetype.jks
-          printf 'storeFile=voicetype.jks\nstorePassword=%s\nkeyAlias=voicetype\nkeyPassword=%s\n' "$KS_PW" "$KS_PW" > keystore.properties
-          keytool -list -keystore voicetype.jks -storepass "$KS_PW" | grep -i 'SHA-256' || true
+          echo "$KS" | base64 -d > tttlight.jks
+          printf 'storeFile=tttlight.jks\nstorePassword=%s\nkeyAlias=tttlight\nkeyPassword=%s\n' "$KS_PW" "$KS_PW" > keystore.properties
+          keytool -list -keystore tttlight.jks -storepass "$KS_PW" | grep -i 'SHA-256' || true
 
       - name: Build release APK
         # The version code must both match the release number shown in About and never go backwards,
-        # or Android refuses the install as a downgrade. Build 62 shipped versionCode 62 against an
-        # installed 127 and would not install at all.
-        #
-        # Adding a fixed offset satisfies both: the code stays ahead of every version already out
-        # there, and About subtracts the same offset so it still prints the number the release is
-        # named after. The offset is permanent and must never be lowered.
+        # or Android refuses the install as a downgrade. The fixed offset satisfies both: the code
+        # stays ahead of every version already out there, and About subtracts the same offset so it
+        # still prints the number the release is named after. The offset is permanent and must never
+        # be lowered. It is carried over from the parent app deliberately, so the two apps' version
+        # codes are read the same way by anyone looking at either.
         run: ./gradlew :app:assembleRelease -x lintVitalRelease --no-daemon -PprojectVersionCode=$((1000 + ${{ github.run_number }}))
 
       - name: Publish APK
@@ -66,9 +66,10 @@ jobs:
         run: |
           APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
           # No ampersand in the file name. It is legal in a URL only when escaped, and a download
-          # link that needs escaping is a link that breaks when it is pasted into a chat.
-          cp "$APK" ttt-lll-build-${{ github.run_number }}.apk
-          gh release create "build-${{ github.run_number }}" ttt-lll-build-${{ github.run_number }}.apk --title "TTT&LLL build ${{ github.run_number }}" --notes "TTT&LLL, Talk to Type and Look, Listen, Learn, by Mantra Productions. Installs over the previous build."
+          # link that needs escaping is a link that breaks when it is pasted into a chat. The full
+          # app's name had one and it had to be spelled 'ttt-lll' for exactly this reason.
+          cp "$APK" ttt-light-build-${{ github.run_number }}.apk
+          gh release create "build-${{ github.run_number }}" ttt-light-build-${{ github.run_number }}.apk --title "TTT (light) build ${{ github.run_number }}" --notes "TTT (light), Talk to Type, by Mantra Productions. Voice dictation into any text field. Installs beside TTT&LLL, not over it."
 
       # The two newest releases stay, everything older goes. One was too few: a link handed over
       # is dead the moment the next push publishes, and a one line change to a document is enough

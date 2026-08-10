@@ -68,10 +68,11 @@ configure<ApplicationExtension> {
     }
 
     defaultConfig {
-        // Marko's own package. Changing this makes Android treat the build as a new app, which is
-        // exactly what was wanted: the old net.devemperor.dictate install stays behind as a separate
-        // entry until it is removed by hand, and this one carries no trace of the fork's origin.
-        applicationId = "com.mantraproductions.voicetype"
+        // TTT (light) has its own package id, and this is the one line in the fork that must never
+        // be wrong. Sharing `com.mantraproductions.voicetype` with the full app would not sit beside
+        // it — Android would treat this build as an update and replace a working keyboard with a
+        // stripped one. Different app, different id, different signing key.
+        applicationId = "com.mantraproductions.tttlight"
         // LOCAL TEST ONLY, never committed: -PmaTestBuild=1 gives the APK its own application id so
         // it installs beside the real app instead of colliding with it on a different signing key.
         if (project.hasProperty("maTestBuild")) {

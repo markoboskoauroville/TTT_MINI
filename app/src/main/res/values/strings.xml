@@ -3,7 +3,7 @@
          override it with the old fork name, so a phone set to Croatian or German showed
          "Dictate" on the launcher no matter what this file said. They have been removed and
          this is marked untranslatable so they cannot come back through a translation import. -->
-    <string name="app_name" translatable="false">TTT&amp;LLL</string>
+    <string name="app_name" translatable="false">TTT (light)</string>
 
     <string name="key__phone_pause" comment="Label for the Pause key in the telephone keyboard layout">Pause</string>
     <string name="key__phone_wait" comment="Label for the Wait key in the telephone keyboard layout">Wait</string>
