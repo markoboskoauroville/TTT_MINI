@@ -12,163 +12,185 @@ package dev.patrickgold.florisboard.dictate
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MaRowsTest {
 
     @Test
-    fun `a mixed row survives the round trip`() {
+    fun `an arrangement survives the round trip`() {
         val rows = listOf(
             MaRows.Row(
                 listOf(
-                    MaRows.Button.Builtin(MaFeatureKey.MIC),
-                    MaRows.macro("^C", "{Ctrl+C}"),
-                    MaRows.Button.Builtin(MaFeatureKey.BACKSPACE),
+                    MaRows.Entry(MaRows.Button.Builtin(MaFeatureKey.MIC)),
+                    MaRows.Entry(MaRows.Button.Clip(3), enabled = false),
+                    MaRows.Entry(MaRows.Button.Macro(7)),
                 ),
             ),
-            MaRows.Row(listOf(MaRows.macro("hi", "Dobar dan")), clipExpansion = true),
+            MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(1))), enabled = false),
+            MaRows.Row(emptyList(), enabled = false),
         )
         assertEquals(rows, MaRows.parse(MaRows.serialize(rows)))
     }
 
     @Test
-    fun `the default rows survive the round trip`() {
+    fun `the defaults survive the round trip`() {
         assertEquals(MaRows.defaultRows(), MaRows.parse(MaRows.defaultSerialized()))
     }
 
-    /**
-     * The reason the separators are control characters. A macro holding a comma, a brace, a quote or
-     * a newline has to come back exactly as written, because it is going to be typed into somebody's
-     * document.
-     */
     @Test
-    fun `macro text with awkward characters is not mangled`() {
-        val nasty = "Dear {F5} \"team\",\nregards; {{literal}} 100%"
-        val rows = listOf(MaRows.Row(listOf(MaRows.macro("ltr", nasty))))
-        assertEquals(
-            nasty,
-            (MaRows.parse(MaRows.serialize(rows))[0].buttons[0] as MaRows.Button.Macro).macro,
-        )
+    fun `parse always returns three rows`() {
+        assertEquals(3, MaRows.parse("").size)
+        assertEquals(3, MaRows.parse("rubbish").size)
+        assertEquals(3, MaRows.parse(MaRows.defaultSerialized()).size)
     }
 
+    // Switching a row off must not leave a gap. Row two drawn where row one was is the whole
+    // behaviour Marko described.
     @Test
-    fun `a label longer than the limit is truncated rather than dropped`() {
-        val button = MaRows.macro("abcdef", "{Enter}")
-        assertEquals("abc", button.label)
-        assertEquals("{Enter}", button.macro)
-    }
-
-    @Test
-    fun `an unknown builtin id is dropped and the rest of the row survives`() {
-        // "book" was the reader's key and no longer exists. A row stored before it was removed is
-        // otherwise still perfectly good and must not be thrown away whole.
-        val stored = MaRows.serialize(
-            listOf(MaRows.Row(listOf(MaRows.Button.Builtin(MaFeatureKey.MIC), MaRows.macro("x", "x")))),
-        ).replace("mic", "book")
-        val parsed = MaRows.parse(stored)
-        assertEquals(1, parsed.size)
-        assertEquals(1, parsed[0].buttons.size)
-        assertEquals(MaRows.macro("x", "x"), parsed[0].buttons[0])
-    }
-
-    @Test
-    fun `a blank string parses to nothing rather than throwing`() {
-        assertEquals(emptyList(), MaRows.parse(""))
-        assertEquals(emptyList(), MaRows.parse("   "))
-    }
-
-    @Test
-    fun `rubbish parses to nothing rather than throwing`() {
-        assertEquals(emptyList(), MaRows.parse("not a serialized row at all"))
-    }
-
-    @Test
-    fun `there is no cap on the number of rows`() {
-        val many = (1..40).map { MaRows.Row(listOf(MaRows.macro("r$it".take(3), "row $it"))) }
-        assertEquals(40, MaRows.parse(MaRows.serialize(many)).size)
-    }
-
-    @Test
-    fun `migration keeps the feature row first and every macro row after it`() {
-        val featureOrder = MaFeatureOrder.serialize(
-            listOf(MaFeatureKey.MIC, MaFeatureKey.BACKSPACE, MaFeatureKey.ENTER),
-        )
-        val hidden = MaFeatureOrder.serializeHidden(emptySet())
-        val macros = MaMacros.serialize(
-            listOf(
-                MaMacros.Preset("Editing", listOf(listOf(MaMacros.Macro("all", "{Ctrl+A}")))),
-                MaMacros.Preset("Other", listOf(listOf(MaMacros.Macro(",", ", ")))),
-            ),
-        )
-        val rows = MaRows.migrate(featureOrder, hidden, macros)
-        assertEquals(4, rows.size)
-        assertTrue(rows[0].buttons.all { it is MaRows.Button.Builtin })
-        assertEquals(MaRows.macro("all", "{Ctrl+A}"), rows[1].buttons[0])
-        assertEquals(MaRows.macro(",", ", "), rows[2].buttons[0])
-        assertTrue(rows[3].clipExpansion)
-    }
-
-    @Test
-    fun `a hidden feature key does not come across the migration`() {
-        val featureOrder = MaFeatureOrder.serialize(listOf(MaFeatureKey.MIC, MaFeatureKey.ALL_PASTE))
-        val hidden = MaFeatureOrder.serializeHidden(setOf(MaFeatureKey.ALL_PASTE))
-        val rows = MaRows.migrate(featureOrder, hidden, "")
-        assertTrue(rows[0].buttons.none { it == MaRows.Button.Builtin(MaFeatureKey.ALL_PASTE) })
-    }
-
-    @Test
-    fun `the clipboard expansion is only drawn when it is open`() {
-        val rows = MaRows.defaultRows()
-        val collapsed = MaRows.visibleRows(rows, clipExpanded = false)
-        val expanded = MaRows.visibleRows(rows, clipExpanded = true)
-        // Collapsed it is absent, not empty: the keyboard has to actually be shorter, so the keys
-        // underneath move up rather than leaving a blank strip where the row would have been.
-        assertEquals(1, collapsed.size)
-        assertEquals(2, expanded.size)
-        assertTrue(expanded.last().clipExpansion)
-    }
-
-    @Test
-    fun `the CH badge sits on the feature row and not on the expansion`() {
-        // A switch that lived on the row it opens could never be reached to open it.
-        val rows = MaRows.defaultRows()
-        val badge = MaRows.Button.Builtin(MaFeatureKey.CLIP_LABEL)
-        assertTrue(badge in rows[0].buttons)
-        assertTrue(badge !in rows[1].buttons)
-    }
-
-    @Test
-    fun `the expansion holds nine slots`() {
-        assertEquals(9, MaRows.defaultRows()[1].buttons.size)
-    }
-
-    @Test
-    fun `a row marked as the expansion stays marked across a save and reload`() {
-        // It has to survive reordering, which is why the mark is written into the row rather than
-        // inferred from its position.
+    fun `rows collapse upward when one is switched off`() {
         val rows = listOf(
-            MaRows.Row(listOf(MaRows.macro("a", "a")), clipExpansion = true),
-            MaRows.Row(listOf(MaRows.macro("b", "b"))),
+            MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Builtin(MaFeatureKey.MIC))), enabled = false),
+            MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(1))), enabled = true),
+            MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Macro(1))), enabled = true),
         )
-        val back = MaRows.parse(MaRows.serialize(rows))
-        assertTrue(back[0].clipExpansion)
-        assertTrue(!back[1].clipExpansion)
+        val visible = MaRows.visibleRows(rows)
+        assertEquals(2, visible.size)
+        assertEquals(MaRows.Button.Clip(1), visible[0][0])
+        assertEquals(MaRows.Button.Macro(1), visible[1][0])
     }
 
     @Test
-    fun `rows stored before the expansion existed read back as ordinary rows`() {
-        val legacy = MaRows.serialize(listOf(MaRows.Row(listOf(MaRows.macro("x", "x")))))
-        assertTrue(MaRows.parse(legacy).none { it.clipExpansion })
+    fun `the order among surviving rows never changes`() {
+        val rows = listOf(
+            MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(1)))),
+            MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(2))), enabled = false),
+            MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(3)))),
+        )
+        val visible = MaRows.visibleRows(rows)
+        assertEquals(listOf(MaRows.Button.Clip(1)), visible[0])
+        assertEquals(listOf(MaRows.Button.Clip(3)), visible[1])
     }
 
     @Test
-    fun `every palette label fits on a key`() {
-        assertEquals(emptyList(), MaCommandPalette.oversizedLabels())
+    fun `an unticked button is not drawn but is not lost either`() {
+        val rows = listOf(
+            MaRows.Row(
+                listOf(
+                    MaRows.Entry(MaRows.Button.Builtin(MaFeatureKey.MIC), enabled = false),
+                    MaRows.Entry(MaRows.Button.Builtin(MaFeatureKey.ENTER)),
+                ),
+            ),
+            MaRows.Row(emptyList(), enabled = false),
+            MaRows.Row(emptyList(), enabled = false),
+        )
+        assertEquals(1, MaRows.visibleRows(rows)[0].size)
+        // Still in the stored arrangement, so ticking it again puts it back where it was.
+        assertEquals(2, MaRows.parse(MaRows.serialize(rows))[0].entries.size)
+    }
+
+    // The one guarantee. Everything off, in every row, must still leave a route back to the screen
+    // that would put the keys back — otherwise the only repair is uninstalling the app.
+    @Test
+    fun `with everything switched off the settings key survives alone`() {
+        val rows = (1..3).map { MaRows.Row(emptyList(), enabled = false) }
+        val visible = MaRows.visibleRows(rows)
+        assertEquals(1, visible.size)
+        assertEquals(listOf(MaRows.Button.Builtin(MaFeatureKey.SETTINGS)), visible[0])
     }
 
     @Test
-    fun `no palette entry is missing its token`() {
-        assertNull(MaCommandPalette.ALL.firstOrNull { it.token.isBlank() })
+    fun `a row that is on but has nothing ticked is not drawn as an empty strip`() {
+        val rows = listOf(
+            MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(1), enabled = false)), enabled = true),
+            MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(2))), enabled = true),
+            MaRows.Row(emptyList(), enabled = false),
+        )
+        assertEquals(1, MaRows.visibleRows(rows).size)
+    }
+
+    @Test
+    fun `a stored key that no longer exists is dropped and the rest of the row survives`() {
+        val stored = MaRows.serialize(
+            listOf(
+                MaRows.Row(
+                    listOf(
+                        MaRows.Entry(MaRows.Button.Builtin(MaFeatureKey.MIC)),
+                        MaRows.Entry(MaRows.Button.Clip(2)),
+                    ),
+                ),
+            ),
+        ).replace("mic", "book")
+        val row = MaRows.parse(stored)[0]
+        assertEquals(1, row.entries.size)
+        assertEquals(MaRows.Button.Clip(2), row.entries[0].button)
+    }
+
+    @Test
+    fun `a clip or macro slot outside its range is dropped rather than clamped`() {
+        // Clamping would silently point the button at a different slot, which is worse than the
+        // button not being there: it would paste the wrong thing rather than nothing.
+        val stored = MaRows.serialize(
+            listOf(MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(2))))),
+        ).replace("c\u001D2", "c\u001D99")
+        assertTrue(MaRows.parse(stored)[0].entries.isEmpty())
+    }
+
+    @Test
+    fun `there are ten clipboard slots and ten macro slots`() {
+        assertEquals(10, MaRows.CLIP_SLOTS)
+        assertEquals(10, MaRows.MACRO_SLOTS)
+        val cat = MaRows.catalogue()
+        assertEquals(10, cat.count { it is MaRows.Button.Clip })
+        assertEquals(10, cat.count { it is MaRows.Button.Macro })
+    }
+
+    @Test
+    fun `the catalogue offers no leftover clipboard keys from the old design`() {
+        assertTrue(
+            MaRows.catalogue().none {
+                it is MaRows.Button.Builtin && it.key == MaFeatureKey.CLIP_LABEL
+            },
+        )
+    }
+
+    @Test
+    fun `moving a button within a row keeps every other row untouched`() {
+        val rows = MaRows.defaultRows()
+        val moved = MaRows.move(rows, 0, 0, 3)
+        assertEquals(rows[1], moved[1])
+        assertEquals(rows[2], moved[2])
+        assertEquals(rows[0].entries.size, moved[0].entries.size)
+        assertEquals(rows[0].entries[0], moved[0].entries[3])
+    }
+
+    @Test
+    fun `an out of range move is ignored rather than throwing`() {
+        val rows = MaRows.defaultRows()
+        assertEquals(rows, MaRows.move(rows, 0, 0, 99))
+        assertEquals(rows, MaRows.move(rows, 9, 0, 1))
+    }
+
+    @Test
+    fun `macro slots round trip and keep awkward macro text intact`() {
+        val nasty = "Dear {F5} \"team\",\nregards; {{literal}} 100%"
+        val slots = MaMacroSlots.empty().toMutableList()
+        slots[3] = MaMacroSlots.slot("ltr", nasty)
+        val back = MaMacroSlots.parse(MaMacroSlots.serialize(slots))
+        assertEquals(10, back.size)
+        assertEquals(nasty, back[3].macro)
+        assertEquals("ltr", back[3].label)
+    }
+
+    @Test
+    fun `macro slots are always ten however short the stored value is`() {
+        assertEquals(10, MaMacroSlots.parse("").size)
+        assertEquals("M10", MaMacroSlots.parse("").last().label)
+    }
+
+    @Test
+    fun `a macro label longer than the limit is truncated rather than dropped`() {
+        val s = MaMacroSlots.slot("abcdef", "{Enter}")
+        assertEquals("abc", s.label)
+        assertEquals("{Enter}", s.macro)
     }
 }

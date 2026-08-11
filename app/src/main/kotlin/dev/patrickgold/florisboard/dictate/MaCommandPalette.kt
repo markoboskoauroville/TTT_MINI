@@ -28,14 +28,14 @@ package dev.patrickgold.florisboard.dictate
  *
  * ### Why the label is suggested too
  *
- * Every entry carries a label that fits in [MaRows.MAX_LABEL] characters. Picking a command fills in
+ * Every entry carries a label that fits in [MaMacroSlots.MAX_LABEL] characters. Picking a command fills in
  * both halves of the button, so the common case is one tap and done. It is only a suggestion and the
  * label stays editable: the point is that the field is never blank, not that the name is fixed.
  */
 object MaCommandPalette {
 
     /**
-     * @param label a suggested face for the key, at most [MaRows.MAX_LABEL] characters
+     * @param label a suggested face for the key, at most [MaMacroSlots.MAX_LABEL] characters
      * @param token what gets inserted into the macro text
      * @param description what it does, in plain words, for the list
      */
@@ -144,5 +144,5 @@ object MaCommandPalette {
      * four-character label added here would be silently truncated into something that reads as a
      * typo on the key rather than as a mistake in this file.
      */
-    fun oversizedLabels(): List<Entry> = ALL.filter { it.label.length > MaRows.MAX_LABEL }
+    fun oversizedLabels(): List<Entry> = ALL.filter { it.label.length > MaMacroSlots.MAX_LABEL }
 }
