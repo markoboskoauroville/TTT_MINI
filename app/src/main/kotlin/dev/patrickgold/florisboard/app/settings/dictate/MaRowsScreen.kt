@@ -401,6 +401,8 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
         is MaRows.Button.Builtin -> when (button.key) {
             MaFeatureKey.ALL_PASTE -> letters("AP")
             MaFeatureKey.ALL_CLEAR -> letters("AC")
+            MaFeatureKey.CLIP_CLEAR ->
+                Icon(Icons.Default.Delete, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.SPACE -> letters("\u2013\u2013\u2013")
             MaFeatureKey.SELECT_ALL ->
                 Icon(Icons.Default.SelectAll, contentDescription = null, tint = tint, modifier = size)

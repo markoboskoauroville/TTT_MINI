@@ -276,8 +276,15 @@ class ClipboardManager(
         // Structural rather than reference comparison: capture returning the same contents means
         // there was nothing to record, and writing the preference anyway would wake every collector
         // of it — including the keyboard's row — for no change at all.
+        //
+        // The write is suspending, so it goes on ioScope like every other write in this class. The
+        // read above is not, which is why the decision is made first and only the write is launched:
+        // launching the whole thing would let two copies arriving together both read an empty bucket
+        // list and both claim the same one.
         if (next != current) {
-            prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(next))
+            ioScope.launch {
+                prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(next))
+            }
         }
     }
 
