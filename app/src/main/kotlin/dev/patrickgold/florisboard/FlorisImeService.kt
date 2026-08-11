@@ -42,6 +42,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import android.view.WindowManager
+import android.os.SystemClock
+import kotlinx.coroutines.delay
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaLanguage
@@ -132,6 +134,10 @@ class FlorisImeService : LifecycleInputMethodService() {
 
         fun hideUi() {
             val ims = FlorisImeServiceReference.get() ?: return
+            // The user asked for this one. The pin's re-show must not undo a deliberate dismissal —
+            // a keyboard that will not go away when told is a far worse fault than one that goes
+            // away too eagerly.
+            ims.maUserRequestedHide = true
             ims.hideUi()
         }
 
@@ -262,6 +268,13 @@ class FlorisImeService : LifecycleInputMethodService() {
     private val themeManager by themeManager()
 
     val windowController = ImeWindowController(prefs, lifecycleScope)
+
+    /** Set when the user dismissed the keyboard themselves, so the pin does not undo it. */
+    @Volatile
+    private var maUserRequestedHide = false
+
+    /** When the pin last pushed the keyboard back up, for the governor in [maReshowIfPinned]. */
+    private val maPinReshowAt = ArrayDeque<Long>()
 
     private val activeState get() = keyboardManager.activeState
     val inputFeedbackController by lazy { InputFeedbackController.new(this) }
@@ -565,6 +578,48 @@ class FlorisImeService : LifecycleInputMethodService() {
         else -> ImeUiMode.TEXT
     }
 
+    /**
+     * Pushes the keyboard back up after something dismissed it, while the pin is on.
+     *
+     * Tapping the middle of the screen makes the app drop focus and ask the system to hide the
+     * keyboard. That request goes to the system, not here, and an input method cannot refuse it —
+     * onWindowHidden is a notification that it already happened. Asking to be shown again is the
+     * only move available, and it is a request rather than a guarantee: with focus genuinely gone it
+     * will simply fail, which is the case this cannot fix.
+     *
+     * ### The governor, and why it is not optional
+     *
+     * An app that hides the keyboard on a rule of its own will hide it again the moment it returns,
+     * and re-showing without a limit turns that into a loop: hide, show, hide, show, visible as
+     * flicker and leaving no way to dismiss the keyboard at all. So re-shows are counted, and after
+     * [MA_PIN_MAX_RESHOWS] inside [MA_PIN_WINDOW_MS] this stops trying until the window passes.
+     * Losing the pin's benefit in a stubborn app is a small cost; a keyboard the user cannot put
+     * away is not.
+     *
+     * A dismissal the user asked for is never undone.
+     */
+    private fun maReshowIfPinned() {
+        if (!prefs.dictate.maKeyboardPinned.get()) return
+        if (maUserRequestedHide) {
+            maUserRequestedHide = false
+            return
+        }
+        val now = SystemClock.elapsedRealtime()
+        while (maPinReshowAt.isNotEmpty() && now - maPinReshowAt.first() > MA_PIN_WINDOW_MS) {
+            maPinReshowAt.removeFirst()
+        }
+        if (maPinReshowAt.size >= MA_PIN_MAX_RESHOWS) {
+            flogWarning(LogTopic.IMS_EVENTS) { "Pin: giving up re-showing, the app keeps closing it" }
+            return
+        }
+        maPinReshowAt.addLast(now)
+        lifecycleScope.launch {
+            // A beat, so the request does not race the hide it is answering and get swallowed.
+            delay(MA_PIN_RESHOW_DELAY_MS)
+            if (prefs.dictate.maKeyboardPinned.get()) showUi()
+        }
+    }
+
     override fun onWindowHidden() {
         super.onWindowHidden()
         // Collapsing the keyboard during a recording finalizes and keeps the audio so far (instead of
@@ -582,6 +637,9 @@ class FlorisImeService : LifecycleInputMethodService() {
         } else {
             flogWarning(LogTopic.IMS_EVENTS) { "Ignoring (is already hidden)" }
         }
+        // Last, after the teardown above. A recording is stashed and the view reset first, so if the
+        // keyboard does come back it comes back in a known state rather than mid-collapse.
+        maReshowIfPinned()
     }
 
     override fun onEvaluateFullscreenMode(): Boolean {
@@ -757,3 +815,12 @@ class FlorisImeService : LifecycleInputMethodService() {
         return keyboardManager.onHardwareKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
     }
 }
+
+/** How long the pin's re-show attempts are counted over. */
+private const val MA_PIN_WINDOW_MS = 6_000L
+
+/** How many times the pin will push back inside that window before it stops fighting. */
+private const val MA_PIN_MAX_RESHOWS = 3
+
+/** A beat before asking, so the request does not race the hide it is answering. */
+private const val MA_PIN_RESHOW_DELAY_MS = 120L
