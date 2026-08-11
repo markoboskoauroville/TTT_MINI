@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import dev.patrickgold.florisboard.dictate.ui.MaKeyboardPin
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -188,12 +189,20 @@ fun TextInputLayout(
             // left as an empty strip holding the space it was asked to give up.
             val maFeatureRowShown by prefs.dictate.maFeatureRowShown.collectAsState()
             if (maFeatureRowShown) {
-                MaFeatureRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    // Per row, not for the block. There can be any number of rows now and the count
-                    // changes while the keyboard is open, so the height cannot be decided here.
-                    rowHeight = FlorisImeSizing.smartbarHeight,
-                )
+                // The pin sits in the top-left corner, over the first row rather than in it. In the
+                // row it would be an ordinary key: editable, movable, and removable, and this is the
+                // one control that must not be any of those. Somebody who has hidden the pin cannot
+                // reach the pin to unhide it.
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    MaFeatureRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        // Per row, not for the block. There can be any number of rows now and the
+                        // count changes while the keyboard is open, so the height cannot be decided
+                        // here.
+                        rowHeight = FlorisImeSizing.smartbarHeight,
+                    )
+                    MaKeyboardPin(modifier = Modifier.align(Alignment.TopStart))
+                }
             }
         }
     }

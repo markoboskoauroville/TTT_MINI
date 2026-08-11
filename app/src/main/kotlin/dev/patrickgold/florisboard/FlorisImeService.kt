@@ -463,7 +463,11 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onEvaluateInputViewShown(): Boolean {
         val config = resources.configuration
-        return super.onEvaluateInputViewShown()
+        // Pinned means shown whenever this IME is running, including the cases the system would
+        // otherwise collapse: a hardware keyboard attached, or a configuration where the on-screen
+        // view is treated as optional. This is the honest half of the pin.
+        return prefs.dictate.maKeyboardPinned.get()
+            || super.onEvaluateInputViewShown()
             || config.keyboard == Configuration.KEYBOARD_NOKEYS
             || prefs.physicalKeyboard.showOnScreenKeyboard.get()
     }
@@ -582,6 +586,12 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onEvaluateFullscreenMode(): Boolean {
         val config = resources.configuration
+        // Pinned refuses fullscreen extract mode outright. In that mode the app's field is replaced
+        // by the system's own full-height editor and the keyboard's rows go with it, which is the
+        // most complete version of the disappearing Marko is pinning against.
+        if (prefs.dictate.maKeyboardPinned.get()) {
+            return false
+        }
         if (config.orientation != Configuration.ORIENTATION_LANDSCAPE) {
             return false
         }

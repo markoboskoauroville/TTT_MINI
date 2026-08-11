@@ -1020,6 +1020,25 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * history sorted newest first, which meant every key changed meaning on every copy and a key
          * pressed from memory pasted whatever had since moved under it.
          */
+        /**
+         * Keeps the keyboard up: the pin in the top-left corner.
+         *
+         * What it does and does not do is worth being exact about, because the name promises more
+         * than Android allows. Pinned, the input view is shown whenever this IME is running — with a
+         * hardware keyboard attached, in landscape, and in the cases where the system would collapse
+         * the on-screen view to a strip — fullscreen extract mode is refused, and the keyboard asks
+         * to be shown again the moment a field is focused rather than waiting to be invited.
+         *
+         * It cannot hold the keyboard open across an app that has no text field focused. The system
+         * owns that window and tears it down when nothing is taking input; no flag an IME can set
+         * overrides it. What the pin removes is the collapsing and re-raising in between, which is
+         * the part that was actually costing Marko time.
+         */
+        val maKeyboardPinned = boolean(
+            key = "dictate__ma_keyboard_pinned",
+            default = false,
+        )
+
         val maClipCaptured = string(
             key = "dictate__ma_clip_captured",
             default = "",
