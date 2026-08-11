@@ -544,6 +544,10 @@ class FlorisImeService : LifecycleInputMethodService() {
      */
     private fun maRestoredUiMode(): ImeUiMode = when (prefs.dictate.maOpeningView.get()) {
         "dictation" -> ImeUiMode.TRANSCRIBE
+        // Pinned from inside the clipboard panel. Tapping an entry pastes it, which makes the panel
+        // a second route to the C keys' job with no ten-slot ceiling and the text visible rather
+        // than a number to remember.
+        "clipboard" -> ImeUiMode.CLIPBOARD
         // The old behaviour, kept for anyone who wants it: reopen whichever view was last used. Only
         // the two main views are remembered; clipboard, emoji and history are transient and would be
         // wrong to reopen on an unrelated field.

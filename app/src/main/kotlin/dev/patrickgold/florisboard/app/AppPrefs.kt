@@ -1012,6 +1012,19 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "",
         )
 
+        /**
+         * What C1 to C10 hold, in the order they were copied. See MaClipCapture.
+         *
+         * Slots fill and then hold still: the first copy after a clear takes C1 and stays there.
+         * The keys used to be a window onto the history sorted newest first, which meant every key
+         * changed meaning on every copy and a key pressed from memory pasted whatever had moved
+         * under it. For a row navigated by number that was the worst possible behaviour.
+         */
+        val maClipCaptured = string(
+            key = "dictate__ma_clip_captured",
+            default = "",
+        )
+
         val maClipReplace = boolean(
             key = "dictate__ma_clip_replace",
             default = true,

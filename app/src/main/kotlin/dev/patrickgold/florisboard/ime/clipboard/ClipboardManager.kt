@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
+import dev.patrickgold.florisboard.dictate.MaClipCapture
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -253,9 +254,33 @@ class ClipboardManager(
     }
 
     /**
+     * Fills the next free C slot with this copy, if there is one.
+     *
+     * Hooked here rather than in the keyboard because copying usually happens with the keyboard
+     * closed — the whole point is to copy in one app and paste in another — and a capture that only
+     * ran while the keyboard was on screen would miss almost everything.
+     *
+     * Called before the history check on purpose. The C keys are the feature; the history is a
+     * separate switch the user may have turned off, and the keys must not stop working because of it.
+     *
+     * Text only, and only until the row is full. MaClipCapture holds the reasoning for both.
+     */
+    private fun captureIntoClipSlots(newItem: ClipboardItem) {
+        if (newItem.type != ItemType.TEXT) return
+        val text = newItem.text ?: return
+        val current = MaClipCapture.parse(prefs.dictate.maClipCaptured.get())
+        if (MaClipCapture.isFull(current)) return
+        val next = MaClipCapture.capture(current, text)
+        if (next !== current) {
+            prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(next))
+        }
+    }
+
+    /**
      * Adds a new item to the clipboard history (if enabled).
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
+        captureIntoClipSlots(newItem)
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = currentHistory.all.firstOrNull { item ->
                 item.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive

@@ -50,6 +50,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.automirrored.outlined.Backspace
@@ -95,7 +96,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
-import dev.patrickgold.florisboard.dictate.MaClipboardSlots
+import dev.patrickgold.florisboard.dictate.MaClipCapture
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
@@ -155,6 +156,20 @@ fun ClipboardInputLayout(
     val activeFilterTypes = remember { mutableStateSetOf<ItemType>() }
 
     val unfilteredHistory by clipboardManager.historyFlow.collectAsState()
+
+    // The same slots the C keys read, so a label here cannot say C3 while C3 pastes something else.
+    // Matched on the text rather than on the history row's id, because that is what a slot holds:
+    // a history row can be trimmed away while the slot that captured its text still works.
+    val capturedRaw by prefs.dictate.maClipCaptured.collectAsState()
+    val capturedClipSlots = remember(capturedRaw) { MaClipCapture.parse(capturedRaw) }
+
+    // Whether this panel is what the keyboard opens on. Toggled by the pin in the header.
+    //
+    // Worth having as a pin rather than only as a settings entry: somebody who wants this wants it
+    // while they are standing in the panel realising they keep coming back to it, not later from a
+    // list of opening views three screens away.
+    val openingView by prefs.dictate.maOpeningView.collectAsState()
+    val pinned = openingView == "clipboard"
     val filteredHistory = remember(unfilteredHistory, activeFilterTypes.toSet()) {
         if (activeFilterTypes.isEmpty()) {
             unfilteredHistory
@@ -210,6 +225,26 @@ fun ClipboardInputLayout(
                 modifier = Modifier.weight(1f),
                 text = stringRes(R.string.clipboard__header_title),
             )
+            // The pin: makes this panel the view the keyboard opens on, or gives that up again.
+            //
+            // Placed here rather than only in the opening-view settings because the moment somebody
+            // wants it is the moment they notice they keep coming back to this panel, and that
+            // moment happens here. Setting it writes the same preference the settings screen does,
+            // so the two can never disagree about what is pinned.
+            SnyggIconButton(
+                elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
+                onClick = {
+                    scope.launch {
+                        prefs.dictate.maOpeningView.set(if (pinned) "keyboard" else "clipboard")
+                    }
+                },
+                modifier = sizeModifier,
+                enabled = !isPopupSurfaceActive(),
+            ) {
+                SnyggIcon(
+                    imageVector = if (pinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
+                )
+            }
             SnyggIconButton(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
                 onClick = { scope.launch { prefs.clipboard.historyEnabled.set(!historyEnabled) } },
@@ -269,7 +304,7 @@ fun ClipboardInputLayout(
         //
         // The panel and the row have to agree on the numbering or the labels are worse than
         // nothing: somebody reads "C3" here and presses C3 and gets something else. Both sides
-        // therefore ask MaClipboardSlots rather than each counting for themselves.
+        // therefore ask MaClipCapture rather than each counting for themselves.
         clipSlot: Int? = null,
     ) {
         val attributes = remember(item) {
@@ -411,7 +446,7 @@ fun ClipboardInputLayout(
                             elementName = FlorisImeUi.ClipboardItem.elementName,
                             item = item,
                             contentScrollInsteadOfClip = false,
-                            clipSlot = MaClipboardSlots.slotFor(unfilteredHistory, item),
+                            clipSlot = capturedClipSlots.let { MaClipCapture.slotFor(it, item.text.orEmpty()) },
                         )
                     }
                 }

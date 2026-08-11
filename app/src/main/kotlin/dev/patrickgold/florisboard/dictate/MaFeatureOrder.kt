@@ -57,6 +57,15 @@ enum class MaFeatureKey(val id: String, val label: String) {
     /** Settings, reopened where they were left. */
     SETTINGS("settings", "Settings"),
 
+    /**
+     * The trash key: empties C1 to C10 so they can fill again from the next copy.
+     *
+     * Needed the moment the slots stopped moving. Filling in fixed order means a full row is a
+     * finished row — capturing stops and nothing changes again — so without a way to empty it the
+     * feature works exactly once per install. This key is that way.
+     */
+    CLIP_CLEAR("cclear", "Clear the C keys"),
+
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),
     ZONE_3("zone3", "3, the copy row"),
@@ -121,6 +130,7 @@ object MaFeatureOrder {
         MaFeatureKey.ZONE_3,
         MaFeatureKey.ENTER,
         MaFeatureKey.SETTINGS,
+        MaFeatureKey.CLIP_CLEAR,
     )
 
     val DEFAULT_RAW: String = serialize(DEFAULT)

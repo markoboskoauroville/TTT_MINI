@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Keyboard
@@ -45,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import dev.patrickgold.florisboard.clipboardManager
-import dev.patrickgold.florisboard.dictate.MaClipboardSlots
 import dev.patrickgold.florisboard.dictate.MaMacroSlots
 import androidx.compose.foundation.layout.size
 import kotlinx.coroutines.delay
@@ -63,6 +63,7 @@ import dev.patrickgold.florisboard.dictate.MaFeatureOrder
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import androidx.compose.runtime.LaunchedEffect
 import dev.patrickgold.florisboard.ime.ImeUiMode
+import dev.patrickgold.florisboard.dictate.MaClipCapture
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
@@ -169,6 +170,10 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
 
     val clipReplace by prefs.dictate.maClipReplace.collectAsState()
 
+    // What C1 to C10 currently hold, in the order they were copied.
+    val capturedRaw by prefs.dictate.maClipCaptured.collectAsState()
+    val capturedSlots = remember(capturedRaw) { MaClipCapture.parse(capturedRaw) }
+
     val rowsRaw by prefs.dictate.maRows.collectAsState()
     val macroRaw by prefs.dictate.maMacroSlots.collectAsState()
     val macroSlots = remember(macroRaw) { MaMacroSlots.parse(macroRaw) }
@@ -244,17 +249,19 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
 
             // C1 to C10, newest first. Paste-replace, the way AP pastes.
             is MaRows.Button.Clip -> {
-                val item = MaClipboardSlots.itemAt(clipHistory, button.slot)
+                // The slot's own text, not the history's newest-first ordering. C4 is the fourth
+                // thing copied since the row was cleared and stays that until it is cleared again.
+                val text = MaClipCapture.at(capturedSlots, button.slot)
                 ThemedKey(
                     code = KeyCode.NOOP,
                     // The key shows only its number: ten text previews across a row would be a few
                     // characters wide each and unreadable. What it holds is spoken instead, which is
                     // the only way to answer "what is on C4" without pasting it somewhere to find out.
                     modifier = keyMod.semantics {
-                        contentDescription = MaClipboardSlots.describe(item, button.slot)
+                        contentDescription = MaClipCapture.describeSlot(text, button.slot)
                     },
                     onClick = {
-                        if (item != null) {
+                        if (text != null) {
                             scope.launch {
                                 if (clipReplace) {
                                     keyboardManager.activeState.isManualSelectionMode = false
@@ -269,7 +276,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                                     // doing nothing because the old text is gone too.
                                     delay(MA_CLIP_PASTE_MS)
                                 }
-                                editorInstance.commitClipboardItem(item)
+                                FlorisImeService.currentInputConnection()?.commitText(text, 1)
                             }
                         }
                     },
@@ -284,7 +291,9 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 ) { fg ->
                     Text(
                         text = "C${button.slot}",
-                        color = if (item == null) fg.copy(alpha = 0.4f) else fg,
+                        // Dimmed until the slot has been filled, so a glance says how far the
+                        // row has got without pressing anything.
+                        color = if (text == null) fg.copy(alpha = 0.4f) else fg,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -340,6 +349,34 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         onLongClick = fold,
                     ) {
                         DictateController.onMicClick(context)
+                    }
+                }
+
+                MaFeatureKey.CLIP_CLEAR -> {
+                    // Empties C1 to C10 so they fill again from the next copy.
+                    //
+                    // The slots stopped moving, so a full row is a finished row: capturing stops and
+                    // nothing changes until this is pressed. Without it the feature would work once
+                    // per install.
+                    //
+                    // The clipboard history is deliberately left alone. This key resets the ten
+                    // keys, and wiping somebody's whole clipboard as a side effect of tidying a row
+                    // is not recoverable — the history is still there behind a long press on any C
+                    // key, which is where anything wanted back can be found.
+                    val filled = capturedSlots.size
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        icon = Icons.Default.Delete,
+                        contentDescription = stringRes(
+                            if (filled == 0) R.string.ma__clip_clear_empty else R.string.ma__clip_clear,
+                        ),
+                        modifier = keyMod,
+                        // Dimmed when there is nothing to clear, so the row shows at a glance
+                        // whether the slots are holding anything.
+                        tint = if (filled == 0) MaDimmed else null,
+                        onLongClick = fold,
+                    ) {
+                        scope.launch { prefs.dictate.maClipCaptured.set("") }
                     }
                 }
 
@@ -452,3 +489,6 @@ private const val MA_CLIP_LEAD_MS = 100L
 /** The wait before the paste itself. AP's value, for AP's reason. See the CH key. */
 // 333ms, Marko's number. The sequence he specified is select all, 100ms, delete, 333ms, paste.
 private const val MA_CLIP_PASTE_MS = 333L
+
+/** The grey a key wears when it is present but has nothing to act on. */
+private val MaDimmed = Color(0xFF6B6B6B)

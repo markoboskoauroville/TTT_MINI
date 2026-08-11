@@ -232,6 +232,7 @@ fun MaOpeningViewScreen() = FlorisScreen {
         val options = listOf(
             Triple("keyboard", "Keyboard", "The typing keyboard, every time"),
             Triple("dictation", "Dictation", "The recording view, every time"),
+            Triple("clipboard", "Paste history", "The clipboard panel, where tapping an entry pastes it"),
             Triple("last", "Whichever was last used", "Reopens the view you left"),
         )
         options.forEach { (value, title, summary) ->
