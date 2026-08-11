@@ -31,7 +31,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
 import dev.patrickgold.florisboard.ime.smartbar.InlineSuggestionsChipMargin
@@ -197,29 +196,20 @@ object FlorisImeSizing {
      * clipboard, history). [keyboardUiHeight] derives its row count from the currently active evaluator,
      * which for a panel can differ from the typing keyboard and make the panel a different height — so it
      * visibly jumps when opened. Basing it on the last characters keyboard (like [rowCountAsState]) keeps a
-     * panel exactly as tall as the keyboard it replaces, including the always-on rewording prompt row when
-     * that's enabled (the panels replace it too, so its height must be counted).
+     * panel exactly as tall as the keyboard it replaces.
      */
     @Composable
     fun panelUiHeight(): Dp {
         val prefs by FlorisPreferenceStore
         val rowCount by rowCountAsState()
         val smartbarEnabled by prefs.smartbar.enabled.collectAsState()
-        val rewordingEnabled by prefs.dictate.rewordingEnabled.collectAsState()
-        val promptsLayout by prefs.dictate.promptsLayout.collectAsState()
-        // Must carry the same hide switch the Smartbar reads, or the panels reserve space for a row
-        // that is no longer drawn and the keyboard keeps a band of nothing where it used to be.
-        val maShowPrompts by prefs.dictate.maShowPrompts.collectAsState()
-        // The rewording prompt row (ROW layout) is pinned above the Smartbar on the normal keyboard and
-        // adds its height (DictatePromptRow uses smartbarHeight * 1.25); include it so the panels match.
-        val promptRowHeight =
-            if (smartbarEnabled && rewordingEnabled && maShowPrompts &&
-                promptsLayout == DictatePromptsLayout.ROW
-            ) {
-                smartbarHeight * 1.25f
-            } else {
-                0.dp
-            }
+        // The prompt row is gone with the Little Man, so nothing reserves height for it any more.
+        //
+        // This is the half of a deletion that is easy to miss and obvious on the phone: the row
+        // stops drawing, the arithmetic keeps counting it, and the keyboard holds a band of nothing
+        // where it used to be. Kept as a named zero rather than deleted outright so the next person
+        // reading this arithmetic can see that the row was considered and is genuinely absent.
+        val promptRowHeight = 0.dp
         // smartbarLayoutHeight, NOT smartbarUiHeight. A panel is as tall as the keyboard it replaces,
         // and the keyboard's shape does not change because there is nothing to suggest right now.
         return keyboardRowBaseHeight * rowCount.coerceAtLeast(4) + smartbarLayoutHeight() + promptRowHeight

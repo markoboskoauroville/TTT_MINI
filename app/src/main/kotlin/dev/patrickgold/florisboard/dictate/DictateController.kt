@@ -1740,7 +1740,7 @@ object DictateController {
     /** Copies [text] to the system clipboard — the floating-button always-copy safety net (issue #214). */
     private fun copyToSystemClipboard(context: Context, text: String) {
         val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
-        runCatching { clipboard.setPrimaryClip(ClipData.newPlainText("Dictate", text)) }
+        runCatching { clipboard.setPrimaryClip(ClipData.newPlainText("TTT mini", text)) }
     }
 
     // --- Real-time streaming (issue #128) -------------------------------------------------------
@@ -2380,7 +2380,7 @@ object DictateController {
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, name)
                 put(MediaStore.Downloads.MIME_TYPE, "audio/wav")
-                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Dictate")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/TTTmini")
                 put(MediaStore.Downloads.IS_PENDING, 1)
             }
             val resolver = context.contentResolver
@@ -2389,7 +2389,7 @@ object DictateController {
             resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
         } else {
             @Suppress("DEPRECATION")
-            val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Dictate")
+            val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "TTTmini")
             dir.mkdirs()
             src.inputStream().use { input -> File(dir, name).outputStream().use { input.copyTo(it) } }
         }
@@ -2974,7 +2974,7 @@ object DictateController {
         runCatching {
             val intent = when (kind) {
                 PromoKind.RATE -> Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://github.com/markoboskoauroville/DictateKeyboard/releases"))
+                    Uri.parse("https://github.com/markoboskoauroville/TTT_MINI/releases"))
                 PromoKind.DONATE -> Intent(Intent.ACTION_VIEW, Uri.parse("https://paypal.me/DevEmperor"))
                 PromoKind.CHANGELOG -> Intent(context, FlorisAppActivity::class.java)
                 PromoKind.FLOATING_BUTTON -> Intent(

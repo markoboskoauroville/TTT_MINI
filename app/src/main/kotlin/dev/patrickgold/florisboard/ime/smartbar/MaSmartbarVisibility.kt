@@ -12,7 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.DictateController
-import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.nlpManager
@@ -79,10 +78,10 @@ fun maSmartbarHasContent(): Boolean {
     val alwaysOn = smartbarLayout == SmartbarLayout.ACTIONS_ONLY ||
         smartbarLayout == SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED
 
-    val promptStripShowing = rewordingEnabled &&
-        promptsLayout == DictatePromptsLayout.PANEL &&
-        hasSelection &&
-        prompts.isNotEmpty()
+    // The prompt strip is gone with the Little Man, so it can no longer be a reason to show the
+    // Smartbar. Left as a named false rather than deleted from the return below, so the list of
+    // reasons the Smartbar appears still reads as a list and the missing one is visible.
+    val promptStripShowing = false
 
     return alwaysOn ||
         candidates.isNotEmpty() ||

@@ -29,7 +29,7 @@ import java.io.File
  *
  * Everything the app normally remembers, preferences and the persisted SAF grant on the picked keys
  * file, is destroyed by a full uninstall. That is why the API keys had to be entered again after a
- * clean install. A file written to `Documents/MantraVoiceType/` is not touched by Android when the
+ * clean install. A file written to `Documents/TTTmini/` is not touched by Android when the
  * package is removed, so a fresh install can pick the keys straight back up with no clicks at all.
  *
  * The catch is reading it back. Once the package is uninstalled the MediaStore ownership record for
@@ -44,7 +44,13 @@ import java.io.File
  */
 object MaVault {
     /** Folder inside the shared Documents directory. Visible, findable, and easy to back up. */
-    const val DIR_NAME = "MantraVoiceType"
+    // TTT mini's own folder, and it must never be TTT&LLL's.
+    //
+    // External storage is the one place these two apps can reach each other: everything else is
+    // inside a sandbox Android keys by package id, so it cannot cross. A shared folder here means
+    // one app's key backup overwriting the other's, and the file is called keys.txt in both, so the
+    // loss is silent and total — the second app to back up wins and the first one's keys are gone.
+    const val DIR_NAME = "TTTmini"
 
     /** Raw copy of whatever keys file was last imported, parsed by MaKeys exactly as before. */
     const val KEYS_FILE = "keys.txt"
@@ -105,7 +111,7 @@ object MaVault {
         val total = sections.sumOf { it.second.size }
         if (total == 0) return false
         val text = buildString {
-            appendLine("# TTT&LLL, API key backup")
+            appendLine("# TTT mini, API key backup")
             appendLine("# Written " + java.text.SimpleDateFormat("d.M.yyyy HH:mm", java.util.Locale.getDefault())
                 .format(java.util.Date()))
             appendLine("# Keep this file. A fresh install reads it from here with no clicks.")

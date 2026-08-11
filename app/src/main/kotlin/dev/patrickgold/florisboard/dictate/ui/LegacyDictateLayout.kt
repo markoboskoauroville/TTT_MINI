@@ -300,28 +300,20 @@ fun LegacyDictateLayout(
                 val showStatus = dictateState is DictateController.UiState.Error ||
                     dictateState is DictateController.UiState.Interrupted ||
                     dictateState is DictateController.UiState.Promo
-                if (showStatus || rewordingEnabled) {
-                    // Status chips stay one row tall; the prompt strip can be one or two rows (#194).
-                    val stripHeight = when {
-                        showStatus -> FlorisImeSizing.smartbarHeight * 1.2f
-                        promptRows >= 2 -> FlorisImeSizing.smartbarHeight * 2.4f
-                        else -> FlorisImeSizing.smartbarHeight * 1.2f
-                    }
-                    // Hidden on request, except while something is happening: a recording in
-                    // progress reports itself here, and hiding the row would hide the timer and the
-                    // send button with it, which is not what "hide the little man" asks for.
-                    val maShowPrompts by prefs.dictate.maShowPrompts.collectAsState()
-                    if (maShowPrompts || showStatus) Box(
+                // The Little Man's row is gone, and with it the only thing that drew him. What is
+                // left here is the status surface: an error, an interrupted recording, a promo. The
+                // row appears when there is something to say and takes no space when there is not.
+                //
+                // The rewording branch went with the row rather than being switched off, because a
+                // switched-off row is a row somebody turns back on by accident.
+                if (showStatus) {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(stripHeight)
+                            .height(FlorisImeSizing.smartbarHeight * 1.2f)
                             .padding(bottom = KeyMarginV),
                     ) {
-                        if (showStatus) {
-                            DictateSmartbarUi(dictateState, modifier = Modifier.fillMaxSize())
-                        } else {
-                            DictatePromptRow(prompts, modifier = Modifier.fillMaxSize(), rows = promptRows)
-                        }
+                        DictateSmartbarUi(dictateState, modifier = Modifier.fillMaxSize())
                     }
                 }
 
