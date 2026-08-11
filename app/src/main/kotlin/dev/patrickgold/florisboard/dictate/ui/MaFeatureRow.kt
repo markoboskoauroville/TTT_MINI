@@ -352,7 +352,15 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                                             ?.performContextMenuAction(android.R.id.selectAll)
                                         delay(MA_CLIP_LEAD_MS)
                                         FlorisImeService.currentInputConnection()?.commitText("", 1)
-                                        delay(MA_CLIP_LEAD_MS)
+                                        // Longer than the other two, and not by accident. AP waits
+                                        // five times as long here because the paste is the one step
+                                        // that actually gets dropped, and matching AP was the whole
+                                        // point of the request. A hundred milliseconds looks like it
+                                        // works, until the field being pasted into is slow and the
+                                        // key silently empties it instead of replacing its contents
+                                        // — which is worse than doing nothing, because the old text
+                                        // is gone too.
+                                        delay(MA_CLIP_PASTE_MS)
                                     }
                                     // commitClipboardItem rather than committing the text: it is
                                     // what handles an image or a video entry, which plain text
@@ -499,3 +507,6 @@ private val MaRecordRed = Color(0xFF9B3B33)
  * transcribe view, and a hundred milliseconds is cheaper to state twice than to route around.
  */
 private const val MA_CLIP_LEAD_MS = 100L
+
+/** The wait before the paste itself. AP's value, for AP's reason. See the CH key. */
+private const val MA_CLIP_PASTE_MS = 500L
