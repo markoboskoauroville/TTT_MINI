@@ -78,6 +78,7 @@ import java.text.NumberFormat
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisWarningCard
+import dev.patrickgold.florisboard.BuildConfig
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -96,6 +97,20 @@ fun HomeScreen() = FlorisScreen {
     }
 
     content {
+        // The app's name and version, one quiet line, tappable for everything that used to be a
+        // whole screen of its own. About stopped being a destination: opening the settings and being
+        // shown a credits page instead of the settings is a bug however it was justified, and a
+        // version number is the only part of that page anybody opens it for.
+        Text(
+            text = "${stringRes(R.string.app_name_full)} ${BuildConfig.VERSION_NAME}",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { navController.navigate(Routes.Settings.About) }
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+        )
+
         val isCollapsed by prefs.internal.homeIsBetaToolboxCollapsed.collectAsState()
 
         val isFlorisBoardEnabled by InputMethodUtils.observeIsFlorisboardEnabled(foregroundOnly = true)
@@ -212,11 +227,6 @@ fun HomeScreen() = FlorisScreen {
             }
         }
 
-        Preference(
-            icon = Icons.Outlined.Info,
-            title = stringRes(R.string.about__title),
-            onClick = { navController.navigate(Routes.Settings.About) },
-        )
     }
 }
 

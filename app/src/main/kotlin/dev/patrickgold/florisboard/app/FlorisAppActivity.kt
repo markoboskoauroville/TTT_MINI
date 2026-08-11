@@ -211,17 +211,9 @@ class FlorisAppActivity : ComponentActivity() {
         // see whether the update actually landed. Home leads with "try out your setup", which is the
         // one thing there is no need to do at that moment, and the build number was two taps further
         // on. Navigating rather than changing the start destination keeps Home underneath, so the
-        // back arrow goes to Home instead of straight out of the app.
-        //
-        // Once per launch, not once per composition, or every rotation would throw the user back to
-        // About from wherever they had navigated to.
-        var openedAbout by rememberSaveable { mutableStateOf(false) }
-        LaunchedEffect(isImeSetUp) {
-            if (isImeSetUp && !openedAbout) {
-                openedAbout = true
-                navController.navigate(Routes.Settings.About)
-            }
-        }
+        // The app used to navigate to About on every launch. That is gone: opening the settings
+        // and being shown a credits page instead of the settings is a bug however it was justified,
+        // and the version line at the top of Home now carries everything that page was opened for.
 
         // After the onboarding's optional floating-button step finishes setup, jump on to the
         // floating-button settings so the user lands exactly where the step pointed them. One-shot.

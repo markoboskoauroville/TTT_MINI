@@ -62,6 +62,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaCommandPalette
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
@@ -255,10 +261,11 @@ fun MaRowsScreen() = FlorisScreen {
         if (adding) {
             MaKeyPicker(
                 macroSlots = macroSlots,
-                onPick = { button ->
+                onAdd = { buttons ->
                     commit(
                         rows.mapIndexed { i, r ->
-                            if (i != tab) r else r.copy(entries = r.entries + MaRows.Entry(button))
+                            if (i != tab) r
+                            else r.copy(entries = r.entries + buttons.map { MaRows.Entry(it) })
                         },
                     )
                     adding = false
@@ -423,58 +430,133 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
 }
 
 /**
- * Picks a key to add: the app's own, then C1 to C10, then M1 to M10.
+ * Picking keys to add: the whole screen, three columns, ticks, and as many as you like at once.
  *
- * A key already in the row can be added again. That is allowed on purpose rather than guarded
- * against: a second backspace at the far end of a long row is a reasonable thing to want, and
- * guessing that a repeat is a mistake would block it for no gain.
+ * ### What was wrong with the version this replaces
+ *
+ * It was a dialog holding one narrow column of thirty-odd entries, and it could not be scrolled at
+ * all: `verticalScroll()` was applied before `heightIn(max = 440.dp)`, so the content was measured
+ * at the height of its own viewport and there was never anything to scroll to. Everything past the
+ * first eight keys was unreachable. Modifier order is not cosmetic — the constraint has to come
+ * first, then the scroll — and the failure looks exactly like a frozen screen rather than a bug.
+ *
+ * ### Why the whole screen
+ *
+ * There is no reason to add keys one at a time through a dialog occupying a third of a phone. Three
+ * columns fit every key on one screen with no scrolling at all, ticks let a whole row be assembled
+ * in one pass, and one Add applies the lot. Adding ten clipboard keys was ten open-pick-reopen
+ * cycles; now it is ten taps and a button.
  */
 @Composable
 private fun MaKeyPicker(
     macroSlots: List<MaMacroSlots.Slot>,
-    onPick: (MaRows.Button) -> Unit,
+    onAdd: (List<MaRows.Button>) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    // Chosen order is kept rather than catalogue order: keys arrive on the row in the order they
+    // were ticked, so a row can be assembled by tapping left to right.
+    val chosen = remember { mutableStateListOf<MaRows.Button>() }
+
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add a key") },
-        text = {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .heightIn(max = 440.dp),
-            ) {
-                var section = ""
-                MaRows.catalogue().forEach { button ->
-                    val heading = when (button) {
-                        is MaRows.Button.Builtin -> "Keys"
-                        is MaRows.Button.Clip -> "Clipboard"
-                        is MaRows.Button.Macro -> "Your macros"
+        // The default dialog width is a fraction of the screen. This one is the screen.
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Add keys",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                }
+                Text(
+                    text = "Tick as many as you like, then add them all at once.",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        // weight first, then the scroll. The bug this screen replaces was these two
+                        // the other way round.
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 8.dp),
+                ) {
+                    val sections = MaRows.catalogue().groupBy { button ->
+                        when (button) {
+                            is MaRows.Button.Builtin -> "Keys"
+                            is MaRows.Button.Clip -> "Clipboard, C1 to C10"
+                            is MaRows.Button.Macro -> "Your macros, M1 to M10"
+                        }
                     }
-                    if (heading != section) {
-                        section = heading
+                    sections.forEach { (heading, buttons) ->
                         Text(
                             text = heading,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                            modifier = Modifier.padding(start = 8.dp, top = 16.dp, bottom = 4.dp),
                         )
+                        // Three per row, laid out by hand rather than with a lazy grid: this is a
+                        // fixed, short list inside something that already scrolls, and nesting a
+                        // lazy grid in a scrolling column is the arrangement that throws.
+                        buttons.chunked(3).forEach { triple ->
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                triple.forEach { button ->
+                                    val ticked = button in chosen
+                                    Row(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .heightIn(min = 52.dp)
+                                            .clickable {
+                                                if (ticked) chosen.remove(button) else chosen.add(button)
+                                            }
+                                            .padding(end = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Checkbox(checked = ticked, onCheckedChange = null)
+                                        Text(
+                                            text = button.title(macroSlots),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            maxLines = 2,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                    }
+                                }
+                                // Keeps the last, short row aligned in three columns instead of
+                                // letting one or two entries stretch across the width.
+                                repeat(3 - triple.size) { Spacer(Modifier.weight(1f)) }
+                            }
+                        }
                     }
-                    TextButton(
-                        onClick = { onPick(button) },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
-                    ) {
-                        Text(
-                            text = button.title(macroSlots),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
+                    Spacer(Modifier.height(24.dp))
+                }
+
+                HorizontalDivider()
+                Button(
+                    onClick = { onAdd(chosen.toList()) },
+                    enabled = chosen.isNotEmpty(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .heightIn(min = 52.dp),
+                ) {
+                    Text(
+                        if (chosen.isEmpty()) "Add" else "Add ${chosen.size}",
+                    )
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
-    )
+        }
+    }
 }
 
 /**
@@ -502,8 +584,12 @@ private fun MaMacroEditor(
         text = {
             Column(
                 modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .heightIn(max = 420.dp),
+                    // Constraint first, then the scroll. The other way round measures the content
+                    // at the height of its own viewport, so there is never anything to scroll to
+                    // and the screen simply does not move under the finger. That is the bug that
+                    // made the key picker unusable, and it was here too.
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
             ) {
                 OutlinedTextField(
                     value = label,
