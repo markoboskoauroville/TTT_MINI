@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.dictate.MaRows
 import dev.patrickgold.florisboard.dictate.MaMacroSyntax
 import androidx.compose.runtime.LaunchedEffect
