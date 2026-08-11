@@ -90,15 +90,15 @@ fun MaRowsScreen() = FlorisScreen {
         // Held locally and written on every change. Editing a row is a deliberate act with a pause
         // after it, not a drag producing a value per frame, so there is nothing here worth batching
         // and a write straight through means the keyboard behind the settings updates as he goes.
-        val rows: List<List<MaRows.Button>> = remember(rowsRaw) {
+        val rows: List<MaRows.Row> = remember(rowsRaw) {
             MaRows.parse(rowsRaw).ifEmpty { MaRows.defaultRows() }
         }
 
-        fun commit(next: List<List<MaRows.Button>>) {
+        fun commit(next: List<MaRows.Row>) {
             // An empty list would be read back as "not migrated yet" by the keyboard and silently
             // replaced with the defaults, so a row set emptied down to nothing has to be stored as
             // one empty row rather than as no rows at all.
-            val safe = next.filter { it.isNotEmpty() }.ifEmpty { MaRows.defaultRows() }
+            val safe = next.filter { it.buttons.isNotEmpty() }.ifEmpty { MaRows.defaultRows() }
             scope.launch { prefs.dictate.maRows.set(MaRows.serialize(safe)) }
         }
 
@@ -156,7 +156,8 @@ fun MaRowsScreen() = FlorisScreen {
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
         Spacer(Modifier.height(8.dp))
 
-        rows.forEachIndexed { rowIndex, row ->
+        rows.forEachIndexed { rowIndex, rowEntry ->
+            val row = rowEntry.buttons
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,7 +170,11 @@ fun MaRowsScreen() = FlorisScreen {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Row ${rowIndex + 1}",
+                        text = if (rowEntry.clipExpansion) {
+                            "Paste history \u2014 opens from the CH badge"
+                        } else {
+                            "Row ${rowIndex + 1}"
+                        },
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.weight(1f),
                     )
@@ -233,7 +238,7 @@ fun MaRowsScreen() = FlorisScreen {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(
-                onClick = { commit(rows + listOf(listOf(MaRows.macro("new", "")))) },
+                onClick = { commit(rows + MaRows.Row(listOf(MaRows.macro("new", "")))) },
                 modifier = Modifier.weight(1f),
             ) { Text("Add a row") }
             TextButton(
@@ -244,20 +249,23 @@ fun MaRowsScreen() = FlorisScreen {
         Spacer(Modifier.height(24.dp))
 
         editing?.let { (rowIndex, buttonIndex) ->
-            val current = rows.getOrNull(rowIndex)?.getOrNull(buttonIndex)
+            val current = rows.getOrNull(rowIndex)?.buttons?.getOrNull(buttonIndex)
             if (current == null) {
                 editing = null
             } else {
                 MaButtonEditor(
                     initial = current,
                     canMoveLeft = buttonIndex > 0,
-                    canMoveRight = buttonIndex < rows[rowIndex].lastIndex,
+                    canMoveRight = buttonIndex < rows[rowIndex].buttons.lastIndex,
                     onMove = { direction ->
                         val target = buttonIndex + direction
                         commit(
                             rows.mapIndexed { i, r ->
                                 if (i != rowIndex) r
-                                else r.toMutableList().apply { add(target, removeAt(buttonIndex)) }
+                                else r.copy(
+                                    buttons = r.buttons.toMutableList()
+                                        .apply { add(target, removeAt(buttonIndex)) },
+                                )
                             },
                         )
                         editing = null
@@ -265,7 +273,8 @@ fun MaRowsScreen() = FlorisScreen {
                     onDelete = {
                         commit(
                             rows.mapIndexed { i, r ->
-                                if (i != rowIndex) r else r.filterIndexed { j, _ -> j != buttonIndex }
+                                if (i != rowIndex) r
+                                else r.copy(buttons = r.buttons.filterIndexed { j, _ -> j != buttonIndex })
                             },
                         )
                         editing = null
@@ -274,7 +283,11 @@ fun MaRowsScreen() = FlorisScreen {
                         commit(
                             rows.mapIndexed { i, r ->
                                 if (i != rowIndex) r
-                                else r.mapIndexed { j, b -> if (j == buttonIndex) updated else b }
+                                else r.copy(
+                                    buttons = r.buttons.mapIndexed { j, b ->
+                                        if (j == buttonIndex) updated else b
+                                    },
+                                )
                             },
                         )
                         editing = null
@@ -292,7 +305,14 @@ fun MaRowsScreen() = FlorisScreen {
                 onMove = {},
                 onDelete = { addingToRow = null },
                 onSave = { added ->
-                    commit(rows.mapIndexed { i, r -> if (i == rowIndex) r + added else r })
+                    commit(
+                        rows.mapIndexed { i, r ->
+                            // copy, not a new Row: adding a key to the clipboard expansion must
+                            // leave it the expansion, or it silently becomes an ordinary row that
+                            // is always on screen.
+                            if (i == rowIndex) r.copy(buttons = r.buttons + added) else r
+                        },
+                    )
                     addingToRow = null
                 },
                 onDismiss = { addingToRow = null },

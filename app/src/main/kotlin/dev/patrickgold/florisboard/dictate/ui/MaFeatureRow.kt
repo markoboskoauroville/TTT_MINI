@@ -69,7 +69,6 @@ import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.keyboardManager
-import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.stringRes
@@ -171,9 +170,16 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val clipReplace by prefs.dictate.maClipReplace.collectAsState()
 
     val rowsRaw by prefs.dictate.maRows.collectAsState()
-    val rows = remember(rowsRaw) {
+    val allRows = remember(rowsRaw) {
         MaRows.parse(rowsRaw).ifEmpty { MaRows.defaultRows() }
     }
+
+    // The folder rule, applied. The clipboard expansion belongs to the feature row: it can only be
+    // on screen while this composable is on screen at all, which is already conditional on
+    // maFeatureRowShown, and only while the badge has opened it. Collapsed, it is absent rather than
+    // empty, so the keyboard is genuinely shorter and the keys below move up.
+    val clipExpanded by prefs.dictate.maClipExpanded.collectAsState()
+    val rows = MaRows.visibleRows(allRows, clipExpanded)
 
     // The one-time carry across from the two old systems.
     //
@@ -197,7 +203,8 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-      rows.forEach { rowButtons ->
+      rows.forEach { row ->
+        val rowButtons = row.buttons
         Row(
             modifier = Modifier.fillMaxWidth().height(rowHeight),
             verticalAlignment = Alignment.CenterVertically,
@@ -297,15 +304,31 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     ThemedKey(
                         code = KeyCode.NOOP,
                         modifier = keyMod,
+                        // Tap opens and closes the expansion. This badge is the whole control: it
+                        // is the only way the nine slots appear, and it is deliberately on the
+                        // feature row rather than on the row it opens, since a switch living on the
+                        // thing it reveals could never be reached to reveal it.
+                        //
+                        // Not the full clipboard panel any more. That was one tap away from here and
+                        // is still on the keyboard's own clipboard key; what this row is for is
+                        // speed — badge, then a number — and a key that sometimes opens a panel and
+                        // sometimes opens a row would cost a moment's thought every time.
                         onClick = {
-                            keyboardManager.activeState.imeUiMode = ImeUiMode.CLIPBOARD
+                            scope.launch {
+                                prefs.dictate.maClipExpanded.set(!clipExpanded)
+                            }
                         },
                         onLongClick = fold,
                     ) { fg ->
                         Box(
                             modifier = Modifier
                                 .size(30.dp)
-                                .border(1.5.dp, fg, CircleShape),
+                                // Thicker while the row is open. The badge is a toggle and a toggle
+                                // has to show which way it is set, but the row appearing below is
+                                // already the loud half of that answer, so this stays quiet: the
+                                // same circle, drawn firmer, rather than a second colour. Colour in
+                                // this app means recording.
+                                .border(if (clipExpanded) 3.dp else 1.5.dp, fg, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(

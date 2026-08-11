@@ -983,6 +983,22 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * Off makes them insert at the cursor and touch nothing else, for writing prose where the
          * clipboard is a source rather than the whole answer.
          */
+        /**
+         * Whether the clipboard expansion is open.
+         *
+         * Off at rest, and that is the point of it: the nine slots are a second row of keys, and a
+         * keyboard that is permanently a row taller costs screen on every app whether or not the
+         * clipboard is being used. The CH badge on the feature row opens it, uses it, and closes it.
+         *
+         * Not remembered as "open" across a restart on purpose — see the badge. Coming back to a
+         * keyboard that is unexpectedly a row taller is the kind of thing that gets blamed on the
+         * app being broken.
+         */
+        val maClipExpanded = boolean(
+            key = "dictate__ma_clip_expanded",
+            default = false,
+        )
+
         val maClipReplace = boolean(
             key = "dictate__ma_clip_replace",
             default = true,

@@ -57,6 +57,15 @@ object MaRows {
     private const val T_MACRO = "m"
 
     /**
+     * Marks a row as the clipboard expansion, written at the head of the row.
+     *
+     * A marker rather than a fixed position, because rows can be reordered and the expansion has to
+     * stay the expansion when it moves. Rows written before this existed carry no marker and read
+     * back as ordinary rows, which is the right answer for them.
+     */
+    private const val ROW_CLIP = "\u001Ac"
+
+    /**
      * Three characters, and the reason is the key rather than the label.
      *
      * These are keys on a phone keyboard, sized for a thumb, sitting a dozen to a row. "AP" and "AC"
@@ -71,6 +80,16 @@ object MaRows {
 
     /** Kept from the macro bar, where a row long enough to need scrolling was found to be unusable. */
     const val MAX_BUTTONS_PER_ROW = 24
+
+    /**
+     * One row, and whether it is the feature row's clipboard expansion.
+     *
+     * The relationship lives here rather than as something the renderer remembers, because it is a
+     * rule about when a row exists at all and rules like that belong where they can be tested. A
+     * convention held only in drawing code is a convention that the editor, the migration and the
+     * next screen each have to re-derive, and one of them eventually derives it differently.
+     */
+    data class Row(val buttons: List<Button>, val clipExpansion: Boolean = false)
 
     sealed interface Button {
 
@@ -100,9 +119,14 @@ object MaRows {
      * Built from [MaFeatureOrder.DEFAULT] rather than repeated here, so the two cannot disagree, and
      * so a key added to the enum later appears here without anybody remembering to add it twice.
      */
-    /** The clipboard row, in the order it is counted along: the badge, then newest to oldest. */
-    private val CLIP_ROW = listOf(
-        MaFeatureKey.CLIP_LABEL,
+    /**
+     * The clipboard expansion: nine slots, newest first.
+     *
+     * The CH badge is deliberately **not** here. It belongs on the feature row, because it is the
+     * control that opens this row — a switch that lived on the thing it opens could never be reached
+     * to open it.
+     */
+    private val CLIP_KEYS = listOf(
         MaFeatureKey.CLIP_1,
         MaFeatureKey.CLIP_2,
         MaFeatureKey.CLIP_3,
@@ -115,24 +139,38 @@ object MaRows {
     )
 
     /**
-     * Two rows to start with: his feature keys, then the clipboard history.
+     * The feature row, with the CH badge on the end of it, and the clipboard expansion beneath.
      *
      * [MaFeatureOrder.DEFAULT] is the list of every key that exists, which is what lets the editor
-     * offer all of them — it is not a row. Splitting happens here. Keys marked hidden by default are
-     * left out, because there is no hidden flag in this model: a key that is not wanted is a key
-     * that is not in a row, and putting one there by default would show it to somebody who never
-     * asked for it.
+     * offer all of them; it is not a row. The split happens here. Keys hidden by default are left
+     * out, because this model has no hidden flag — a key that is not wanted is a key that is not in
+     * a row, and placing one by default would show it to somebody who never asked for it.
      */
-    fun defaultRows(): List<List<Button>> = listOf(
-        MaFeatureOrder.DEFAULT
-            .filter { it !in CLIP_ROW && it !in MaFeatureOrder.DEFAULT_HIDDEN }
-            .map { Button.Builtin(it) },
-        CLIP_ROW.map { Button.Builtin(it) },
+    fun defaultRows(): List<Row> = listOf(
+        Row(
+            MaFeatureOrder.DEFAULT
+                .filter { it !in CLIP_KEYS && it != MaFeatureKey.CLIP_LABEL }
+                .filter { it !in MaFeatureOrder.DEFAULT_HIDDEN }
+                .map { Button.Builtin(it) } + Button.Builtin(MaFeatureKey.CLIP_LABEL),
+        ),
+        Row(CLIP_KEYS.map { Button.Builtin(it) }, clipExpansion = true),
     )
 
-    fun serialize(rows: List<List<Button>>): String =
+    /**
+     * The rows actually drawn, given whether the clipboard expansion is open.
+     *
+     * The folder rule, in one place and testable. The expansion is not an independent row: it exists
+     * only while the feature row is on screen — which is the caller's own condition for drawing any
+     * of this — and only while the badge has opened it. Collapsed, it is not drawn at all rather
+     * than drawn empty, so the keyboard is genuinely shorter and the keys underneath move up.
+     */
+    fun visibleRows(rows: List<Row>, clipExpanded: Boolean): List<Row> =
+        rows.filter { clipExpanded || !it.clipExpansion }
+
+    fun serialize(rows: List<Row>): String =
         rows.joinToString(ROW_SEP.toString()) { row ->
-            row.joinToString(BTN_SEP.toString()) { button ->
+            val head = if (row.clipExpansion) ROW_CLIP else ""
+            head + row.buttons.joinToString(BTN_SEP.toString()) { button ->
                 when (button) {
                     is Button.Builtin -> "$T_BUILTIN$FIELD_SEP${button.key.id}"
                     is Button.Macro -> "$T_MACRO$FIELD_SEP${button.label}$FIELD_SEP${button.macro}"
@@ -143,21 +181,24 @@ object MaRows {
     /**
      * Parses the stored string, skipping anything malformed rather than throwing.
      *
-     * A damaged preference degrades to a smaller set of rows. It must never become a keyboard that
-     * refuses to draw: this string is read while the keyboard is opening, in front of whatever the
-     * user was about to type into, and there is no way to reach settings to fix it from there.
+     * A damaged preference degrades to fewer rows. It must never become a keyboard that refuses to
+     * draw: this is read while the keyboard is opening, in front of whatever the user was about to
+     * type into, and there is no way to reach settings and repair it from behind a keyboard that
+     * never appears.
      *
-     * A built-in naming a key that no longer exists is dropped, not guessed at. Keys have been
-     * removed from this app before — the reader's book key went with the reader — and a stored row
-     * written before that is otherwise still perfectly good.
+     * A built-in naming a key that no longer exists is dropped rather than guessed at. Keys have
+     * been removed from this app before — the reader's book key went with the reader — and a row
+     * stored before that is otherwise still perfectly good.
      */
-    fun parse(raw: String): List<List<Button>> {
+    fun parse(raw: String): List<Row> {
         if (raw.isBlank()) return emptyList()
         return raw.split(ROW_SEP)
             .map { rowText ->
-                rowText.split(BTN_SEP).mapNotNull { parseButton(it) }
+                val isClip = rowText.startsWith(ROW_CLIP)
+                val body = if (isClip) rowText.removePrefix(ROW_CLIP) else rowText
+                Row(body.split(BTN_SEP).mapNotNull { parseButton(it) }, isClip)
             }
-            .filter { it.isNotEmpty() }
+            .filter { it.buttons.isNotEmpty() }
     }
 
     private fun parseButton(raw: String): Button? {
@@ -192,14 +233,18 @@ object MaRows {
      * and with unlimited rows that reason is gone. Nothing is lost, and anything unwanted is now one
      * deletion away instead of trapped in a preset he never selects.
      */
-    fun migrate(featureOrderRaw: String, featureHiddenRaw: String, macroRaw: String): List<List<Button>> {
+    fun migrate(featureOrderRaw: String, featureHiddenRaw: String, macroRaw: String): List<Row> {
         val hidden = MaFeatureOrder.parseHidden(featureHiddenRaw)
         val featureRow = MaFeatureOrder.visible(MaFeatureOrder.parse(featureOrderRaw), hidden)
-            .map { Button.Builtin(it) }
+            .filter { it !in CLIP_KEYS && it != MaFeatureKey.CLIP_LABEL }
+            .map { Button.Builtin(it) } + Button.Builtin(MaFeatureKey.CLIP_LABEL)
         val macroRows = MaMacros.parse(macroRaw)
             .flatMap { preset -> preset.rows }
-            .map { row -> row.map { macro(it.label, it.macro) } }
-            .filter { it.isNotEmpty() }
-        return (listOf(featureRow) + macroRows).filter { it.isNotEmpty() }
+            .map { row -> Row(row.map { macro(it.label, it.macro) }) }
+            .filter { it.buttons.isNotEmpty() }
+        // The clipboard expansion is appended for an existing install as well as a new one. It did
+        // not exist when his old preferences were written, so carrying them across faithfully would
+        // hand him the one thing he asked for last and then leave it out.
+        return listOf(Row(featureRow)) + macroRows + Row(CLIP_KEYS.map { Button.Builtin(it) }, true)
     }
 }
