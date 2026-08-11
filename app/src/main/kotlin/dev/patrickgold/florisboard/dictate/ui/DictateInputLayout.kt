@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -74,7 +73,6 @@ fun DictateInputLayout(
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
     val prompts by DictateController.prompts.collectAsState()
-    val livePromptActive by DictateController.livePromptActive.collectAsState()
     val scrollState = rememberScrollState()
     val prefs by FlorisPreferenceStore
     val accent by prefs.theme.accentColor.collectAsState() // follows the user's keyboard accent.
@@ -126,37 +124,13 @@ fun DictateInputLayout(
                 .padding(8.dp),
             horizontalArrangement = Arrangement.Start,
         ) {
-            // In the panel the chips are roomier and sit closer together than in the compact row, so
-            // they are easier to hit (larger icon + extra tap padding, tighter inter-chip spacing).
-            val panelChipSpacing = Modifier.padding(2.dp)
-            val panelIconSize = 22.dp
-            val panelTapPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
-            DictateLivePromptChip(
-                modifier = panelChipSpacing,
-                iconSize = panelIconSize,
-                tapPadding = panelTapPadding,
-                // Accent-highlight while its recording runs (tap again stops it — startLivePrompt toggles).
-                highlighted = livePromptActive,
-                onClick = {
-                    DictateController.startLivePrompt(context)
-                    // Return to the keyboard so the recording indicator + field stay visible.
-                    keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
-                },
-            )
-            prompts.forEach { prompt ->
-                DictatePromptChip(
-                    icon = dictatePromptIcon(prompt),
-                    text = prompt.name.orEmpty(),
-                    modifier = panelChipSpacing,
-                    iconSize = panelIconSize,
-                    tapPadding = panelTapPadding,
-                    onClick = {
-                        DictateController.applyPrompt(context, prompt)
-                        // Return to the keyboard so the field + the Smartbar progress are visible.
-                        keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
-                    },
-                )
-            }
+            // The Little Man's chips went with him. This panel was his: a live-prompt button and a
+            // chip per saved prompt, all of it rewording. What is left is the empty-state message
+            // below, which now always shows, because there is nothing left to list.
+            //
+            // The panel itself is not removed here. It belongs to the transcribe view, which comes
+            // out whole in its own step, and gutting a view in a commit about something else is how
+            // half-deleted screens accumulate.
         }
         if (prompts.isEmpty()) {
             SnyggBox(

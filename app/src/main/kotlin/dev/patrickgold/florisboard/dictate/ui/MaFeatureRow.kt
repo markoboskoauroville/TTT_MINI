@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.dictate.MaClipboardSlots
+import dev.patrickgold.florisboard.dictate.MaMacroSlots
 import androidx.compose.foundation.layout.size
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
