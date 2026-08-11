@@ -1013,22 +1013,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         /**
-         * What C1 to C10 hold, in the order they were copied. See MaClipCapture.
+         * What the ten copy buckets hold, in order. See MaClipCapture.
          *
-         * Slots fill and then hold still: the first copy after a clear takes C1 and stays there.
-         * The keys used to be a window onto the history sorted newest first, which meant every key
-         * changed meaning on every copy and a key pressed from memory pasted whatever had moved
-         * under it. For a row navigated by number that was the worst possible behaviour.
+         * A copy goes into the lowest empty bucket and stays there until it is pasted, which pours
+         * that bucket out and frees it for the next copy. The keys were once a window onto the
+         * history sorted newest first, which meant every key changed meaning on every copy and a key
+         * pressed from memory pasted whatever had since moved under it.
          */
         val maClipCaptured = string(
             key = "dictate__ma_clip_captured",
             default = "",
         )
 
-        val maClipReplace = boolean(
-            key = "dictate__ma_clip_replace",
-            default = true,
-        )
         // The macro bar: every preset, serialized by MaMacros. One string because that is all a
         // macro bar is, and because a control-character encoding lets a macro contain commas,
         // quotes, newlines and braces without any escaping to get wrong.

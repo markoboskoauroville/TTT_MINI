@@ -168,7 +168,6 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val clipboardManager by context.clipboardManager()
     val clipHistory by clipboardManager.historyFlow.collectAsState()
 
-    val clipReplace by prefs.dictate.maClipReplace.collectAsState()
 
     // What C1 to C10 currently hold, in the order they were copied.
     val capturedRaw by prefs.dictate.maClipCaptured.collectAsState()
@@ -247,7 +246,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 }
             }
 
-            // C1 to C10, newest first. Paste-replace, the way AP pastes.
+            // C1 to C10. Always paste-replace: select all, delete, paste.
             is MaRows.Button.Clip -> {
                 // The slot's own text, not the history's newest-first ordering. C4 is the fourth
                 // thing copied since the row was cleared and stays that until it is cleared again.
@@ -263,19 +262,22 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     onClick = {
                         if (text != null) {
                             scope.launch {
-                                if (clipReplace) {
-                                    keyboardManager.activeState.isManualSelectionMode = false
-                                    delay(MA_CLIP_LEAD_MS)
-                                    FlorisImeService.currentInputConnection()
-                                        ?.performContextMenuAction(android.R.id.selectAll)
-                                    delay(MA_CLIP_LEAD_MS)
-                                    FlorisImeService.currentInputConnection()?.commitText("", 1)
-                                    // Longer than the lead, and not by accident: the paste is the
-                                    // one step that actually gets dropped. Too short and the key
-                                    // empties the field without refilling it, which is worse than
-                                    // doing nothing because the old text is gone too.
-                                    delay(MA_CLIP_PASTE_MS)
-                                }
+                                // Always replace. Never insert.
+                                //
+                                // This was behind a preference, and the screen that could switch
+                                // that preference back on was deleted three builds ago — so an
+                                // install holding a stored false had these keys inserting into
+                                // whatever was already in the field, with no way to correct it.
+                                // That is not a setting anybody wants wrong: pasting a bucket into
+                                // the middle of existing text is how a document gets damaged rather
+                                // than edited. The condition is gone, not defaulted.
+                                keyboardManager.activeState.isManualSelectionMode = false
+                                delay(MA_CLIP_STEP_MS)
+                                FlorisImeService.currentInputConnection()
+                                    ?.performContextMenuAction(android.R.id.selectAll)
+                                delay(MA_CLIP_STEP_MS)
+                                FlorisImeService.currentInputConnection()?.commitText("", 1)
+                                delay(MA_CLIP_STEP_MS)
                                 FlorisImeService.currentInputConnection()?.commitText(text, 1)
                                 // The bucket is poured out once its contents are in the field.
                                 // After the paste, not before: if the commit fails the text is
@@ -493,11 +495,24 @@ private val MaRecordRed = Color(0xFF9B3B33)
  * Repeated rather than imported from LegacyDictateLayout because that file is being deleted with the
  * transcribe view, and a hundred milliseconds is cheaper to state twice than to route around.
  */
-private const val MA_CLIP_LEAD_MS = 100L
+/**
+ * The gap between each step of a bucket paste: select all, delete, paste.
+ *
+ * Each step is a round trip to another process, and firing the next before the last has landed acts
+ * on a selection that does not exist yet — which reads as a key that did nothing, or worse, as a
+ * key that inserted instead of replacing. 200ms is Marko's number and is comfortably above what the
+ * round trip needs while staying under what a finger notices.
+ *
+ * One value for all three gaps now. The paste step used to wait longer than the others because it
+ * was the one observed to get dropped; with the whole sequence at 200ms that margin is already
+ * there, and three delays that are supposed to be the same should be the same constant rather than
+ * two that drift apart.
+ */
+private const val MA_CLIP_STEP_MS = 200L
+
 
 /** The wait before the paste itself. AP's value, for AP's reason. See the CH key. */
 // 333ms, Marko's number. The sequence he specified is select all, 100ms, delete, 333ms, paste.
-private const val MA_CLIP_PASTE_MS = 333L
 
 /** The grey a key wears when it is present but has nothing to act on. */
 private val MaDimmed = Color(0xFF6B6B6B)
