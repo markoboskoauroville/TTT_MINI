@@ -277,6 +277,15 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                                     delay(MA_CLIP_PASTE_MS)
                                 }
                                 FlorisImeService.currentInputConnection()?.commitText(text, 1)
+                                // The bucket is poured out once its contents are in the field.
+                                // After the paste, not before: if the commit fails the text is
+                                // still in the bucket to try again, whereas emptying first would
+                                // lose it with nothing to show for it.
+                                prefs.dictate.maClipCaptured.set(
+                                    MaClipCapture.serialize(
+                                        MaClipCapture.pour(capturedSlots, button.slot),
+                                    ),
+                                )
                             }
                         }
                     },
@@ -363,7 +372,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     // keys, and wiping somebody's whole clipboard as a side effect of tidying a row
                     // is not recoverable — the history is still there behind a long press on any C
                     // key, which is where anything wanted back can be found.
-                    val filled = capturedSlots.size
+                    val filled = MaClipCapture.filledCount(capturedSlots)
                     ThemedIconKey(
                         code = KeyCode.NOOP,
                         icon = Icons.Default.Delete,
