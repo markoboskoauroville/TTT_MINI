@@ -61,6 +61,8 @@ import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaFeatureOrder
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
+import androidx.compose.runtime.LaunchedEffect
+import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
@@ -164,6 +166,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // collecting the same flow would recompose nine times for every copy anywhere on the phone.
     val clipboardManager by context.clipboardManager()
     val clipHistory by clipboardManager.historyFlow.collectAsState()
+
     val clipReplace by prefs.dictate.maClipReplace.collectAsState()
 
     val rowsRaw by prefs.dictate.maRows.collectAsState()
@@ -177,6 +180,19 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
         if (rowsRaw.isBlank()) MaRows.defaultRows() else MaRows.parse(rowsRaw)
     }
     val rows = MaRows.visibleRows(storedRows)
+    // Changing the default is not enough on its own. Anyone whose preferences already hold an
+    // explicit false — written by the old default, or by the FlorisBoard screen that still offers
+    // the switch — would keep an empty history and ten dead keys, and would have no way to guess
+    // that a clipboard setting three screens away is why. So when a C key is actually on a row,
+    // recording is switched on. The keys cannot work without it and nothing else here reads it.
+    val clipKeysPresent = remember(storedRows) {
+        storedRows.any { row -> row.entries.any { it.button is MaRows.Button.Clip } }
+    }
+    LaunchedEffect(clipKeysPresent) {
+        if (clipKeysPresent && !prefs.clipboard.historyEnabled.get()) {
+            prefs.clipboard.historyEnabled.set(true)
+        }
+    }
 
     Column(modifier = modifier.fillMaxWidth()) {
       rows.forEach { rowButtons ->
@@ -247,7 +263,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                                         ?.performContextMenuAction(android.R.id.selectAll)
                                     delay(MA_CLIP_LEAD_MS)
                                     FlorisImeService.currentInputConnection()?.commitText("", 1)
-                                    // Five times the others, and not by accident: the paste is the
+                                    // Longer than the lead, and not by accident: the paste is the
                                     // one step that actually gets dropped. Too short and the key
                                     // empties the field without refilling it, which is worse than
                                     // doing nothing because the old text is gone too.
@@ -257,7 +273,14 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                             }
                         }
                     },
-                    onLongClick = fold,
+                    // Long press opens the clipboard history rather than folding the row, which is
+                    // what every other key here does on a long press. The exception is deliberate:
+                    // the key shows a number and nothing else, so the only way to find out what is
+                    // on C4 before pasting it is to look, and the place to look is one gesture away
+                    // from the key itself. Folding is still reachable from any other key on the row.
+                    onLongClick = {
+                        keyboardManager.activeState.imeUiMode = ImeUiMode.CLIPBOARD
+                    },
                 ) { fg ->
                     Text(
                         text = "C${button.slot}",
@@ -427,4 +450,5 @@ private val MaRecordRed = Color(0xFF9B3B33)
 private const val MA_CLIP_LEAD_MS = 100L
 
 /** The wait before the paste itself. AP's value, for AP's reason. See the CH key. */
-private const val MA_CLIP_PASTE_MS = 500L
+// 333ms, Marko's number. The sequence he specified is select all, 100ms, delete, 333ms, paste.
+private const val MA_CLIP_PASTE_MS = 333L

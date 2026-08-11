@@ -95,6 +95,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
+import dev.patrickgold.florisboard.dictate.MaClipboardSlots
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
@@ -264,6 +265,12 @@ fun ClipboardInputLayout(
         item: ClipboardItem,
         contentScrollInsteadOfClip: Boolean,
         modifier: Modifier = Modifier,
+        // Which C key pastes this entry, or null when it is past C10 and no key reaches it.
+        //
+        // The panel and the row have to agree on the numbering or the labels are worse than
+        // nothing: somebody reads "C3" here and presses C3 and gets something else. Both sides
+        // therefore ask MaClipboardSlots rather than each counting for themselves.
+        clipSlot: Int? = null,
     ) {
         val attributes = remember(item) {
             mapOf("type" to item.type.toString().lowercase())
@@ -353,6 +360,12 @@ fun ClipboardInputLayout(
             } else {
                 val text = item.stringRepresentation()
                 Column {
+                    if (clipSlot != null) {
+                        SnyggText(
+                            modifier = Modifier.padding(bottom = 2.dp),
+                            text = "C$clipSlot",
+                        )
+                    }
                     ClipTextItemDescription(
                         elementName = FlorisImeUi.ClipboardItemDescription.elementName,
                         attributes = attributes,
@@ -398,6 +411,7 @@ fun ClipboardInputLayout(
                             elementName = FlorisImeUi.ClipboardItem.elementName,
                             item = item,
                             contentScrollInsteadOfClip = false,
+                            clipSlot = MaClipboardSlots.slotFor(unfilteredHistory, item),
                         )
                     }
                 }

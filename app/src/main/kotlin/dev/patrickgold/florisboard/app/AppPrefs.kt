@@ -113,9 +113,15 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "clipboard__suggestion_timeout",
             default = 60,
         )
+        // On by default in TTT mini, where it was off in FlorisBoard.
+        //
+        // This is not a preference here, it is the feature. The C1 to C10 keys read this history,
+        // and with recording off history.all is permanently empty, so every one of those keys sees
+        // null and does nothing at all — which is exactly how they shipped and exactly what it
+        // looked like: ten keys that swallow a tap.
         val historyEnabled = boolean(
             key = "clipboard__history_enabled",
-            default = false,
+            default = true,
         )
         val historyNumGridColumnsPortrait = int(
             key = "clipboard__history_num_grid_columns_portrait",

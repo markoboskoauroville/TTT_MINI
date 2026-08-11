@@ -59,4 +59,19 @@ object MaClipboardSlots {
             }
         }
     }
+
+    /**
+     * Which C key pastes [item], or null when it falls past C[SLOT_COUNT] and no key reaches it.
+     *
+     * The inverse of [itemAt], and deliberately built on the same ordering rather than on a second
+     * count of its own. The panel labels an entry "C3" and the row's C3 has to paste that exact
+     * entry; two independent counts would agree right up until a pinned item or a tie in timestamps
+     * pulled them apart, and then the label would be quietly lying.
+     */
+    fun slotFor(history: ClipboardHistory, item: ClipboardItem): Int? {
+        val index = history.all
+            .sortedByDescending { it.creationTimestampMs }
+            .indexOfFirst { it.id == item.id }
+        return if (index in 0 until SLOT_COUNT) index + 1 else null
+    }
 }
