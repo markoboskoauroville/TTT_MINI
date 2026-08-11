@@ -26,7 +26,10 @@ package dev.patrickgold.florisboard.dictate
  * anybody out of anything; hiding can.
  */
 enum class MaFeatureKey(val id: String, val label: String) {
-    ALL_PASTE("ap", "Paste all"),
+    // Named after the letters on the key, not after what the key sounds like it does.
+    // "Paste all" reads as "paste everything" when it actually replaces the field, and the key
+    // itself says AP, so the list said one thing and the keyboard said another.
+    ALL_PASTE("ap", "AP (all paste)"),
     SELECT_ALL("select_all", "Select all"),
     BACKSPACE("backspace", "Backspace"),
 
@@ -36,7 +39,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * Marko's name and his distinction. The C is not cut: cutting would overwrite whatever is being
      * carried, which on a keyboard driven by voice is usually the very thing about to be pasted.
      */
-    ALL_CLEAR("ac", "Clear all"),
+    ALL_CLEAR("ac", "AC (all clear)"),
 
     /**
      * A spacebar, in the row that survives folding.
@@ -64,7 +67,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * finished row — capturing stops and nothing changes again — so without a way to empty it the
      * feature works exactly once per install. This key is that way.
      */
-    CLIP_CLEAR("cclear", "Clear the C keys"),
+    CLIP_CLEAR("cclear", "Empty the C buckets"),
 
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),

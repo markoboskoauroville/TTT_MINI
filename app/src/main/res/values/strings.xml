@@ -911,8 +911,8 @@
     <string name="ma__feature_record">Start recording</string>
     <string name="ma__feature_record_stop">Stop recording and send</string>
     <string name="ma__feature_settings">Settings</string>
-    <string name="ma__clip_clear">Clear the C keys</string>
-    <string name="ma__clip_clear_empty">Clear the C keys, nothing held</string>
+    <string name="ma__clip_clear">Empty the C buckets</string>
+    <string name="ma__clip_clear_empty">Empty the C buckets, all already empty</string>
     <string name="dictate__legacy_action_all_clear">Select all and delete</string>
     <string name="dictate__legacy_action_space">Space</string>
     <string name="ma__feature_file">Transcribe an audio file</string>

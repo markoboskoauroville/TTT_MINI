@@ -122,10 +122,10 @@ object MaClipCapture {
      * without pasting it somewhere to find out, which matters more here than it usually would.
      */
     fun describeSlot(text: String?, slot: Int): String = when {
-        text == null -> "C$slot, empty"
+        text == null -> "Copy bucket $slot, empty"
         else -> {
             val short = text.replace('\n', ' ').trim().take(60)
-            if (text.length > 60) "C$slot, $short\u2026" else "C$slot, $short"
+            if (text.length > 60) "Copy bucket $slot, $short\u2026" else "Copy bucket $slot, $short"
         }
     }
 }

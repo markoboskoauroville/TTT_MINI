@@ -293,7 +293,10 @@ fun MaRowsScreen() = FlorisScreen {
 /** What a button is called in the editor's list. */
 private fun MaRows.Button.title(macroSlots: List<MaMacroSlots.Slot>): String = when (this) {
     is MaRows.Button.Builtin -> key.label
-    is MaRows.Button.Clip -> if (slot == 1) "C1, newest copy" else "C$slot"
+    // "C1, newest copy" was left over from when these were a window onto the history. C1 has not
+    // meant the newest copy since the buckets landed, and a label describing behaviour the app no
+    // longer has is worse than no label: it teaches the wrong model of the only feature that matters.
+    is MaRows.Button.Clip -> "Copy bucket $slot"
     is MaRows.Button.Macro -> {
         val s = MaMacroSlots.at(macroSlots, slot)
         if (s.isEmpty) "M$slot, empty" else "M$slot, ${s.label}"
@@ -494,11 +497,17 @@ private fun MaKeyPicker(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 8.dp),
                 ) {
+                    // Grouped by what a key is for rather than by which kind it is in the model.
+                    // The clear key is a Builtin and belongs beside the buckets it empties: a
+                    // heading is a promise about what is underneath it, and somebody looking for
+                    // the way to empty the buckets looks under the buckets.
                     val sections = MaRows.catalogue().groupBy { button ->
-                        when (button) {
-                            is MaRows.Button.Builtin -> "Keys"
-                            is MaRows.Button.Clip -> "Clipboard, C1 to C10"
-                            is MaRows.Button.Macro -> "Your macros, M1 to M10"
+                        when {
+                            button is MaRows.Button.Clip -> "Copy buckets, C1 to C10"
+                            button is MaRows.Button.Builtin &&
+                                button.key == MaFeatureKey.CLIP_CLEAR -> "Copy buckets, C1 to C10"
+                            button is MaRows.Button.Macro -> "Your macros, M1 to M10"
+                            else -> "Keys"
                         }
                     }
                     sections.forEach { (heading, buttons) ->
@@ -526,6 +535,15 @@ private fun MaKeyPicker(
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Checkbox(checked = ticked, onCheckedChange = null)
+                                        // The key's own glyph, the same one the row draws and the
+                                        // same one the list beside it draws. Picking a key from a
+                                        // column of words means matching a name to something seen
+                                        // on the keyboard; picking it from its own face means
+                                        // recognising it. That is the difference between reading
+                                        // the list and scanning it, which on this screen is the
+                                        // whole point.
+                                        MaButtonGlyph(button, macroSlots)
+                                        Spacer(Modifier.width(6.dp))
                                         Text(
                                             text = button.title(macroSlots),
                                             style = MaterialTheme.typography.bodyMedium,
