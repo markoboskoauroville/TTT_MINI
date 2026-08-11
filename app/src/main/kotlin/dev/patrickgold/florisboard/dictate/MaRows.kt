@@ -152,8 +152,9 @@ object MaRows {
 
     /** Every button that can be added, in the order the editor offers them. */
     fun catalogue(): List<Button> =
-        MaFeatureKey.entries.filter { it != MaFeatureKey.CLIP_LABEL && it.id.startsWith("clip").not() }
-            .map { Button.Builtin(it) } +
+        // No filtering needed: the clipboard is no longer a set of keys in this enum, it is
+        // Button.Clip. The enum now holds only the app's own keys, so every one of them is offered.
+        MaFeatureKey.entries.map { Button.Builtin(it) } +
             (1..CLIP_SLOTS).map { Button.Clip(it) } +
             (1..MACRO_SLOTS).map { Button.Macro(it) }
 

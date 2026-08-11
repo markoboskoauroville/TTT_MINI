@@ -994,9 +994,16 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * keyboard that is unexpectedly a row taller is the kind of thing that gets blamed on the
          * app being broken.
          */
-        val maClipExpanded = boolean(
-            key = "dictate__ma_clip_expanded",
-            default = false,
+        /**
+         * What the ten macro buttons do, serialized by MaMacroSlots.
+         *
+         * Apart from the rows on purpose: a row stores a reference to a slot, so the same macro can
+         * sit in two rows without being written twice, and moving a button cannot lose what was
+         * attached to it.
+         */
+        val maMacroSlots = string(
+            key = "dictate__ma_macro_slots",
+            default = "",
         )
 
         val maClipReplace = boolean(

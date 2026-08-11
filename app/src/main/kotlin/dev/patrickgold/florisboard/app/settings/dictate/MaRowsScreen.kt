@@ -10,8 +10,8 @@
 
 package dev.patrickgold.florisboard.app.settings.dictate
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,16 +19,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -37,7 +43,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,84 +57,100 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaCommandPalette
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
+import dev.patrickgold.florisboard.dictate.MaMacroSlots
 import dev.patrickgold.florisboard.dictate.MaRows
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
 
 /**
- * The one editor for every key above the keyboard.
+ * The feature row editor: three rows, three tabs, one row at a time.
  *
- * This replaced two screens that each did half the job: a feature row editor that could reorder
- * built-in keys and not add any, and a macro editor that could add custom keys and not place a
- * built-in one among them.
+ * This is the app's main feature and the screen it is arranged from, so it is deliberately the
+ * plainest thing in the settings. One tab is one row. Everything visible on the tab belongs to that
+ * row and nothing else, which is what stops the screen becoming the crowded single list it was
+ * before: with three rows of keys shown at once there was no way to see any of them.
  *
- * ### Arrows rather than dragging
+ * ### Same list, same gestures, as the rest of the app
  *
- * The screen it replaces reordered by holding a key and dragging it. That is the wrong interaction
- * here and it was worth losing. Marko reads this screen with low vision and works largely by voice:
- * a drag needs the target held under a fingertip and tracked while it moves, which is precisely the
- * kind of fine, sighted, sustained gesture that costs him the most. Arrow buttons are large fixed
- * targets that can be hit repeatedly without tracking anything.
+ * A numbered row, the key's own glyph, its name, a tick, and a handle to drag it by. That pattern is
+ * already on the settings order screen and was on the feature row screen before this one, and
+ * matching it was the whole point of the rewrite: an invented second style made the app look like
+ * two apps. Dragging is [MaReorderableColumn], the same component the rest of the app drags with.
  *
- * There is also a plainer reason. A row of keys wraps and scrolls sideways, and dragging within
- * something that scrolls sideways inside something that scrolls vertically is the interaction that
- * fights back hardest on a phone.
+ * ### Nothing is protected
+ *
+ * Every key can be unticked, backspace and enter included. The floor lives in the model rather than
+ * here: switch everything off in all three rows and the keyboard draws the settings key alone, so
+ * there is always a route back to this screen. A rule enforced by hiding tick boxes would be a rule
+ * the user has to discover by failing.
+ *
+ * ### Unticked, not deleted
+ *
+ * A key switched off stays in the list, greyed. It keeps its position, so switching it back on puts
+ * it where it was rather than at the end — a list whose entries move about cannot be learned by
+ * position, and this one is navigated by position.
  */
 @Composable
 fun MaRowsScreen() = FlorisScreen {
-    title = "Keys and rows"
+    title = "Feature row"
 
     content {
         val prefs by FlorisPreferenceStore
         val scope = rememberCoroutineScope()
         val rowsRaw by prefs.dictate.maRows.collectAsState()
+        val macroRaw by prefs.dictate.maMacroSlots.collectAsState()
 
-        // Held locally and written on every change. Editing a row is a deliberate act with a pause
-        // after it, not a drag producing a value per frame, so there is nothing here worth batching
-        // and a write straight through means the keyboard behind the settings updates as he goes.
-        val rows: List<MaRows.Row> = remember(rowsRaw) {
-            MaRows.parse(rowsRaw).ifEmpty { MaRows.defaultRows() }
+        var rows by remember(rowsRaw) {
+            mutableStateOf(
+                if (rowsRaw.isBlank()) MaRows.defaultRows() else MaRows.parse(rowsRaw),
+            )
         }
+        val macroSlots = remember(macroRaw) { MaMacroSlots.parse(macroRaw) }
 
         fun commit(next: List<MaRows.Row>) {
-            // An empty list would be read back as "not migrated yet" by the keyboard and silently
-            // replaced with the defaults, so a row set emptied down to nothing has to be stored as
-            // one empty row rather than as no rows at all.
-            val safe = next.filter { it.buttons.isNotEmpty() }.ifEmpty { MaRows.defaultRows() }
-            scope.launch { prefs.dictate.maRows.set(MaRows.serialize(safe)) }
+            rows = next
+            scope.launch { prefs.dictate.maRows.set(MaRows.serialize(next)) }
         }
 
-        var editing by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-        var addingToRow by remember { mutableStateOf<Int?>(null) }
+        var tab by remember { mutableStateOf(0) }
+        var adding by remember { mutableStateOf(false) }
+        var editingMacro by remember { mutableStateOf<Int?>(null) }
 
-        Text(
-            text = "Every key above the keyboard lives here. A key is either one of the app's own " +
-                "or one you write yourself, and both can sit in the same row in any order.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-        Text(
-            text = "Add as many rows as you like. Backspace and enter cannot be removed from every " +
-                "row at once: with the keyboard folded away there would be no way to delete a " +
-                "character or end a line.",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
+        TabRow(selectedTabIndex = tab) {
+            (0 until MaRows.ROW_COUNT).forEach { i ->
+                Tab(
+                    selected = tab == i,
+                    onClick = { tab = i },
+                    text = {
+                        Text(
+                            text = "Row ${i + 1}",
+                            // A row that is switched off says so on its own tab, so the state is
+                            // visible before it is opened. Without it, an empty-looking row and a
+                            // switched-off row read identically from here.
+                            color = if (rows.getOrNull(i)?.enabled == true) {
+                                Color.Unspecified
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    },
+                )
+            }
+        }
 
-        Spacer(Modifier.height(4.dp))
+        val row = rows.getOrNull(tab) ?: MaRows.Row(emptyList(), enabled = false)
 
-        // The CH row's one setting, kept here rather than buried in the dictate settings, because
-        // this is the screen somebody is on when they are thinking about those keys.
-        val clipReplace by prefs.dictate.maClipReplace.collectAsState()
+        Spacer(Modifier.height(8.dp))
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -134,360 +159,411 @@ fun MaRowsScreen() = FlorisScreen {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Clipboard keys replace the field",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Show this row",
+                    style = MaterialTheme.typography.bodyLarge,
                 )
                 Text(
-                    text = if (clipReplace) {
-                        "Select all, delete, paste — like AP, with the entry you picked."
-                    } else {
-                        "Insert at the cursor and leave the rest of the field alone."
-                    },
+                    // The behaviour worth stating, because it is the one that surprises: rows do not
+                    // hold their place. Switching row one off moves row two up into it.
+                    text = "Rows that are off leave no gap. The ones below move up.",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Switch(
-                checked = clipReplace,
-                onCheckedChange = { scope.launch { prefs.dictate.maClipReplace.set(it) } },
+                checked = row.enabled,
+                onCheckedChange = { on ->
+                    commit(rows.mapIndexed { i, r -> if (i == tab) r.copy(enabled = on) else r })
+                },
             )
         }
 
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
         Spacer(Modifier.height(8.dp))
 
-        rows.forEachIndexed { rowIndex, rowEntry ->
-            val row = rowEntry.buttons
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 4.dp, top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = if (rowEntry.clipExpansion) {
-                            "Paste history \u2014 opens from the CH badge"
-                        } else {
-                            "Row ${rowIndex + 1}"
-                        },
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(
-                        onClick = {
-                            if (rowIndex > 0) {
-                                commit(rows.toMutableList().apply { add(rowIndex - 1, removeAt(rowIndex)) })
-                            }
-                        },
-                        enabled = rowIndex > 0,
-                    ) { Icon(Icons.Default.ArrowUpward, contentDescription = "Move row up") }
-                    IconButton(
-                        onClick = {
-                            if (rowIndex < rows.lastIndex) {
-                                commit(rows.toMutableList().apply { add(rowIndex + 1, removeAt(rowIndex)) })
-                            }
-                        },
-                        enabled = rowIndex < rows.lastIndex,
-                    ) { Icon(Icons.Default.ArrowDownward, contentDescription = "Move row down") }
-                    IconButton(
-                        onClick = { commit(rows.filterIndexed { i, _ -> i != rowIndex }) },
-                    ) { Icon(Icons.Default.Delete, contentDescription = "Delete row ${rowIndex + 1}") }
-                }
+        if (row.entries.isEmpty()) {
+            Text(
+                text = "No keys in this row yet. Add one below.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+            )
+        } else {
+            Text(
+                text = "Hold a key and drag to move it. Untick to take it off the keyboard.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    row.forEachIndexed { buttonIndex, button ->
-                        OutlinedButton(
-                            onClick = { editing = rowIndex to buttonIndex },
-                            modifier = Modifier.heightIn(min = 48.dp),
-                        ) {
-                            Text(
-                                text = button.face(),
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 15.sp,
-                            )
-                        }
-                    }
-                    OutlinedButton(
-                        onClick = { addingToRow = rowIndex },
-                        modifier = Modifier.heightIn(min = 48.dp),
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Key")
-                    }
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = { commit(rows + MaRows.Row(listOf(MaRows.macro("new", "")))) },
-                modifier = Modifier.weight(1f),
-            ) { Text("Add a row") }
-            TextButton(
-                onClick = { commit(MaRows.defaultRows()) },
-            ) { Text("Reset") }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        editing?.let { (rowIndex, buttonIndex) ->
-            val current = rows.getOrNull(rowIndex)?.buttons?.getOrNull(buttonIndex)
-            if (current == null) {
-                editing = null
-            } else {
-                MaButtonEditor(
-                    initial = current,
-                    canMoveLeft = buttonIndex > 0,
-                    canMoveRight = buttonIndex < rows[rowIndex].buttons.lastIndex,
-                    onMove = { direction ->
-                        val target = buttonIndex + direction
+            MaReorderableColumn(
+                items = row.entries,
+                rowHeight = ROW_HEIGHT,
+                onMove = { from, to -> rows = MaRows.move(rows, tab, from, to) },
+                onSettled = { commit(rows) },
+            ) { index, entry, lifted ->
+                MaRowKeyItem(
+                    position = index + 1,
+                    entry = entry,
+                    macroSlots = macroSlots,
+                    lifted = lifted,
+                    onToggle = {
                         commit(
                             rows.mapIndexed { i, r ->
-                                if (i != rowIndex) r
-                                else r.copy(
-                                    buttons = r.buttons.toMutableList()
-                                        .apply { add(target, removeAt(buttonIndex)) },
-                                )
-                            },
-                        )
-                        editing = null
-                    },
-                    onDelete = {
-                        commit(
-                            rows.mapIndexed { i, r ->
-                                if (i != rowIndex) r
-                                else r.copy(buttons = r.buttons.filterIndexed { j, _ -> j != buttonIndex })
-                            },
-                        )
-                        editing = null
-                    },
-                    onSave = { updated ->
-                        commit(
-                            rows.mapIndexed { i, r ->
-                                if (i != rowIndex) r
-                                else r.copy(
-                                    buttons = r.buttons.mapIndexed { j, b ->
-                                        if (j == buttonIndex) updated else b
+                                if (i != tab) r else r.copy(
+                                    entries = r.entries.mapIndexed { j, e ->
+                                        if (j == index) e.copy(enabled = !e.enabled) else e
                                     },
                                 )
                             },
                         )
-                        editing = null
                     },
-                    onDismiss = { editing = null },
+                    onEditMacro = { slot -> editingMacro = slot },
+                    onRemove = {
+                        commit(
+                            rows.mapIndexed { i, r ->
+                                if (i != tab) r
+                                else r.copy(entries = r.entries.filterIndexed { j, _ -> j != index })
+                            },
+                        )
+                    },
                 )
             }
         }
 
-        addingToRow?.let { rowIndex ->
-            MaButtonEditor(
-                initial = MaRows.macro("", ""),
-                canMoveLeft = false,
-                canMoveRight = false,
-                onMove = {},
-                onDelete = { addingToRow = null },
-                onSave = { added ->
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { adding = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .heightIn(min = 52.dp),
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Add a key to row ${tab + 1}")
+        }
+
+        Spacer(Modifier.height(8.dp))
+        TextButton(
+            onClick = { commit(MaRows.defaultRows()) },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Reset all three rows") }
+
+        Spacer(Modifier.height(24.dp))
+
+        if (adding) {
+            MaKeyPicker(
+                macroSlots = macroSlots,
+                onPick = { button ->
                     commit(
                         rows.mapIndexed { i, r ->
-                            // copy, not a new Row: adding a key to the clipboard expansion must
-                            // leave it the expansion, or it silently becomes an ordinary row that
-                            // is always on screen.
-                            if (i == rowIndex) r.copy(buttons = r.buttons + added) else r
+                            if (i != tab) r else r.copy(entries = r.entries + MaRows.Entry(button))
                         },
                     )
-                    addingToRow = null
+                    adding = false
                 },
-                onDismiss = { addingToRow = null },
+                onDismiss = { adding = false },
+            )
+        }
+
+        editingMacro?.let { slot ->
+            MaMacroEditor(
+                slot = slot,
+                current = MaMacroSlots.at(macroSlots, slot),
+                onSave = { label, macro ->
+                    val next = macroSlots.toMutableList()
+                    next[slot - 1] = MaMacroSlots.slot(label, macro)
+                    scope.launch { prefs.dictate.maMacroSlots.set(MaMacroSlots.serialize(next)) }
+                    editingMacro = null
+                },
+                onDismiss = { editingMacro = null },
             )
         }
     }
 }
 
-/** What the key shows on its face, for the editor's own preview of it. */
-private fun MaRows.Button.face(): String = when (this) {
+/** What a button is called in the editor's list. */
+private fun MaRows.Button.title(macroSlots: List<MaMacroSlots.Slot>): String = when (this) {
     is MaRows.Button.Builtin -> key.label
-    is MaRows.Button.Macro -> label.ifBlank { "\u00b7\u00b7\u00b7" }
+    is MaRows.Button.Clip -> if (slot == 1) "C1, newest copy" else "C$slot"
+    is MaRows.Button.Macro -> {
+        val s = MaMacroSlots.at(macroSlots, slot)
+        if (s.isEmpty) "M$slot, empty" else "M$slot, ${s.label}"
+    }
 }
 
 /**
- * Edits one key: which kind it is, what it says, and what it does.
+ * One key in the list: number, glyph, name, tick, handle.
  *
- * The palette is the point of the whole dialog. [dev.patrickgold.florisboard.dictate.MaMacroSyntax]
- * accepts a generous range of names, which is right for reading a macro and useless for writing one,
- * and `{Ctrl+Shift+Z}` cannot be dictated — spoken into a text field it arrives as prose. So the
- * commands are picked from a list instead of typed, and picking one fills in the label as well, so
- * the ordinary case is a single choice and no typing at all.
+ * Macro rows carry an extra tap target to open their editor, because a macro button is the only
+ * kind with anything behind it to edit. The remove button is here rather than as a swipe: a swipe
+ * on a row inside a list that also drags is the gesture collision this screen cannot afford.
  */
 @Composable
-private fun MaButtonEditor(
-    initial: MaRows.Button,
-    canMoveLeft: Boolean,
-    canMoveRight: Boolean,
-    onMove: (Int) -> Unit,
-    onDelete: () -> Unit,
-    onSave: (MaRows.Button) -> Unit,
+private fun MaRowKeyItem(
+    position: Int,
+    entry: MaRows.Entry,
+    macroSlots: List<MaMacroSlots.Slot>,
+    lifted: Boolean,
+    onToggle: () -> Unit,
+    onEditMacro: (Int) -> Unit,
+    onRemove: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .shadow(if (lifted) 8.dp else 0.dp, RoundedCornerShape(12.dp)),
+        shape = RoundedCornerShape(12.dp),
+        color = if (lifted) {
+            MaterialTheme.colorScheme.surfaceVariant
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+        ) {
+            Text(
+                text = position.toString(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(20.dp),
+            )
+            MaButtonGlyph(entry.button, macroSlots)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = entry.button.title(macroSlots),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = if (lifted) FontWeight.SemiBold else FontWeight.Normal,
+                // Greyed rather than removed, so the list keeps its shape whatever is switched off.
+                color = if (entry.enabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                modifier = Modifier.weight(1f),
+            )
+            if (entry.button is MaRows.Button.Macro) {
+                TextButton(onClick = { onEditMacro(entry.button.slot) }) { Text("Edit") }
+            }
+            Checkbox(checked = entry.enabled, onCheckedChange = { onToggle() })
+            IconButton(onClick = onRemove) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Remove from this row",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.DragHandle,
+                contentDescription = "Hold and drag to move",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp).padding(end = 4.dp),
+            )
+        }
+    }
+}
+
+/**
+ * The same glyph the key carries on the keyboard, so the list can be read against it.
+ *
+ * AP, AC, the zone numerals and the clipboard numbers are letters on the row rather than pictures,
+ * so they are letters here. Giving them an icon that appears nowhere on the keyboard would make this
+ * list something to translate rather than something to recognise.
+ */
+@Composable
+private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.Slot>) {
+    val tint = MaterialTheme.colorScheme.onSurface
+    val size = Modifier.size(24.dp)
+
+    @Composable
+    fun letters(text: String, color: Color = tint) {
+        Box(modifier = size, contentAlignment = Alignment.Center) {
+            Text(text = text, color = color, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+        }
+    }
+
+    when (button) {
+        is MaRows.Button.Clip -> letters("C${button.slot}")
+        is MaRows.Button.Macro -> letters(MaMacroSlots.at(macroSlots, button.slot).label)
+        is MaRows.Button.Builtin -> when (button.key) {
+            MaFeatureKey.ALL_PASTE -> letters("AP")
+            MaFeatureKey.ALL_CLEAR -> letters("AC")
+            MaFeatureKey.SPACE -> letters("\u2013\u2013\u2013")
+            MaFeatureKey.SELECT_ALL ->
+                Icon(Icons.Default.SelectAll, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.BACKSPACE ->
+                Icon(Icons.Default.Backspace, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.MIC ->
+                Icon(Icons.Default.Mic, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.SETTINGS ->
+                Icon(Icons.Default.Settings, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.ENTER ->
+                // AutoMirrored, not Default: Icons.Default.KeyboardReturn is the deprecated spelling
+                // and a build failure. ComputingEvaluator in this repo already uses it this way,
+                // which is the check that settled it rather than a guess.
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardReturn,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = size,
+                )
+            // Green, the colour these three wear on the keyboard when their zone is showing. Colour
+            // means state everywhere in this app, so it appears here only for the keys that carry it.
+            MaFeatureKey.ZONE_1 -> letters("1", Color(0xFF6FA85A))
+            MaFeatureKey.ZONE_2 -> letters("2", Color(0xFF6FA85A))
+            MaFeatureKey.ZONE_3 -> letters("3", Color(0xFF6FA85A))
+        }
+    }
+}
+
+/**
+ * Picks a key to add: the app's own, then C1 to C10, then M1 to M10.
+ *
+ * A key already in the row can be added again. That is allowed on purpose rather than guarded
+ * against: a second backspace at the far end of a long row is a reasonable thing to want, and
+ * guessing that a repeat is a mistake would block it for no gain.
+ */
+@Composable
+private fun MaKeyPicker(
+    macroSlots: List<MaMacroSlots.Slot>,
+    onPick: (MaRows.Button) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var isBuiltin by remember { mutableStateOf(initial is MaRows.Button.Builtin) }
-    var builtinKey by remember {
-        mutableStateOf((initial as? MaRows.Button.Builtin)?.key ?: MaFeatureKey.MIC)
-    }
-    var label by remember { mutableStateOf((initial as? MaRows.Button.Macro)?.label ?: "") }
-    var macro by remember { mutableStateOf((initial as? MaRows.Button.Macro)?.macro ?: "") }
-    var builtinMenuOpen by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add a key") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(max = 440.dp),
+            ) {
+                var section = ""
+                MaRows.catalogue().forEach { button ->
+                    val heading = when (button) {
+                        is MaRows.Button.Builtin -> "Keys"
+                        is MaRows.Button.Clip -> "Clipboard"
+                        is MaRows.Button.Macro -> "Your macros"
+                    }
+                    if (heading != section) {
+                        section = heading
+                        Text(
+                            text = heading,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                        )
+                    }
+                    TextButton(
+                        onClick = { onPick(button) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                    ) {
+                        Text(
+                            text = button.title(macroSlots),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+
+/**
+ * Writes what one macro button does.
+ *
+ * The palette is the reason this is usable. MaMacroSyntax accepts a generous range of names, which
+ * is right for reading a macro and useless for writing one, and `{Ctrl+Shift+Z}` cannot be dictated
+ * — spoken into a field it arrives as prose. So the commands are picked from a grouped list, and
+ * picking one fills the label in too when it is still blank, so the common case is one tap.
+ */
+@Composable
+private fun MaMacroEditor(
+    slot: Int,
+    current: MaMacroSlots.Slot,
+    onSave: (String, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var label by remember { mutableStateOf(current.label) }
+    var macro by remember { mutableStateOf(current.macro) }
     var paletteOpen by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (isBuiltin) "A key of the app's own" else "A key you write") },
+        title = { Text("Macro M$slot") },
         text = {
             Column(
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
                     .heightIn(max = 420.dp),
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { isBuiltin = true },
-                        enabled = !isBuiltin,
-                        modifier = Modifier.weight(1f),
-                    ) { Text("App key") }
-                    OutlinedButton(
-                        onClick = { isBuiltin = false },
-                        enabled = isBuiltin,
-                        modifier = Modifier.weight(1f),
-                    ) { Text("Macro") }
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                if (isBuiltin) {
-                    OutlinedButton(
-                        onClick = { builtinMenuOpen = true },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(builtinKey.label) }
-                    DropdownMenu(
-                        expanded = builtinMenuOpen,
-                        onDismissRequest = { builtinMenuOpen = false },
-                    ) {
-                        MaFeatureKey.entries.forEach { key ->
+                OutlinedTextField(
+                    value = label,
+                    // Truncated as it is typed rather than refused at the end, so the limit is
+                    // discovered by the field simply stopping instead of by a complaint afterwards.
+                    onValueChange = { label = it.take(MaMacroSlots.MAX_LABEL) },
+                    label = { Text("What the key says (${MaMacroSlots.MAX_LABEL} characters)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = macro,
+                    onValueChange = { macro = it },
+                    label = { Text("What it does") },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Plain text types itself. Anything in braces is a real key press.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { paletteOpen = true },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) { Text("Pick a command") }
+                DropdownMenu(expanded = paletteOpen, onDismissRequest = { paletteOpen = false }) {
+                    MaCommandPalette.GROUPS.forEach { group ->
+                        Text(
+                            text = group.name,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        )
+                        group.entries.forEach { e ->
                             DropdownMenuItem(
-                                text = { Text(key.label) },
+                                text = { Text("${e.label}   ${e.description}") },
                                 onClick = {
-                                    builtinKey = key
-                                    builtinMenuOpen = false
+                                    // Appended rather than replacing: a macro is usually a short
+                                    // sequence rather than a single key.
+                                    macro += e.token
+                                    if (label.isBlank() || label == "M$slot") {
+                                        label = e.label.take(MaMacroSlots.MAX_LABEL)
+                                    }
+                                    paletteOpen = false
                                 },
                             )
                         }
-                    }
-                } else {
-                    OutlinedTextField(
-                        value = label,
-                        // Truncated as it is typed rather than rejected at the end, so the limit is
-                        // discovered by the field simply stopping rather than by a complaint after
-                        // the work is done.
-                        onValueChange = { label = it.take(MaRows.MAX_LABEL) },
-                        label = { Text("What the key says (${MaRows.MAX_LABEL} characters)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = macro,
-                        onValueChange = { macro = it },
-                        label = { Text("What it does") },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "Plain text types itself. Anything in braces is a real key press.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = { paletteOpen = true },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text("Pick a command") }
-                    DropdownMenu(
-                        expanded = paletteOpen,
-                        onDismissRequest = { paletteOpen = false },
-                    ) {
-                        MaCommandPalette.GROUPS.forEach { group ->
-                            Text(
-                                text = group.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                            )
-                            group.entries.forEach { entry ->
-                                DropdownMenuItem(
-                                    text = { Text("${entry.label}   ${entry.description}") },
-                                    onClick = {
-                                        // Appended rather than replacing, so several commands can be
-                                        // built into one key: a macro is often a short sequence.
-                                        macro += entry.token
-                                        if (label.isBlank()) label = entry.label.take(MaRows.MAX_LABEL)
-                                        paletteOpen = false
-                                    },
-                                )
-                            }
-                            HorizontalDivider()
-                        }
+                        HorizontalDivider()
                     }
                 }
-
-                Spacer(Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(8.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { onMove(-1) },
-                        enabled = canMoveLeft,
-                        modifier = Modifier.weight(1f),
-                    ) { Text("\u2190 Earlier") }
-                    OutlinedButton(
-                        onClick = { onMove(1) },
-                        enabled = canMoveRight,
-                        modifier = Modifier.weight(1f),
-                    ) { Text("Later \u2192") }
-                }
-                TextButton(
-                    onClick = onDelete,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("Remove this key") }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = {
-                    onSave(
-                        if (isBuiltin) MaRows.Button.Builtin(builtinKey)
-                        else MaRows.macro(label, macro),
-                    )
-                },
-                // A macro key with nothing to do is a key that looks like it works and does not.
-                // A blank label is allowed: the key shows dots and can be named later.
-                enabled = isBuiltin || macro.isNotBlank(),
+                // A blank label is filled back in with the slot's own name rather than left empty,
+                // so an unconfigured key still says which slot it is instead of showing nothing.
+                onClick = { onSave(label.ifBlank { "M$slot" }, macro) },
             ) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },

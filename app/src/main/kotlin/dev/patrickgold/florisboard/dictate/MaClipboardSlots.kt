@@ -30,31 +30,8 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 object MaClipboardSlots {
 
     /** One key for each finger, which is also as many as fit on a row at a legible size. */
-    const val SLOT_COUNT = 9
+    const val SLOT_COUNT = MaRows.CLIP_SLOTS
 
-    /**
-     * The number on a clipboard key's face, or 0 for anything that is not one.
-     *
-     * The mapping lives here beside the slot logic rather than in the renderer, so the enum entry
-     * and the number it stands for cannot drift apart in the one place it would matter.
-     */
-    fun slotOf(key: MaFeatureKey): Int = when (key) {
-        MaFeatureKey.CLIP_1 -> 1
-        MaFeatureKey.CLIP_2 -> 2
-        MaFeatureKey.CLIP_3 -> 3
-        MaFeatureKey.CLIP_4 -> 4
-        MaFeatureKey.CLIP_5 -> 5
-        MaFeatureKey.CLIP_6 -> 6
-        MaFeatureKey.CLIP_7 -> 7
-        MaFeatureKey.CLIP_8 -> 8
-        MaFeatureKey.CLIP_9 -> 9
-        else -> 0
-    }
-
-    /**
-     * The entry behind key [slot], where slot 1 is the most recent, or null when the history does
-     * not reach that far back yet.
-     */
     fun itemAt(history: ClipboardHistory, slot: Int): ClipboardItem? {
         if (slot < 1 || slot > SLOT_COUNT) return null
         return history.all

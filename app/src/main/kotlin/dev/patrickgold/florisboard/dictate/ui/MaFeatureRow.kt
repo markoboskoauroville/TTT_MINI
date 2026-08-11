@@ -46,9 +46,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.dictate.MaClipboardSlots
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
@@ -58,7 +55,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.dictate.MaRows
 import dev.patrickgold.florisboard.dictate.MaMacroSyntax
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -170,41 +166,19 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val clipReplace by prefs.dictate.maClipReplace.collectAsState()
 
     val rowsRaw by prefs.dictate.maRows.collectAsState()
-    val allRows = remember(rowsRaw) {
-        MaRows.parse(rowsRaw).ifEmpty { MaRows.defaultRows() }
-    }
+    val macroRaw by prefs.dictate.maMacroSlots.collectAsState()
+    val macroSlots = remember(macroRaw) { MaMacroSlots.parse(macroRaw) }
 
-    // The folder rule, applied. The clipboard expansion belongs to the feature row: it can only be
-    // on screen while this composable is on screen at all, which is already conditional on
-    // maFeatureRowShown, and only while the badge has opened it. Collapsed, it is absent rather than
-    // empty, so the keyboard is genuinely shorter and the keys below move up.
-    val clipExpanded by prefs.dictate.maClipExpanded.collectAsState()
-    val rows = MaRows.visibleRows(allRows, clipExpanded)
-
-    // The one-time carry across from the two old systems.
-    //
-    // Blank means not migrated, not "no rows", which is why the fallback above is defaultRows()
-    // rather than nothing: the keyboard has to draw during the moment between reading a blank value
-    // and the write landing, and an empty keyboard in that gap is a keyboard somebody is looking at.
-    //
-    // It runs from here rather than from application start because this is the first place that
-    // knows the value is blank, and because a migration that runs before the preference store has
-    // loaded reads a blank source and writes an empty result — which is exactly the bug that would
-    // wipe his macros instead of moving them.
-    val orderRaw by prefs.dictate.maFeatureRowOrder.collectAsState()
-    val hiddenRaw by prefs.dictate.maFeatureRowHidden.collectAsState()
-    val macroRaw by prefs.dictate.maMacroBar.collectAsState()
-    LaunchedEffect(rowsRaw) {
-        if (rowsRaw.isBlank()) {
-            val migrated = MaRows.migrate(orderRaw, hiddenRaw, macroRaw)
-                .ifEmpty { MaRows.defaultRows() }
-            prefs.dictate.maRows.set(MaRows.serialize(migrated))
-        }
+    // Rows that are off are absent rather than empty, so the ones below move up and the keyboard is
+    // genuinely shorter. When everything is off everywhere this hands back the settings key alone,
+    // which is the floor that keeps a route back to the screen that would restore the rest.
+    val storedRows = remember(rowsRaw) {
+        if (rowsRaw.isBlank()) MaRows.defaultRows() else MaRows.parse(rowsRaw)
     }
+    val rows = MaRows.visibleRows(storedRows)
 
     Column(modifier = modifier.fillMaxWidth()) {
-      rows.forEach { row ->
-        val rowButtons = row.buttons
+      rows.forEach { rowButtons ->
         Row(
             modifier = Modifier.fillMaxWidth().height(rowHeight),
             verticalAlignment = Alignment.CenterVertically,
@@ -231,13 +205,66 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
             // use a long press for anything of its own. That is the right trade: folding has to
             // work from anywhere on the row or the row cannot be got rid of, and a macro that
             // needed two gestures would need explaining.
-            is MaRows.Button.Macro -> ThemedTextKey(
-                label = button.label,
-                modifier = keyMod,
-                tint = null,
-                onLongClick = fold,
-            ) {
-                MaMacroSyntax.run(button.macro, FlorisImeService.currentInputConnection())
+            // M1 to M10. What the button does lives in MaMacroSlots, so the row holds only which
+            // slot it is: the same macro can then sit in two rows, edited once.
+            //
+            // An empty slot still draws, showing its own name. A macro button that vanished until
+            // it was configured would leave the user hunting for a key that is not there yet, and
+            // the label is how he knows which slot to go and fill in.
+            is MaRows.Button.Macro -> {
+                val slot = MaMacroSlots.at(macroSlots, button.slot)
+                ThemedTextKey(
+                    label = slot.label,
+                    modifier = keyMod,
+                    tint = null,
+                    onLongClick = fold,
+                ) {
+                    if (!slot.isEmpty) {
+                        MaMacroSyntax.run(slot.macro, FlorisImeService.currentInputConnection())
+                    }
+                }
+            }
+
+            // C1 to C10, newest first. Paste-replace, the way AP pastes.
+            is MaRows.Button.Clip -> {
+                val item = MaClipboardSlots.itemAt(clipHistory, button.slot)
+                ThemedKey(
+                    code = KeyCode.NOOP,
+                    // The key shows only its number: ten text previews across a row would be a few
+                    // characters wide each and unreadable. What it holds is spoken instead, which is
+                    // the only way to answer "what is on C4" without pasting it somewhere to find out.
+                    modifier = keyMod.semantics {
+                        contentDescription = MaClipboardSlots.describe(item, button.slot)
+                    },
+                    onClick = {
+                        if (item != null) {
+                            scope.launch {
+                                if (clipReplace) {
+                                    keyboardManager.activeState.isManualSelectionMode = false
+                                    delay(MA_CLIP_LEAD_MS)
+                                    FlorisImeService.currentInputConnection()
+                                        ?.performContextMenuAction(android.R.id.selectAll)
+                                    delay(MA_CLIP_LEAD_MS)
+                                    FlorisImeService.currentInputConnection()?.commitText("", 1)
+                                    // Five times the others, and not by accident: the paste is the
+                                    // one step that actually gets dropped. Too short and the key
+                                    // empties the field without refilling it, which is worse than
+                                    // doing nothing because the old text is gone too.
+                                    delay(MA_CLIP_PASTE_MS)
+                                }
+                                editorInstance.commitClipboardItem(item)
+                            }
+                        }
+                    },
+                    onLongClick = fold,
+                ) { fg ->
+                    Text(
+                        text = "C${button.slot}",
+                        color = if (item == null) fg.copy(alpha = 0.4f) else fg,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
             }
 
             is MaRows.Button.Builtin -> when (button.key) {
@@ -289,120 +316,6 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         onLongClick = fold,
                     ) {
                         DictateController.onMicClick(context)
-                    }
-                }
-
-                MaFeatureKey.CLIP_LABEL -> {
-                    // The badge that names the row. A circle so it reads as a label and not as a
-                    // tenth number: a row that is counted along has to make it obvious where the
-                    // counting starts, and a key shaped like the others at the head of the line is
-                    // exactly what makes somebody start counting from the wrong place.
-                    //
-                    // It is still tappable, and opens the full clipboard history. Nine is what fits
-                    // on a row, not what the clipboard holds, and an image or an older entry has to
-                    // be reachable from the row that is otherwise about the clipboard.
-                    ThemedKey(
-                        code = KeyCode.NOOP,
-                        modifier = keyMod,
-                        // Tap opens and closes the expansion. This badge is the whole control: it
-                        // is the only way the nine slots appear, and it is deliberately on the
-                        // feature row rather than on the row it opens, since a switch living on the
-                        // thing it reveals could never be reached to reveal it.
-                        //
-                        // Not the full clipboard panel any more. That was one tap away from here and
-                        // is still on the keyboard's own clipboard key; what this row is for is
-                        // speed — badge, then a number — and a key that sometimes opens a panel and
-                        // sometimes opens a row would cost a moment's thought every time.
-                        onClick = {
-                            scope.launch {
-                                prefs.dictate.maClipExpanded.set(!clipExpanded)
-                            }
-                        },
-                        onLongClick = fold,
-                    ) { fg ->
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                // Thicker while the row is open. The badge is a toggle and a toggle
-                                // has to show which way it is set, but the row appearing below is
-                                // already the loud half of that answer, so this stays quiet: the
-                                // same circle, drawn firmer, rather than a second colour. Colour in
-                                // this app means recording.
-                                .border(if (clipExpanded) 3.dp else 1.5.dp, fg, CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "CH",
-                                color = fg,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
-                    }
-                }
-
-                MaFeatureKey.CLIP_1, MaFeatureKey.CLIP_2, MaFeatureKey.CLIP_3,
-                MaFeatureKey.CLIP_4, MaFeatureKey.CLIP_5, MaFeatureKey.CLIP_6,
-                MaFeatureKey.CLIP_7, MaFeatureKey.CLIP_8, MaFeatureKey.CLIP_9 -> {
-                    // One to nine, newest first. The number is the whole face of the key: nine text
-                    // previews across one row would be a few characters wide each and unreadable,
-                    // so what the key holds is spoken instead, through its content description.
-                    // That label is the only thing that answers "what is on key four" without
-                    // pasting it somewhere to find out.
-                    val slot = MaClipboardSlots.slotOf(button.key)
-                    val item = MaClipboardSlots.itemAt(clipHistory, slot)
-                    ThemedKey(
-                        code = KeyCode.NOOP,
-                        // Spoken through semantics rather than a contentDescription parameter,
-                        // which ThemedKey does not have. Checked against the function rather than
-                        // assumed: every other key here draws an icon that carries its own.
-                        modifier = keyMod.semantics {
-                            contentDescription = MaClipboardSlots.describe(item, slot)
-                        },
-                        onClick = {
-                            if (item != null) {
-                                scope.launch {
-                                    // AP, with a chosen entry instead of the current one. The two
-                                    // delays are AP's and exist for AP's reason: the context menu
-                                    // action and the commit are round trips to another process, and
-                                    // firing the next before the last has landed deletes a selection
-                                    // that does not exist yet, which reads as a key that did
-                                    // nothing rather than as a race.
-                                    if (clipReplace) {
-                                        keyboardManager.activeState.isManualSelectionMode = false
-                                        delay(MA_CLIP_LEAD_MS)
-                                        FlorisImeService.currentInputConnection()
-                                            ?.performContextMenuAction(android.R.id.selectAll)
-                                        delay(MA_CLIP_LEAD_MS)
-                                        FlorisImeService.currentInputConnection()?.commitText("", 1)
-                                        // Longer than the other two, and not by accident. AP waits
-                                        // five times as long here because the paste is the one step
-                                        // that actually gets dropped, and matching AP was the whole
-                                        // point of the request. A hundred milliseconds looks like it
-                                        // works, until the field being pasted into is slow and the
-                                        // key silently empties it instead of replacing its contents
-                                        // — which is worse than doing nothing, because the old text
-                                        // is gone too.
-                                        delay(MA_CLIP_PASTE_MS)
-                                    }
-                                    // commitClipboardItem rather than committing the text: it is
-                                    // what handles an image or a video entry, which plain text
-                                    // committal would drop silently.
-                                    editorInstance.commitClipboardItem(item)
-                                }
-                            }
-                        },
-                        onLongClick = fold,
-                    ) { fg ->
-                        Text(
-                            text = slot.toString(),
-                            // An empty slot is dimmed rather than hidden. A key that vanishes when
-                            // the history is short would renumber the row under his thumb, and the
-                            // row is counted along by position.
-                            color = if (item == null) fg.copy(alpha = 0.3f) else fg,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
                     }
                 }
 

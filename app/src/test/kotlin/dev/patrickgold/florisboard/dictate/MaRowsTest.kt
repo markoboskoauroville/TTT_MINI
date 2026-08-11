@@ -145,12 +145,10 @@ class MaRowsTest {
     }
 
     @Test
-    fun `the catalogue offers no leftover clipboard keys from the old design`() {
-        assertTrue(
-            MaRows.catalogue().none {
-                it is MaRows.Button.Builtin && it.key == MaFeatureKey.CLIP_LABEL
-            },
-        )
+    fun `the catalogue offers every app key plus the twenty slots`() {
+        val cat = MaRows.catalogue()
+        assertEquals(MaFeatureKey.entries.size, cat.count { it is MaRows.Button.Builtin })
+        assertEquals(MaFeatureKey.entries.size + 20, cat.size)
     }
 
     @Test
