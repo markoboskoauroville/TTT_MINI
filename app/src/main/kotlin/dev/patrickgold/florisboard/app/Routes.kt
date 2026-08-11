@@ -65,7 +65,6 @@ import dev.patrickgold.florisboard.app.settings.dictate.DictateKeysScreen
 import dev.patrickgold.florisboard.app.settings.MaOpeningViewScreen
 import dev.patrickgold.florisboard.app.settings.MaSettingsOrderScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaRowsScreen
-import dev.patrickgold.florisboard.app.settings.dictate.DictateLittleManScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateMacroEditorScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateRecoveredScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictatePromptLibraryScreen
@@ -148,10 +147,6 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictate/openingview")
         object MaOpeningView
-
-        @Serializable
-        @Deeplink("settings/dictate/littleman")
-        object DictateLittleMan
 
         @Serializable
         @Deeplink("settings/dictate/keys")
@@ -382,8 +377,6 @@ object Routes {
 
             composableWithDeepLink(Settings.Home::class) { HomeScreen() }
             composableWithDeepLink(Settings.Search::class) { SettingsSearchScreen() }
-
-            composableWithDeepLink(Settings.DictateLittleMan::class) { DictateLittleManScreen() }
             composableWithDeepLink(Settings.DictateKeys::class) { DictateKeysScreen() }
             composableWithDeepLink(Settings.MaFeatureRow::class) { MaRowsScreen() }
             composableWithDeepLink(Settings.MaSettingsOrder::class) { MaSettingsOrderScreen() }

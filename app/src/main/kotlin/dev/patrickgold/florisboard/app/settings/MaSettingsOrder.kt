@@ -22,7 +22,6 @@ package dev.patrickgold.florisboard.app.settings
  * reachable key screen is a keyboard that cannot be fixed from inside itself.
  */
 enum class MaSettingsEntry(val id: String, val title: String, val summary: String?) {
-    LITTLE_MAN("little_man", "Little Man AI Assistant", "His buttons, their prompts, and what he remembers"),
     FEATURE_ROW("feature_row", "Feature row", "Drag the keys into the order you want"),
     DEFAULT_VIEW("default_view", "Opening view", "Which view the keyboard shows when it appears"),
     MACROS("macros", "Macro bar", "Buttons that type text or press keys"),
@@ -56,7 +55,6 @@ object MaSettingsOrder {
      * any other and somebody who wants it at the top should be able to drag it there.
      */
     val DEFAULT: List<MaSettingsEntry> = listOf(
-        MaSettingsEntry.LITTLE_MAN,
         MaSettingsEntry.FEATURE_ROW,
         MaSettingsEntry.DEFAULT_VIEW,
         MaSettingsEntry.MACROS,

@@ -63,9 +63,6 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.dictate.DictateController
-import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
-import dev.patrickgold.florisboard.dictate.ui.DictatePromptRow
-import dev.patrickgold.florisboard.dictate.ui.DictatePromptStrip
 import dev.patrickgold.florisboard.dictate.ui.DictateSmartbarUi
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionButton
@@ -111,31 +108,12 @@ fun Smartbar() {
     val smartbarEnabled by prefs.smartbar.enabled.collectAsState()
     val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.collectAsState()
 
-    // Always-on rewording prompt row (ROW layout mode): pinned above the Smartbar so the prompts are
-    // permanently visible. The live-prompt chip is always present, so the row shows even with no saved
-    // prompts. The PANEL mode instead surfaces the prompts via a separate panel + contextual strip.
-    val dictatePromptsLayout by prefs.dictate.promptsLayout.collectAsState()
-    val dictateRewordingEnabled by prefs.dictate.rewordingEnabled.collectAsState()
-    val dictatePrompts by DictateController.prompts.collectAsState()
-    // Marko: the same switch that hides the little man's row on the transcribe view hides it here.
-    // It was only ever wired to one of the two views, so turning it off left the row sitting on the
-    // keyboard, which is exactly the half of the screen worth reclaiming.
-    val maShowPrompts by prefs.dictate.maShowPrompts.collectAsState()
-    val showDictatePromptRow = dictateRewordingEnabled && maShowPrompts &&
-        dictatePromptsLayout == DictatePromptsLayout.ROW
-    LaunchedEffect(showDictatePromptRow) {
-        if (showDictatePromptRow) DictateController.refreshPrompts(context)
-    }
-
     AnimatedVisibility(
         visible = smartbarEnabled,
         enter = VerticalEnterTransition,
         exit = VerticalExitTransition,
     ) {
         Column {
-            if (showDictatePromptRow) {
-                DictatePromptRow(dictatePrompts)
-            }
             // MA TWIST: the strip exists only when it has something to say. Marko's ask, and the
             // reason is one glance at the screenshot: a full row of a phone screen, above a keyboard
             // that is already the bottom half of the display, holding a language badge and a stretch
@@ -213,29 +191,6 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     // Drives the in-Smartbar dictation indicator (recording timer / transcribing spinner).
     val dictateState by DictateController.state.collectAsState()
 
-    // Contextual prompt chip strip: shown in place of the candidates while text is selected and
-    // rewording is enabled (roadmap 4.3). The selection flag is derived as a distinct boolean so the
-    // Smartbar does not recompose on every keystroke, only when the selection mode actually flips.
-    val dictatePrompts by DictateController.prompts.collectAsState()
-    val dictateRewordingEnabled by prefs.dictate.rewordingEnabled.collectAsState()
-    val editorInstance by context.editorInstance()
-    val hasDictateSelection by remember(editorInstance) {
-        editorInstance.activeContentFlow
-            .map { it.selection.isSelectionMode && it.selectedText.isNotBlank() }
-            .distinctUntilChanged()
-    }.collectAsState(initial = false)
-    // Reload prompts whenever a selection starts, so the strip reflects edits made in settings.
-    LaunchedEffect(hasDictateSelection) {
-        if (hasDictateSelection) DictateController.refreshPrompts(context)
-    }
-    // The contextual on-selection strip belongs to the PANEL layout; in ROW mode the always-on prompt
-    // row above the Smartbar already shows every prompt, so the strip would be redundant.
-    val dictatePromptsLayout by prefs.dictate.promptsLayout.collectAsState()
-    val showDictatePromptStrip = dictateRewordingEnabled &&
-        dictatePromptsLayout == DictatePromptsLayout.PANEL &&
-        hasDictateSelection &&
-        dictatePrompts.isNotEmpty()
-
     /**
      * The language, written like a suggestion.
      *
@@ -283,7 +238,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
             val exitTransition = if (shouldAnimate) HorizontalExitTransition else NoExitTransition
             val isDictating = dictateState !is DictateController.UiState.Idle
             this@CenterContent.AnimatedVisibility(
-                visible = !expanded && !isDictating && !showDictatePromptStrip,
+                visible = !expanded && !isDictating,
                 enter = enterTransition,
                 exit = exitTransition,
             ) {
@@ -302,13 +257,6 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                     FlorisImeUi.SmartbarSharedActionsRow.elementName,
                     modifier = modifier.fillMaxSize(),
                 )
-            }
-            this@CenterContent.AnimatedVisibility(
-                visible = !expanded && !isDictating && showDictatePromptStrip,
-                enter = enterTransition,
-                exit = exitTransition,
-            ) {
-                DictatePromptStrip(dictatePrompts, modifier = Modifier.fillMaxSize())
             }
             this@CenterContent.AnimatedVisibility(
                 visible = isDictating,
@@ -399,9 +347,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     ) {
         when (smartbarLayout) {
             SmartbarLayout.SUGGESTIONS_ONLY -> {
-                if (showDictatePromptStrip) {
-                    DictatePromptStrip(dictatePrompts, modifier = Modifier.fillMaxSize())
-                } else if (shouldShowInlineSuggestionsUi) {
+                if (shouldShowInlineSuggestionsUi) {
                     InlineSuggestionsUi(inlineSuggestions)
                 } else {
                     CandidatesRow()

@@ -86,16 +86,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),
     ZONE_3("zone3", "3, the copy row"),
-    ENTER("enter", "Enter"),
-
-    /**
-     * The Little Man AI Assistant, on the row itself.
-     *
-     * Off by default, so an existing keyboard does not silently gain a key: [MaFeatureOrder.DEFAULT]
-     * lists it, which is what makes it appear in the editor, and [MaFeatureOrder.DEFAULT_HIDDEN]
-     * switches it off until it is wanted. That pair is also the pattern for every key added later.
-     */
-    LITTLE_MAN("little_man", "Little Man AI Assistant");
+    ENTER("enter", "Enter");
 
     companion object {
         fun byId(id: String): MaFeatureKey? = entries.firstOrNull { it.id == id }
@@ -156,7 +147,6 @@ object MaFeatureOrder {
         MaFeatureKey.ZONE_3,
         MaFeatureKey.ENTER,
         MaFeatureKey.SETTINGS,
-        MaFeatureKey.LITTLE_MAN,
         // The clipboard keys belong to DEFAULT because DEFAULT is the list of every key that
         // exists, which is what lets the editor offer all of them. Where they are *placed* is
         // MaRows.defaultRows()'s business, and it puts them on a row of their own.
@@ -181,7 +171,10 @@ object MaFeatureOrder {
      * for. A row that grows a key on its own is a row whose other keys all moved, and every one of
      * those positions is something a thumb had learned.
      */
-    val DEFAULT_HIDDEN: Set<MaFeatureKey> = setOf(MaFeatureKey.LITTLE_MAN)
+    // Nothing is hidden by default any more. The Little Man was the only entry and he is
+    // gone; the set stays because MaFeatureOrder still serializes it and MaRows.migrate still
+    // reads it off the old preference when carrying an existing install across.
+    val DEFAULT_HIDDEN: Set<MaFeatureKey> = emptySet()
 
     val DEFAULT_HIDDEN_RAW: String = serializeHidden(DEFAULT_HIDDEN)
 

@@ -422,25 +422,6 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     }
                 }
 
-                MaFeatureKey.LITTLE_MAN -> {
-                    // The assistant, on the row itself. Off by default; switched on in the editor.
-                    //
-                    // RecordVoiceOver rather than a face: it is the icon his settings entry already
-                    // wears, so the row and the settings list name him the same way. It is also the
-                    // only speaking-head glyph with a proven import in this repo, and an icon that
-                    // exists in the docs but not in the artifact this project resolves is a build
-                    // failure named after a file nobody was editing.
-                    ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = Icons.Default.RecordVoiceOver,
-                        contentDescription = "Little Man AI Assistant",
-                        modifier = keyMod,
-                        onLongClick = fold,
-                    ) {
-                        keyboardManager.activeState.imeUiMode = ImeUiMode.TRANSCRIBE
-                    }
-                }
-
                 MaFeatureKey.ENTER -> {
                     // Enter, last, which is where every keyboard ever made has put it. It was beside backspace
                     // until Marko moved it here, and the bottom right corner is a position the thumb finds

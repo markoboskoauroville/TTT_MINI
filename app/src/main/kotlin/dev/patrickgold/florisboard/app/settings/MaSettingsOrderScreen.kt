@@ -62,7 +62,6 @@ import kotlinx.coroutines.launch
  */
 val MaSettingsEntry.icon: ImageVector
     get() = when (this) {
-        MaSettingsEntry.LITTLE_MAN -> Icons.Default.RecordVoiceOver
         MaSettingsEntry.FEATURE_ROW -> Icons.Default.DragHandle
         MaSettingsEntry.DEFAULT_VIEW -> Icons.Default.Visibility
         MaSettingsEntry.MACROS -> Icons.Default.Bolt
@@ -89,7 +88,6 @@ val MaSettingsEntry.icon: ImageVector
  */
 val MaSettingsEntry.route: Any
     get() = when (this) {
-        MaSettingsEntry.LITTLE_MAN -> Routes.Settings.DictateLittleMan
         MaSettingsEntry.FEATURE_ROW -> Routes.Settings.MaFeatureRow
         MaSettingsEntry.DEFAULT_VIEW -> Routes.Settings.MaOpeningView
         MaSettingsEntry.MACROS -> Routes.Settings.DictateMacros

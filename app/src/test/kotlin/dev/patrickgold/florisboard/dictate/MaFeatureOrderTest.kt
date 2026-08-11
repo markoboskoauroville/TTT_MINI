@@ -114,11 +114,13 @@ class MaFeatureOrderTest : FunSpec({
         visible shouldBe MaFeatureOrder.DEFAULT.filter { it != MaFeatureKey.ALL_PASTE }
     }
 
-    test("the little man starts switched off so no row silently gains a key") {
-        (MaFeatureKey.LITTLE_MAN in MaFeatureOrder.DEFAULT) shouldBe true
-        (MaFeatureKey.LITTLE_MAN in MaFeatureOrder.DEFAULT_HIDDEN) shouldBe true
-        MaFeatureOrder.visible(MaFeatureOrder.DEFAULT, MaFeatureOrder.DEFAULT_HIDDEN)
-            .contains(MaFeatureKey.LITTLE_MAN) shouldBe false
+    test("nothing is hidden by default now the little man is gone") {
+        // He was the only entry in DEFAULT_HIDDEN and the only reason the set existed. The set is
+        // kept because MaRows.migrate still reads the old hidden preference when carrying an
+        // existing install across, and a key hidden there must not reappear in a row.
+        MaFeatureOrder.DEFAULT_HIDDEN shouldBe emptySet()
+        MaFeatureOrder.visible(MaFeatureOrder.DEFAULT, MaFeatureOrder.DEFAULT_HIDDEN) shouldBe
+            MaFeatureOrder.DEFAULT
     }
 
     test("ids are unique and resolvable") {

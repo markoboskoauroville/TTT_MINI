@@ -768,7 +768,7 @@
     <string name="about__feedback__title" comment="Preference title">Feedback &amp; support</string>
     <string name="about__feedback__summary" comment="Preference summary">Send an email with questions, bugs or ideas</string>
     <string name="about__feedback__email" translatable="false">contact@devemperor.net</string>
-    <string name="about__feedback__subject" comment="Default subject line of the feedback email" translatable="false">TTT&amp;LLL</string>
+    <string name="about__feedback__subject" comment="Default subject line of the feedback email" translatable="false">TTT mini</string>
     <string name="about__privacy_policy__title" comment="Preference title">Privacy policy</string>
     <string name="about__privacy_policy__summary" comment="Preference summary">The privacy policy for this project</string>
     <string name="about__project_license__title" comment="Preference title">Project license</string>
