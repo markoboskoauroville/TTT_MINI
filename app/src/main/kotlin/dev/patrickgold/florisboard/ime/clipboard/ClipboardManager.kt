@@ -169,10 +169,33 @@ class ClipboardManager(
      * Called by system clipboard when the system primary clip has changed.
      */
     override fun onPrimaryClipChanged() {
+        // Buckets fill on every copy, outside every condition below.
+        //
+        // The sync settings decide whether FlorisBoard's own clipboard mirrors the system one. The
+        // copy buckets are not that: they are keys on Marko's row, and they must not stop working
+        // because a sync preference three screens away is set to NO_EVENTS. Their own guard is the
+        // one in captureIntoClipSlots and nothing else.
+        ioScope.launch { captureIntoClipSlots(systemClipboardManager.primaryClip) }
+
         val syncBehavior = prefs.clipboard.syncToFloris.get()
         if (!prefs.clipboard.useInternalClipboard.get() || syncBehavior != ClipboardSyncBehavior.NO_EVENTS) {
             val systemPrimaryClip = systemClipboardManager.primaryClip
             ioScope.launch {
+                // Buckets were filled above, before either duplicate guard here, and that placement
+                // is the whole fix.
+                //
+                // Both guards drop a copy whose text matches the last one seen: isDuplicate against
+                // the previous callback, isEqual against the stored primary clip. They exist to keep
+                // the history from growing a second identical row and to stop the sync looping, and
+                // for the history they are right. For buckets they were fatal. Copy something, paste
+                // it — which pours the bucket out — then copy the same thing again because the paste
+                // landed in the wrong window, and the clipboard has not changed, so neither guard
+                // lets the event through and the bucket stays empty forever. That is exactly what
+                // happened to Marko, and no amount of copying would have fixed it.
+                //
+                // Running first costs nothing, because capture is idempotent: the same text already
+                // sitting in a bucket is refused, so the repeated callbacks a single copy can
+                // produce still fill exactly one. Same water twice is fine; two buckets of it is not.
                 val isDuplicate: Boolean
                 primaryClipLastFromCallbackGuard.withLock {
                     val a = primaryClipLastFromCallback?.getItemAt(0)
@@ -267,24 +290,16 @@ class ClipboardManager(
      * than one never used. Text only, and nothing at all when every bucket is full. MaClipCapture
      * holds the reasoning.
      */
-    private fun captureIntoClipSlots(newItem: ClipboardItem) {
-        if (newItem.type != ItemType.TEXT) return
-        val text = newItem.text ?: return
+    private suspend fun captureIntoClipSlots(clip: android.content.ClipData?) {
+        val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString() ?: return
         val current = MaClipCapture.parse(prefs.dictate.maClipCaptured.get())
         if (MaClipCapture.isFull(current)) return
         val next = MaClipCapture.capture(current, text)
         // Structural rather than reference comparison: capture returning the same contents means
         // there was nothing to record, and writing the preference anyway would wake every collector
-        // of it — including the keyboard's row — for no change at all.
-        //
-        // The write is suspending, so it goes on ioScope like every other write in this class. The
-        // read above is not, which is why the decision is made first and only the write is launched:
-        // launching the whole thing would let two copies arriving together both read an empty bucket
-        // list and both claim the same one.
+        // of it — including the keyboard's own row — for no change at all.
         if (next != current) {
-            ioScope.launch {
-                prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(next))
-            }
+            prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(next))
         }
     }
 
@@ -292,7 +307,6 @@ class ClipboardManager(
      * Adds a new item to the clipboard history (if enabled).
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
-        captureIntoClipSlots(newItem)
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = currentHistory.all.firstOrNull { item ->
                 item.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive
