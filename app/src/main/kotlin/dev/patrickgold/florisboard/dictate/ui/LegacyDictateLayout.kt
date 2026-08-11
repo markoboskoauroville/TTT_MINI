@@ -330,8 +330,8 @@ fun LegacyDictateLayout(
                     )
                 }
 
-                // Row 1c: the flat command bar, matching the keyboard view so both look the same.
-                MaMacroBar()
+                // The macro bar was here, removed with the one in the keyboard view. Both views draw
+                // the same rows, so a row deleted from one has to go from the other or they drift.
 
 
                 // Row 2: editing actions (select-all first, so it sits in the row below the strip).
@@ -363,8 +363,7 @@ fun LegacyDictateLayout(
                     onExitToKeyboard = onExitToKeyboard,
                 )
 
-                // Row 5: the arrow strip, same as the keyboard view.
-                MaCursorRow()
+                // The arrow strip was here, removed with the one in the keyboard view.
 
                 // Row 6: the feature row, along the very bottom. Ten keys, everything the app can
                 // do, reachable without a trip to the settings application first.

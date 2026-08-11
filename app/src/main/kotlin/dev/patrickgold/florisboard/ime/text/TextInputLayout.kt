@@ -34,8 +34,6 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.dictate.gif.GifSearchPanel
-import dev.patrickgold.florisboard.dictate.ui.MaMacroBar
-import dev.patrickgold.florisboard.dictate.ui.MaCursorRow
 import dev.patrickgold.florisboard.dictate.ui.MaFeatureRow
 import dev.patrickgold.florisboard.dictate.ui.MaExtraRow
 import dev.patrickgold.florisboard.dictate.ui.LegacyEditRow
@@ -112,13 +110,11 @@ fun TextInputLayout(
             // worse answer than simply not losing it.
             Smartbar()
         }
-        // Macro bar (Marko): user-defined buttons directly under the Smartbar, in the same flat
-        // style as the arrow strip at the bottom. Hidden while the overflow panel is open, which
-        // owns the whole area below it. It draws nothing when the active preset has no rows, so it
-        // needs no toggle of its own: emptying it is how it is turned off.
-        if (!state.isActionsOverflowVisible) {
-            MaMacroBar()
-        }
+        // The macro bar is gone. It was the editable strip of user macros — undo, redo, all, copy —
+        // and it has been superseded by the M1 to M10 buttons in the feature rows, which do the same
+        // job inside the one editor that arranges everything else. It kept drawing its default
+        // preset because it needs no switch of its own: an empty bar draws nothing, and nobody had
+        // emptied it, so a bar nobody had chosen appeared above the keyboard.
         // The copy and paste row (Marko), the same one the transcribe view draws, in the space the
         // macro bar fix freed in build 88. Both views now show the identical row from the identical
         // code, so arranging it in Settings arranges it everywhere and the two cannot drift apart.
@@ -167,16 +163,10 @@ fun TextInputLayout(
             }
             // Arrow strip along the very bottom, below the letters, exactly where the reference
             // keyboard puts it.
-            val maCursorRowEnabled by prefs.dictate.maCursorRow.collectAsState()
-            val maExtraRowOn by prefs.dictate.maExtraRow.collectAsState()
-            val maExtraRowMode by prefs.dictate.maExtraRowMode.collectAsState()
-            // The bottom strip stands down while the extra row is in editing mode. Two rows of
-            // arrows on one keyboard is one row of arrows wasted, and the taller keyboard costs more
-            // than the second set of keys is worth.
-            val maEditingRowShown = maExtraRowOn && maExtraRowMode == "editing"
-            if (maCursorRowEnabled && !maEditingRowShown) {
-                MaCursorRow()
-            }
+            // The cursor row is gone with the macro bar: the chevrons and the fold key that sat
+            // between the macro bar and the feature rows. Its fold key is now the zone keys in the
+            // feature row, and its arrows are available as ordinary buttons from the key picker, so
+            // everything it did survives somewhere the editor can arrange.
             // The feature row, along the very bottom, the same one the transcribe view draws and
             // from the same code, so the two views cannot drift apart.
             //

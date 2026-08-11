@@ -90,7 +90,6 @@ data class QuickActionArrangement(
                 QuickAction.InsertKey(TextKeyData.MA_TOGGLE_PROMPTS),
                 QuickAction.InsertKey(TextKeyData.MA_TOGGLE_EDIT_ROW),
                 QuickAction.InsertKey(TextKeyData.MA_TOGGLE_QUICK_ROW),
-                QuickAction.InsertKey(TextKeyData.MA_TOGGLE_CURSOR_ROW),
                 QuickAction.InsertKey(TextKeyData.SETTINGS),
                 // Default visible order requested by the user. The live prompt is no longer a Smartbar
                 // button – it lives as a chip inside the prompt panel/row – so only the panel opener

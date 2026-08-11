@@ -1255,9 +1255,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.MA_TOGGLE_QUICK_ROW -> scope.launch {
                 prefs.dictate.maShowQuickRow.set(!prefs.dictate.maShowQuickRow.get())
             }
-            KeyCode.MA_TOGGLE_CURSOR_ROW -> scope.launch {
-                prefs.dictate.maCursorRow.set(!prefs.dictate.maCursorRow.get())
-            }
+            // The row this toggled no longer exists. The keycode stays defined so a stored quick
+            // action arrangement holding it still parses, but it does nothing rather than flipping a
+            // preference nothing reads.
+            KeyCode.MA_TOGGLE_CURSOR_ROW -> Unit
             KeyCode.MA_ROW_NEXT_SET -> scope.launch {
                 val order = listOf("digits", "diacritics", "symbols", "arrows")
                 val at = order.indexOf(prefs.dictate.maExtraRowMode.get()).coerceAtLeast(0)

@@ -97,16 +97,8 @@ fun GesturesScreen() = FlorisScreen {
             // Talk to Type: the swipe-to-symbol switch, placed directly above the two
             // thresholds that govern how far and how fast a swipe must be, since turning it on
             // and then tuning those two is one continuous task rather than three separate ones.
-            // Talk to Type: the cursor row. Kept beside the space-bar cursor gesture below,
-            // because the two are the same job solved twice and it should be obvious that turning
-            // one on does not turn the other off.
-            SwitchPreference(
-                prefs.dictate.maCursorRow,
-                title = "Command and arrow bars",
-                summary = "A flat command bar under the Smartbar and an arrow strip along the " +
-                    "bottom, in both the keyboard and the transcribe view. Hold an arrow to " +
-                    "repeat it.",
-            )
+            // The command and arrow bars switch is gone with the bars themselves. A switch that
+            // turns nothing on is worse than a missing one: it teaches that settings do not work.
             SwitchPreference(
                 prefs.gestures.maSwipeToSymbol,
                 title = "Swipe to symbol",
