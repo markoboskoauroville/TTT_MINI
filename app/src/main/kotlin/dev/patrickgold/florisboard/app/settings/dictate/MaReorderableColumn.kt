@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
+import androidx.compose.ui.unit.dp
 
 /**
  * A list whose rows can be held and dragged into a different order.
@@ -124,3 +125,13 @@ fun <T> MaReorderableColumn(
         }
     }
 }
+
+/**
+ * Height of one draggable row, shared by every list that uses [MaReorderableColumn].
+ *
+ * It lived in the feature row editor until that screen was replaced by MaRowsScreen, which reorders
+ * with arrows rather than by dragging and has no use for it. It belongs beside the component that
+ * actually needs it: the drag arithmetic measures in these units, so a caller passing a different
+ * height than the one the maths assumes gets rows that swap at the wrong moment.
+ */
+val ROW_HEIGHT = 64.dp
