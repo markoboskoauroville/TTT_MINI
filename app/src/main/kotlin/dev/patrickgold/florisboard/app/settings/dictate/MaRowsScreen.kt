@@ -37,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -120,7 +121,40 @@ fun MaRowsScreen() = FlorisScreen {
             modifier = Modifier.padding(horizontal = 16.dp),
         )
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(4.dp))
+
+        // The CH row's one setting, kept here rather than buried in the dictate settings, because
+        // this is the screen somebody is on when they are thinking about those keys.
+        val clipReplace by prefs.dictate.maClipReplace.collectAsState()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Clipboard keys replace the field",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = if (clipReplace) {
+                        "Select all, delete, paste — like AP, with the entry you picked."
+                    } else {
+                        "Insert at the cursor and leave the rest of the field alone."
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = clipReplace,
+                onCheckedChange = { scope.launch { prefs.dictate.maClipReplace.set(it) } },
+            )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+        Spacer(Modifier.height(8.dp))
 
         rows.forEachIndexed { rowIndex, row ->
             Card(

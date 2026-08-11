@@ -100,8 +100,34 @@ object MaRows {
      * Built from [MaFeatureOrder.DEFAULT] rather than repeated here, so the two cannot disagree, and
      * so a key added to the enum later appears here without anybody remembering to add it twice.
      */
+    /** The clipboard row, in the order it is counted along: the badge, then newest to oldest. */
+    private val CLIP_ROW = listOf(
+        MaFeatureKey.CLIP_LABEL,
+        MaFeatureKey.CLIP_1,
+        MaFeatureKey.CLIP_2,
+        MaFeatureKey.CLIP_3,
+        MaFeatureKey.CLIP_4,
+        MaFeatureKey.CLIP_5,
+        MaFeatureKey.CLIP_6,
+        MaFeatureKey.CLIP_7,
+        MaFeatureKey.CLIP_8,
+        MaFeatureKey.CLIP_9,
+    )
+
+    /**
+     * Two rows to start with: his feature keys, then the clipboard history.
+     *
+     * [MaFeatureOrder.DEFAULT] is the list of every key that exists, which is what lets the editor
+     * offer all of them — it is not a row. Splitting happens here. Keys marked hidden by default are
+     * left out, because there is no hidden flag in this model: a key that is not wanted is a key
+     * that is not in a row, and putting one there by default would show it to somebody who never
+     * asked for it.
+     */
     fun defaultRows(): List<List<Button>> = listOf(
-        MaFeatureOrder.DEFAULT.map { Button.Builtin(it) },
+        MaFeatureOrder.DEFAULT
+            .filter { it !in CLIP_ROW && it !in MaFeatureOrder.DEFAULT_HIDDEN }
+            .map { Button.Builtin(it) },
+        CLIP_ROW.map { Button.Builtin(it) },
     )
 
     fun serialize(rows: List<List<Button>>): String =

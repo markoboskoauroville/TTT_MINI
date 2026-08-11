@@ -42,6 +42,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import dev.patrickgold.florisboard.clipboardManager
+import dev.patrickgold.florisboard.dictate.MaClipboardSlots
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
@@ -154,6 +163,12 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // whole block, so the stack is as tall as it needs to be and the caller does not have to know
     // how many rows there are — which it cannot, since the number is a preference and changes while
     // the keyboard is open.
+    // The clipboard history, for the CH row. Read once here rather than per key: nine keys each
+    // collecting the same flow would recompose nine times for every copy anywhere on the phone.
+    val clipboardManager by context.clipboardManager()
+    val clipHistory by clipboardManager.historyFlow.collectAsState()
+    val clipReplace by prefs.dictate.maClipReplace.collectAsState()
+
     val rowsRaw by prefs.dictate.maRows.collectAsState()
     val rows = remember(rowsRaw) {
         MaRows.parse(rowsRaw).ifEmpty { MaRows.defaultRows() }
@@ -266,6 +281,96 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         onLongClick = fold,
                     ) {
                         DictateController.onMicClick(context)
+                    }
+                }
+
+                MaFeatureKey.CLIP_LABEL -> {
+                    // The badge that names the row. A circle so it reads as a label and not as a
+                    // tenth number: a row that is counted along has to make it obvious where the
+                    // counting starts, and a key shaped like the others at the head of the line is
+                    // exactly what makes somebody start counting from the wrong place.
+                    //
+                    // It is still tappable, and opens the full clipboard history. Nine is what fits
+                    // on a row, not what the clipboard holds, and an image or an older entry has to
+                    // be reachable from the row that is otherwise about the clipboard.
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        onClick = {
+                            keyboardManager.activeState.imeUiMode = ImeUiMode.CLIPBOARD
+                        },
+                        onLongClick = fold,
+                    ) { fg ->
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .border(1.5.dp, fg, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = "CH",
+                                color = fg,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    }
+                }
+
+                MaFeatureKey.CLIP_1, MaFeatureKey.CLIP_2, MaFeatureKey.CLIP_3,
+                MaFeatureKey.CLIP_4, MaFeatureKey.CLIP_5, MaFeatureKey.CLIP_6,
+                MaFeatureKey.CLIP_7, MaFeatureKey.CLIP_8, MaFeatureKey.CLIP_9 -> {
+                    // One to nine, newest first. The number is the whole face of the key: nine text
+                    // previews across one row would be a few characters wide each and unreadable,
+                    // so what the key holds is spoken instead, through its content description.
+                    // That label is the only thing that answers "what is on key four" without
+                    // pasting it somewhere to find out.
+                    val slot = MaClipboardSlots.slotOf(button.key)
+                    val item = MaClipboardSlots.itemAt(clipHistory, slot)
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        // Spoken through semantics rather than a contentDescription parameter,
+                        // which ThemedKey does not have. Checked against the function rather than
+                        // assumed: every other key here draws an icon that carries its own.
+                        modifier = keyMod.semantics {
+                            contentDescription = MaClipboardSlots.describe(item, slot)
+                        },
+                        onClick = {
+                            if (item != null) {
+                                scope.launch {
+                                    // AP, with a chosen entry instead of the current one. The two
+                                    // delays are AP's and exist for AP's reason: the context menu
+                                    // action and the commit are round trips to another process, and
+                                    // firing the next before the last has landed deletes a selection
+                                    // that does not exist yet, which reads as a key that did
+                                    // nothing rather than as a race.
+                                    if (clipReplace) {
+                                        keyboardManager.activeState.isManualSelectionMode = false
+                                        delay(MA_CLIP_LEAD_MS)
+                                        FlorisImeService.currentInputConnection()
+                                            ?.performContextMenuAction(android.R.id.selectAll)
+                                        delay(MA_CLIP_LEAD_MS)
+                                        FlorisImeService.currentInputConnection()?.commitText("", 1)
+                                        delay(MA_CLIP_LEAD_MS)
+                                    }
+                                    // commitClipboardItem rather than committing the text: it is
+                                    // what handles an image or a video entry, which plain text
+                                    // committal would drop silently.
+                                    editorInstance.commitClipboardItem(item)
+                                }
+                            }
+                        },
+                        onLongClick = fold,
+                    ) { fg ->
+                        Text(
+                            text = slot.toString(),
+                            // An empty slot is dimmed rather than hidden. A key that vanishes when
+                            // the history is short would renumber the row under his thumb, and the
+                            // row is counted along by position.
+                            color = if (item == null) fg.copy(alpha = 0.3f) else fg,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
                     }
                 }
 
@@ -385,3 +490,11 @@ private fun ThemedTextKey(
  * neither pulses nor breathes while it says it.
  */
 private val MaRecordRed = Color(0xFF9B3B33)
+
+/**
+ * The pause between the steps of a clipboard replace, matching the copy row's own.
+ *
+ * Repeated rather than imported from LegacyDictateLayout because that file is being deleted with the
+ * transcribe view, and a hundred milliseconds is cheaper to state twice than to route around.
+ */
+private const val MA_CLIP_LEAD_MS = 100L

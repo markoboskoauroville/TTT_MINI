@@ -970,6 +970,23 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__ma_rows",
             default = "",
         )
+
+        /**
+         * Whether a clipboard history key replaces the field or inserts into it.
+         *
+         * On by default, because replacing is what the CH row is for. These keys are AP with a
+         * chosen entry rather than the current one: select all, delete, paste. The field Marko is
+         * filling is nearly always a search box, a prompt or a single-line field he is putting one
+         * value into, and inserting beside whatever is already there is the wrong answer often
+         * enough that it has to be the exception.
+         *
+         * Off makes them insert at the cursor and touch nothing else, for writing prose where the
+         * clipboard is a source rather than the whole answer.
+         */
+        val maClipReplace = boolean(
+            key = "dictate__ma_clip_replace",
+            default = true,
+        )
         // The macro bar: every preset, serialized by MaMacros. One string because that is all a
         // macro bar is, and because a control-character encoding lets a macro contain commas,
         // quotes, newlines and braces without any escaping to get wrong.

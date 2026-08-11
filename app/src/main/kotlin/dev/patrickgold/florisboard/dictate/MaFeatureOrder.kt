@@ -56,6 +56,33 @@ enum class MaFeatureKey(val id: String, val label: String) {
 
     /** Settings, reopened where they were left. */
     SETTINGS("settings", "Settings"),
+
+    /**
+     * The CH badge that opens the clipboard history row.
+     *
+     * A label rather than a key: it names the row it sits at the head of, the way the row of numbers
+     * beside it would otherwise mean nothing. Tapping it opens the full clipboard history, which is
+     * where an entry older than nine, or an image, is reached.
+     */
+    CLIP_LABEL("ch", "CH badge"),
+
+    /**
+     * The clipboard keys, one to nine, newest first.
+     *
+     * Nine separate entries rather than one key carrying an index, because the editor works in
+     * whole keys: this way each one can be moved, removed or put in a different row on its own, and
+     * a row of five is as valid as a row of nine. It costs nine lines here and buys that everywhere
+     * else.
+     */
+    CLIP_1("clip1", "Clipboard 1, newest"),
+    CLIP_2("clip2", "Clipboard 2"),
+    CLIP_3("clip3", "Clipboard 3"),
+    CLIP_4("clip4", "Clipboard 4"),
+    CLIP_5("clip5", "Clipboard 5"),
+    CLIP_6("clip6", "Clipboard 6"),
+    CLIP_7("clip7", "Clipboard 7"),
+    CLIP_8("clip8", "Clipboard 8"),
+    CLIP_9("clip9", "Clipboard 9, oldest"),
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),
     ZONE_3("zone3", "3, the copy row"),
@@ -130,6 +157,19 @@ object MaFeatureOrder {
         MaFeatureKey.ENTER,
         MaFeatureKey.SETTINGS,
         MaFeatureKey.LITTLE_MAN,
+        // The clipboard keys belong to DEFAULT because DEFAULT is the list of every key that
+        // exists, which is what lets the editor offer all of them. Where they are *placed* is
+        // MaRows.defaultRows()'s business, and it puts them on a row of their own.
+        MaFeatureKey.CLIP_LABEL,
+        MaFeatureKey.CLIP_1,
+        MaFeatureKey.CLIP_2,
+        MaFeatureKey.CLIP_3,
+        MaFeatureKey.CLIP_4,
+        MaFeatureKey.CLIP_5,
+        MaFeatureKey.CLIP_6,
+        MaFeatureKey.CLIP_7,
+        MaFeatureKey.CLIP_8,
+        MaFeatureKey.CLIP_9,
     )
 
     val DEFAULT_RAW: String = serialize(DEFAULT)
