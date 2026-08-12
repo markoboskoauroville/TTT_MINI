@@ -43,22 +43,6 @@ import java.util.Locale
  */
 object MaScreenTargets {
 
-    /**
-     * The default targets: Marko's three, plus the obvious neighbours.
-     *
-     * Matched against the label in lower case, as a whole word where the label is one word and as a
-     * contained phrase where it is several. `generate image` deliberately omits the coin count that
-     * follows it, because that number changes with the model and a match on the whole label would
-     * break every time the price did.
-     */
-    val DEFAULT_TARGETS = listOf(
-        "send",
-        "add url",
-        "generate image",
-        "pošalji",
-        "posalji",
-    )
-
     /** Labels that look like a target and are not. Checked first. */
     private val NEVER = listOf(
         "send feedback",

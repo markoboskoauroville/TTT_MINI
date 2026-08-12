@@ -27,6 +27,8 @@ import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import android.widget.Toast
 import androidx.compose.material.icons.filled.AutoFixHigh
 import dev.patrickgold.florisboard.dictate.overlay.MaScreenTargets
+import androidx.compose.material.icons.filled.History
+import dev.patrickgold.florisboard.dictate.MaMagicTargets
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Keyboard
@@ -201,8 +203,10 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // of text rather than a build.
     val magicRaw by prefs.dictate.maMagicTargets.collectAsState()
     val magicTargets = remember(magicRaw) {
-        magicRaw.split('\n').map { it.trim() }.filter { it.isNotEmpty() }
-            .ifEmpty { MaScreenTargets.DEFAULT_TARGETS }
+        // Ticked terms only, in the order the user dragged them into: the wand presses the first it
+        // finds, so the order is the user's answer to "which did you mean" on a screen with two.
+        MaMagicTargets.activeTerms(MaMagicTargets.parse(magicRaw))
+            .ifEmpty { MaMagicTargets.activeTerms(MaMagicTargets.defaults()) }
     }
     // Changing the default is not enough on its own. Anyone whose preferences already hold an
     // explicit false — written by the old default, or by the FlorisBoard screen that still offers
@@ -452,6 +456,20 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     }
                 }
 
+                MaFeatureKey.HISTORY -> {
+                    // Everything dictated, ready to put back. The recovery route when a sentence
+                    // went into the wrong app or was replaced by the next one.
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        icon = Icons.Default.History,
+                        contentDescription = stringRes(R.string.ma__feature_history),
+                        modifier = keyMod,
+                        onLongClick = fold,
+                    ) {
+                        keyboardManager.activeState.imeUiMode = ImeUiMode.HISTORY
+                    }
+                }
+
                 MaFeatureKey.SEND_BUTTON -> {
                     // The magic wand: presses whichever of the listed buttons is on screen.
                     //
@@ -464,7 +482,13 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         contentDescription = stringRes(R.string.ma__magic_button),
                         modifier = keyMod,
                         tint = if (DictateAccessibilityService.isRunning) null else MaDimmed,
-                        onLongClick = fold,
+                        // Long press opens the wand's own list instead of folding the row, which is
+                        // what a long press does everywhere else here. The exception earns itself:
+                        // the list is the whole configuration of this key, it is edited far more
+                        // often than any other key's, and a key whose behaviour depends entirely on
+                        // a list should put that list one gesture away. Folding is still on every
+                        // other key in the row.
+                        onLongClick = { MaSettingsResume.open(context, "settings/dictate/magic") },
                     ) {
                         if (!DictateAccessibilityService.isRunning) {
                             maOpenAccessibilitySettings(context)

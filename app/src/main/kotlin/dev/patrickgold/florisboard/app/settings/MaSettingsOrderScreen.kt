@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Key
@@ -63,6 +64,7 @@ import kotlinx.coroutines.launch
 val MaSettingsEntry.icon: ImageVector
     get() = when (this) {
         MaSettingsEntry.FEATURE_ROW -> Icons.Default.DragHandle
+        MaSettingsEntry.MAGIC -> Icons.Default.AutoFixHigh
         MaSettingsEntry.DEFAULT_VIEW -> Icons.Default.Visibility
         MaSettingsEntry.MACROS -> Icons.Default.Bolt
         MaSettingsEntry.DB -> Icons.Default.Dashboard
@@ -89,6 +91,7 @@ val MaSettingsEntry.icon: ImageVector
 val MaSettingsEntry.route: Any
     get() = when (this) {
         MaSettingsEntry.FEATURE_ROW -> Routes.Settings.MaFeatureRow
+        MaSettingsEntry.MAGIC -> Routes.Settings.MaMagic
         MaSettingsEntry.DEFAULT_VIEW -> Routes.Settings.MaOpeningView
         MaSettingsEntry.MACROS -> Routes.Settings.DictateMacros
         MaSettingsEntry.DB -> Routes.Settings.DbEditor

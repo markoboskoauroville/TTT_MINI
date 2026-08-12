@@ -1047,7 +1047,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         /**
-         * What the magic key looks for, one label per line.
+         * What the magic key looks for: the terms, their order, and which are switched on.
          *
          * Text rather than a picture of a button. Every control on Android carries the label a
          * screen reader announces plus its exact rectangle, so a button is findable by what it says
@@ -1055,7 +1055,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * all three, and breaks looking exactly like the key is faulty.
          *
          * Editable so a new site costs a line here rather than a build. Empty falls back to
-         * MaScreenTargets.DEFAULT_TARGETS, so clearing it cannot leave a key that does nothing.
+         * MaMagicTargets.defaults(), so clearing it cannot leave a key that does nothing.
          */
         val maMagicTargets = string(
             key = "dictate__ma_magic_targets",

@@ -23,6 +23,7 @@ package dev.patrickgold.florisboard.app.settings
  */
 enum class MaSettingsEntry(val id: String, val title: String, val summary: String?) {
     FEATURE_ROW("feature_row", "Feature row", "Three rows of keys, drag them into the order you want"),
+    MAGIC("magic", "Magic wand", "What the wand looks for on screen, and which it tries first"),
     DEFAULT_VIEW("default_view", "Opening view", "Which view the keyboard shows when it appears"),
     MACROS("macros", "Macro bar", "Buttons that type text or press keys"),
     DB("db", "db", "The dashboard: what is on it, and how to open it"),
@@ -56,6 +57,7 @@ object MaSettingsOrder {
      */
     val DEFAULT: List<MaSettingsEntry> = listOf(
         MaSettingsEntry.FEATURE_ROW,
+        MaSettingsEntry.MAGIC,
         MaSettingsEntry.DEFAULT_VIEW,
         MaSettingsEntry.MACROS,
         MaSettingsEntry.DB,

@@ -103,6 +103,24 @@ object MaSettingsResume {
      * graph's deep-link handler when it carries this category, and without it the intent is treated
      * as an extension import and lands on the wrong screen entirely.
      */
+    /**
+     * Opens one particular settings screen, rather than wherever the user left off.
+     *
+     * Used by keys that lead somewhere specific — holding the wand goes to the wand's own list, not
+     * to whatever page was last read. Deliberately does not disturb the remembered route: the gear
+     * key should still return to where he was, and a detour through the wand's list is not "where
+     * he was".
+     */
+    fun open(context: Context, path: String) {
+        runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse("ui://florisboard/$path"))
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
+    }
+
     fun open(context: Context) {
         val path = lastPath(context)
         prefs(context).edit().putBoolean(K_ARMED, true).apply()

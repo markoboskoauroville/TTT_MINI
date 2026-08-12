@@ -78,6 +78,16 @@ enum class MaFeatureKey(val id: String, val label: String) {
     APP_SWITCH("tab", "TAB, the last app"),
 
     /**
+     * The dictation history: everything transcribed, ready to put back into a field.
+     *
+     * A key rather than a menu because it is the recovery route. A dictation that went into the
+     * wrong app, or was replaced by the next one, is only retrievable here, and hunting for it
+     * through a panel is exactly the wrong amount of effort at the moment somebody has just lost a
+     * sentence they spoke.
+     */
+    HISTORY("history", "History, what you dictated"),
+
+    /**
      * Presses the send button of the chat app in front, so a prompt goes without leaving the keyboard.
      *
      * Not tied to any one app: it finds the control on screen that says it sends. Works wherever the
@@ -152,6 +162,7 @@ object MaFeatureOrder {
         MaFeatureKey.SETTINGS,
         MaFeatureKey.CLIP_CLEAR,
         MaFeatureKey.APP_SWITCH,
+        MaFeatureKey.HISTORY,
         MaFeatureKey.SEND_BUTTON,
     )
 
