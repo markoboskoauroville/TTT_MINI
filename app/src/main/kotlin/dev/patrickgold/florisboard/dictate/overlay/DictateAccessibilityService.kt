@@ -612,9 +612,31 @@ class DictateAccessibilityService : AccessibilityService() {
          * fix, and nothing on screen matching is a thing they can only be told about.
          */
         /** Everything pressable on the screen in front, for the wand's picker. */
-        fun scanScreenTargets(): List<String> {
+        /**
+         * The package of the app in front, so a term can be learned and used for that app alone.
+         *
+         * Taken from the window itself rather than from what the switcher last observed: the
+         * switcher deliberately ignores the launcher and the shade, and a term picked while one of
+         * those was in front would otherwise be filed under whatever came before it.
+         */
+        fun foregroundPackage(): String? {
+            val ims = instance ?: return null
+            return runCatching {
+                ims.windows
+                    .filter { it.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION }
+                    .maxByOrNull { it.layer }
+                    ?.root
+                    ?.let { root ->
+                        val pkg = root.packageName?.toString()
+                        runCatching { root.recycle() }
+                        pkg
+                    }
+            }.getOrNull() ?: ims.rootInActiveWindow?.packageName?.toString()
+        }
+
+        fun scanScreenTargets(everything: Boolean = false): List<String> {
             val ims = instance ?: return emptyList()
-            return MaScreenTargets.scanClickable(ims)
+            return MaScreenTargets.scanClickable(ims, everything)
         }
 
         fun pressScreenTarget(targets: List<String>): String? {

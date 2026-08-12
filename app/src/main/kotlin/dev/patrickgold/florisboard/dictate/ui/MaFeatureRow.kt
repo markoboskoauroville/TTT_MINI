@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.outlined.AudioFile
 import androidx.compose.material.icons.outlined.AutoFixHigh
 import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -227,6 +228,9 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     var scrollMenu by remember { mutableStateOf(false) }
     var scanned by remember { mutableStateOf<List<String>>(emptyList()) }
 
+    val magicAll = remember(magicRaw) {
+        MaMagicTargets.parse(magicRaw).ifEmpty { MaMagicTargets.defaults() }
+    }
     val magicTargets = remember(magicRaw) {
         // Ticked terms only, in the order the user dragged them into: the wand presses the first it
         // finds, so the order is the user's answer to "which did you mean" on a screen with two.
@@ -540,7 +544,14 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         if (!DictateAccessibilityService.isRunning) {
                             maOpenAccessibilitySettings(context)
                         } else {
-                            val pressed = DictateAccessibilityService.pressScreenTarget(magicTargets)
+                            // Only the terms belonging to the app in front, plus the ones that
+                            // belong to no app. Send in Claude and Send in Gemini are different
+                            // buttons, and a wand that pressed whichever it found first would press
+                            // the wrong one the moment both were in the list.
+                            val here = DictateAccessibilityService.foregroundPackage()
+                            val pressed = DictateAccessibilityService.pressScreenTarget(
+                                MaMagicTargets.activeTermsFor(magicAll, here),
+                            )
                             if (pressed == null) {
                                 Toast.makeText(
                                     context,
@@ -689,9 +700,18 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 .ifEmpty { MaMagicTargets.defaults() }
               // Appended rather than inserted at the top. The wand presses the first term it
               // finds, so a new term must not quietly outrank the ones already relied on.
-              if (current.none { it.term.equals(label, ignoreCase = true) }) {
+              // Filed under the app it was seen in, so it can never fire in another one. A term
+              // already present for this app is not added twice; the same word for a different app
+              // is a different term and is allowed.
+              val here = DictateAccessibilityService.foregroundPackage()
+              val duplicate = current.any {
+                it.term.equals(label, ignoreCase = true) && it.appPackage == here
+              }
+              if (!duplicate) {
                 prefs.dictate.maMagicTargets.set(
-                  MaMagicTargets.serialize(current + MaMagicTargets.Target(label)),
+                  MaMagicTargets.serialize(
+                    current + MaMagicTargets.Target(label, appPackage = here),
+                  ),
                 )
               }
             }
@@ -721,6 +741,7 @@ private fun MaScanPicker(
     onEdit: () -> kotlin.Unit,
     onDismiss: () -> kotlin.Unit,
 ) {
+    var query by remember { mutableStateOf("") }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -759,7 +780,37 @@ private fun MaScanPicker(
                     .padding(horizontal = 8.dp, vertical = 4.dp),
             )
         }
-        found.forEach { label ->
+        // The filters above are right nearly always and wrong occasionally — a button in the
+        // browser's own toolbar, or one whose id happens to match the furniture list. Rather than
+        // argue about those, typing here asks the screen again with nothing filtered out and shows
+        // whatever matches. A filter you can switch off is a filter you can trust.
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            singleLine = true,
+            placeholder = { Text(stringRes(R.string.ma__magic_scan_search), fontSize = 14.sp) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+        )
+        val shown = if (query.isBlank()) {
+            found
+        } else {
+            // Asked fresh rather than filtered from what is already listed, because the point of
+            // searching is to reach the things the first pass left out.
+            remember(query) {
+                DictateAccessibilityService.scanScreenTargets(everything = true)
+            }.filter { it.contains(query.trim(), ignoreCase = true) }
+        }
+        if (shown.isEmpty()) {
+            Text(
+                text = stringRes(R.string.ma__magic_scan_nomatch),
+                color = Color(0x99FFFFFF),
+                fontSize = 14.sp,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
+        shown.forEach { label ->
             val already = existing.any { it.equals(label, ignoreCase = true) }
             Text(
                 text = if (already) "\u2713  $label" else label,

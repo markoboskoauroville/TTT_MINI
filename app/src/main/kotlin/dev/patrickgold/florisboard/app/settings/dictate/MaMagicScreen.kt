@@ -138,9 +138,19 @@ fun MaMagicScreen() = FlorisScreen {
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
+                        modifier = Modifier.padding(vertical = 12.dp),
+                    )
+                    // Which app the term belongs to, because the same word can now appear twice.
+                    // "Send" for Claude and "Send" for Gemini are two rows that would otherwise be
+                    // indistinguishable, and deleting the wrong one is silent.
+                    Text(
+                        text = target.appPackage?.substringAfterLast('.') ?: "any app",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
                         modifier = Modifier
                             .weight(1f)
-                            .padding(vertical = 12.dp),
+                            .padding(start = 8.dp),
                     )
                     Checkbox(
                         checked = target.enabled,

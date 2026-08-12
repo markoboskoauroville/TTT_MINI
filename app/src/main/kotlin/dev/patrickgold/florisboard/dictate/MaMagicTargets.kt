@@ -33,7 +33,24 @@ object MaMagicTargets {
     private const val FIELD = '\u001D'
 
     /** @param term what to look for, matched against the label a screen reader would announce */
-    data class Target(val term: String, val enabled: Boolean = true)
+    /**
+     * @param term what to look for on screen
+     * @param enabled whether the wand may use it
+     * @param appPackage the app it was captured in, or null for "any app"
+     *
+     * The package is what stops one term meaning two things. "Send" in Claude and "Send" in Gemini
+     * are different buttons in different apps, and a wand that pressed whichever it found first
+     * would press the wrong one as soon as both were in the list. A term learned in an app belongs
+     * to that app.
+     *
+     * Null means everywhere, which is what the built-in defaults are and what a hand-typed term
+     * stays unless it was picked off a real screen.
+     */
+    data class Target(
+        val term: String,
+        val enabled: Boolean = true,
+        val appPackage: String? = null,
+    )
 
     /**
      * The starting list: Marko's three buttons, then the obvious neighbours.
@@ -55,7 +72,23 @@ object MaMagicTargets {
         targets.filter { it.enabled && it.term.isNotBlank() }.map { it.term.trim() }
 
     fun serialize(targets: List<Target>): String =
-        targets.joinToString(SEP.toString()) { "${if (it.enabled) "1" else "0"}$FIELD${it.term}" }
+        targets.joinToString(SEP.toString()) {
+            // The package goes last so that anything written before it existed still reads: an old
+            // entry simply has two fields instead of three and comes back meaning "any app", which
+            // is exactly what it meant when it was written.
+            "${if (it.enabled) "1" else "0"}$FIELD${it.term}$FIELD${it.appPackage.orEmpty()}"
+        }
+
+    /**
+     * The terms the wand may use in [appPackage], enabled and in order.
+     *
+     * A term belonging to another app is skipped rather than tried. Trying it costs nothing when it
+     * finds nothing, but the whole point is that it might find something — Gemini's send button
+     * answering to Claude's term is the failure this exists to prevent.
+     */
+    fun activeTermsFor(targets: List<Target>, appPackage: String?): List<String> =
+        targets.filter { it.enabled && (it.appPackage == null || it.appPackage == appPackage) }
+            .map { it.term }
 
     /**
      * Parses the stored string, dropping anything malformed rather than throwing.
@@ -73,10 +106,15 @@ object MaMagicTargets {
         return raw.split(SEP).mapNotNull { chunk ->
             val idx = chunk.indexOf(FIELD)
             if (idx < 0) return@mapNotNull null
-            // The term is the whole remainder, so it may contain anything except the separators,
-            // which are control characters nobody can type on a phone.
-            val term = chunk.substring(idx + 1)
-            if (term.isBlank()) null else Target(term, chunk.substring(0, idx) == "1")
+            val enabled = chunk.substring(0, idx) == "1"
+            val rest = chunk.substring(idx + 1)
+            // Two fields or three. An entry written before terms carried an app has no third field
+            // and reads back as "any app", which is what it meant when it was written — so an
+            // existing list keeps working rather than being silently scoped to nothing.
+            val split = rest.lastIndexOf(FIELD)
+            val term = if (split < 0) rest else rest.substring(0, split)
+            val pkg = if (split < 0) null else rest.substring(split + 1).takeIf { it.isNotBlank() }
+            if (term.isBlank()) null else Target(term, enabled, pkg)
         }
     }
 

@@ -68,7 +68,15 @@ object MaScreenTargets {
      * Deduplicated, because one button is often several nested nodes carrying the same label, and
      * three identical rows in the picker look like a fault rather than a choice.
      */
-    fun scanClickable(service: AccessibilityService): List<String> {
+    /**
+     * @param everything skip the page and furniture filters and return all of it
+     *
+     * The filters are right nearly always and wrong occasionally: a button in a browser's own
+     * toolbar, or one whose id happens to sit on the furniture list. Rather than argue about the
+     * edge cases, the search box in the picker asks for the unfiltered set and lets him look
+     * through it himself. A filter you can switch off is a filter you can trust.
+     */
+    fun scanClickable(service: AccessibilityService, everything: Boolean = false): List<String> {
         val out = LinkedHashSet<String>()
         for (root in appWindowRoots(service)) {
             try {
@@ -84,13 +92,13 @@ object MaScreenTargets {
                 // ordinary Android views outside it. So when a page is present, only the page is
                 // read. When there is none — a native app, where everything on screen is the app —
                 // the whole window is read as before.
-                val contents = webContents(root)
+                val contents = if (everything) emptyList() else webContents(root)
                 if (contents.isEmpty()) {
-                    collectClickable(root, out, 0)
+                    collectClickable(root, out, 0, everything)
                 } else {
                     for (content in contents) {
                         try {
-                            collectClickable(content, out, 0)
+                            collectClickable(content, out, 0, everything)
                         } finally {
                             runCatching { content.recycle() }
                         }
@@ -167,20 +175,23 @@ object MaScreenTargets {
         node: AccessibilityNodeInfo,
         out: MutableSet<String>,
         depth: Int,
+        everything: Boolean = false,
     ) {
         if (depth > 28) return
         // Only things that are themselves pressable. This used to accept any node sitting inside a
         // clickable parent, which on a chat screen means every line of the conversation: Marko's
         // list came back holding "Claude is AI and can make mistakes" and the whole message body.
         // A screen is mostly text, and a picker full of text is a picker nobody can find a button in.
-        if (node.isVisibleToUser && node.isClickable && node.isEnabled && !isChrome(node)) {
+        if (node.isVisibleToUser && node.isClickable && node.isEnabled &&
+            (everything || !isChrome(node))
+        ) {
             // The label may be on the button or on the icon inside it, so look down as well as at
             // the node itself — but only for the button's own label, not for everything under it.
             (labelOf(node) ?: childLabel(node))?.let { out.add(it) }
         }
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            collectClickable(child, out, depth + 1)
+            collectClickable(child, out, depth + 1, everything)
             runCatching { child.recycle() }
         }
     }
