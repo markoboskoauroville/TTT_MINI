@@ -158,8 +158,15 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // back. So 1 can be green while nothing is visible, and that is the truth about the switch.
     val onGreen = Color(0xFF6FA85A)
 
-    // Long press anywhere here folds the row away. The finger is already on the row it wants gone.
-    val fold: () -> kotlin.Unit = { scope.launch { prefs.dictate.maFeatureRowShown.set(false) } }
+    // The long press that hid the whole row is gone, on every key.
+    //
+    // It was a gesture with no sign of itself and no undo: a long press anywhere on the row made the
+    // row vanish, and nothing on screen then said what had happened or how to bring it back. A key
+    // held a moment too long — while thinking, or while the phone was slow — cost the feature, and
+    // the way back was a settings screen the user had no reason to connect with it.
+    //
+    // Hiding the row now lives in one place, the switch at the top of the feature row editor, where
+    // it is labelled and reversible.
 
     // Select-all becomes deselect when there is a selection, so the key it draws has to know. Read
     // once here and handed down, exactly as the copy row reads it.
@@ -246,12 +253,11 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
           when (button) {
             // A macro key: what the user wrote, on the face of it, running what he attached to it.
             //
-            // Long press folds the row like every other key here, which means a macro cannot also
-            // use a long press for anything of its own. That is the right trade: folding has to
-            // work from anywhere on the row or the row cannot be got rid of, and a macro that
-            // needed two gestures would need explaining.
             // M1 to M10. What the button does lives in MaMacroSlots, so the row holds only which
             // slot it is: the same macro can then sit in two rows, edited once.
+            //
+            // A long press is free on these keys now that folding is gone, if a macro ever wants
+            // one for something of its own.
             //
             // An empty slot still draws, showing its own name. A macro button that vanished until
             // it was configured would leave the user hunting for a key that is not there yet, and
@@ -262,7 +268,6 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     label = slot.label,
                     modifier = keyMod,
                     tint = null,
-                    onLongClick = fold,
                 ) {
                     if (!slot.isEmpty) {
                         MaMacroSyntax.run(slot.macro, FlorisImeService.currentInputConnection())
@@ -315,7 +320,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                             }
                         }
                     },
-                    // Long press opens the clipboard history rather than folding the row, which is
+                    // Long press opens the clipboard history, which is
                     // what every other key here does on a long press. The exception is deliberate:
                     // the key shows a number and nothing else, so the only way to find out what is
                     // on C4 before pasting it is to look, and the place to look is one gesture away
@@ -388,8 +393,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         ),
                         modifier = keyMod,
                         tint = if (recording) MaRecordRed else null,
-                        onLongClick = fold,
-                    ) {
+                        ) {
                         DictateController.onMicClick(context)
                     }
                 }
@@ -421,8 +425,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                             bucketsFull -> MaRecordRed
                             else -> null
                         },
-                        onLongClick = fold,
-                    ) {
+                        ) {
                         scope.launch { prefs.dictate.maClipCaptured.set("") }
                     }
                 }
@@ -437,8 +440,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         contentDescription = stringRes(R.string.ma__app_switch),
                         modifier = keyMod,
                         tint = if (MaAppSwitcher.hasTarget()) null else MaDimmed,
-                        onLongClick = fold,
-                    ) {
+                        ) {
                         if (!DictateAccessibilityService.isRunning) {
                             // The whole reason this key fires blanks, and the user cannot guess it.
                             // Both these keys read the screen through the accessibility service,
@@ -464,8 +466,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         icon = Icons.Default.History,
                         contentDescription = stringRes(R.string.ma__feature_history),
                         modifier = keyMod,
-                        onLongClick = fold,
-                    ) {
+                        ) {
                         keyboardManager.activeState.imeUiMode = ImeUiMode.HISTORY
                     }
                 }
@@ -482,7 +483,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         contentDescription = stringRes(R.string.ma__magic_button),
                         modifier = keyMod,
                         tint = if (DictateAccessibilityService.isRunning) null else MaDimmed,
-                        // Long press opens the wand's own list instead of folding the row, which is
+                        // Long press opens the wand's own list, which is
                         // what a long press does everywhere else here. The exception earns itself:
                         // the list is the whole configuration of this key, it is edited far more
                         // often than any other key's, and a key whose behaviour depends entirely on
@@ -516,15 +517,14 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         icon = Icons.Default.Settings,
                         contentDescription = stringRes(R.string.ma__feature_settings),
                         modifier = keyMod,
-                        onLongClick = fold,
-                    ) {
+                        ) {
                         MaSettingsResume.open(context)
                     }
                 }
 
                 MaFeatureKey.ZONE_1 -> {
                     // 1, the number row. Digits, or whichever set the row is showing.
-                    ThemedTextKey("1", keyMod, if (zone1) onGreen else null, fold) {
+                    ThemedTextKey("1", keyMod, if (zone1) onGreen else null) {
                         scope.launch { prefs.dictate.maExtraRow.set(!zone1) }
                     }
                 }
@@ -532,14 +532,14 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 MaFeatureKey.ZONE_2 -> {
                     // 2, the keyboard itself, all of it at once. This is the one that gives back real estate,
                     // and on a keyboard driven by voice it is off more often than it is on.
-                    ThemedTextKey("2", keyMod, if (zone2) onGreen else null, fold) {
+                    ThemedTextKey("2", keyMod, if (zone2) onGreen else null) {
                         scope.launch { prefs.dictate.maZoneKeyboard.set(!zone2) }
                     }
                 }
 
                 MaFeatureKey.ZONE_3 -> {
                     // 3, the copy and paste row along the top. Paste, copy, history and the rest of it.
-                    ThemedTextKey("3", keyMod, if (zone3) onGreen else null, fold) {
+                    ThemedTextKey("3", keyMod, if (zone3) onGreen else null) {
                         scope.launch { prefs.dictate.maEditRow.set(!zone3) }
                     }
                 }
@@ -555,7 +555,6 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     // the reason backspace is, that with zone two folded away there is no enter key anywhere
                     // else, and a keyboard that cannot end a line has to be unfolded to finish a sentence.
                     //
-                    // No fold on long press. The hold already means the popup.
                     LegacyEnterKey(
                         keyboardManager = keyboardManager,
                         modifier = keyMod,
@@ -575,13 +574,11 @@ private fun ThemedTextKey(
     label: String,
     modifier: Modifier,
     tint: Color?,
-    onLongClick: () -> kotlin.Unit,
     onClick: () -> kotlin.Unit,
 ) {
     ThemedKey(
         code = KeyCode.NOOP,
         modifier = modifier,
-        onLongClick = onLongClick,
         onClick = onClick,
     ) { fg ->
         Text(

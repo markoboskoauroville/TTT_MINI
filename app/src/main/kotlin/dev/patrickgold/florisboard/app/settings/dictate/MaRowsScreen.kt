@@ -77,6 +77,7 @@ import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import dev.patrickgold.florisboard.dictate.MaMacroSlots
 import dev.patrickgold.florisboard.dictate.MaRows
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
 
@@ -133,6 +134,29 @@ fun MaRowsScreen() = FlorisScreen {
         var tab by remember { mutableStateOf(0) }
         var adding by remember { mutableStateOf(false) }
         var editingMacro by remember { mutableStateOf<Int?>(null) }
+
+        // The only way to hide the feature row, now that a long press no longer does it.
+
+        //
+
+        // It has to live here, above the tabs, because it governs all three rows rather than the one
+
+        // being edited. And it has to exist at all: the gesture that used to hide the row was the
+
+        // only thing that could, so removing it without putting this here would have made the row
+
+        // permanent — which is the opposite of what was asked for.
+
+        SwitchPreference(
+
+            prefs.dictate.maFeatureRowShown,
+
+            title = "Show the feature row",
+
+            summary = "The rows of keys above the keyboard. Turn this off to hide all of them.",
+
+        )
+
 
         TabRow(selectedTabIndex = tab) {
             (0 until MaRows.ROW_COUNT).forEach { i ->
