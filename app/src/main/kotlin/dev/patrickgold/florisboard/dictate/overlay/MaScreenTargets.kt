@@ -10,6 +10,9 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import android.accessibilityservice.AccessibilityService
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
@@ -76,12 +79,32 @@ object MaScreenTargets {
      */
     object Learn {
 
-        /** Armed until this moment, or zero when not armed. */
-        @Volatile
-        private var armedUntil = 0L
+        /** What the wand is doing, for the bar at the top of the keyboard to show. */
+        sealed interface State {
+            /** Nothing happening. The bar is not drawn. */
+            data object Idle : State
+
+            /** Waiting for him to press a button in another app. */
+            data object Waiting : State
+
+            /** A button was pressed and is offered for storing. */
+            data class Caught(val label: String, val appPackage: String?, val appName: String) : State
+        }
+
+        private val _state = MutableStateFlow<State>(State.Idle)
+
+        /**
+         * Observed by the feature row.
+         *
+         * A flow rather than a value read when the keyboard is next drawn, which is what this
+         * replaced and why it appeared to do nothing at all: he presses the button in another app
+         * while the keyboard is still up, so nothing of ours is redrawn and a value waiting to be
+         * collected is never collected. The bar has to be told, not asked.
+         */
+        val state: StateFlow<State> = _state.asStateFlow()
 
         @Volatile
-        private var caught: Pair<String, String?>? = null
+        private var armedUntil = 0L
 
         /**
          * Long enough to switch apps and find the button, short enough that a forgotten arming has
@@ -90,36 +113,38 @@ object MaScreenTargets {
         private const val WINDOW_MS = 30_000L
 
         fun arm() {
-            caught = null
             armedUntil = android.os.SystemClock.elapsedRealtime() + WINDOW_MS
+            _state.value = State.Waiting
+        }
+
+        fun cancel() {
+            armedUntil = 0L
+            _state.value = State.Idle
         }
 
         fun isArmed(): Boolean = android.os.SystemClock.elapsedRealtime() < armedUntil
 
-        /** The label and package of the last click caught, consumed once. */
-        fun take(): Pair<String, String?>? {
-            val c = caught
-            caught = null
-            return c
+        /** Called once he has answered the bar, either way. */
+        fun clear() {
+            _state.value = State.Idle
         }
 
         /**
-         * Offered every click while armed. Returns the label if it was worth catching.
+         * Offered every click while armed.
          *
-         * A click on something with no name is ignored rather than caught: an unnamed control cannot
-         * be found again by name, so recording it would produce a term that never matches. Better to
-         * stay armed and let him try a different button.
+         * A click on something with no name is ignored and the arming stands: an unnamed control
+         * cannot be found again by name, so storing it would produce a term that never matches, and
+         * staying armed lets him simply try a different button.
          */
-        fun onClicked(node: AccessibilityNodeInfo, ownPackage: String): String? {
-            if (!isArmed()) return null
+        fun onClicked(node: AccessibilityNodeInfo, ownPackage: String, appName: String) {
+            if (!isArmed()) return
             val pkg = node.packageName?.toString()
-            // Our own keyboard's keys are clicks too, and the long press that armed this is one of
-            // them. Catching that would teach the wand the name of the wand.
-            if (pkg == null || pkg == ownPackage) return null
-            val label = labelOf(node) ?: childLabel(node) ?: return null
-            caught = label to pkg
+            // Our own keys are clicks too, and the long press that armed this is one of them.
+            // Catching that would teach the wand the name of the wand.
+            if (pkg == null || pkg == ownPackage) return
+            val label = labelOf(node) ?: childLabel(node) ?: return
             armedUntil = 0L
-            return label
+            _state.value = State.Caught(label, pkg, appName)
         }
     }
 

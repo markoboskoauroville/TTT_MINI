@@ -130,7 +130,18 @@ class DictateAccessibilityService : AccessibilityService() {
                 ) {
                     event.source?.let { node ->
                         try {
-                            MaScreenTargets.Learn.onClicked(node, packageName)
+                            // The app's readable name, resolved here where the package manager is
+                            // to hand. "Claude" rather than com.anthropic.claude: the bar is asking
+                            // him a question and it should ask it in words he uses.
+                            val label = node.packageName?.toString()?.let { pkg ->
+                                runCatching {
+                                    val pm = packageManager
+                                    pm.getApplicationLabel(
+                                        pm.getApplicationInfo(pkg, 0),
+                                    ).toString()
+                                }.getOrNull() ?: pkg.substringAfterLast('.')
+                            }.orEmpty()
+                            MaScreenTargets.Learn.onClicked(node, packageName, label)
                         } finally {
                             runCatching { node.recycle() }
                         }
@@ -663,8 +674,8 @@ class DictateAccessibilityService : AccessibilityService() {
             return true
         }
 
-        /** The label and package caught since arming, taken once. */
-        fun takeLearned(): Pair<String, String?>? = MaScreenTargets.Learn.take()
+        /** What the wand is doing, for the bar at the top of the keyboard. */
+        val learnState get() = MaScreenTargets.Learn.state
 
         fun scanScreenTargets(everything: Boolean = false): List<String> {
             val ims = instance ?: return emptyList()

@@ -227,31 +227,12 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val scrollPages by prefs.dictate.maScrollPages.collectAsState()
     var scrollMenu by remember { mutableStateOf(false) }
 
-    // Anything learned while he was away is picked up the moment the keyboard is drawn again,
-    // which is the first opportunity: he pressed the button in another app, so nothing of ours was
-    // on screen to react at the time.
-    LaunchedEffect(Unit) {
-        val learned = DictateAccessibilityService.takeLearned()
-        if (learned != null) {
-            val (label, pkg) = learned
-            val current = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
-            val duplicate = current.any {
-                it.term.equals(label, ignoreCase = true) && it.appPackage == pkg
-            }
-            if (!duplicate) {
-                prefs.dictate.maMagicTargets.set(
-                    MaMagicTargets.serialize(
-                        current + MaMagicTargets.Target(label, appPackage = pkg),
-                    ),
-                )
-            }
-            Toast.makeText(
-                context,
-                context.getString(R.string.ma__magic_learn_added, label),
-                Toast.LENGTH_SHORT,
-            ).show()
-        }
-    }
+    // What the wand is doing, shown in a bar above the keys.
+    //
+    // Observed rather than read once when the keyboard is drawn. He presses the button in another
+    // app while the keyboard is still up, so nothing of ours is redrawn — which is exactly why the
+    // wand appeared to do nothing at all. The bar has to be told, not asked.
+    val learn by DictateAccessibilityService.learnState.collectAsState()
 
     val magicAll = remember(magicRaw) {
         MaMagicTargets.parse(magicRaw).ifEmpty { MaMagicTargets.defaults() }
@@ -277,6 +258,36 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
+      // The wand's own bar, above the keys, in the place the recording bar uses.
+      //
+      // Everything this app does to somebody else's screen reports itself here. Waiting for a
+      // button, and then asking before storing what it caught: he presses the thing, and the
+      // keyboard asks whether that was the one. Before this the wand did its work in silence, which
+      // is indistinguishable from doing nothing.
+      MaWandBar(
+          state = learn,
+          onStore = { label, pkg ->
+              scope.launch {
+                  val current = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
+                  val duplicate = current.any {
+                      it.term.equals(label, ignoreCase = true) && it.appPackage == pkg
+                  }
+                  if (!duplicate) {
+                      prefs.dictate.maMagicTargets.set(
+                          MaMagicTargets.serialize(
+                              current + MaMagicTargets.Target(label, appPackage = pkg),
+                          ),
+                      )
+                  }
+                  MaScreenTargets.Learn.clear()
+              }
+          },
+          onDiscard = { MaScreenTargets.Learn.cancel() },
+          onEdit = {
+              MaScreenTargets.Learn.cancel()
+              MaSettingsResume.open(context, "settings/dictate/magic")
+          },
+      )
       rows.forEach { rowButtons ->
         Row(
             modifier = Modifier.fillMaxWidth().height(rowHeight),
@@ -565,12 +576,11 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         onLongClick = {
                             if (!DictateAccessibilityService.isRunning) {
                                 maOpenAccessibilitySettings(context)
-                            } else if (DictateAccessibilityService.armLearn()) {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.ma__magic_learn_armed),
-                                    Toast.LENGTH_LONG,
-                                ).show()
+                            } else {
+                                // No toast: the bar above says it, stays until it is answered, and
+                                // carries the cancel. A toast on top of that is the same sentence
+                                // twice, one copy of which vanishes on its own.
+                                DictateAccessibilityService.armLearn()
                             }
                         },
                     ) {
@@ -879,4 +889,99 @@ private fun maStepScroll(pages: Int, delta: Int): Int {
     val next = pages + delta
     val stepped = if (next == 0) pages + delta * 2 else next
     return stepped.coerceIn(-10, 10)
+}
+
+/**
+ * The wand's status bar, above the keys.
+ *
+ * Draws nothing at rest, so it costs no height until something is happening — the same rule the
+ * status surface follows, and the reason the keyboard does not permanently carry a strip that is
+ * usually empty.
+ *
+ * Asking before storing rather than storing and announcing. He may press the wrong thing, or press
+ * the right thing and find it was called something unhelpful, and a wand that fills its own list
+ * with whatever was tapped becomes a list he has to clean rather than one he built.
+ */
+@Composable
+private fun MaWandBar(
+    state: MaScreenTargets.Learn.State,
+    onStore: (String, String?) -> kotlin.Unit,
+    onDiscard: () -> kotlin.Unit,
+    onEdit: () -> kotlin.Unit,
+) {
+    if (state is MaScreenTargets.Learn.State.Idle) return
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF16161A))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        when (state) {
+            is MaScreenTargets.Learn.State.Waiting -> {
+                Text(
+                    text = stringRes(R.string.ma__wand_waiting),
+                    color = Color(0xFFE8B15C),
+                    fontSize = 14.sp,
+                    maxLines = 2,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = stringRes(R.string.ma__wand_cancel),
+                    color = Color(0x99FFFFFF),
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .clickable { onDiscard() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+
+            is MaScreenTargets.Learn.State.Caught -> {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = state.label,
+                        color = Color(0xFFECEAE3),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                    )
+                    Text(
+                        // Which app, because the term will only ever fire there and he should know
+                        // that before agreeing to it.
+                        text = stringRes(R.string.ma__wand_store_in, state.appName),
+                        color = Color(0x99FFFFFF),
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                    )
+                }
+                Text(
+                    text = stringRes(R.string.ma__wand_no),
+                    color = Color(0x99FFFFFF),
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .clickable { onDiscard() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+                Text(
+                    text = stringRes(R.string.ma__wand_yes),
+                    color = Color(0xFF6FA85A),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .clickable { onStore(state.label, state.appPackage) }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+
+            else -> Unit
+        }
+        Text(
+            text = stringRes(R.string.ma__wand_settings),
+            color = Color(0xFFE8B15C),
+            fontSize = 13.sp,
+            modifier = Modifier
+                .clickable { onEdit() }
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+        )
+    }
 }

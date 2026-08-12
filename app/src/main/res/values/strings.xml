@@ -920,6 +920,12 @@
     <string name="ma__magic_scan_edit">Edit list</string>
     <string name="ma__magic_scan_search">Search everything on screen</string>
     <string name="ma__magic_learn_armed">Now press the button you want the wand to press</string>
+    <string name="ma__wand_waiting">Press the button you want the wand to press</string>
+    <string name="ma__wand_cancel">Cancel</string>
+    <string name="ma__wand_yes">Store</string>
+    <string name="ma__wand_no">No</string>
+    <string name="ma__wand_store_in">Store for %1$s?</string>
+    <string name="ma__wand_settings">Wand</string>
     <string name="ma__magic_learn_added">Wand learned: %1$s</string>
     <string name="ma__magic_scan_nomatch">Nothing on screen matches that</string>
     <string name="ma__scroll_pages">Pages to scroll</string>
