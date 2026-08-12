@@ -677,15 +677,27 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // (see DictateLanguages; "detect" = auto-detect). Default mirrors the legacy app.
         val inputLanguages = string(
             key = "dictate__input_languages",
-            // Talk to Type: detect first, so mixed Croatian and English is the default rather
-            // than something to opt into, then the two Marko actually speaks.
-            default = "detect,hr,en",
+            // The two Marko speaks, and no detect entry: the language is chosen by the HR/ENG key
+            // rather than guessed from the audio.
+            default = "hr,en",
         )
         // The currently active dictation language code; persists across sessions and is switched
         // from the recording bar's language chip.
+        /**
+         * The dictation language: `hr` or `en`, and nothing else.
+         *
+         * Auto-detect is gone. It defaulted here, and it meant the service guessed the language from
+         * the audio — which sounds harmless and was not: a Croatian sentence guessed wrong comes back
+         * as fluent Croatian that is the wrong words, and there is nothing in the result to notice.
+         * Marko speaks two languages and says which one with a key, so there is nothing to guess.
+         *
+         * Croatian is the default rather than English because it is the one that suffers when the
+         * app is wrong. English transcribed as Croatian is obviously broken; Croatian transcribed by
+         * the English model is quietly broken.
+         */
         val activeInputLanguage = string(
             key = "dictate__active_input_language",
-            default = "detect",
+            default = "hr",
         )
         // Guard so the one-time seeding of the device/system dictation language (added on top of the
         // default detect,en) runs only once on a fresh install. See

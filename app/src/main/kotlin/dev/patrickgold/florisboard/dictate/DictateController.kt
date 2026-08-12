@@ -725,7 +725,16 @@ object DictateController {
      * language and persists the correction. No-op when the active code is already selected.
      */
     private suspend fun reconcileActiveLanguage() {
+        // A stored "detect" is repaired here rather than tolerated. It cannot be reached any more —
+        // no key sets it and no screen offers it — but an install that has been running since before
+        // auto-detect was removed still holds it, and this is the one place that runs before every
+        // recording. MaLanguage.active() reads it as Croatian either way; this makes the stored value
+        // agree with what the app is actually doing, so the badge and the request cannot disagree.
+        if (prefs.dictate.activeInputLanguage.get() == DictateLanguages.DETECT) {
+            prefs.dictate.activeInputLanguage.set(MaLanguage.HR)
+        }
         val selection = DictateLanguages.parseSelection(prefs.dictate.inputLanguages.get())
+            .filter { it.code != DictateLanguages.DETECT }
         if (selection.isEmpty()) return
         val current = prefs.dictate.activeInputLanguage.get()
         if (selection.none { it.code == current }) {
@@ -1244,7 +1253,8 @@ object DictateController {
         // History metadata (issue #140), resolved once so the success (capture) and EVERY failure path —
         // including the early returns below (no key / model not downloaded) — log the same info.
         val historyProviderName = account.displayName.ifBlank { preset.displayName }
-        val historyLanguage = prefs.dictate.activeInputLanguage.get().takeIf { it != DictateLanguages.DETECT } ?: ""
+        // Always a real code: there is no detect case left, so history never records a blank language.
+        val historyLanguage = MaLanguage.active()
         val historySource = if (outputTarget == OutputTarget.OVERLAY) DictateHistorySource.OVERLAY else source
         // Logs the failed dictation with its audio (safety net, issue #140) unless this is a replay, then
         // drops the cache file. Async so the early-return callers don't block.
@@ -1391,18 +1401,18 @@ object DictateController {
                 val request = TranscriptionRequest(
                     audioFile = uploadFile,
                     model = model,
-                    // Null for "detect" so the provider auto-detects; otherwise the chosen code. For the
-                    // chat-audio path the language goes into the instruction (readable name) instead.
-                    language = if (chatAudio) null else prefs.dictate.activeInputLanguage.get()
-                        .takeIf { it != DictateLanguages.DETECT },
-                    // AUTO means "one of mine", not "any language on earth". The shortlist is
-                    // whatever is enabled in settings, so detection chooses between Croatian and
-                    // English rather than reading a Croatian sentence with an English brand name in
-                    // it as Spanish and returning the whole transcript wrong.
-                    languageCandidates = DictateLanguages
-                        .parseSelection(prefs.dictate.inputLanguages.get())
-                        .map { it.code }
-                        .filter { it != DictateLanguages.DETECT },
+                    // Always an explicit language, never null. Null told the provider to detect, and
+                    // detection is what this app stopped doing: the HR/ENG key says which language it
+                    // is, so there is nothing left to guess. MaLanguage.active() answers hr or en and
+                    // collapses anything older to Croatian, so an install still holding "detect"
+                    // sends hr rather than falling back to the guess.
+                    //
+                    // Chat-audio is the exception and always was: there the language goes into the
+                    // written instruction as a readable name instead of as a field.
+                    language = if (chatAudio) null else MaLanguage.active(),
+                    // Empty, not a shortlist. Candidates only mean anything to a provider that is
+                    // detecting, and this one is being told.
+                    languageCandidates = emptyList(),
                     // Non-chat: style/punctuation prompt biases recognition (roadmap 2.4 / 4.11).
                     // Chat-audio: the full instruction (language + style + all auto-formatting) in one go.
                     prompt = if (chatAudio) buildChatAudioInstruction(appContext) else transcriptionStylePrompt(),
@@ -1818,7 +1828,8 @@ object DictateController {
         } else {
             account.realtimeModel.takeIf { it.isNotBlank() } ?: preset.defaultRealtimeModel ?: return null
         }
-        val language = prefs.dictate.activeInputLanguage.get().takeIf { it != DictateLanguages.DETECT }
+        // Realtime is told the language too. Streaming had the same detect hole as the batch path.
+        val language = MaLanguage.active()
         realtimeFinal.setLength(0)
         realtimeFailed = false
         realtimeCancelled = false
@@ -1944,7 +1955,7 @@ object DictateController {
                     providerId = rtAccount.providerId,
                     providerName = rtAccount.displayName.ifBlank { rtPreset.displayName },
                     model = rtModel,
-                    language = prefs.dictate.activeInputLanguage.get().takeIf { it != DictateLanguages.DETECT } ?: "",
+                    language = MaLanguage.active(),
                     source = DictateHistorySource.REALTIME,
                 )
                 finalizeAndCommit(appContext, transcript, recordedSeconds, live, alreadyFormatted = false, finalizeViaComposing = true, capture = rtCapture)
@@ -2182,7 +2193,7 @@ object DictateController {
             providerId = account.providerId,
             providerName = account.displayName.ifBlank { preset.displayName },
             model = model,
-            language = prefs.dictate.activeInputLanguage.get().takeIf { it != DictateLanguages.DETECT } ?: "",
+            language = MaLanguage.active(),
             source = DictateHistorySource.KEYBOARD,
         )
         finalizeAndCommit(
@@ -2210,7 +2221,7 @@ object DictateController {
         val apiKey = MaKeyRingStore.currentKey(account.providerId, account.apiKey)
         val preset = presetFor(account)
         val model = transcriptionModelFor(appContext, account, preset, "gpt-4o-mini-transcribe")
-        val language = prefs.dictate.activeInputLanguage.get().takeIf { it != DictateLanguages.DETECT }
+        val language = MaLanguage.active()
         val style = transcriptionStylePrompt()
         val prompt = continuity.takeLast(200).trim().let { if (it.isEmpty()) style else "$it $style".trim() }
         val request = TranscriptionRequest(audioFile = wav, model = model, language = language, prompt = prompt)
@@ -3368,13 +3379,10 @@ object DictateController {
      */
     private suspend fun buildChatAudioInstruction(context: Context): String {
         val parts = mutableListOf<String>()
-        val langCode = prefs.dictate.activeInputLanguage.get()
-        if (langCode != DictateLanguages.DETECT) {
-            // Source-language hint only (not an output directive) so it never fights a "translate to X"
-            // rewording prompt — the weaker models otherwise just echo the spoken language.
-            DictateLanguages.englishNameFor(langCode)?.takeIf { it.isNotBlank() }
-                ?.let { parts.add("The audio is spoken in $it.") }
-        }
+        // Source-language hint only (not an output directive) so it never fights a "translate to X"
+        // rewording prompt — the weaker models otherwise just echo the spoken language.
+        DictateLanguages.englishNameFor(MaLanguage.active())?.takeIf { it.isNotBlank() }
+            ?.let { parts.add("The audio is spoken in $it.") }
         transcriptionStylePrompt()?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
         // Formatting/rewording is folded in only when the user has rewording enabled (mirrors
         // postProcessTranscript's gating), so single-call output matches the two-call output.
@@ -3514,23 +3522,17 @@ object DictateController {
      * turns that into "fast until about two minutes, then slow" without any timer of its own.
      */
     private fun maUseSyncPath(preset: ProviderPreset, chatAudio: Boolean, file: File): Boolean {
-        val lang = prefs.dictate.activeInputLanguage.get()
-        val candidates = DictateLanguages
-            .parseSelection(prefs.dictate.inputLanguages.get())
-            .map { it.code }
+        // MaLanguage.active() and not the raw preference, deliberately. It answers hr or en and
+        // nothing else, collapsing anything left over from an older install — including the auto
+        // detect this app no longer offers — to Croatian. The gate therefore has two cases rather
+        // than three, and an install that still has "detect" stored gets the safe one.
+        val lang = MaLanguage.active()
 
-        // Auto-detect with Croatian among the candidates counts as Croatian. Which language it
-        // actually is cannot be known until after it has been transcribed, and by then the damage is
-        // done: guessing Sync and being wrong produces exactly the plausible-but-wrong Croatian this
-        // whole gate exists to prevent.
-        val croatianInPlay = lang == "hr" || (lang == DictateLanguages.DETECT && "hr" in candidates)
-        if (croatianInPlay) return false
-
-        // An allow-list, not a deny-list, and that direction is the point. A language nobody has
-        // checked is slow until somebody checks it: slow costs a few seconds, wrong costs the
-        // sentence. Extend this only for a language whose Sync output has actually been read.
-        val effective = if (lang == DictateLanguages.DETECT) candidates.singleOrNull() else lang
-        if (effective !in SYNC_SAFE_LANGUAGES) return false
+        // An allow-list, not a deny-list, and that direction is the point. Sync's fast model returns
+        // fluent Croatian that is the wrong words, so being wrong here costs the sentence and there
+        // is nothing in the result to notice. Only a language whose Sync output has actually been
+        // read belongs on this list.
+        if (lang !in SYNC_SAFE_LANGUAGES) return false
 
         // Deliberately NOT gated on prefs.dictate.maSpeed any more, and this is not an oversight.
         //
