@@ -105,7 +105,6 @@ object MaClipCapture {
     fun isFull(slots: List<String?>, visible: Set<Int>): Boolean =
         visible.isNotEmpty() && visible.all { slots.getOrNull(it - 1) != null }
 
-    /** How many buckets are holding something, for the trash key's dimmed state. */
     /** How many visible buckets are holding something, for the trash key's dimmed state. */
     fun filledCount(slots: List<String?>, visible: Set<Int>): Int =
         visible.count { slots.getOrNull(it - 1) != null }
