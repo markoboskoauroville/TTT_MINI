@@ -72,13 +72,96 @@ object MaScreenTargets {
         val out = LinkedHashSet<String>()
         for (root in appWindowRoots(service)) {
             try {
-                collectClickable(root, out, 0)
+                // The page, not the browser around it.
+                //
+                // In a browser the address bar, the tab counter, the menu and the back button are
+                // all clickable and all irrelevant: Marko is looking for a button on the site, and
+                // offering him "New tab" and "Bookmarks" alongside it is the noise he asked to be
+                // rid of.
+                //
+                // The two are cleanly separable. Web content is rendered by the engine and appears
+                // under a node of class android.webkit.WebView; the browser's own furniture is
+                // ordinary Android views outside it. So when a page is present, only the page is
+                // read. When there is none — a native app, where everything on screen is the app —
+                // the whole window is read as before.
+                val contents = webContents(root)
+                if (contents.isEmpty()) {
+                    collectClickable(root, out, 0)
+                } else {
+                    for (content in contents) {
+                        try {
+                            collectClickable(content, out, 0)
+                        } finally {
+                            runCatching { content.recycle() }
+                        }
+                    }
+                }
             } finally {
                 runCatching { root.recycle() }
             }
         }
         return out.toList()
     }
+
+    /**
+     * The web page roots inside a window, or empty when the window holds none.
+     *
+     * Nested WebViews are not descended into twice: the outer one already contains the inner, and
+     * collecting both would offer every button on the page a second time.
+     */
+    private fun webContents(root: AccessibilityNodeInfo): List<AccessibilityNodeInfo> {
+        val found = mutableListOf<AccessibilityNodeInfo>()
+        collectWebViews(root, found, 0)
+        return found
+    }
+
+    private fun collectWebViews(
+        node: AccessibilityNodeInfo,
+        out: MutableList<AccessibilityNodeInfo>,
+        depth: Int,
+    ) {
+        if (depth > 28) return
+        if (node.isVisibleToUser && isWebRoot(node)) {
+            out.add(AccessibilityNodeInfo.obtain(node))
+            // Stop here: everything below is this page, and it will be walked when the page is read.
+            return
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectWebViews(child, out, depth + 1)
+            runCatching { child.recycle() }
+        }
+    }
+
+    /**
+     * Whether this node is the top of a rendered web page.
+     *
+     * Two ways of telling, because one browser is not enough. Chromium and the system WebView both
+     * report the class below, and Marko uses Chrome. Firefox renders through GeckoView, which does
+     * not always report that class, so the view id is checked as well — the ids below are the
+     * containers each browser puts its page inside.
+     *
+     * Getting this wrong is safe in one direction only, which is why both checks are narrow: failing
+     * to find a page means the whole window is scanned, which is merely the old noisy behaviour.
+     * Matching something that is not a page would hide the buttons that are actually there.
+     */
+    private fun isWebRoot(node: AccessibilityNodeInfo): Boolean {
+        if (node.className?.toString() == WEB_VIEW_CLASS) return true
+        val id = node.viewIdResourceName?.substringAfterLast('/') ?: return false
+        return id in WEB_ROOT_IDS
+    }
+
+    /** The class Chromium and the system WebView both report for a rendered page. */
+    private const val WEB_VIEW_CLASS = "android.webkit.WebView"
+
+    /** Page containers, by view id: Chromium first, then GeckoView as Firefox builds it. */
+    private val WEB_ROOT_IDS = setOf(
+        "compositor_view_holder",
+        "webview",
+        "engine_view",
+        "gecko_view",
+        "geckoview",
+    )
 
     private fun collectClickable(
         node: AccessibilityNodeInfo,
@@ -90,7 +173,7 @@ object MaScreenTargets {
         // clickable parent, which on a chat screen means every line of the conversation: Marko's
         // list came back holding "Claude is AI and can make mistakes" and the whole message body.
         // A screen is mostly text, and a picker full of text is a picker nobody can find a button in.
-        if (node.isVisibleToUser && node.isClickable && node.isEnabled) {
+        if (node.isVisibleToUser && node.isClickable && node.isEnabled && !isChrome(node)) {
             // The label may be on the button or on the icon inside it, so look down as well as at
             // the node itself — but only for the button's own label, not for everything under it.
             (labelOf(node) ?: childLabel(node))?.let { out.add(it) }
@@ -101,6 +184,39 @@ object MaScreenTargets {
             runCatching { child.recycle() }
         }
     }
+
+    /**
+     * Whether this is the app's own furniture rather than something in the content.
+     *
+     * Only matters for apps with no web page in them, where the whole window is scanned and the
+     * toolbar comes with it. A chat app's back arrow, hamburger, overflow and new-conversation
+     * button are clickable, are never what Marko is reaching for, and sit at the top of every list
+     * because they sit at the top of every screen.
+     *
+     * Matched on the view id rather than the label, because the label is what he might legitimately
+     * search for: a page could contain a button honestly called "Menu". An id belongs to the app's
+     * own layout and is not something a web page produces at all.
+     *
+     * Deliberately short and it should stay short. This is a list of things certain to be furniture,
+     * not a general tidy-up: anything wrongly on it is a button he cannot reach, and that failure is
+     * silent.
+     */
+    private fun isChrome(node: AccessibilityNodeInfo): Boolean {
+        val id = node.viewIdResourceName?.substringAfterLast('/')?.lowercase() ?: return false
+        return CHROME_IDS.any { id == it }
+    }
+
+    /** Browser and app furniture, by view id. Exact matches only. */
+    private val CHROME_IDS = setOf(
+        // Chromium's toolbar
+        "url_bar", "search_box_text", "tab_switcher_button", "menu_button", "home_button",
+        "back_button", "forward_button", "refresh_button", "bookmark_button",
+        // GeckoView's toolbar, as Firefox builds it
+        "mozac_browser_toolbar_url_view", "mozac_browser_toolbar_menu", "counter_box",
+        "mozac_browser_toolbar_navigation_actions",
+        // Android's own
+        "navigation_bar_item_icon_view",
+    )
 
     /** The first short label among a button's immediate children, for an icon button. */
     private fun childLabel(node: AccessibilityNodeInfo): String? {
