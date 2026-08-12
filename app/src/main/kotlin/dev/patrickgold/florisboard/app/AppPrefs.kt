@@ -1057,6 +1057,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * Editable so a new site costs a line here rather than a build. Empty falls back to
          * MaMagicTargets.defaults(), so clearing it cannot leave a key that does nothing.
          */
+        val maMagicTargets = string(
+            key = "dictate__ma_magic_targets",
+            default = "",
+        )
+
         /**
          * How far the S key scrolls, in pages. Negative scrolls up.
          *
@@ -1067,11 +1072,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val maScrollPages = int(
             key = "dictate__ma_scroll_pages",
             default = 1,
-        )
-
-        val maMagicTargets = string(
-            key = "dictate__ma_magic_targets",
-            default = "",
         )
 
         val maClipCaptured = string(

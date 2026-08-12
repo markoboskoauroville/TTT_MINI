@@ -804,7 +804,10 @@ private fun MaScrollStepper(
             fontSize = 22.sp,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier
-                .clickable { onChange((pages - 1).coerceAtLeast(-10)) }
+                // Steps over zero rather than through it. Zero pages is a key that does nothing,
+                // which on a stepper reads as the key having broken rather than as a value chosen —
+                // and it is passed through twice on the way from down to up.
+                .clickable { onChange(maStepScroll(pages, -1)) }
                 .padding(horizontal = 18.dp, vertical = 4.dp),
         )
         Text(
@@ -819,7 +822,7 @@ private fun MaScrollStepper(
             fontSize = 22.sp,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier
-                .clickable { onChange((pages + 1).coerceAtMost(10)) }
+                .clickable { onChange(maStepScroll(pages, 1)) }
                 .padding(horizontal = 18.dp, vertical = 4.dp),
         )
         Text(
@@ -918,4 +921,16 @@ private fun maOpenAccessibilitySettings(context: android.content.Context) {
         context.getString(R.string.ma__accessibility_needed),
         Toast.LENGTH_LONG,
     ).show()
+}
+
+/**
+ * Moves the scroll count one step, skipping zero and stopping at ten either way.
+ *
+ * The sign is the direction, so the sequence runs ... -2, -1, 1, 2 ... and never rests on a value
+ * that would make the key do nothing.
+ */
+private fun maStepScroll(pages: Int, delta: Int): Int {
+    val next = pages + delta
+    val stepped = if (next == 0) pages + delta * 2 else next
+    return stepped.coerceIn(-10, 10)
 }
