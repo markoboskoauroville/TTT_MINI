@@ -22,10 +22,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.automirrored.filled.Send
 import dev.patrickgold.florisboard.dictate.overlay.MaAppSwitcher
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import android.widget.Toast
+import androidx.compose.material.icons.filled.AutoFixHigh
+import dev.patrickgold.florisboard.dictate.overlay.MaScreenTargets
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Keyboard
@@ -195,6 +196,14 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // cannot disagree about how many buckets exist.
     val visibleClipSlots = remember(storedRows) { MaRows.visibleClipSlots(storedRows) }
     val bucketsFull = MaClipCapture.isFull(capturedSlots, visibleClipSlots)
+
+    // What the magic key looks for, newest first. Editable in settings so a new site costs a line
+    // of text rather than a build.
+    val magicRaw by prefs.dictate.maMagicTargets.collectAsState()
+    val magicTargets = remember(magicRaw) {
+        magicRaw.split('\n').map { it.trim() }.filter { it.isNotEmpty() }
+            .ifEmpty { MaScreenTargets.DEFAULT_TARGETS }
+    }
     // Changing the default is not enough on its own. Anyone whose preferences already hold an
     // explicit false — written by the old default, or by the FlorisBoard screen that still offers
     // the switch — would keep an empty history and ten dead keys, and would have no way to guess
@@ -426,10 +435,14 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         tint = if (MaAppSwitcher.hasTarget()) null else MaDimmed,
                         onLongClick = fold,
                     ) {
-                        if (!MaAppSwitcher.switchToPrevious(context)) {
-                            // Silence here would be indistinguishable from a broken key. The
-                            // accessibility service is switched on by hand and may simply not be,
-                            // and nothing on the row could say so.
+                        if (!DictateAccessibilityService.isRunning) {
+                            // The whole reason this key fires blanks, and the user cannot guess it.
+                            // Both these keys read the screen through the accessibility service,
+                            // which is switched on by hand in the system settings and is off until
+                            // somebody does. Opening that screen is more use than a message saying
+                            // something did not work.
+                            maOpenAccessibilitySettings(context)
+                        } else if (!MaAppSwitcher.switchToPrevious(context)) {
                             Toast.makeText(
                                 context,
                                 context.getString(R.string.ma__app_switch_none),
@@ -440,19 +453,30 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 }
 
                 MaFeatureKey.SEND_BUTTON -> {
+                    // The magic wand: presses whichever of the listed buttons is on screen.
+                    //
+                    // One key for several buttons because they are never up at the same time — a
+                    // send arrow, an Add URL dialog, a Generate button. The list is editable in
+                    // settings, so a new site is a line of text rather than a new build.
                     ThemedIconKey(
                         code = KeyCode.NOOP,
-                        icon = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = stringRes(R.string.ma__send_button),
+                        icon = Icons.Default.AutoFixHigh,
+                        contentDescription = stringRes(R.string.ma__magic_button),
                         modifier = keyMod,
+                        tint = if (DictateAccessibilityService.isRunning) null else MaDimmed,
                         onLongClick = fold,
                     ) {
-                        if (!DictateAccessibilityService.pressSendButton()) {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.ma__send_button_none),
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                        if (!DictateAccessibilityService.isRunning) {
+                            maOpenAccessibilitySettings(context)
+                        } else {
+                            val pressed = DictateAccessibilityService.pressScreenTarget(magicTargets)
+                            if (pressed == null) {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.ma__magic_button_none),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         }
                     }
                 }
@@ -582,3 +606,25 @@ private const val MA_CLIP_STEP_MS = 200L
 
 /** The grey a key wears when it is present but has nothing to act on. */
 private val MaDimmed = Color(0xFF6B6B6B)
+
+/**
+ * Opens the system accessibility settings, where the service has to be switched on by hand.
+ *
+ * Android gives no way to turn it on from inside the app and no deep link to this app's own row in
+ * that list, so this lands on the list and the user finds TTT mini in it. Still far better than a
+ * message: the keys that need the service are useless until this is done, and nothing else in the
+ * app says so at the moment it matters.
+ */
+private fun maOpenAccessibilitySettings(context: android.content.Context) {
+    runCatching {
+        context.startActivity(
+            android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
+    Toast.makeText(
+        context,
+        context.getString(R.string.ma__accessibility_needed),
+        Toast.LENGTH_LONG,
+    ).show()
+}

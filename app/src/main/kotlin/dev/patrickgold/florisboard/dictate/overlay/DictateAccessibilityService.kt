@@ -604,14 +604,16 @@ class DictateAccessibilityService : AccessibilityService() {
          * leaves a stale root pointing at a screen the user is no longer looking at, and clicking
          * inside that does something invisible in an app they cannot see.
          */
-        fun pressSendButton(): Boolean {
-            val ims = instance ?: return false
-            val root = ims.rootInActiveWindow ?: return false
-            return try {
-                MaSendButton.pressIn(root)
-            } finally {
-                runCatching { root.recycle() }
-            }
+        /**
+         * Presses the first of [targets] found on screen. Returns the label pressed, or null.
+         *
+         * Null covers two different situations and the caller has to tell them apart, which is why
+         * [isRunning] exists beside this: the service being switched off is a thing the user can
+         * fix, and nothing on screen matching is a thing they can only be told about.
+         */
+        fun pressScreenTarget(targets: List<String>): String? {
+            val ims = instance ?: return null
+            return MaScreenTargets.pressFirstMatch(ims, targets)
         }
 
         private val _editableFocused = MutableStateFlow(false)

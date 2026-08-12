@@ -29,7 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Mic
@@ -411,8 +411,10 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             MaFeatureKey.APP_SWITCH ->
                 Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.SEND_BUTTON ->
+                // The wand, matching the row. The editor showing a different picture from the key
+                // is the mismatch this preview exists to prevent.
                 Icon(
-                    Icons.AutoMirrored.Filled.Send,
+                    Icons.Default.AutoFixHigh,
                     contentDescription = null,
                     tint = tint,
                     modifier = size,

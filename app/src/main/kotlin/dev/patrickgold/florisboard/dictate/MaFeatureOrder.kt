@@ -84,7 +84,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * send button is labelled, which is nearly everywhere, because an unlabelled one is unusable to
      * a screen reader.
      */
-    SEND_BUTTON("send", "Send, the app's own button"),
+    SEND_BUTTON("send", "Magic, press the button on screen"),
 
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),

@@ -914,8 +914,9 @@
     <string name="ma__clip_clear">Empty the C buckets</string>
     <string name="ma__app_switch">Switch to the last app</string>
     <string name="ma__app_switch_none">No app to switch back to yet</string>
-    <string name="ma__send_button">Press the app’s send button</string>
-    <string name="ma__send_button_none">No send button found on screen</string>
+    <string name="ma__magic_button">Press the button on screen</string>
+    <string name="ma__magic_button_none">No matching button on this screen</string>
+    <string name="ma__accessibility_needed">Turn on TTT mini here so it can press buttons for you</string>
     <string name="ma__clip_clear_empty">Empty the C buckets, all already empty</string>
     <string name="dictate__legacy_action_all_clear">Select all and delete</string>
     <string name="dictate__legacy_action_space">Space</string>
