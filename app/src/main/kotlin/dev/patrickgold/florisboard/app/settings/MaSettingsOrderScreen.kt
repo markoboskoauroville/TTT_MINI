@@ -69,6 +69,7 @@ val MaSettingsEntry.icon: ImageVector
         MaSettingsEntry.MACROS -> Icons.Default.Bolt
         MaSettingsEntry.DB -> Icons.Default.Dashboard
         MaSettingsEntry.KEYS -> Icons.Default.Key
+        MaSettingsEntry.VOCABULARY -> Icons.Default.Spellcheck
         MaSettingsEntry.RECORDING -> Icons.Default.Mic
         MaSettingsEntry.REWORDING -> Icons.Default.AutoAwesome
         MaSettingsEntry.MAPPINGS -> Icons.Default.Spellcheck
@@ -96,6 +97,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.MACROS -> Routes.Settings.DictateMacros
         MaSettingsEntry.DB -> Routes.Settings.DbEditor
         MaSettingsEntry.KEYS -> Routes.Settings.DictateKeys
+        MaSettingsEntry.VOCABULARY -> Routes.Settings.MaVocabulary
         MaSettingsEntry.RECORDING -> Routes.Settings.DictateRecording
         MaSettingsEntry.REWORDING -> Routes.Settings.DictateRewording
         MaSettingsEntry.MAPPINGS -> Routes.Settings.DictateMappings
