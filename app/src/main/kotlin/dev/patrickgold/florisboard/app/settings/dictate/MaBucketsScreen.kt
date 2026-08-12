@@ -59,21 +59,22 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun MaBucketsScreen() = FlorisScreen {
-    title = "Copy buckets"
+    title = "Paste timing"
 
     content {
         val prefs by FlorisPreferenceStore
 
         Text(
-            text = "A bucket key selects everything in the field, deletes it, then pastes. These " +
-                "are the waits between those three steps.",
+            text = "The C bucket keys, AP and AC all do the same thing to a text field: select " +
+                "everything, delete it, then paste. These are the waits between those steps.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
         Text(
-            text = "If a bucket does nothing in some app, or empties the field without filling it, " +
-                "raise the wait before the paste first. That is the step that gets dropped.",
+            text = "If a key does nothing in some app, or empties the field without filling it, " +
+                "raise the wait before the paste first. That is the step that gets dropped. AC " +
+                "stops after the delete, so the third wait does not affect it.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp),

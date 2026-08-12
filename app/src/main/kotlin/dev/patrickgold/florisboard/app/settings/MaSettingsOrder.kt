@@ -29,7 +29,7 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     DB("db", "db", "The dashboard: what is on it, and how to open it"),
     KEYS("keys", "API keys", "Import, test and manage every key"),
     VOCABULARY("vocabulary", "Learn my words", "Teach the keyboard the names you dictate"),
-    BUCKETS("buckets", "Copy buckets", "How long each step of a bucket paste waits"),
+    BUCKETS("buckets", "Paste timing", "How long each step waits, for the buckets, AP and AC"),
     RECORDING("recording", "Recording", null),
     REWORDING("rewording", "Rewording (AI)", null),
     MAPPINGS("mappings", "Custom mappings", null),

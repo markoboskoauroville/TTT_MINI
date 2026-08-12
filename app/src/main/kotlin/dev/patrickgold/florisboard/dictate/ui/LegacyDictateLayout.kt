@@ -389,11 +389,7 @@ fun LegacyDictateLayout(
     }
 }
 
-/** Lead-in before a macro step the field only has to notice. See ALL_PASTE. */
-private const val MA_MACRO_LEAD_MS = 100L
 
-/** The wait before a paste, which is the step that actually gets dropped. See ALL_PASTE. */
-private const val MA_MACRO_PASTE_MS = 500L
 
 /**
  * A single legacy key: the active theme's `key` colours for the given [code] (so special keys such as
@@ -520,8 +516,18 @@ internal fun LegacyActionKey(
     onNumbers: () -> Unit = { keyboardManager.activeState.keyboardMode = KeyboardMode.NUMERIC_ADVANCED },
 ) {
     val context = LocalContext.current
+    val prefs by FlorisPreferenceStore
     val label = stringRes(action.labelRes)
     val actionScope = rememberCoroutineScope()
+    // The same three waits the copy buckets use, and deliberately not settings of their own.
+    //
+    // AP, AC and a bucket key do the same three things to the same field: select everything, delete
+    // it, put text in. What makes a field too slow is the field, not which key asked — so tuning
+    // them apart would mean finding the same number twice, and forgetting the second one when an
+    // app got slower.
+    val delaySelect by prefs.dictate.maClipDelaySelect.collectAsState()
+    val delayDelete by prefs.dictate.maClipDelayDelete.collectAsState()
+    val delayPaste by prefs.dictate.maClipDelayPaste.collectAsState()
     // Named apart from the row's own locals: this composable is called per key and these two are
     // only wanted by the snippet gesture.
     val snippetClipboard by context.clipboardManager()
@@ -604,15 +610,15 @@ internal fun LegacyActionKey(
             onClick = {
                 actionScope.launch {
                     keyboardManager.activeState.isManualSelectionMode = false
-                    delay(MA_MACRO_LEAD_MS)
+                    if (delaySelect > 0) delay(delaySelect.toLong())
                     FlorisImeService.currentInputConnection()
                         ?.performContextMenuAction(android.R.id.selectAll)
-                    delay(MA_MACRO_LEAD_MS)
+                    if (delayDelete > 0) delay(delayDelete.toLong())
                     // The connection is fetched again at every step rather than held. Most of a
                     // second is a long time in an input method and the field can be replaced
                     // underneath a macro, at which point a stale connection writes into nothing.
                     FlorisImeService.currentInputConnection()?.commitText("", 1)
-                    delay(MA_MACRO_PASTE_MS)
+                    if (delayPaste > 0) delay(delayPaste.toLong())
                     FlorisImeService.currentInputConnection()
                         ?.performContextMenuAction(android.R.id.paste)
                 }
@@ -642,10 +648,10 @@ internal fun LegacyActionKey(
             onClick = {
                 actionScope.launch {
                     keyboardManager.activeState.isManualSelectionMode = false
-                    delay(MA_MACRO_LEAD_MS)
+                    if (delaySelect > 0) delay(delaySelect.toLong())
                     FlorisImeService.currentInputConnection()
                         ?.performContextMenuAction(android.R.id.selectAll)
-                    delay(MA_MACRO_LEAD_MS)
+                    if (delayDelete > 0) delay(delayDelete.toLong())
                     FlorisImeService.currentInputConnection()?.commitText("", 1)
                 }
             },
