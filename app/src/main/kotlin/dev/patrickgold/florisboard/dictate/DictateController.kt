@@ -495,6 +495,16 @@ object DictateController {
     private const val SYNC_SECONDS_MARGIN = 2.0
 
     /** 20 Hz is responsive for a voice indicator while avoiding a display-rate UI loop. */
+    /**
+     * The only languages allowed on the Sync path.
+     *
+     * An allow-list on purpose. Sync's fast model is strong on English and returns confident nonsense
+     * on Croatian — fluent-sounding sentences that are the wrong words — so the cost of guessing
+     * wrong is a transcript nobody can tell is broken. A language stays slow until its Sync output
+     * has actually been read by somebody. Slow costs seconds; wrong costs the sentence.
+     */
+    private val SYNC_SAFE_LANGUAGES = setOf("en")
+
     private const val AUDIO_LEVEL_SAMPLE_MS = 50L
 
     /** Cumulative recorded audio (seconds) after which the rate / donate nudges appear (roadmap 9.7/9.8). */
@@ -3489,8 +3499,48 @@ object DictateController {
      * than assumed.
      */
 
+    /**
+     * Whether this dictation goes down the Sync path, decided by language first of all.
+     *
+     * ### The failure this exists to prevent
+     *
+     * Sync's fast model transcribes Croatian badly, and badly in the worst possible way: it returns
+     * fluent Croatian that is the wrong words. Not garbled, not empty, not obviously broken —
+     * plausible sentences nobody would question without knowing what was said. A wrong answer that
+     * looks right is worse than an error, because there is nothing to notice.
+     *
+     * So the language decides the path, and speed is no longer something the user sets. Croatian is
+     * always async. English may use Sync while the clip fits its window, and the length check below
+     * turns that into "fast until about two minutes, then slow" without any timer of its own.
+     */
     private fun maUseSyncPath(preset: ProviderPreset, chatAudio: Boolean, file: File): Boolean {
-        if (prefs.dictate.maSpeed.get() != MaSpeed.FAST) return false
+        val lang = prefs.dictate.activeInputLanguage.get()
+        val candidates = DictateLanguages
+            .parseSelection(prefs.dictate.inputLanguages.get())
+            .map { it.code }
+
+        // Auto-detect with Croatian among the candidates counts as Croatian. Which language it
+        // actually is cannot be known until after it has been transcribed, and by then the damage is
+        // done: guessing Sync and being wrong produces exactly the plausible-but-wrong Croatian this
+        // whole gate exists to prevent.
+        val croatianInPlay = lang == "hr" || (lang == DictateLanguages.DETECT && "hr" in candidates)
+        if (croatianInPlay) return false
+
+        // An allow-list, not a deny-list, and that direction is the point. A language nobody has
+        // checked is slow until somebody checks it: slow costs a few seconds, wrong costs the
+        // sentence. Extend this only for a language whose Sync output has actually been read.
+        val effective = if (lang == DictateLanguages.DETECT) candidates.singleOrNull() else lang
+        if (effective !in SYNC_SAFE_LANGUAGES) return false
+
+        // Deliberately NOT gated on prefs.dictate.maSpeed any more, and this is not an oversight.
+        //
+        // That preference defaults to SLOW and, worse, holds whatever the old FAST/SLOW key was last
+        // left on. Reading it here would mean English silently never taking the fast path on every
+        // install that had ever tapped that key to SLOW — a setting the user can no longer see, let
+        // alone change, because the key that set it is gone. A control that has been removed must
+        // not keep voting.
+        //
+        // The language decides, and nothing else does.
         // Sync belongs to AssemblyAI and to no other account. Anything else keeps its own path.
         if (preset.transcriptionApi != TranscriptionApi.ASSEMBLYAI_ASYNC) return false
         // Chat-audio transcribes and formats in one chat request; Sync does transcription only.

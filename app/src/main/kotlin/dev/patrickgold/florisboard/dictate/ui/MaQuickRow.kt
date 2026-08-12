@@ -51,7 +51,6 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaCase
 import dev.patrickgold.florisboard.dictate.MaLanguage
-import dev.patrickgold.florisboard.dictate.MaSpeed
 import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
@@ -98,8 +97,6 @@ fun MaQuickRow(modifier: Modifier = Modifier) {
     // in, which was removed on purpose.
     val languageBadge = remember(activeCode) { MaLanguage.badge() }
 
-    val speed by prefs.dictate.maSpeed.collectAsState()
-    val speedScope = rememberCoroutineScope()
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -137,37 +134,18 @@ fun MaQuickRow(modifier: Modifier = Modifier) {
         // FAST or SLOW, in the slot the language buttons gave back. Marko's: one saving paid straight
         // into the next thing worth reaching without opening settings.
         //
-        // The two words name the experience rather than the wire format. SLOW uploads a small
-        // compressed file, waits for the job, and costs a third as much; FAST posts the audio and the
-        // transcript comes back in the same breath, at about 134 ms, for three times the price. Which
-        // one is worth it depends on whether the sentence is worth waiting for, and that is a
-        // judgement made in the second before speaking, which is why it belongs on this row and not
-        // in a settings screen.
+        // The FAST/SLOW key stood here and is gone.
         //
-        // Shown like the language key, without a lit state, for the same reason: it says where you
-        // are, and one tap is the only move. A pressed-looking FAST would invite the question of what
-        // an unpressed FAST would mean, and there is no such thing.
+        // It was a real judgement while it lasted: FAST returns the transcript in the same breath at
+        // three times the price, SLOW uploads a small file and waits. But it was the wrong question
+        // to put in front of somebody, because the answer is not a preference — it is a property of
+        // the language. Sync's fast model is strong on English and returns fluent Croatian that is
+        // the wrong words, so FAST plus Croatian was a setting that quietly ruined the dictation and
+        // looked fine doing it.
         //
-        // FAST IS A PREFERENCE, NEVER A PROMISE, and the key does not pretend otherwise. Anything
-        // past the sync endpoint's two minute cap goes down the slow path automatically and silently,
-        // because a long recording is the one that took the most effort and must never be the one
-        // that fails. See DictateController.maUseSyncPath.
-        MaQuickKey(
-            selected = false,
-            onClick = {
-                speedScope.launch {
-                    prefs.dictate.maSpeed.set(if (speed == MaSpeed.FAST) MaSpeed.SLOW else MaSpeed.FAST)
-                }
-            },
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-        ) { fg ->
-            Text(
-                text = if (speed == MaSpeed.FAST) "FAST" else "SLOW",
-                color = fg,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 12.sp,
-            )
-        }
+        // The language key next door now decides both. HR goes async; ENG may go Sync while the clip
+        // is short enough, and falls to async past the two minute cap on its own. See
+        // DictateController.maUseSyncPath.
         // Four case buttons, and they only ever act on text that already exists. They set nothing,
         // remember nothing, and have no on state: press one and the words in the field are rewritten
         // there and then.

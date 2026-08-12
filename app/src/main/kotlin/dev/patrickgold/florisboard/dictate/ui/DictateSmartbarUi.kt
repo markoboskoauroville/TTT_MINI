@@ -105,7 +105,6 @@ import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaLanguage
-import dev.patrickgold.florisboard.dictate.MaSpeed
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.DictateRecordingAnimation
@@ -481,15 +480,19 @@ private fun MaUtilityKeys(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val activeCode by prefs.dictate.activeInputLanguage.collectAsState()
-    val speed by prefs.dictate.maSpeed.collectAsState()
     val languageBadge = remember(activeCode) { MaLanguage.badge() }
 
+    // HR/ENG stays, and it now carries more weight than it did.
+    //
+    // This is the on-the-fly control: tapped between recordings, it sets the transcription language
+    // and the keyboard's suggestions together. Since the Sync gate reads activeInputLanguage, this
+    // one key now also decides which path the next dictation takes — HR goes async, ENG may go Sync
+    // while the clip is short enough. One tap, both consequences, nothing else to remember.
+    //
+    // The FAST/SLOW key that sat beside it is gone. Speed is a consequence of the language now
+    // rather than a choice, and left as a control it could be set to exactly the combination that
+    // ruins a dictation: FAST on Croatian, which returns fluent sentences that are the wrong words.
     MaUtilityKey(label = languageBadge, modifier = modifier) { MaLanguage.toggle(context) }
-    MaUtilityKey(label = if (speed == MaSpeed.FAST) "FAST" else "SLOW", modifier = modifier) {
-        scope.launch {
-            prefs.dictate.maSpeed.set(if (speed == MaSpeed.FAST) MaSpeed.SLOW else MaSpeed.FAST)
-        }
-    }
 }
 
 /** One key, in the feature row's own style, sized to its label rather than to a grid. */
