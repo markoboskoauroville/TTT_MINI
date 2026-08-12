@@ -611,6 +611,12 @@ class DictateAccessibilityService : AccessibilityService() {
          * [isRunning] exists beside this: the service being switched off is a thing the user can
          * fix, and nothing on screen matching is a thing they can only be told about.
          */
+        /** Everything pressable on the screen in front, for the wand's picker. */
+        fun scanScreenTargets(): List<String> {
+            val ims = instance ?: return emptyList()
+            return MaScreenTargets.scanClickable(ims)
+        }
+
         fun pressScreenTarget(targets: List<String>): String? {
             val ims = instance ?: return null
             return MaScreenTargets.pressFirstMatch(ims, targets)

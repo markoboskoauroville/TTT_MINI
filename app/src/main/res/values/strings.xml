@@ -916,6 +916,9 @@
     <string name="ma__app_switch_none">No app to switch back to yet</string>
     <string name="ma__magic_button">Press the button on screen</string>
     <string name="ma__magic_button_none">No matching button on this screen</string>
+    <string name="ma__magic_scan_title">Tap a button to add it to the wand</string>
+    <string name="ma__magic_scan_close">Close</string>
+    <string name="ma__magic_scan_none">Nothing pressable found on this screen</string>
     <string name="ma__accessibility_needed">Turn on TTT mini here so it can press buttons for you</string>
     <string name="ma__clip_clear_empty">Empty the C buckets, all already empty</string>
     <string name="dictate__legacy_action_all_clear">Select all and delete</string>

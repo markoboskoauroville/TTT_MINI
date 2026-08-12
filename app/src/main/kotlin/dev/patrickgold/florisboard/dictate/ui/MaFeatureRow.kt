@@ -29,6 +29,13 @@ import androidx.compose.material.icons.filled.AutoFixHigh
 import dev.patrickgold.florisboard.dictate.overlay.MaScreenTargets
 import androidx.compose.material.icons.filled.History
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Keyboard
@@ -209,6 +216,9 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // What the magic key looks for, newest first. Editable in settings so a new site costs a line
     // of text rather than a build.
     val magicRaw by prefs.dictate.maMagicTargets.collectAsState()
+    // What the last scan found, held only while the picker is open.
+    var scanned by remember { mutableStateOf<List<String>>(emptyList()) }
+
     val magicTargets = remember(magicRaw) {
         // Ticked terms only, in the order the user dragged them into: the wand presses the first it
         // finds, so the order is the user's answer to "which did you mean" on a screen with two.
@@ -489,7 +499,27 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         // often than any other key's, and a key whose behaviour depends entirely on
                         // a list should put that list one gesture away. Folding is still on every
                         // other key in the row.
-                        onLongClick = { MaSettingsResume.open(context, "settings/dictate/magic") },
+                        // Long press reads the screen and offers what is on it.
+                        //
+                        // This replaced opening the settings screen, and it is the better use of
+                        // the gesture: the settings screen can be reached from settings, whereas
+                        // the labels on the screen in front can only be read while that screen is
+                        // in front. Claude's send button carries no visible text, so there was
+                        // nothing to type and no way to find out what to type.
+                        onLongClick = {
+                            if (!DictateAccessibilityService.isRunning) {
+                                maOpenAccessibilitySettings(context)
+                            } else {
+                                scanned = DictateAccessibilityService.scanScreenTargets()
+                                if (scanned.isEmpty()) {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.ma__magic_scan_none),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            }
+                        },
                     ) {
                         if (!DictateAccessibilityService.isRunning) {
                             maOpenAccessibilitySettings(context)
@@ -565,6 +595,89 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
         }
         }
       }
+
+      // The picker, over the row, listing what the last scan found.
+      //
+      // Drawn inside the keyboard's own window rather than as a system dialog: an input method
+      // cannot put up a dialog, and it does not need to. The keyboard is already on screen and
+      // already the thing the finger is on.
+      if (scanned.isNotEmpty()) {
+        MaScanPicker(
+          found = scanned,
+          existing = magicTargets,
+          onPick = { label ->
+            scope.launch {
+              val current = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
+                .ifEmpty { MaMagicTargets.defaults() }
+              // Appended rather than inserted at the top. The wand presses the first term it
+              // finds, so a new term must not quietly outrank the ones already relied on.
+              if (current.none { it.term.equals(label, ignoreCase = true) }) {
+                prefs.dictate.maMagicTargets.set(
+                  MaMagicTargets.serialize(current + MaMagicTargets.Target(label)),
+                )
+              }
+            }
+            scanned = emptyList()
+          },
+          onDismiss = { scanned = emptyList() },
+        )
+      }
+    }
+}
+
+/**
+ * What the wand found on screen, to be picked from rather than typed.
+ *
+ * Terms already in the list are shown ticked and cannot be added twice — the same button scanned on
+ * two visits would otherwise pile up duplicates, and a list with three identical rows looks broken.
+ */
+@Composable
+private fun MaScanPicker(
+    found: List<String>,
+    existing: List<String>,
+    onPick: (String) -> kotlin.Unit,
+    onDismiss: () -> kotlin.Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 220.dp)
+            .background(Color(0xFF16161A))
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringRes(R.string.ma__magic_scan_title),
+                color = Color(0xFFE8B15C),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringRes(R.string.ma__magic_scan_close),
+                color = Color(0x99FFFFFF),
+                fontSize = 13.sp,
+                modifier = Modifier
+                    .clickable { onDismiss() }
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+        found.forEach { label ->
+            val already = existing.any { it.equals(label, ignoreCase = true) }
+            Text(
+                text = if (already) "\u2713  $label" else label,
+                color = if (already) Color(0xFF6FA85A) else Color(0xFFECEAE3),
+                fontSize = 15.sp,
+                maxLines = 1,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = !already) { onPick(label) }
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            )
+        }
     }
 }
 

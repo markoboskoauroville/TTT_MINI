@@ -53,6 +53,74 @@ object MaScreenTargets {
     )
 
     /**
+     * Everything on screen that can be pressed, with the label that would find it.
+     *
+     * The answer to "how would I know its name". Claude's send button carries no visible text — it
+     * is an orange circle with an arrow — so there is nothing to type into the term list, and until
+     * now the only way to find its label was to guess. This reads the labels straight out of the
+     * screen and lets him pick one.
+     *
+     * Only genuinely pressable things are listed. A screen holds hundreds of nodes and almost all of
+     * them are layout: offering those would bury the four buttons that matter under a wall of
+     * containers, and picking a container adds a term that matches something nobody can press.
+     *
+     * Deduplicated, because one button is often several nested nodes carrying the same label, and
+     * three identical rows in the picker look like a fault rather than a choice.
+     */
+    fun scanClickable(service: AccessibilityService): List<String> {
+        val out = LinkedHashSet<String>()
+        for (root in appWindowRoots(service)) {
+            try {
+                collectClickable(root, out, 0)
+            } finally {
+                runCatching { root.recycle() }
+            }
+        }
+        return out.toList()
+    }
+
+    private fun collectClickable(
+        node: AccessibilityNodeInfo,
+        out: MutableSet<String>,
+        depth: Int,
+    ) {
+        if (depth > 28) return
+        if (node.isVisibleToUser) {
+            // The label the finder would match on, from the node itself or from the button it sits
+            // inside. An icon button usually carries the description while its clickable parent
+            // carries nothing, so a label found here is still reachable by the same walk-up the
+            // press uses.
+            val clickable = node.isClickable && node.isEnabled
+            val parentClickable = generateSequence(node.parent) { it.parent }
+                .take(3)
+                .any { it.isClickable && it.isEnabled }
+            if (clickable || parentClickable) {
+                labelOf(node)?.let { out.add(it) }
+            }
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectClickable(child, out, depth + 1)
+            runCatching { child.recycle() }
+        }
+    }
+
+    /**
+     * A short, typeable label for a node, or null when it has nothing worth matching.
+     *
+     * Long text is dropped rather than truncated. A paragraph that happens to be tappable is not a
+     * button anybody names, and a truncated term would match the wrong thing later.
+     */
+    private fun labelOf(node: AccessibilityNodeInfo): String? {
+        val raw = node.contentDescription?.toString()?.trim()
+            ?: node.text?.toString()?.trim()
+            ?: node.viewIdResourceName?.substringAfterLast('/')?.replace('_', ' ')
+        val label = raw?.replace('\n', ' ')?.trim().orEmpty()
+        if (label.isBlank() || label.length > 40) return null
+        return label
+    }
+
+    /**
      * Presses the first target found. Returns the label pressed, or null when nothing matched.
      *
      * The label is returned rather than a boolean so the key can say which button it pressed. On a
