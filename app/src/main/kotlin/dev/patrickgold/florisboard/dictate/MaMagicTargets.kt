@@ -59,13 +59,18 @@ object MaMagicTargets {
      * that number changes with the model and matching the whole label would break every time the
      * price did.
      */
-    fun defaults(): List<Target> = listOf(
-        Target("send"),
-        Target("add url"),
-        Target("generate image"),
-        Target("pošalji"),
-        Target("posalji"),
-    )
+    /**
+     * Nothing. The wand starts empty and is taught.
+     *
+     * It shipped with five guesses — send, add url, generate image and two spellings of pošalji —
+     * and every one of them was wrong in the way that matters: they are labels somebody imagined
+     * rather than labels read off a real screen, they belonged to no app so they fired everywhere,
+     * and they filled the list so the terms Marko actually captured were buried among them.
+     *
+     * A wand that does nothing until it is taught is honest. A wand that does the wrong thing
+     * because of a guess made here is not.
+     */
+    fun defaults(): List<Target> = emptyList()
 
     /** What the wand actually searches, in order. Unticked terms are absent, not empty strings. */
     fun activeTerms(targets: List<Target>): List<String> =

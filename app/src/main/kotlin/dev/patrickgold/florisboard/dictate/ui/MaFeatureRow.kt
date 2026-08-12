@@ -226,7 +226,32 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val activeLangCode by prefs.dictate.activeInputLanguage.collectAsState()
     val scrollPages by prefs.dictate.maScrollPages.collectAsState()
     var scrollMenu by remember { mutableStateOf(false) }
-    var scanned by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    // Anything learned while he was away is picked up the moment the keyboard is drawn again,
+    // which is the first opportunity: he pressed the button in another app, so nothing of ours was
+    // on screen to react at the time.
+    LaunchedEffect(Unit) {
+        val learned = DictateAccessibilityService.takeLearned()
+        if (learned != null) {
+            val (label, pkg) = learned
+            val current = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
+            val duplicate = current.any {
+                it.term.equals(label, ignoreCase = true) && it.appPackage == pkg
+            }
+            if (!duplicate) {
+                prefs.dictate.maMagicTargets.set(
+                    MaMagicTargets.serialize(
+                        current + MaMagicTargets.Target(label, appPackage = pkg),
+                    ),
+                )
+            }
+            Toast.makeText(
+                context,
+                context.getString(R.string.ma__magic_learn_added, label),
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
 
     val magicAll = remember(magicRaw) {
         MaMagicTargets.parse(magicRaw).ifEmpty { MaMagicTargets.defaults() }
@@ -526,18 +551,26 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         // the labels on the screen in front can only be read while that screen is
                         // in front. Claude's send button carries no visible text, so there was
                         // nothing to type and no way to find out what to type.
+                        // Long press arms learning, then he presses the real button.
+                        //
+                        // The list this replaced was the wrong shape of help: a screen holds dozens
+                        // of pressable things, their labels are written for a screen reader rather
+                        // than for somebody choosing from a list, and he had to work out which of
+                        // thirty entries was the orange circle he wanted. Pointing at the thing is
+                        // what he asked for and it is simply better.
+                        //
+                        // Nothing is intercepted. He presses the button, it does what it always
+                        // does, and its name arrives here as a side effect of the click event the
+                        // service already receives.
                         onLongClick = {
                             if (!DictateAccessibilityService.isRunning) {
                                 maOpenAccessibilitySettings(context)
-                            } else {
-                                scanned = DictateAccessibilityService.scanScreenTargets()
-                                if (scanned.isEmpty()) {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.ma__magic_scan_none),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                }
+                            } else if (DictateAccessibilityService.armLearn()) {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.ma__magic_learn_armed),
+                                    Toast.LENGTH_LONG,
+                                ).show()
                             }
                         },
                     ) {
@@ -690,206 +723,9 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
         )
       }
 
-      if (scanned.isNotEmpty()) {
-        MaScanPicker(
-          found = scanned,
-          existing = magicTargets,
-          onPick = { label ->
-            scope.launch {
-              val current = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
-                .ifEmpty { MaMagicTargets.defaults() }
-              // Appended rather than inserted at the top. The wand presses the first term it
-              // finds, so a new term must not quietly outrank the ones already relied on.
-              // Filed under the app it was seen in, so it can never fire in another one. A term
-              // already present for this app is not added twice; the same word for a different app
-              // is a different term and is allowed.
-              val here = DictateAccessibilityService.foregroundPackage()
-              val duplicate = current.any {
-                it.term.equals(label, ignoreCase = true) && it.appPackage == here
-              }
-              if (!duplicate) {
-                prefs.dictate.maMagicTargets.set(
-                  MaMagicTargets.serialize(
-                    current + MaMagicTargets.Target(label, appPackage = here),
-                  ),
-                )
-              }
-            }
-            scanned = emptyList()
-          },
-          onEdit = {
-            scanned = emptyList()
-            MaSettingsResume.open(context, "settings/dictate/magic")
-          },
-          onDismiss = { scanned = emptyList() },
-        )
-      }
-    }
-}
-
-/**
- * What the wand found on screen, to be picked from rather than typed.
- *
- * Terms already in the list are shown ticked and cannot be added twice — the same button scanned on
- * two visits would otherwise pile up duplicates, and a list with three identical rows looks broken.
- */
-@Composable
-private fun MaScanPicker(
-    found: List<String>,
-    existing: List<String>,
-    onPick: (String) -> kotlin.Unit,
-    onEdit: () -> kotlin.Unit,
-    onDismiss: () -> kotlin.Unit,
-) {
-    var query by remember { mutableStateOf("") }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = 220.dp)
-            .background(Color(0xFF16161A))
-            .verticalScroll(rememberScrollState()),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringRes(R.string.ma__magic_scan_title),
-                color = Color(0xFFE8B15C),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f),
-            )
-            // Straight to the list from here, because this is where somebody realises it needs
-            // tidying: a term added by mistake, or three that want reordering. Making him find the
-            // settings app and then the right screen is three steps too many at that moment.
-            Text(
-                text = stringRes(R.string.ma__magic_scan_edit),
-                color = Color(0xFFE8B15C),
-                fontSize = 13.sp,
-                modifier = Modifier
-                    .clickable { onEdit() }
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-            )
-            Text(
-                text = stringRes(R.string.ma__magic_scan_close),
-                color = Color(0x99FFFFFF),
-                fontSize = 13.sp,
-                modifier = Modifier
-                    .clickable { onDismiss() }
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-            )
-        }
-        // The filters above are right nearly always and wrong occasionally — a button in the
-        // browser's own toolbar, or one whose id happens to match the furniture list. Rather than
-        // argue about those, typing here asks the screen again with nothing filtered out and shows
-        // whatever matches. A filter you can switch off is a filter you can trust.
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            singleLine = true,
-            placeholder = { Text(stringRes(R.string.ma__magic_scan_search), fontSize = 14.sp) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-        )
-        val shown = if (query.isBlank()) {
-            found
-        } else {
-            // Asked fresh rather than filtered from what is already listed, because the point of
-            // searching is to reach the things the first pass left out.
-            remember(query) {
-                DictateAccessibilityService.scanScreenTargets(everything = true)
-            }.filter { it.contains(query.trim(), ignoreCase = true) }
-        }
-        if (shown.isEmpty()) {
-            Text(
-                text = stringRes(R.string.ma__magic_scan_nomatch),
-                color = Color(0x99FFFFFF),
-                fontSize = 14.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            )
-        }
-        shown.forEach { label ->
-            val already = existing.any { it.equals(label, ignoreCase = true) }
-            Text(
-                text = if (already) "\u2713  $label" else label,
-                color = if (already) Color(0xFF6FA85A) else Color(0xFFECEAE3),
-                fontSize = 15.sp,
-                maxLines = 1,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = !already) { onPick(label) }
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-            )
-        }
-    }
-}
-
-/**
- * How many pages the S key scrolls, set on the spot.
- *
- * Bounded at ten either way. Beyond that the page has usually stopped moving anyway — a list runs
- * out — and a number that can run to fifty is a number somebody sets by accident and then has to
- * count back down.
- *
- * Zero is allowed and means the key does nothing, which is the honest reading of a stepper that
- * passes through zero on its way from down to up. It is not a state anybody stays in.
- */
-@Composable
-private fun MaScrollStepper(
-    pages: Int,
-    onChange: (Int) -> kotlin.Unit,
-    onDismiss: () -> kotlin.Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF16161A))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringRes(R.string.ma__scroll_pages),
-            color = Color(0x99FFFFFF),
-            fontSize = 13.sp,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = "\u2212",
-            color = Color(0xFFE8B15C),
-            fontSize = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier
-                // Steps over zero rather than through it. Zero pages is a key that does nothing,
-                // which on a stepper reads as the key having broken rather than as a value chosen —
-                // and it is passed through twice on the way from down to up.
-                .clickable { onChange(maStepScroll(pages, -1)) }
-                .padding(horizontal = 18.dp, vertical = 4.dp),
-        )
-        Text(
-            text = if (pages < 0) "\u2191${-pages}" else "\u2193$pages",
-            color = Color(0xFFECEAE3),
-            fontSize = 17.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Text(
-            text = "+",
-            color = Color(0xFFE8B15C),
-            fontSize = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier
-                .clickable { onChange(maStepScroll(pages, 1)) }
-                .padding(horizontal = 18.dp, vertical = 4.dp),
-        )
-        Text(
-            text = stringRes(R.string.ma__magic_scan_close),
-            color = Color(0x99FFFFFF),
-            fontSize = 13.sp,
-            modifier = Modifier
-                .clickable { onDismiss() }
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-        )
+      // The scan picker was here. It is gone with the list it drew: nothing arms it any more,
+      // because learning happens by pressing the real button instead of choosing from thirty
+      // labels written for a screen reader.
     }
 }
 

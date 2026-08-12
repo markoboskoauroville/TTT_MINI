@@ -54,6 +54,76 @@ object MaScreenTargets {
     )
 
     /**
+     * Learning a button by watching it be pressed.
+     *
+     * ### Why this replaces reading a list
+     *
+     * The list was the wrong shape of help. A screen holds dozens of pressable things, the labels
+     * are written for a screen reader rather than for a person choosing from a list, and Marko had
+     * to work out which of thirty entries was the orange circle he actually wanted. He asked for the
+     * opposite: touch the thing, and be told what it is called.
+     *
+     * A keyboard cannot watch a finger land on another app — the touch belongs to that app. But the
+     * accessibility service is told, after the fact, when a control has been clicked, and the event
+     * carries the control. So he presses the button for real, it does what it always does, and its
+     * name arrives here as a side effect. Nothing is intercepted and nothing behaves differently.
+     *
+     * ### Why it is armed rather than always on
+     *
+     * Recording every click anybody makes would be both useless and unpleasant. It is armed by a
+     * long press, listens for one click, and disarms — by success, by the timeout, or by being armed
+     * again.
+     */
+    object Learn {
+
+        /** Armed until this moment, or zero when not armed. */
+        @Volatile
+        private var armedUntil = 0L
+
+        @Volatile
+        private var caught: Pair<String, String?>? = null
+
+        /**
+         * Long enough to switch apps and find the button, short enough that a forgotten arming has
+         * expired before the next unrelated tap.
+         */
+        private const val WINDOW_MS = 30_000L
+
+        fun arm() {
+            caught = null
+            armedUntil = android.os.SystemClock.elapsedRealtime() + WINDOW_MS
+        }
+
+        fun isArmed(): Boolean = android.os.SystemClock.elapsedRealtime() < armedUntil
+
+        /** The label and package of the last click caught, consumed once. */
+        fun take(): Pair<String, String?>? {
+            val c = caught
+            caught = null
+            return c
+        }
+
+        /**
+         * Offered every click while armed. Returns the label if it was worth catching.
+         *
+         * A click on something with no name is ignored rather than caught: an unnamed control cannot
+         * be found again by name, so recording it would produce a term that never matches. Better to
+         * stay armed and let him try a different button.
+         */
+        fun onClicked(node: AccessibilityNodeInfo, ownPackage: String): String? {
+            if (!isArmed()) return null
+            val pkg = node.packageName?.toString()
+            // Our own keyboard's keys are clicks too, and the long press that armed this is one of
+            // them. Catching that would teach the wand the name of the wand.
+            if (pkg == null || pkg == ownPackage) return null
+            val label = labelOf(node) ?: childLabel(node) ?: return null
+            caught = label to pkg
+            armedUntil = 0L
+            return label
+        }
+    }
+
+    /**
      * Everything on screen that can be pressed, with the label that would find it.
      *
      * The answer to "how would I know its name". Claude's send button carries no visible text — it

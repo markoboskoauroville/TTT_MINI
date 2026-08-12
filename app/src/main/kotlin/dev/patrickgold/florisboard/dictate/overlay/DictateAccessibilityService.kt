@@ -122,6 +122,20 @@ class DictateAccessibilityService : AccessibilityService() {
                 if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
                     MaAppSwitcher.onWindowPackage(this, packageName, event.packageName?.toString())
                 }
+                // Learning a button by watching it be pressed. Only while armed, and the event is
+                // the one the service already receives — nothing is intercepted, and the button
+                // does exactly what it always does.
+                if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED &&
+                    MaScreenTargets.Learn.isArmed()
+                ) {
+                    event.source?.let { node ->
+                        try {
+                            MaScreenTargets.Learn.onClicked(node, packageName)
+                        } finally {
+                            runCatching { node.recycle() }
+                        }
+                    }
+                }
                 updateEditableFocusImmediately()
             }
             // This is the only subscribed event which can arrive for every keystroke. Keep it coalesced
@@ -624,6 +638,13 @@ class DictateAccessibilityService : AccessibilityService() {
             return runCatching {
                 ims.windows
                     .filter { it.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION }
+                    // Never this app. A term captured while the keyboard's own window answered was
+                    // filed under tttlight and could then only ever fire inside TTT mini — which is
+                    // nowhere, because the keyboard is not an app anybody presses buttons in. It
+                    // showed up in Marko's list as "New chat, tttlight" for a button in Claude.
+                    .filter { w ->
+                        runCatching { w.root?.packageName?.toString() }.getOrNull() != ims.packageName
+                    }
                     .maxByOrNull { it.layer }
                     ?.root
                     ?.let { root ->
@@ -631,8 +652,19 @@ class DictateAccessibilityService : AccessibilityService() {
                         runCatching { root.recycle() }
                         pkg
                     }
-            }.getOrNull() ?: ims.rootInActiveWindow?.packageName?.toString()
+            }.getOrNull()
+                ?: ims.rootInActiveWindow?.packageName?.toString()?.takeIf { it != ims.packageName }
         }
+
+        /** Arms learning: the next button pressed in another app is remembered. */
+        fun armLearn(): Boolean {
+            if (instance == null) return false
+            MaScreenTargets.Learn.arm()
+            return true
+        }
+
+        /** The label and package caught since arming, taken once. */
+        fun takeLearned(): Pair<String, String?>? = MaScreenTargets.Learn.take()
 
         fun scanScreenTargets(everything: Boolean = false): List<String> {
             val ims = instance ?: return emptyList()

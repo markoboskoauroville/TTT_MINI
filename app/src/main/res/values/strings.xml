@@ -919,6 +919,8 @@
     <string name="ma__magic_scan_title">Tap a button to add it to the wand</string>
     <string name="ma__magic_scan_edit">Edit list</string>
     <string name="ma__magic_scan_search">Search everything on screen</string>
+    <string name="ma__magic_learn_armed">Now press the button you want the wand to press</string>
+    <string name="ma__magic_learn_added">Wand learned: %1$s</string>
     <string name="ma__magic_scan_nomatch">Nothing on screen matches that</string>
     <string name="ma__scroll_pages">Pages to scroll</string>
     <string name="ma__scroll_none">Nothing on this screen scrolls</string>
