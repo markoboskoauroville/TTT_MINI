@@ -729,6 +729,73 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     }
 }
 
+/**
+ * How many pages the S key scrolls, set on the spot.
+ *
+ * Bounded at ten either way. Beyond that the page has usually stopped moving anyway — a list runs
+ * out — and a number that can run to fifty is a number somebody sets by accident and then has to
+ * count back down.
+ *
+ * Zero is allowed and means the key does nothing, which is the honest reading of a stepper that
+ * passes through zero on its way from down to up. It is not a state anybody stays in.
+ */
+@Composable
+private fun MaScrollStepper(
+    pages: Int,
+    onChange: (Int) -> kotlin.Unit,
+    onDismiss: () -> kotlin.Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF16161A))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringRes(R.string.ma__scroll_pages),
+            color = Color(0x99FFFFFF),
+            fontSize = 13.sp,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = "\u2212",
+            color = Color(0xFFE8B15C),
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                // Steps over zero rather than through it. Zero pages is a key that does nothing,
+                // which on a stepper reads as the key having broken rather than as a value chosen —
+                // and it is passed through twice on the way from down to up.
+                .clickable { onChange(maStepScroll(pages, -1)) }
+                .padding(horizontal = 18.dp, vertical = 4.dp),
+        )
+        Text(
+            text = if (pages < 0) "\u2191${-pages}" else "\u2193$pages",
+            color = Color(0xFFECEAE3),
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = "+",
+            color = Color(0xFFE8B15C),
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                .clickable { onChange(maStepScroll(pages, 1)) }
+                .padding(horizontal = 18.dp, vertical = 4.dp),
+        )
+        Text(
+            text = stringRes(R.string.ma__magic_scan_close),
+            color = Color(0x99FFFFFF),
+            fontSize = 13.sp,
+            modifier = Modifier
+                .clickable { onDismiss() }
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
+}
+
 /** A round key carrying a numeral, styled exactly as every other key in the row. */
 @Composable
 private fun ThemedTextKey(
