@@ -1057,6 +1057,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * Editable so a new site costs a line here rather than a build. Empty falls back to
          * MaMagicTargets.defaults(), so clearing it cannot leave a key that does nothing.
          */
+        /**
+         * How far the S key scrolls, in pages. Negative scrolls up.
+         *
+         * One number with a sign rather than a direction and a distance, so one key does both and
+         * the setting is a single stepper. Set on the key itself by long press: it is adjusted while
+         * looking at the page being scrolled, which is not a moment to go into settings for.
+         */
+        val maScrollPages = int(
+            key = "dictate__ma_scroll_pages",
+            default = 1,
+        )
+
         val maMagicTargets = string(
             key = "dictate__ma_magic_targets",
             default = "",

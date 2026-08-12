@@ -434,6 +434,7 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             MaFeatureKey.CLIP_CLEAR ->
                 Icon(Icons.Default.Delete, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.LANGUAGE -> letters("HR")
+            MaFeatureKey.SCROLL -> letters("S")
             MaFeatureKey.APP_SWITCH ->
                 Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.HISTORY ->

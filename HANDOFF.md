@@ -1505,3 +1505,31 @@ something genuinely will not work, say why plainly instead of quietly building s
 
 Tell him what was *not* done and why. A short honest list of what remains is worth more than an
 optimistic summary.
+
+## SEQ, the sequencer — agreed design, not yet built
+
+Marko's spec, recorded in full because it was given across two messages and the detail matters.
+
+**What it does.** A key labelled `seq`. Each press fires the next key to its right in the same row,
+left to right, never itself. One press, one step — it is a manual macro runner rather than a script:
+he watches each step land before asking for the next, which is the point. That is how he already
+works, pressing 1, 2, 3, 4 by hand; the sequencer removes the need to look for the next key.
+
+**Where it is.** It reads its own position in the row at press time, so moving the key changes which
+keys it drives, and no separate list has to be kept in step with the row.
+
+**Showing the next step.** A small red dot under the key that will fire next, moving along the row as
+he presses. Without it there is no way to know where in the sequence he is, and a manual runner whose
+position is invisible is one he has to count in his head — which is the work it was supposed to save.
+
+**Long press.** Opens the sequencer menu: reset to the start, or pick the step to begin from.
+
+### Why it is not in this build
+
+Every key's action is written inline in a 361-line `when` block in `MaFeatureRow.kt`. The sequencer
+has to invoke another key's action, so those actions have to come out into something callable first
+— `maRunButton(button)` — with the `when` block calling it too.
+
+Writing a second copy for the sequencer instead would be quicker and wrong: two implementations of
+what AP does, drifting apart from the day they are written. The extraction is the build before this
+feature, not part of it.

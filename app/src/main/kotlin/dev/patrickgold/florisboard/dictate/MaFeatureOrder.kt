@@ -97,6 +97,15 @@ enum class MaFeatureKey(val id: String, val label: String) {
     LANGUAGE("lang", "Language, HR or ENG"),
 
     /**
+     * S, the page scroller. Tap to scroll, long press to set how far.
+     *
+     * One key rather than two, because the page count carries its own sign: negative scrolls up.
+     * Marko worked that out himself mid-sentence and it is the better design — two keys would have
+     * needed two settings and twice the row space to say the same thing.
+     */
+    SCROLL("scroll", "S, scroll the page"),
+
+    /**
      * Presses the send button of the chat app in front, so a prompt goes without leaving the keyboard.
      *
      * Not tied to any one app: it finds the control on screen that says it sends. Works wherever the
@@ -173,6 +182,7 @@ object MaFeatureOrder {
         MaFeatureKey.APP_SWITCH,
         MaFeatureKey.HISTORY,
         MaFeatureKey.LANGUAGE,
+        MaFeatureKey.SCROLL,
         MaFeatureKey.SEND_BUTTON,
     )
 

@@ -14,6 +14,7 @@ import android.accessibilityservice.AccessibilityService
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 /**
@@ -128,6 +129,93 @@ object MaScreenTargets {
         if (label.isBlank() || label.length > 32) return null
         return label
     }
+
+    /**
+     * Scrolls the page under the keyboard by [pages]. Negative scrolls up. Returns false if nothing
+     * on screen could be scrolled.
+     *
+     * Uses the scroll action rather than a swipe gesture. A swipe has to guess where the list is,
+     * how far a page is on this screen, and how fast to move so it reads as a drag rather than a
+     * fling — three guesses, each wrong on some screen. The action asks the view itself to advance
+     * one page, which is the same thing a hardware page-down does and is exactly one page every
+     * time.
+     */
+    suspend fun scrollBy(service: AccessibilityService, pages: Int): Boolean {
+        if (pages == 0) return true
+        val action = if (pages > 0) {
+            AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+        } else {
+            AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+        }
+        var moved = false
+        repeat(kotlin.math.abs(pages)) { step ->
+            val target = findScrollable(service) ?: return moved
+            val ok = try {
+                target.performAction(action)
+            } finally {
+                runCatching { target.recycle() }
+            }
+            if (!ok) return moved
+            moved = true
+            // The node is found again for each page rather than held, because scrolling replaces the
+            // rows inside it and a node captured before the move can be stale by the time the next
+            // one is asked for. The pause lets the scroll settle so the second page starts from
+            // where the first finished rather than racing it.
+            if (step < kotlin.math.abs(pages) - 1) delay(SCROLL_SETTLE_MS)
+        }
+        return moved
+    }
+
+    /**
+     * The biggest scrollable thing on screen, which is the page rather than a side list.
+     *
+     * Screens often hold several: a horizontal strip of chips, a small menu, and the actual content.
+     * Largest by area is the content in every case worth handling, and it is a far better rule than
+     * first-found, which tends to be whichever toolbar happens to sit earliest in the tree.
+     */
+    private fun findScrollable(service: AccessibilityService): AccessibilityNodeInfo? {
+        var best: AccessibilityNodeInfo? = null
+        var bestArea = 0
+        for (root in appWindowRoots(service)) {
+            try {
+                val found = mutableListOf<AccessibilityNodeInfo>()
+                collectScrollable(root, found, 0)
+                for (node in found) {
+                    val r = Rect().also { node.getBoundsInScreen(it) }
+                    val area = r.width() * r.height()
+                    if (area > bestArea) {
+                        runCatching { best?.recycle() }
+                        best = node
+                        bestArea = area
+                    } else {
+                        runCatching { node.recycle() }
+                    }
+                }
+            } finally {
+                runCatching { root.recycle() }
+            }
+        }
+        return best
+    }
+
+    private fun collectScrollable(
+        node: AccessibilityNodeInfo,
+        out: MutableList<AccessibilityNodeInfo>,
+        depth: Int,
+    ) {
+        if (depth > 28) return
+        if (node.isVisibleToUser && node.isScrollable) {
+            out.add(AccessibilityNodeInfo.obtain(node))
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectScrollable(child, out, depth + 1)
+            runCatching { child.recycle() }
+        }
+    }
+
+    /** Long enough for one page to land before the next is asked for. */
+    private const val SCROLL_SETTLE_MS = 220L
 
     /**
      * Presses the first target found. Returns the label pressed, or null when nothing matched.

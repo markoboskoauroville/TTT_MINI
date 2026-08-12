@@ -220,6 +220,8 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val magicRaw by prefs.dictate.maMagicTargets.collectAsState()
     // What the last scan found, held only while the picker is open.
     val activeLangCode by prefs.dictate.activeInputLanguage.collectAsState()
+    val scrollPages by prefs.dictate.maScrollPages.collectAsState()
+    var scrollMenu by remember { mutableStateOf(false) }
     var scanned by remember { mutableStateOf<List<String>>(emptyList()) }
 
     val magicTargets = remember(magicRaw) {
@@ -564,6 +566,39 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     }
                 }
 
+                MaFeatureKey.SCROLL -> {
+                    // S, and the number of pages beside it, so the key says what it will do before
+                    // it is pressed rather than after. An up arrow appears when the count is
+                    // negative: the sign is the direction, and a minus sign alone is easy to misread
+                    // at this size.
+                    val label = when {
+                        scrollPages < 0 -> "S\u2191${-scrollPages}"
+                        scrollPages > 1 -> "S\u2193$scrollPages"
+                        else -> "S"
+                    }
+                    ThemedTextKey(
+                        label = label,
+                        modifier = keyMod,
+                        tint = null,
+                        onLongClick = { scrollMenu = true },
+                    ) {
+                        if (!DictateAccessibilityService.isRunning) {
+                            maOpenAccessibilitySettings(context)
+                        } else {
+                            scope.launch {
+                                val service = DictateAccessibilityService.gestureService()
+                                if (service == null || !MaScreenTargets.scrollBy(service, scrollPages)) {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.ma__scroll_none),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            }
+                        }
+                    }
+                }
+
                 MaFeatureKey.SETTINGS -> {
                     // Settings, reopened where they were left rather than at the top.
                     //
@@ -629,6 +664,15 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
       // Drawn inside the keyboard's own window rather than as a system dialog: an input method
       // cannot put up a dialog, and it does not need to. The keyboard is already on screen and
       // already the thing the finger is on.
+      // The stepper, set on the key while looking at the page it will scroll.
+      if (scrollMenu) {
+        MaScrollStepper(
+          pages = scrollPages,
+          onChange = { scope.launch { prefs.dictate.maScrollPages.set(it) } },
+          onDismiss = { scrollMenu = false },
+        )
+      }
+
       if (scanned.isNotEmpty()) {
         MaScanPicker(
           found = scanned,
@@ -725,17 +769,86 @@ private fun MaScanPicker(
     }
 }
 
+/**
+ * How many pages the S key scrolls, set on the spot.
+ *
+ * Bounded at ten either way. Beyond that the page has usually stopped moving anyway — a list runs
+ * out — and a number that can run to fifty is a number somebody sets by accident and then has to
+ * count back down.
+ *
+ * Zero is allowed and means the key does nothing, which is the honest reading of a stepper that
+ * passes through zero on its way from down to up. It is not a state anybody stays in.
+ */
+@Composable
+private fun MaScrollStepper(
+    pages: Int,
+    onChange: (Int) -> kotlin.Unit,
+    onDismiss: () -> kotlin.Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF16161A))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringRes(R.string.ma__scroll_pages),
+            color = Color(0x99FFFFFF),
+            fontSize = 13.sp,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = "\u2212",
+            color = Color(0xFFE8B15C),
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                .clickable { onChange((pages - 1).coerceAtLeast(-10)) }
+                .padding(horizontal = 18.dp, vertical = 4.dp),
+        )
+        Text(
+            text = if (pages < 0) "\u2191${-pages}" else "\u2193$pages",
+            color = Color(0xFFECEAE3),
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = "+",
+            color = Color(0xFFE8B15C),
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                .clickable { onChange((pages + 1).coerceAtMost(10)) }
+                .padding(horizontal = 18.dp, vertical = 4.dp),
+        )
+        Text(
+            text = stringRes(R.string.ma__magic_scan_close),
+            color = Color(0x99FFFFFF),
+            fontSize = 13.sp,
+            modifier = Modifier
+                .clickable { onDismiss() }
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
+}
+
 /** A round key carrying a numeral, styled exactly as every other key in the row. */
 @Composable
 private fun ThemedTextKey(
     label: String,
     modifier: Modifier,
     tint: Color?,
+    // Optional and null by default. The fold gesture that every key once had is gone, so a long
+    // press here means whatever the individual key decides — the scroll key uses it for its stepper
+    // and most keys use it for nothing.
+    onLongClick: (() -> kotlin.Unit)? = null,
     onClick: () -> kotlin.Unit,
 ) {
     ThemedKey(
         code = KeyCode.NOOP,
         modifier = modifier,
+        onLongClick = onLongClick,
         onClick = onClick,
     ) { fg ->
         Text(
