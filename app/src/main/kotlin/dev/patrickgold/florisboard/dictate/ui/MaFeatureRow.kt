@@ -28,6 +28,7 @@ import android.widget.Toast
 import androidx.compose.material.icons.filled.AutoFixHigh
 import dev.patrickgold.florisboard.dictate.overlay.MaScreenTargets
 import androidx.compose.material.icons.filled.History
+import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -217,6 +218,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // of text rather than a build.
     val magicRaw by prefs.dictate.maMagicTargets.collectAsState()
     // What the last scan found, held only while the picker is open.
+    val activeLangCode by prefs.dictate.activeInputLanguage.collectAsState()
     var scanned by remember { mutableStateOf<List<String>>(emptyList()) }
 
     val magicTargets = remember(magicRaw) {
@@ -533,6 +535,26 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                                 ).show()
                             }
                         }
+                    }
+                }
+
+                MaFeatureKey.LANGUAGE -> {
+                    // The language it will transcribe in, on its face, and one tap changes it.
+                    //
+                    // The same MaLanguage.toggle the recording bar uses, so the two cannot disagree.
+                    // It writes activeInputLanguage, which is what the transcription request reads,
+                    // what the keyboard's own suggestions follow, and what decides whether a clip
+                    // may take the fast path — one tap, all three.
+                    // Derived from the observed preference, not from MaLanguage.badge() alone.
+                    // badge() reads the store directly, which is not Compose state, so a key drawn
+                    // from it would keep its old face after a tap until something else redrew the
+                    // row — a toggle that appears not to have worked.
+                    ThemedTextKey(
+                        label = if (activeLangCode == MaLanguage.EN) "ENG" else "HR",
+                        modifier = keyMod,
+                        tint = null,
+                    ) {
+                        MaLanguage.toggle(context)
                     }
                 }
 

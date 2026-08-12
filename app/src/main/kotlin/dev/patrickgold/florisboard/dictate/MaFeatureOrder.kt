@@ -88,6 +88,15 @@ enum class MaFeatureKey(val id: String, val label: String) {
     HISTORY("history", "History, what you dictated"),
 
     /**
+     * HR / ENG, on the row rather than only in the recording bar.
+     *
+     * Marko changes language between recordings as he works, and the recording bar only exists while
+     * a recording is running — so the one moment he cannot reach it is the moment before he starts,
+     * which is exactly when the choice is made.
+     */
+    LANGUAGE("lang", "Language, HR or ENG"),
+
+    /**
      * Presses the send button of the chat app in front, so a prompt goes without leaving the keyboard.
      *
      * Not tied to any one app: it finds the control on screen that says it sends. Works wherever the
@@ -163,6 +172,7 @@ object MaFeatureOrder {
         MaFeatureKey.CLIP_CLEAR,
         MaFeatureKey.APP_SWITCH,
         MaFeatureKey.HISTORY,
+        MaFeatureKey.LANGUAGE,
         MaFeatureKey.SEND_BUTTON,
     )
 

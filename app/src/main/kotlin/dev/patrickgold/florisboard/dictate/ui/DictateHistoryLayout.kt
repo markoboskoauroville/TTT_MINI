@@ -15,6 +15,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.clickable
+import dev.patrickgold.florisboard.dictate.MaLanguage
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -94,6 +96,9 @@ fun DictateHistoryLayout(
         flow { emitAll(DictateHistoryStore.flow(context)) }.flowOn(Dispatchers.IO)
     }.collectAsState(initial = null)
 
+    // Observed, so the badge changes face the moment it is tapped. MaLanguage.badge() reads the
+    // store directly and would leave the old label showing until something else redrew the panel.
+    val activeLangCode by prefs.dictate.activeInputLanguage.collectPrefAsState()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     // Which entry is being deleted, if any. The three deletions are genuinely different outcomes, so
@@ -129,6 +134,23 @@ fun DictateHistoryLayout(
                     .weight(1f)
                     .padding(start = 4.dp),
                 text = stringRes(R.string.dictate__history_title),
+            )
+            // The language a re-transcribe will use, and the whole reason it is here.
+            //
+            // Recording English while the app is set to Croatian is a mistake that is only noticed
+            // after reading the transcript — and the fix, re-transcribing, used whatever language
+            // was still set, which was the wrong one. So the panel that offers the re-transcribe now
+            // offers the language beside it.
+            //
+            // It writes activeInputLanguage, which retranscribeHistoryEntry already reads through
+            // MaLanguage.active(), so nothing else had to change: set it here, press replay, and the
+            // audio goes up in the other language.
+            SnyggText(
+                elementName = FlorisImeUi.MediaEmojiSubheader.elementName,
+                modifier = Modifier
+                    .clickable { MaLanguage.toggle(context) }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                text = if (activeLangCode == MaLanguage.EN) "ENG" else "HR",
             )
             // Jump straight to the full history management screen in the settings app.
             SnyggIconButton(
