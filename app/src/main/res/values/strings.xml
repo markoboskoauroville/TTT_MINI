@@ -924,7 +924,7 @@
     <string name="ma__wand_cancel">Cancel</string>
     <string name="ma__wand_yes">Store</string>
     <string name="ma__wand_no">No</string>
-    <string name="ma__wand_store_in">Store for %1$s?</string>
+    <string name="ma__wand_store_in">Store for {app}?</string>
     <string name="ma__wand_settings">Wand</string>
     <string name="ma__magic_learn_added">Wand learned: %1$s</string>
     <string name="ma__magic_scan_nomatch">Nothing on screen matches that</string>

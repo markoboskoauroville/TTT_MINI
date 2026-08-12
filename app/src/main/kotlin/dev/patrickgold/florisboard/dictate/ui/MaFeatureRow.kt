@@ -948,7 +948,7 @@ private fun MaWandBar(
                     Text(
                         // Which app, because the term will only ever fire there and he should know
                         // that before agreeing to it.
-                        text = stringRes(R.string.ma__wand_store_in, state.appName),
+                        text = stringRes(R.string.ma__wand_store_in, "app" to state.appName),
                         color = Color(0x99FFFFFF),
                         fontSize = 12.sp,
                         maxLines = 1,
