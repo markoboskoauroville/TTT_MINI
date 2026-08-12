@@ -173,11 +173,6 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val capturedRaw by prefs.dictate.maClipCaptured.collectAsState()
     val capturedSlots = remember(capturedRaw) { MaClipCapture.parse(capturedRaw) }
 
-    // The buckets this user actually has, and whether they are all holding something. Derived from
-    // the same rows the keyboard is drawing, so the answer here and the answer the capture uses
-    // cannot disagree about how many buckets exist.
-    val visibleClipSlots = remember(storedRows) { MaRows.visibleClipSlots(storedRows) }
-    val bucketsFull = MaClipCapture.isFull(capturedSlots, visibleClipSlots)
 
     val rowsRaw by prefs.dictate.maRows.collectAsState()
     val macroRaw by prefs.dictate.maMacroSlots.collectAsState()
@@ -190,6 +185,11 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
         if (rowsRaw.isBlank()) MaRows.defaultRows() else MaRows.parse(rowsRaw)
     }
     val rows = MaRows.visibleRows(storedRows)
+    // The buckets this user actually has, and whether they are all holding something. Derived from
+    // the same rows the keyboard is drawing, so the answer here and the answer the capture uses
+    // cannot disagree about how many buckets exist.
+    val visibleClipSlots = remember(storedRows) { MaRows.visibleClipSlots(storedRows) }
+    val bucketsFull = MaClipCapture.isFull(capturedSlots, visibleClipSlots)
     // Changing the default is not enough on its own. Anyone whose preferences already hold an
     // explicit false — written by the old default, or by the FlorisBoard screen that still offers
     // the switch — would keep an empty history and ten dead keys, and would have no way to guess
