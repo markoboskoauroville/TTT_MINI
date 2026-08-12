@@ -21,6 +21,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.automirrored.filled.Send
+import dev.patrickgold.florisboard.dictate.overlay.MaAppSwitcher
+import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
+import android.widget.Toast
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Keyboard
@@ -406,6 +411,49 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         onLongClick = fold,
                     ) {
                         scope.launch { prefs.dictate.maClipCaptured.set("") }
+                    }
+                }
+
+                MaFeatureKey.APP_SWITCH -> {
+                    // Alt+Tab. Dim when nothing has been seen to switch to yet, which is the state
+                    // right after the phone starts or the accessibility service is switched off —
+                    // both cases where the key would do nothing and should say so first.
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        icon = Icons.Default.SwapHoriz,
+                        contentDescription = stringRes(R.string.ma__app_switch),
+                        modifier = keyMod,
+                        tint = if (MaAppSwitcher.hasTarget()) null else MaDimmed,
+                        onLongClick = fold,
+                    ) {
+                        if (!MaAppSwitcher.switchToPrevious(context)) {
+                            // Silence here would be indistinguishable from a broken key. The
+                            // accessibility service is switched on by hand and may simply not be,
+                            // and nothing on the row could say so.
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.ma__app_switch_none),
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    }
+                }
+
+                MaFeatureKey.SEND_BUTTON -> {
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        icon = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = stringRes(R.string.ma__send_button),
+                        modifier = keyMod,
+                        onLongClick = fold,
+                    ) {
+                        if (!DictateAccessibilityService.pressSendButton()) {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.ma__send_button_none),
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
                     }
                 }
 

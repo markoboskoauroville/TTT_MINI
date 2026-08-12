@@ -28,6 +28,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Mic
@@ -406,6 +408,15 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             MaFeatureKey.ALL_CLEAR -> letters("AC")
             MaFeatureKey.CLIP_CLEAR ->
                 Icon(Icons.Default.Delete, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.APP_SWITCH ->
+                Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.SEND_BUTTON ->
+                Icon(
+                    Icons.AutoMirrored.Filled.Send,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = size,
+                )
             MaFeatureKey.SPACE -> letters("\u2013\u2013\u2013")
             MaFeatureKey.SELECT_ALL ->
                 Icon(Icons.Default.SelectAll, contentDescription = null, tint = tint, modifier = size)

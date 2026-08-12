@@ -69,6 +69,23 @@ enum class MaFeatureKey(val id: String, val label: String) {
      */
     CLIP_CLEAR("cclear", "Empty the C buckets"),
 
+    /**
+     * TAB: back to the app you were just in, and back again. Alt+Tab, on a phone.
+     *
+     * The buckets made carrying text between two apps easy while the switching stayed as slow as it
+     * ever was — recents, find the card, tap it. This is that, as one key.
+     */
+    APP_SWITCH("tab", "TAB, the last app"),
+
+    /**
+     * Presses the send button of the chat app in front, so a prompt goes without leaving the keyboard.
+     *
+     * Not tied to any one app: it finds the control on screen that says it sends. Works wherever the
+     * send button is labelled, which is nearly everywhere, because an unlabelled one is unusable to
+     * a screen reader.
+     */
+    SEND_BUTTON("send", "Send, the app's own button"),
+
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),
     ZONE_3("zone3", "3, the copy row"),
@@ -134,6 +151,8 @@ object MaFeatureOrder {
         MaFeatureKey.ENTER,
         MaFeatureKey.SETTINGS,
         MaFeatureKey.CLIP_CLEAR,
+        MaFeatureKey.APP_SWITCH,
+        MaFeatureKey.SEND_BUTTON,
     )
 
     val DEFAULT_RAW: String = serialize(DEFAULT)

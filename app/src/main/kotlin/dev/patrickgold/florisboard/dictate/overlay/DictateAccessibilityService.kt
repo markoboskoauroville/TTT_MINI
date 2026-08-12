@@ -115,7 +115,15 @@ class DictateAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_CLICKED,
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
             AccessibilityEvent.TYPE_WINDOWS_CHANGED,
-            -> updateEditableFocusImmediately()
+            -> {
+                // The app switcher rides on the events the bubble already needs, so tracking which
+                // app is in front costs nothing extra: no new subscription, no new permission, and
+                // no polling. Only a window state change tells us an app came forward.
+                if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                    MaAppSwitcher.onWindowPackage(packageName, event.packageName?.toString())
+                }
+                updateEditableFocusImmediately()
+            }
             // This is the only subscribed event which can arrive for every keystroke. Keep it coalesced
             // so caret moves and text selection do not cause a focused-node IPC round trip per character.
             AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED -> scheduleFocusUpdate()
@@ -587,6 +595,24 @@ class DictateAccessibilityService : AccessibilityService() {
          * be, and every caller has to say so out loud instead of clicking nothing.
          */
         fun gestureService(): AccessibilityService? = instance
+
+        /**
+         * Presses the send button of the app in front. False when the service is off or nothing
+         * on screen says it sends.
+         *
+         * The root is fetched here rather than held: a window that has changed since the last event
+         * leaves a stale root pointing at a screen the user is no longer looking at, and clicking
+         * inside that does something invisible in an app they cannot see.
+         */
+        fun pressSendButton(): Boolean {
+            val ims = instance ?: return false
+            val root = ims.rootInActiveWindow ?: return false
+            return try {
+                MaSendButton.pressIn(root)
+            } finally {
+                runCatching { root.recycle() }
+            }
+        }
 
         private val _editableFocused = MutableStateFlow(false)
 
