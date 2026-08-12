@@ -452,7 +452,10 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         icon = Icons.Default.SwapHoriz,
                         contentDescription = stringRes(R.string.ma__app_switch),
                         modifier = keyMod,
-                        tint = if (MaAppSwitcher.hasTarget()) null else MaDimmed,
+                        // No longer dimmed on what this app has observed. Recents knows the task
+                        // order whether or not we saw it, so a dim key would understate what the key
+                        // can actually do.
+                        tint = null,
                         ) {
                         if (!DictateAccessibilityService.isRunning) {
                             // The whole reason this key fires blanks, and the user cannot guess it.
@@ -461,7 +464,9 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                             // somebody does. Opening that screen is more use than a message saying
                             // something did not work.
                             maOpenAccessibilitySettings(context)
-                        } else if (!MaAppSwitcher.switchToPrevious(context)) {
+                        } else if (!MaAppSwitcher.switchViaRecents(scope) &&
+                            !MaAppSwitcher.switchToPrevious(context)
+                        ) {
                             Toast.makeText(
                                 context,
                                 context.getString(R.string.ma__app_switch_none),
@@ -642,6 +647,10 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
             }
             scanned = emptyList()
           },
+          onEdit = {
+            scanned = emptyList()
+            MaSettingsResume.open(context, "settings/dictate/magic")
+          },
           onDismiss = { scanned = emptyList() },
         )
       }
@@ -659,6 +668,7 @@ private fun MaScanPicker(
     found: List<String>,
     existing: List<String>,
     onPick: (String) -> kotlin.Unit,
+    onEdit: () -> kotlin.Unit,
     onDismiss: () -> kotlin.Unit,
 ) {
     Column(
@@ -678,6 +688,17 @@ private fun MaScanPicker(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
+            )
+            // Straight to the list from here, because this is where somebody realises it needs
+            // tidying: a term added by mistake, or three that want reordering. Making him find the
+            // settings app and then the right screen is three steps too many at that moment.
+            Text(
+                text = stringRes(R.string.ma__magic_scan_edit),
+                color = Color(0xFFE8B15C),
+                fontSize = 13.sp,
+                modifier = Modifier
+                    .clickable { onEdit() }
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
             )
             Text(
                 text = stringRes(R.string.ma__magic_scan_close),

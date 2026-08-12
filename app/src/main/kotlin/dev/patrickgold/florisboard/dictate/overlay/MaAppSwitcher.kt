@@ -10,6 +10,11 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import android.content.pm.PackageManager
+import android.accessibilityservice.AccessibilityService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import android.content.Context
 import android.content.Intent
 
@@ -36,6 +41,9 @@ import android.content.Intent
  */
 object MaAppSwitcher {
 
+    /** The pause between the two recents presses. See switchViaRecents. */
+    private const val RECENTS_GAP_MS = 180L
+
     /**
      * Not apps, and none of them should ever become "the app you were just in".
      *
@@ -44,14 +52,33 @@ object MaAppSwitcher {
      * through the home screen on the way somewhere else is not a destination, and a switcher that
      * counted it would send the user home instead of back.
      */
+    /**
+     * Not apps, and none of them should ever become "the app you were just in".
+     *
+     * The keyboard itself is the obvious one. The system shade is the next. The launcher is the one
+     * that actually broke: this was a hard-coded list of stock launcher packages, Marko runs Nova,
+     * and Nova is not on any such list — so the home screen counted as an app and TAB took him to
+     * the desktop and back. A list of launcher package names can only ever be a list of the
+     * launchers somebody thought of.
+     *
+     * So the launcher is asked for by name instead, from the system, at the moment it is needed.
+     * Whatever he is running is the right answer, including one released tomorrow.
+     */
     private val IGNORED_PREFIXES = listOf(
         "com.android.systemui",
-        "com.android.launcher",
-        "com.google.android.apps.nexuslauncher",
-        "com.miui.home",
-        "com.sec.android.app.launcher",
-        "com.android.settings.intelligence",
     )
+
+    /**
+     * The package that handles HOME, or null if that cannot be resolved.
+     *
+     * Resolved per call rather than cached: the default launcher can be changed while the keyboard
+     * is running, and a cached answer would leave the old one counting as an app.
+     */
+    private fun launcherPackage(context: Context): String? = runCatching {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo?.packageName
+    }.getOrNull()
 
     @Volatile
     private var current: String? = null
@@ -70,10 +97,13 @@ object MaAppSwitcher {
      * would push the genuinely previous app out after a few seconds of ordinary use, leaving TAB
      * flipping between one app and itself.
      */
-    fun onWindowPackage(ownPackage: String, pkg: String?) {
+    fun onWindowPackage(context: Context, ownPackage: String, pkg: String?) {
         val name = pkg?.takeIf { it.isNotBlank() } ?: return
         if (name == ownPackage) return
         if (IGNORED_PREFIXES.any { name.startsWith(it) }) return
+        // Passing through the home screen on the way somewhere else is not a destination. Counting
+        // it is what sent Marko to the desktop instead of back to his last app.
+        if (name == launcherPackage(context)) return
         if (name == current) return
         previous = current
         current = name
@@ -94,6 +124,30 @@ object MaAppSwitcher {
      * correct even if it lands before the system has caught up, and the event that follows finds the
      * state already right and changes nothing.
      */
+    /**
+     * Switches by opening the recents list twice, which is what Marko does with his thumb.
+     *
+     * Pressing the square and swiping is the gesture he already trusts, and on stock Android
+     * opening recents twice in quick succession is exactly that: the second open returns to the app
+     * behind the current one. It is better than a launch intent for two reasons — it uses the
+     * system's own idea of task order rather than ours, so it cannot be confused by what this app
+     * happened to observe, and it restores the task exactly as the user left it.
+     *
+     * Returns false when the service is not running, so the caller can fall back.
+     */
+    fun switchViaRecents(scope: CoroutineScope): Boolean {
+        val service = DictateAccessibilityService.gestureService() ?: return false
+        scope.launch {
+            service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
+            // Long enough for the recents animation to have started, short enough that the two
+            // presses are still read as one gesture. Too short and the second is swallowed by the
+            // first; too long and the list simply stays open.
+            delay(RECENTS_GAP_MS)
+            service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
+        }
+        return true
+    }
+
     fun switchToPrevious(context: Context): Boolean {
         val target = previous ?: return false
         val intent = context.packageManager.getLaunchIntentForPackage(target)

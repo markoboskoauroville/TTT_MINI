@@ -120,7 +120,7 @@ class DictateAccessibilityService : AccessibilityService() {
                 // app is in front costs nothing extra: no new subscription, no new permission, and
                 // no polling. Only a window state change tells us an app came forward.
                 if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-                    MaAppSwitcher.onWindowPackage(packageName, event.packageName?.toString())
+                    MaAppSwitcher.onWindowPackage(this, packageName, event.packageName?.toString())
                 }
                 updateEditableFocusImmediately()
             }

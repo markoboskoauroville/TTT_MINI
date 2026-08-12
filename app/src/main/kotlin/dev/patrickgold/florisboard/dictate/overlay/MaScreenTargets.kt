@@ -85,24 +85,31 @@ object MaScreenTargets {
         depth: Int,
     ) {
         if (depth > 28) return
-        if (node.isVisibleToUser) {
-            // The label the finder would match on, from the node itself or from the button it sits
-            // inside. An icon button usually carries the description while its clickable parent
-            // carries nothing, so a label found here is still reachable by the same walk-up the
-            // press uses.
-            val clickable = node.isClickable && node.isEnabled
-            val parentClickable = generateSequence(node.parent) { it.parent }
-                .take(3)
-                .any { it.isClickable && it.isEnabled }
-            if (clickable || parentClickable) {
-                labelOf(node)?.let { out.add(it) }
-            }
+        // Only things that are themselves pressable. This used to accept any node sitting inside a
+        // clickable parent, which on a chat screen means every line of the conversation: Marko's
+        // list came back holding "Claude is AI and can make mistakes" and the whole message body.
+        // A screen is mostly text, and a picker full of text is a picker nobody can find a button in.
+        if (node.isVisibleToUser && node.isClickable && node.isEnabled) {
+            // The label may be on the button or on the icon inside it, so look down as well as at
+            // the node itself — but only for the button's own label, not for everything under it.
+            (labelOf(node) ?: childLabel(node))?.let { out.add(it) }
         }
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
             collectClickable(child, out, depth + 1)
             runCatching { child.recycle() }
         }
+    }
+
+    /** The first short label among a button's immediate children, for an icon button. */
+    private fun childLabel(node: AccessibilityNodeInfo): String? {
+        for (i in 0 until minOf(node.childCount, 6)) {
+            val child = node.getChild(i) ?: continue
+            val label = labelOf(child)
+            runCatching { child.recycle() }
+            if (label != null) return label
+        }
+        return null
     }
 
     /**
@@ -116,7 +123,9 @@ object MaScreenTargets {
             ?: node.text?.toString()?.trim()
             ?: node.viewIdResourceName?.substringAfterLast('/')?.replace('_', ' ')
         val label = raw?.replace('\n', ' ')?.trim().orEmpty()
-        if (label.isBlank() || label.length > 40) return null
+        // Short enough to be a button's name. A tappable paragraph is not a button anybody
+        // names, and a truncated term would match the wrong control later.
+        if (label.isBlank() || label.length > 32) return null
         return label
     }
 

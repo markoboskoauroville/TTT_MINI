@@ -917,6 +917,7 @@
     <string name="ma__magic_button">Press the button on screen</string>
     <string name="ma__magic_button_none">No matching button on this screen</string>
     <string name="ma__magic_scan_title">Tap a button to add it to the wand</string>
+    <string name="ma__magic_scan_edit">Edit list</string>
     <string name="ma__magic_scan_close">Close</string>
     <string name="ma__magic_scan_none">Nothing pressable found on this screen</string>
     <string name="ma__accessibility_needed">Turn on TTT mini here so it can press buttons for you</string>
