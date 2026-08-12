@@ -1069,6 +1069,35 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * the setting is a single stepper. Set on the key itself by long press: it is adjusted while
          * looking at the page being scrolled, which is not a moment to go into settings for.
          */
+        /**
+         * The three waits inside a bucket paste, in milliseconds.
+         *
+         * Split into three because they are three different waits, and the field that is too slow
+         * for one is often fine with the others. Each step is a round trip to another process, and
+         * firing the next before the last has landed acts on a selection that does not exist yet —
+         * which shows up as a key that pasted nothing, or worse, emptied the field and did not
+         * refill it.
+         *
+         * 200ms each is what works in most fields and is Marko's own number. Some apps need more,
+         * and there is no way to know which from here, so it is his to set rather than mine to
+         * guess.
+         *
+         * Zero is allowed. A field fast enough to need no wait should not be made to wait, and
+         * somebody tuning these downward should be able to reach the bottom.
+         */
+        val maClipDelaySelect = int(
+            key = "dictate__ma_clip_delay_select",
+            default = 200,
+        )
+        val maClipDelayDelete = int(
+            key = "dictate__ma_clip_delay_delete",
+            default = 200,
+        )
+        val maClipDelayPaste = int(
+            key = "dictate__ma_clip_delay_paste",
+            default = 200,
+        )
+
         val maScrollPages = int(
             key = "dictate__ma_scroll_pages",
             default = 1,

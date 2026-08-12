@@ -194,6 +194,9 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
 
 
     // What C1 to C10 currently hold, in the order they were copied.
+    val clipDelaySelect by prefs.dictate.maClipDelaySelect.collectAsState()
+    val clipDelayDelete by prefs.dictate.maClipDelayDelete.collectAsState()
+    val clipDelayPaste by prefs.dictate.maClipDelayPaste.collectAsState()
     val capturedRaw by prefs.dictate.maClipCaptured.collectAsState()
     val capturedSlots = remember(capturedRaw) { MaClipCapture.parse(capturedRaw) }
 
@@ -315,13 +318,16 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                                 // That is not a setting anybody wants wrong: pasting a bucket into
                                 // the middle of existing text is how a document gets damaged rather
                                 // than edited. The condition is gone, not defaulted.
+                                // Each wait is its own setting. They are three different waits and
+                                // the field that is too slow for one is often fine with the others,
+                                // so one number for all three could only ever be wrong somewhere.
                                 keyboardManager.activeState.isManualSelectionMode = false
-                                delay(MA_CLIP_STEP_MS)
+                                if (clipDelaySelect > 0) delay(clipDelaySelect.toLong())
                                 FlorisImeService.currentInputConnection()
                                     ?.performContextMenuAction(android.R.id.selectAll)
-                                delay(MA_CLIP_STEP_MS)
+                                if (clipDelayDelete > 0) delay(clipDelayDelete.toLong())
                                 FlorisImeService.currentInputConnection()?.commitText("", 1)
-                                delay(MA_CLIP_STEP_MS)
+                                if (clipDelayPaste > 0) delay(clipDelayPaste.toLong())
                                 FlorisImeService.currentInputConnection()?.commitText(text, 1)
                                 // The bucket is poured out once its contents are in the field.
                                 // After the paste, not before: if the commit fails the text is
@@ -879,20 +885,6 @@ private val MaRecordRed = Color(0xFF9B3B33)
  * Repeated rather than imported from LegacyDictateLayout because that file is being deleted with the
  * transcribe view, and a hundred milliseconds is cheaper to state twice than to route around.
  */
-/**
- * The gap between each step of a bucket paste: select all, delete, paste.
- *
- * Each step is a round trip to another process, and firing the next before the last has landed acts
- * on a selection that does not exist yet — which reads as a key that did nothing, or worse, as a
- * key that inserted instead of replacing. 200ms is Marko's number and is comfortably above what the
- * round trip needs while staying under what a finger notices.
- *
- * One value for all three gaps now. The paste step used to wait longer than the others because it
- * was the one observed to get dropped; with the whole sequence at 200ms that margin is already
- * there, and three delays that are supposed to be the same should be the same constant rather than
- * two that drift apart.
- */
-private const val MA_CLIP_STEP_MS = 200L
 
 
 /** The wait before the paste itself. AP's value, for AP's reason. See the CH key. */

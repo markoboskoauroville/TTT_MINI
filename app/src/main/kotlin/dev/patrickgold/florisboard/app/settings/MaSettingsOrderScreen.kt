@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Mic
@@ -70,6 +71,7 @@ val MaSettingsEntry.icon: ImageVector
         MaSettingsEntry.DB -> Icons.Default.Dashboard
         MaSettingsEntry.KEYS -> Icons.Default.Key
         MaSettingsEntry.VOCABULARY -> Icons.Default.Spellcheck
+        MaSettingsEntry.BUCKETS -> Icons.Default.ContentPasteGo
         MaSettingsEntry.RECORDING -> Icons.Default.Mic
         MaSettingsEntry.REWORDING -> Icons.Default.AutoAwesome
         MaSettingsEntry.MAPPINGS -> Icons.Default.Spellcheck
@@ -98,6 +100,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.DB -> Routes.Settings.DbEditor
         MaSettingsEntry.KEYS -> Routes.Settings.DictateKeys
         MaSettingsEntry.VOCABULARY -> Routes.Settings.MaVocabulary
+        MaSettingsEntry.BUCKETS -> Routes.Settings.MaBuckets
         MaSettingsEntry.RECORDING -> Routes.Settings.DictateRecording
         MaSettingsEntry.REWORDING -> Routes.Settings.DictateRewording
         MaSettingsEntry.MAPPINGS -> Routes.Settings.DictateMappings
