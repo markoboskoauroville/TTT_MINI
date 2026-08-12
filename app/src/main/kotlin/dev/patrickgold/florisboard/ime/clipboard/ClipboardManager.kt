@@ -26,6 +26,7 @@ import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
 import dev.patrickgold.florisboard.dictate.MaClipCapture
+import dev.patrickgold.florisboard.dictate.MaRows
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -286,15 +287,19 @@ class ClipboardManager(
      * Called before the history check on purpose. The C keys are the feature; the history is a
      * separate switch the user may have turned off, and the keys must not stop working because of it.
      *
-     * Goes into the lowest empty bucket, which may be one that was poured out by a paste rather
-     * than one never used. Text only, and nothing at all when every bucket is full. MaClipCapture
-     * holds the reasoning.
+     * Goes into the lowest empty bucket *that is on the keyboard*, which may be one poured out by a
+     * paste rather than one never used. Text only, and nothing at all once every visible bucket is
+     * full. MaClipCapture holds the reasoning.
      */
     private suspend fun captureIntoClipSlots(clip: android.content.ClipData?) {
         val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString() ?: return
         val current = MaClipCapture.parse(prefs.dictate.maClipCaptured.get())
-        if (MaClipCapture.isFull(current)) return
-        val next = MaClipCapture.capture(current, text)
+        // Which buckets exist for this user, read fresh on every copy rather than cached. The row is
+        // edited while the app is running, and a cached set would keep filling a bucket that has
+        // just been taken off the keyboard.
+        val visible = MaRows.visibleClipSlots(MaRows.parse(prefs.dictate.maRows.get()))
+        if (MaClipCapture.isFull(current, visible)) return
+        val next = MaClipCapture.capture(current, text, visible)
         // Structural rather than reference comparison: capture returning the same contents means
         // there was nothing to record, and writing the preference anyway would wake every collector
         // of it — including the keyboard's own row — for no change at all.

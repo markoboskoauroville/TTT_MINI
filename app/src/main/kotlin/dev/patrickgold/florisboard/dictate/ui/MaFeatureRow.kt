@@ -173,6 +173,12 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val capturedRaw by prefs.dictate.maClipCaptured.collectAsState()
     val capturedSlots = remember(capturedRaw) { MaClipCapture.parse(capturedRaw) }
 
+    // The buckets this user actually has, and whether they are all holding something. Derived from
+    // the same rows the keyboard is drawing, so the answer here and the answer the capture uses
+    // cannot disagree about how many buckets exist.
+    val visibleClipSlots = remember(storedRows) { MaRows.visibleClipSlots(storedRows) }
+    val bucketsFull = MaClipCapture.isFull(capturedSlots, visibleClipSlots)
+
     val rowsRaw by prefs.dictate.maRows.collectAsState()
     val macroRaw by prefs.dictate.maMacroSlots.collectAsState()
     val macroSlots = remember(macroRaw) { MaMacroSlots.parse(macroRaw) }
@@ -302,9 +308,16 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 ) { fg ->
                     Text(
                         text = "C${button.slot}",
-                        // Dimmed until the slot has been filled, so a glance says how far the
-                        // row has got without pressing anything.
-                        color = if (text == null) fg.copy(alpha = 0.4f) else fg,
+                        // Three states, read at a glance without pressing anything: dim means the
+                        // bucket is empty, normal means it is holding something, and red means every
+                        // bucket is full so the next copy has nowhere to go until the trash key is
+                        // pressed. Red is the app's one recording red — it means "this is state you
+                        // need to act on", which is exactly what a full row is.
+                        color = when {
+                            text == null -> fg.copy(alpha = 0.4f)
+                            bucketsFull -> MaRecordRed
+                            else -> fg
+                        },
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -374,7 +387,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     // keys, and wiping somebody's whole clipboard as a side effect of tidying a row
                     // is not recoverable — the history is still there behind a long press on any C
                     // key, which is where anything wanted back can be found.
-                    val filled = MaClipCapture.filledCount(capturedSlots)
+                    val filled = MaClipCapture.filledCount(capturedSlots, visibleClipSlots)
                     ThemedIconKey(
                         code = KeyCode.NOOP,
                         icon = Icons.Default.Delete,
@@ -382,9 +395,14 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                             if (filled == 0) R.string.ma__clip_clear_empty else R.string.ma__clip_clear,
                         ),
                         modifier = keyMod,
-                        // Dimmed when there is nothing to clear, so the row shows at a glance
-                        // whether the slots are holding anything.
-                        tint = if (filled == 0) MaDimmed else null,
+                        // Dim when there is nothing to clear, red when the buckets are full and
+                        // this key is the only way forward. The trash turns red at the same moment
+                        // the buckets do, so the row shows both the problem and its answer.
+                        tint = when {
+                            filled == 0 -> MaDimmed
+                            bucketsFull -> MaRecordRed
+                            else -> null
+                        },
                         onLongClick = fold,
                     ) {
                         scope.launch { prefs.dictate.maClipCaptured.set("") }

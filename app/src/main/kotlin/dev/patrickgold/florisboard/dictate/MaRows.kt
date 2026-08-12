@@ -123,6 +123,21 @@ object MaRows {
     }
 
     /**
+     * Which copy buckets are actually on the keyboard, as slot numbers.
+     *
+     * The buckets a copy may fill are exactly the ones the user can see and press. A bucket that is
+     * not on any row cannot be pasted from, so filling it silently swallows a copy: the text is
+     * captured, the row looks unchanged, and the only way to reach it would be to go into the editor
+     * and add the button afterwards. That is not a bucket, it is a hole.
+     *
+     * Returned as the set of numbers rather than a count, because the buttons need not be
+     * contiguous. Somebody with C1, C2 and C7 on the row has three buckets and they are 1, 2 and 7 —
+     * a capacity of three would fill C1, C2 and C3, and C3 is not on the screen.
+     */
+    fun visibleClipSlots(rows: List<Row>): Set<Int> =
+        visibleRows(rows).flatten().filterIsInstance<Button.Clip>().map { it.slot }.toSet()
+
+    /**
      * The starting arrangement: one full row, two empty rows waiting to be built.
      *
      * Rows two and three start switched off and empty rather than pre-filled with a guess. A row

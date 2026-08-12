@@ -60,6 +60,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.ui.MaBucketStrip
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.dictate.DictateController
@@ -245,6 +246,12 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                 if (shouldShowInlineSuggestionsUi) {
                     InlineSuggestionsUi(inlineSuggestions)
                 } else {
+                    // The bucket strip takes this slot whenever a bucket holds something, and steps
+                    // aside the moment they are all empty. It is the legend for the numbered C keys
+                    // below — the only way to tell which bucket holds which text — and it draws
+                    // nothing at all when the buckets are empty, so the suggestions come back on
+                    // their own without a switch to understand.
+                    MaBucketStrip()
                     CandidatesRow()
                 }
             }
@@ -350,6 +357,12 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                 if (shouldShowInlineSuggestionsUi) {
                     InlineSuggestionsUi(inlineSuggestions)
                 } else {
+                    // The bucket strip takes this slot whenever a bucket holds something, and steps
+                    // aside the moment they are all empty. It is the legend for the numbered C keys
+                    // below — the only way to tell which bucket holds which text — and it draws
+                    // nothing at all when the buckets are empty, so the suggestions come back on
+                    // their own without a switch to understand.
+                    MaBucketStrip()
                     CandidatesRow()
                 }
             }

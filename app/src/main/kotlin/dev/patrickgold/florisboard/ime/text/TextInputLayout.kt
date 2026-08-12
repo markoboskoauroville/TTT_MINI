@@ -27,6 +27,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import dev.patrickgold.florisboard.dictate.ui.MaKeyboardPin
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -191,8 +193,35 @@ fun TextInputLayout(
                         // here.
                         rowHeight = FlorisImeSizing.smartbarHeight,
                     )
-                    MaKeyboardPin(modifier = Modifier.align(Alignment.TopStart))
                 }
+                // The pin was drawn over this row's top-left corner and looked like a badge stuck to
+                // the gear key. It sits below the rows now, in the strip added at the end of this
+                // Column.
+            }
+
+            // The pin, on its own strip along the very bottom, hard against the left edge.
+            //
+            // It used to overlap the first row's corner, which read as a badge attached to whatever
+            // key happened to be there rather than as a control of its own. Down here it lines up
+            // with Android's navigation buttons directly beneath it, which is where it belongs: both
+            // are about what stays on the screen rather than about what gets typed.
+            //
+            // Its own strip rather than a corner of the feature row, because the feature row is the
+            // user's to arrange and this control is not. Nothing here can be reordered, unticked or
+            // deleted — somebody who removed the pin would have no way to reach it to put it back.
+            //
+            // Half the height of a key row: enough to hit without looking, small enough that it is
+            // plainly not one of the keys.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(FlorisImeSizing.smartbarHeight * 0.5f),
+            ) {
+                MaKeyboardPin(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 10.dp),
+                )
             }
         }
     }

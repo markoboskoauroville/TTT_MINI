@@ -61,12 +61,15 @@ object MaClipCapture {
      * Already held: people re-copy the same text constantly to be sure, and that must not fill the
      * row with one repeated value.
      */
-    fun capture(slots: List<String?>, text: String): List<String?> {
+    fun capture(slots: List<String?>, text: String, visible: Set<Int>): List<String?> {
         if (text.isBlank()) return slots
         if (slots.any { it == text }) return slots
-        val free = slots.indexOfFirst { it == null }
-        if (free < 0) return slots
-        return slots.toMutableList().also { it[free] = text }
+        // The lowest empty bucket *that is on the keyboard*. Filling one the user cannot see
+        // swallows the copy: the text is captured, the row looks unchanged, and there is no key to
+        // paste it from. With no buckets on screen at all there is nowhere for a copy to go, and
+        // that is a correct answer rather than a failure.
+        val free = visible.sorted().firstOrNull { slots.getOrNull(it - 1) == null } ?: return slots
+        return slots.toMutableList().also { it[free - 1] = text }
     }
 
     /** What C[slot] pastes, 1-based, or null when that bucket is empty. */
@@ -91,10 +94,21 @@ object MaClipCapture {
     fun slotFor(slots: List<String?>, text: String): Int? =
         slots.indexOfFirst { it != null && it == text }.takeIf { it >= 0 }?.plus(1)
 
-    fun isFull(slots: List<String?>): Boolean = slots.all { it != null }
+    /**
+     * Whether every bucket on the keyboard is holding something.
+     *
+     * Measured against the visible set, not against all ten. Four buckets on the row means full at
+     * four, and the row says so by turning red — the next copy has nowhere to go until the trash key
+     * empties them. An empty visible set is not full: there are no buckets, which is a different
+     * thing from full ones and must not paint the row red.
+     */
+    fun isFull(slots: List<String?>, visible: Set<Int>): Boolean =
+        visible.isNotEmpty() && visible.all { slots.getOrNull(it - 1) != null }
 
     /** How many buckets are holding something, for the trash key's dimmed state. */
-    fun filledCount(slots: List<String?>): Int = slots.count { it != null }
+    /** How many visible buckets are holding something, for the trash key's dimmed state. */
+    fun filledCount(slots: List<String?>, visible: Set<Int>): Int =
+        visible.count { slots.getOrNull(it - 1) != null }
 
     /**
      * Serialised with a control character, so captured text may contain commas, quotes, braces and
