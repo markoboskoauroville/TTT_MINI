@@ -171,3 +171,28 @@ private val MaStripDivider = Color(0x33FFFFFF)
 
 /** The gap between paste steps, matching the C keys exactly. See MaFeatureRow. */
 private const val MA_BUCKET_STEP_MS = 200L
+
+/**
+ * Whether any visible bucket is holding something, and therefore whether the strip has anything to
+ * draw.
+ *
+ * Exists so the caller can decide *which* composable takes the slot rather than composing both and
+ * letting one draw nothing. AnimatedVisibility lays its content out in a Box, so two composables in
+ * that slot are two layers on top of each other, not one after the other — which is exactly what
+ * put the bucket legend and the word suggestions in the same strip, overlapping.
+ *
+ * Deliberately asks the same three questions the strip itself asks, in the same order, so the two
+ * cannot disagree about whether there is anything to show.
+ */
+@Composable
+fun maBucketStripHasContent(): Boolean {
+    val prefs by FlorisPreferenceStore
+    val rowsRaw by prefs.dictate.maRows.collectAsState()
+    val capturedRaw by prefs.dictate.maClipCaptured.collectAsState()
+    val storedRows = remember(rowsRaw) {
+        if (rowsRaw.isBlank()) MaRows.defaultRows() else MaRows.parse(rowsRaw)
+    }
+    val visible = remember(storedRows) { MaRows.visibleClipSlots(storedRows) }
+    val slots = remember(capturedRaw) { MaClipCapture.parse(capturedRaw) }
+    return visible.any { MaClipCapture.at(slots, it) != null }
+}

@@ -46,7 +46,6 @@ import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.input.InputKeyEventReceiver
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.input.MaCtrlState
-import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.PunctuationRule
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.latin.TouchTrace
@@ -346,10 +345,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // The composing word is being replaced wholesale, so its tap evidence no longer describes what is
         // in the editor (issue #242).
         TouchTrace.reset()
-        when (candidate) {
-            is ClipboardSuggestionCandidate -> editorInstance.commitClipboardItem(candidate.clipboardItem)
-            else -> editorInstance.commitCompletion(candidate)
-        }
+        // Word completions only. The clipboard candidate is gone: the copy buckets are the clipboard
+        // now, and they commit through their own keys and their own strip.
+        editorInstance.commitCompletion(candidate)
     }
 
     fun commitGesture(word: String) {

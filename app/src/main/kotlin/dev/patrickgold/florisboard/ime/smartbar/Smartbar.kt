@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.ui.MaBucketStrip
+import dev.patrickgold.florisboard.dictate.ui.maBucketStripHasContent
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.dictate.DictateController
@@ -246,13 +247,19 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                 if (shouldShowInlineSuggestionsUi) {
                     InlineSuggestionsUi(inlineSuggestions)
                 } else {
-                    // The bucket strip takes this slot whenever a bucket holds something, and steps
-                    // aside the moment they are all empty. It is the legend for the numbered C keys
-                    // below — the only way to tell which bucket holds which text — and it draws
-                    // nothing at all when the buckets are empty, so the suggestions come back on
-                    // their own without a switch to understand.
-                    MaBucketStrip()
-                    CandidatesRow()
+                    // One or the other, never both. AnimatedVisibility lays its content out in a
+                    // Box, so composing the two here drew them on top of each other: the bucket
+                    // legend and the word suggestions in the same strip, overlapping, unreadable.
+                    //
+                    // The bucket strip owns the slot whenever a bucket holds something, because
+                    // that legend is the only way to tell which bucket holds which text, and it
+                    // steps aside the moment they are all empty. hasContent() asks exactly what the
+                    // strip itself asks before drawing, so the two cannot disagree about the slot.
+                    if (maBucketStripHasContent()) {
+                        MaBucketStrip()
+                    } else {
+                        CandidatesRow()
+                    }
                 }
             }
             this@CenterContent.AnimatedVisibility(
@@ -357,13 +364,19 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                 if (shouldShowInlineSuggestionsUi) {
                     InlineSuggestionsUi(inlineSuggestions)
                 } else {
-                    // The bucket strip takes this slot whenever a bucket holds something, and steps
-                    // aside the moment they are all empty. It is the legend for the numbered C keys
-                    // below — the only way to tell which bucket holds which text — and it draws
-                    // nothing at all when the buckets are empty, so the suggestions come back on
-                    // their own without a switch to understand.
-                    MaBucketStrip()
-                    CandidatesRow()
+                    // One or the other, never both. AnimatedVisibility lays its content out in a
+                    // Box, so composing the two here drew them on top of each other: the bucket
+                    // legend and the word suggestions in the same strip, overlapping, unreadable.
+                    //
+                    // The bucket strip owns the slot whenever a bucket holds something, because
+                    // that legend is the only way to tell which bucket holds which text, and it
+                    // steps aside the moment they are all empty. hasContent() asks exactly what the
+                    // strip itself asks before drawing, so the two cannot disagree about the slot.
+                    if (maBucketStripHasContent()) {
+                        MaBucketStrip()
+                    } else {
+                        CandidatesRow()
+                    }
                 }
             }
 

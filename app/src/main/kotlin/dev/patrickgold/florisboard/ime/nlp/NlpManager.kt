@@ -67,7 +67,6 @@ class NlpManager(context: Context) {
     private val subtypeManager by context.subtypeManager()
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val clipboardSuggestionProvider = ClipboardSuggestionProvider(context)
     private val emojiSuggestionProvider = EmojiSuggestionProvider(context)
     private val providers = guardedByLock {
         mapOf(
@@ -333,12 +332,9 @@ class NlpManager(context: Context) {
         return runBlocking { candidate.sourceProvider?.removeSuggestion(subtype, candidate) == true }.also { result ->
             if (result) {
                 scope.launch {
-                    // Need to re-trigger the suggestions algorithm
-                    if (candidate is ClipboardSuggestionCandidate) {
-                        assembleCandidates()
-                    } else {
-                        suggest(subtypeManager.activeSubtype, editorInstance.activeContent)
-                    }
+                    // Need to re-trigger the suggestions algorithm. Only word candidates reach this
+                    // now: the clipboard branch went with the clipboard suggestion itself.
+                    suggest(subtypeManager.activeSubtype, editorInstance.activeContent)
                 }
             }
         }
@@ -355,18 +351,14 @@ class NlpManager(context: Context) {
     private fun assembleCandidates() {
         runBlocking {
             val candidates = when {
+                // Word suggestions only. The clipboard used to elbow its way in here as a
+                // candidate chip, and it is gone: the copy buckets are the clipboard now, they have
+                // their own strip above the keyboard, and two clipboards on one screen is what
+                // produced a suggestion row drawn in two layers on top of itself.
                 isSuggestionOn() -> {
-                    clipboardSuggestionProvider.suggest(
-                        subtype = Subtype.DEFAULT,
-                        content = editorInstance.activeContent,
-                        maxCandidateCount = 8,
-                        allowPossiblyOffensive = true,
-                        isPrivateSession = keyboardManager.activeState.isIncognitoMode,
-                    ).ifEmpty {
-                        buildList {
-                            internalSuggestionsGuard.withLock {
-                                addAll(internalSuggestions.second)
-                            }
+                    buildList {
+                        internalSuggestionsGuard.withLock {
+                            addAll(internalSuggestions.second)
                         }
                     }
                 }
@@ -430,110 +422,4 @@ class NlpManager(context: Context) {
         }
     }
 
-    inner class ClipboardSuggestionProvider internal constructor(private val context: Context) : SuggestionProvider {
-        private var lastClipboardItemId: Long = -1
-
-        override val providerId = "org.florisboard.nlp.providers.clipboard"
-
-        override suspend fun create() {
-            // Do nothing
-        }
-
-        override suspend fun preload(subtype: Subtype) {
-            // Do nothing
-        }
-
-        override suspend fun suggest(
-            subtype: Subtype,
-            content: EditorContent,
-            maxCandidateCount: Int,
-            allowPossiblyOffensive: Boolean,
-            isPrivateSession: Boolean,
-        ): List<SuggestionCandidate> {
-            // Check if enabled
-            if (!prefs.clipboard.suggestionEnabled.get()) return emptyList()
-
-            val currentItem = validateClipboardItem(clipboardManager.primaryClip, lastClipboardItemId, content.text)
-                ?: return emptyList()
-
-            return buildList {
-                val now = System.currentTimeMillis()
-                if ((now - currentItem.creationTimestampMs) < prefs.clipboard.suggestionTimeout.get() * 1000) {
-                    add(ClipboardSuggestionCandidate(currentItem, sourceProvider = this@ClipboardSuggestionProvider, context = context))
-                    if (currentItem.isSensitive) {
-                        return@buildList
-                    }
-                    if (currentItem.type == ItemType.TEXT) {
-                        val text = currentItem.stringRepresentation()
-                        val matches = buildList {
-                            addAll(NetworkUtils.getEmailAddresses(text))
-                            addAll(NetworkUtils.getUrls(text))
-                            addAll(NetworkUtils.getPhoneNumbers(text))
-                        }
-                        matches.forEachIndexed { i, match ->
-                            val isUniqueMatch = matches.subList(0, i).all { prevMatch ->
-                                prevMatch.value != match.value && prevMatch.range.intersect(match.range).isEmpty()
-                            }
-                            if (match.value != text && isUniqueMatch) {
-                                add(ClipboardSuggestionCandidate(
-                                    clipboardItem = currentItem.copy(
-                                        // TODO: adjust regex of phone number so we don't need to manually strip the
-                                        //  parentheses from the match results
-                                        text = if (match.value.startsWith("(") && match.value.endsWith(")")) {
-                                            match.value.substring(1, match.value.length - 1)
-                                        } else {
-                                            match.value
-                                        }
-                                    ),
-                                    sourceProvider = this@ClipboardSuggestionProvider,
-                                    context = context,
-                                ))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {
-            if (candidate is ClipboardSuggestionCandidate) {
-                lastClipboardItemId = candidate.clipboardItem.id
-            }
-        }
-
-        override suspend fun notifySuggestionReverted(subtype: Subtype, candidate: SuggestionCandidate) {
-            // Do nothing
-        }
-
-        override suspend fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean {
-            if (candidate is ClipboardSuggestionCandidate) {
-                lastClipboardItemId = candidate.clipboardItem.id
-                return true
-            }
-            return false
-        }
-
-        override suspend fun getListOfWords(subtype: Subtype): List<String> {
-            return emptyList()
-        }
-
-        override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
-            return 0.0
-        }
-
-        override suspend fun destroy() {
-            // Do nothing
-        }
-
-        private fun validateClipboardItem(currentItem: ClipboardItem?, lastItemId: Long, contentText: String) =
-            currentItem?.takeIf {
-                // Check if already used
-                it.id != lastItemId
-                    // Check if content is empty
-                    && contentText.isBlank()
-                    // Check if clipboard content has any valid characters
-                    && !currentItem.text.isNullOrBlank()
-                    && !blankStrRegex.matches(currentItem.text)
-            }
-    }
 }

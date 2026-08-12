@@ -43,7 +43,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.NlpManager
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import kotlinx.coroutines.launch
@@ -135,13 +134,9 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                         // Can't use candidate directly
                         val candidateItem = candidates[n]
                         when {
-                            // Clipboard suggestions keep their existing "long-press to forget" behaviour.
-                            candidateItem is ClipboardSuggestionCandidate -> {
-                                nlpManager.removeSuggestion(subtypeManager.activeSubtype, candidateItem)
-                            }
-                            // For words the gesture teaches the personal dictionary instead (issue #241).
-                            // It used to call removeSuggestion(), which every word provider answers with
-                            // false, so long-pressing a word did nothing at all.
+                            // Words only now. The clipboard branch went with the clipboard
+                            // suggestion itself; long press teaches the personal dictionary
+                            // (issue #241), which is all this row carries.
                             else -> {
                                 val subtype = subtypeManager.activeSubtype
                                 val result = nlpManager.addToUserDictionary(subtype, candidateItem)
@@ -186,11 +181,7 @@ private fun CandidateItem(
 ) = with(LocalDensity.current) {
     var isPressed by remember { mutableStateOf(false) }
 
-    val elementName = if (candidate is ClipboardSuggestionCandidate) {
-        FlorisImeUi.SmartbarCandidateClip
-    } else {
-        FlorisImeUi.SmartbarCandidateWord
-    }.elementName
+    val elementName = FlorisImeUi.SmartbarCandidateWord.elementName
     // Remembered so recomposing the row on each keystroke doesn't allocate a fresh map (which, as an
     // unstable arg to the Snygg composables below, would also defeat their skipping) — reduces the
     // per-keystroke recomposition + GC churn behind the typing jank.

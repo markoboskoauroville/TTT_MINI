@@ -115,38 +115,6 @@ data class WordSuggestionCandidate(
     override val icon: ImageVector? = null
 }
 
-/**
- * Default implementation for a clipboard candidate. Should generally not be used by a suggestion provider, except by
- * the clipboard suggestion provider.
- *
- * @see SuggestionCandidate
- */
-data class ClipboardSuggestionCandidate(
-    val clipboardItem: ClipboardItem,
-    override val sourceProvider: SuggestionProvider?,
-    val context: Context,
-) : SuggestionCandidate {
-    override val text: CharSequence = clipboardItem.displayText(context)
-
-    override val secondaryText: CharSequence? = null
-
-    override val confidence: Double = 1.0
-
-    override val isEligibleForAutoCommit: Boolean = false
-
-    override val isEligibleForUserRemoval: Boolean = true
-
-    override val icon: ImageVector = when (clipboardItem.type) {
-        ItemType.TEXT -> when {
-            NetworkUtils.isEmailAddress(text) -> Icons.Default.Email
-            NetworkUtils.isUrl(text) -> Icons.Default.Link
-            NetworkUtils.isPhoneNumber(text) -> Icons.Default.Phone
-            else -> Icons.AutoMirrored.Outlined.Assignment
-        }
-        ItemType.IMAGE -> Icons.Default.Image
-        ItemType.VIDEO -> Icons.Default.Videocam
-    }
-}
 
 /**
  * Represents a candidate suggestion for an emoji.
