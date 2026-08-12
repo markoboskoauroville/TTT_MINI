@@ -60,24 +60,13 @@ fun ClipboardScreen() = FlorisScreen {
             enabledIf = { prefs.clipboard.useInternalClipboard isEqualTo true },
         )
 
-        PreferenceGroup(title = stringRes(R.string.pref__clipboard__group_clipboard_suggestion__label)) {
-            SwitchPreference(
-                prefs.clipboard.suggestionEnabled,
-                modifier = Modifier.settingsSearchAnchor("pref__clipboard__suggestion_enabled__label"),
-                title = stringRes(R.string.pref__clipboard__suggestion_enabled__label),
-                summary = stringRes(R.string.pref__clipboard__suggestion_enabled__summary),
-            )
-            DialogSliderPreference(
-                prefs.clipboard.suggestionTimeout,
-                modifier = Modifier.settingsSearchAnchor("pref__clipboard__suggestion_timeout__label"),
-                title = stringRes(R.string.pref__clipboard__suggestion_timeout__label),
-                valueLabel = { stringRes(R.string.pref__clipboard__suggestion_timeout__summary, "v" to it) },
-                min = 30,
-                max = 300,
-                stepIncrement = 5,
-                enabledIf = { prefs.clipboard.suggestionEnabled isEqualTo true },
-            )
-        }
+        // The clipboard suggestion group is gone with the feature. It put the newest copy into the
+        // word suggestion strip, which is the job the copy buckets do now — and did it in the same
+        // strip the bucket legend uses, so the two drew on top of each other. Two answers to one
+        // question, in one place, was the chaos Marko photographed.
+        //
+        // Switches for a feature that no longer exists are worse than no switches: they teach that
+        // settings do not work.
 
         PreferenceGroup(title = stringRes(R.string.pref__clipboard__group_clipboard_history__label)) {
             SwitchPreference(

@@ -105,14 +105,9 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "clipboard__sync_to_system",
             default = ClipboardSyncBehavior.NO_EVENTS,
         )
-        val suggestionEnabled = boolean(
-            key = "clipboard__suggestion_enabled",
-            default = true,
-        )
-        val suggestionTimeout = int(
-            key = "clipboard__suggestion_timeout",
-            default = 60,
-        )
+        // The clipboard suggestion preferences are gone with the feature they switched. It put the
+        // newest copy into the word suggestion strip, which is what the copy buckets do now, in the
+        // same strip the bucket legend draws in.
         // On by default in TTT mini, where it was off in FlorisBoard.
         //
         // This is not a preference here, it is the feature. The C1 to C10 keys read this history,
@@ -1845,14 +1840,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             "advanced__force_incognito_mode_from_dynamic" -> {
                 entry.transform(key = "suggestion__force_incognito_mode_from_dynamic")
             }
-            // Migrate clipboard suggestion prefs to clipboard
-            // Keep migration rules until: 0.7 dev cycle
-            "suggestion__clipboard_content_enabled" -> {
-                entry.transform(key = "clipboard__suggestion_enabled")
-            }
-            "suggestion__clipboard_content_timeout" -> {
-                entry.transform(key = "clipboard__suggestion_timeout")
-            }
+            // The clipboard suggestion feature is gone, so these two are dropped rather than
+            // migrated: transforming them would rename an old key into a new one that no longer
+            // exists, leaving rubbish in the store for a setting nothing can read.
+            "suggestion__clipboard_content_enabled",
+            "suggestion__clipboard_content_timeout" -> entry.reset()
 
             //Migrate one hand mode prefs keep until: 0.7 dev cycle
             "keyboard__one_handed_mode" -> {

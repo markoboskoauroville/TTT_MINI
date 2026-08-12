@@ -100,9 +100,6 @@ class NlpManager(context: Context) {
         prefs.suggestion.enabled.asFlow().collectLatestIn(scope) {
             assembleCandidates()
         }
-        prefs.clipboard.suggestionEnabled.asFlow().collectLatestIn(scope) {
-            assembleCandidates()
-        }
         prefs.emoji.suggestionEnabled.asFlow().collectLatestIn(scope) {
             assembleCandidates()
         }
