@@ -109,6 +109,29 @@
             android:foregroundServiceType="microphone"
             android:exported="false"/>
 
+        <!-- The accessibility service, and the reason the floating button, TAB and the magic key
+             were all doing nothing: this declaration did not exist. The class was written, the
+             config XML was written, and neither was ever named here — so Android had no idea the
+             service existed and it could not appear in the accessibility list to be switched on.
+             There was nothing to turn on, which is why looking for it found nothing.
+
+             BIND_ACCESSIBILITY_SERVICE is required and is a permission the *system* holds, not one
+             the user grants: it is what stops any other app binding to this service. The intent
+             filter is what puts the row in the accessibility list, and the meta-data points at the
+             config that declares what the service may see and do. -->
+        <service
+            android:name="dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config"/>
+        </service>
+
 
 
 
