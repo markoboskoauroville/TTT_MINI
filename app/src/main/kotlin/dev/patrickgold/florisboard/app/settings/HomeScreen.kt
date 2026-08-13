@@ -55,8 +55,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -84,7 +82,10 @@ import org.florisboard.lib.compose.stringRes
 
 @Composable
 fun HomeScreen() = FlorisScreen {
-    title = stringRes(R.string.settings__home__title)
+    // No welcome. The version line below already says which app this is and which build, and a
+    // headline repeating the name cost a third of the screen on the one page opened most. The
+    // search icon stays, because that is the only thing in that bar anybody presses.
+    title = ""
     navigationIconVisible = false
 
     val navController = LocalNavController.current
@@ -156,36 +157,16 @@ fun HomeScreen() = FlorisScreen {
         //
         // Two tabs, split by where a screen came from rather than by what it does.
         //
-        // Mantra holds everything built for this app. FlorisBoard holds what survived from the
-        // keyboard underneath, which is the pile still worth going through: anything in there that
-        // is never opened is a candidate for deletion, and the split makes that visible at a glance
-        // instead of requiring the history of every screen to be remembered.
+        // One list, no tabs.
         //
-        // Named FlorisBoard rather than Dictate because these particular screens are FlorisBoard's,
-        // by Patrick Goldinger. Dictate, the fork this came from, contributed the dictation screens,
-        // and those are on the Mantra side because they have been rebuilt almost entirely.
-        // ALWAYS opens on Mantra, tab 0.
-        //
-        // It was rememberSaveable, which restores whichever tab was last looked at, so one visit to
-        // the FlorisBoard tab made every later visit open there. That is the right behaviour for a
-        // scroll position and the wrong one for this: the FlorisBoard tab is what survived from the
-        // fork and is visited to check something once, while Mantra is the app. Plain remember, so
-        // entering settings always lands on the side that is his.
-        var tab by remember { mutableStateOf(0) }
-        TabRow(selectedTabIndex = tab) {
-            Tab(
-                selected = tab == 0,
-                onClick = { tab = 0 },
-                text = { Text("Mantra") },
-            )
-            Tab(
-                selected = tab == 1,
-                onClick = { tab = 1 },
-                text = { Text("FlorisBoard") },
-            )
-        }
+        // The split existed to make the leftover FlorisBoard screens visible as a pile worth going
+        // through, which was useful while that pile was being thinned and is not now. Two tabs cost
+        // a permanent strip across the top of the one screen somebody opens most, to answer a
+        // question nobody asks twice. The FlorisBoard entries follow the Mantra ones in the same
+        // list, under their own heading, where they can still be found and no longer take height
+        // from everything above them.
 
-        if (tab == 0) {
+        run {
             // FLAT AND ORDERED BY MARKO, not grouped by me. See MaSettingsOrder.
             //
             // The headings that used to be here, Start here, Dictation, Saved, Keyboard extras, were
@@ -205,7 +186,8 @@ fun HomeScreen() = FlorisScreen {
                     onClick = { navController.navigate(entry.route) },
                 )
             }
-        } else {
+        }
+        run {
             PreferenceGroup(title = "Inherited from FlorisBoard") {
                 // No theme entry. The scheme is baked in, so this screen could only be used to
                 // leave it, and a saved theme in internal storage used to shadow the bundled one,

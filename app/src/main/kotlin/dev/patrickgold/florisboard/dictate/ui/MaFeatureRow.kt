@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Dashboard
@@ -334,9 +335,20 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                   }
               },
           ) { fg ->
-              MaMagicGlyph(
-                  tint = if (DictateAccessibilityService.isRunning) MaSand else fg.copy(alpha = 0.4f),
-                  size = 22.dp,
+              // The same finger the settings list uses, in the row's own colour.
+              //
+              // Two pictures for one feature is the fault this was meant to fix, and drawing a
+              // circled wand here while the settings drew a finger simply moved the mismatch rather
+              // than removing it. One mark, everywhere.
+              //
+              // No colour of its own either. Sand said "this leaves the keyboard", which this key
+              // no longer does — it dumps the screen — so the colour was describing something that
+              // had stopped being true.
+              Icon(
+                  imageVector = Icons.Default.TouchApp,
+                  contentDescription = stringRes(R.string.ma__magic_button),
+                  tint = fg,
+                  modifier = Modifier.size(22.dp),
               )
           }
           magicKeys.forEach { target ->
