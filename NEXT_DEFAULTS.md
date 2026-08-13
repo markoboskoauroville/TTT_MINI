@@ -148,3 +148,54 @@ For picking a reference image without touching the screen:
 `Done` is the first term where scoping is not optional. Every app has one, so unscoped it would fire
 in mail, in settings, anywhere. The six shipped defaults are specific enough to be safe unscoped;
 this one is not, and the difference is worth stating rather than discovering.
+
+---
+
+# Magic keys that know whether their button is there
+
+Marko's idea, and the better half of it is straightforward.
+
+## The light-up
+
+A magic key is grey when the button it presses is not on screen, and lit when it is. Same language
+the buckets already use: dim means nothing there, lit means ready. He learns it once and reads it
+everywhere.
+
+This is worth more than it looks. A magic key currently gives no sign whether it will work until it
+is pressed, so a press that finds nothing is indistinguishable from a broken key — which is exactly
+the confusion that cost several builds earlier. A key that says *I can see it* before it is touched
+removes that whole class of doubt.
+
+**Feasible as described.** The accessibility service already walks the tree for the dump. The work
+is to run that walk on window-content changes, collect which of his terms are present, and expose it
+as state the row observes — the same shape as `MaScreenTargets.Learn.state`.
+
+**The cost is the catch, and it needs designing rather than assuming.** A tree walk on every content
+change is a walk many times a second in a scrolling app, and this runs in the keyboard's process on
+a phone in someone's hand. It needs: throttling to no more than a few times a second, skipping
+entirely while no magic key is drawn, and stopping when the screen has not changed. Get this wrong
+and the feature is a battery complaint rather than a nicety.
+
+## The auto-raise
+
+*"When it recognizes the button, it just jumps up."*
+
+**Partly possible, and the limit is Android's rather than ours.** An input method may not simply show
+itself; it is shown when a text field takes focus. In the photo picker there is no text field, which
+is precisely the case he wants it for.
+
+What does exist is the pin, already built: when pinned, `onEvaluateInputViewShown` returns true and
+the keyboard stays up with no editor at all. So the achievable version is **stay up**, not **jump
+up** — pinned, the keyboard is already there when the picker opens, and the magic keys light as
+their targets appear.
+
+Whether an unpinned keyboard can be raised on demand needs testing on his phone rather than
+reasoning about, since OEMs differ. Try `requestShowSelf` and believe the device, not the
+documentation.
+
+## Order to build
+
+1. The light-up, throttled. It is self-contained, it makes every magic key honest, and it is the
+   part he will feel immediately.
+2. Then test whether auto-raise works at all on a Nothing Phone 2a, and only then decide whether it
+   is a feature or a note saying "pin the keyboard first".
