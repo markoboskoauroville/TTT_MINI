@@ -199,3 +199,45 @@ documentation.
    part he will feel immediately.
 2. Then test whether auto-raise works at all on a Nothing Phone 2a, and only then decide whether it
    is a feature or a note saying "pin the keyboard first".
+
+---
+
+# The zone keys grow up: independent of the keyboard
+
+Marko circled the `1` key and said it plainly: *"it's not child of the keyboard, it's now grown-up
+kid who is independent."*
+
+## What is wrong today
+
+The zone keys switch parts of the typing keyboard on and off. They assume the keyboard is there.
+Pressing `1` when the keyboard is collapsed asks for a number row on a keyboard that is not drawn,
+so it does nothing visible and looks broken.
+
+## What he wants
+
+Each zone key brings up **its own row, on its own**, whether or not the letters are showing. Press
+`1` and a number row appears — no keyboard needed. The zone is a thing in itself, not a switch on
+something else.
+
+This pairs with the pinned row note above: transient rows drawn below the keys cost nothing, and a
+number row summoned without the alphabet is exactly that. It also makes the keys useful in the case
+Marko keeps hitting — a screen with no text field, where the keyboard is collapsed and only the
+magic keys matter.
+
+## The labels: a letter for what the zone is
+
+He asked for mnemonics on the key faces, because three bare numerals say nothing about what each one
+opens:
+
+| Key | Face | What it opens |
+|---|---|---|
+| Zone 1 | **1N** | **N**umbers — the digit row |
+| Zone 2 | **2K** | **K**eys — the letter keyboard |
+| Zone 3 | **3P** | **P**aste — the copy row |
+
+The number keeps the position, the letter says the contents. Both fit inside the little keyboard
+glyph drawn in build 72, so this is a label change rather than a new design — the glyph already has
+room, since the numeral was sized for one character and there is space beside it.
+
+Worth keeping the numeral first, in that order. He has learned the positions by number, and a face
+reading `N1` would be a different key to relearn rather than the same key better labelled.
