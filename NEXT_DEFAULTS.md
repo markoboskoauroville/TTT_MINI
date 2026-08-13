@@ -70,9 +70,15 @@ below.
 | `Stop responding` | stop | already shipping |
 | `Send` | send | already shipping |
 | `Use Image URL` | url | **add this one** |
+| `Add URL` | +url | **add this one** — confirms the dialog the one above opens |
 
-`Use Image URL` is the one he asked for by name. It is a phrase, so it matches as a phrase and
-cannot fire on "Upload Image" sitting beside it.
+`Use Image URL` and `Add URL` are one workflow rather than two keys: the first opens the dialog, he
+pastes, the second confirms. Shipping one without the other leaves him reaching for the screen
+halfway through, which is the reaching this feature exists to remove.
+
+Both are phrases and both are safe. "Use Image URL" cannot fire on "Upload Image" beside it, and
+"Add URL" cannot fire on the dialog's own title "Add Image URL" — phrase matching looks for the
+characters in sequence, and "add image url" does not contain "add url".
 
 Unscoped, like the other three. It belongs to a **web page** rather than an app, so scoping it to
 `org.mozilla.firefox` would break the moment he opens the same site in another browser — and the
