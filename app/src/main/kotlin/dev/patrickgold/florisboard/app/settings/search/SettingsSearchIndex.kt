@@ -42,7 +42,6 @@ object SettingsSearchIndex {
         SettingsSearchEntry(R.string.dictate__history_title, R.string.dictate__history_title, Routes.Settings.DictateHistory, parentRes = R.string.dictate__title),
         SettingsSearchEntry(R.string.dictate__mappings_title, R.string.dictate__mappings_title, Routes.Settings.DictateMappings, parentRes = R.string.dictate__title),
         SettingsSearchEntry(R.string.dictate__prompt_library_title, R.string.dictate__prompt_library_title, Routes.Settings.DictatePromptLibrary, parentRes = R.string.dictate__title),
-        SettingsSearchEntry(R.string.dictate__rewording_title, R.string.dictate__rewording_title, Routes.Settings.DictateRewording, parentRes = R.string.dictate__title),
         SettingsSearchEntry(R.string.dictate__formatting_title, R.string.dictate__formatting_title, Routes.Settings.DictateFormatting, parentRes = R.string.dictate__title),
         SettingsSearchEntry(R.string.dictate__recording_group, R.string.dictate__recording_group, Routes.Settings.DictateRecording, parentRes = R.string.dictate__title),
         SettingsSearchEntry(R.string.dictate__output_group, R.string.dictate__output_group, Routes.Settings.DictateOutput, parentRes = R.string.dictate__title),
@@ -114,15 +113,7 @@ object SettingsSearchIndex {
         // The long-press-send-local checkbox lives inside the on-device provider dialog (issue #228); no
         // scroll anchor exists for a dialog, so search just lands on the Providers screen (on-device is at
         // the top of the list).
-        SettingsSearchEntry(R.string.dictate__rewording_enabled_title, R.string.dictate__rewording_title, Routes.Settings.DictateRewording, parentRes = R.string.dictate__title, anchor = "dictate__rewording_enabled_title"),
-        SettingsSearchEntry(R.string.dictate__prompts_layout_title, R.string.dictate__rewording_title, Routes.Settings.DictateRewording, parentRes = R.string.dictate__title, anchor = "dictate__prompts_layout_title"),
-        SettingsSearchEntry(R.string.dictate__manage_prompts_title, R.string.dictate__rewording_title, Routes.Settings.DictateRewording, parentRes = R.string.dictate__title, anchor = "dictate__manage_prompts_title"),
-        SettingsSearchEntry(R.string.dictate__auto_formatting_title, R.string.dictate__rewording_title, Routes.Settings.DictateRewording, parentRes = R.string.dictate__title, anchor = "dictate__auto_formatting_title"),
-        SettingsSearchEntry(R.string.dictate__reasoning_effort_title, R.string.dictate__rewording_title, Routes.Settings.DictateRewording, parentRes = R.string.dictate__title, anchor = "dictate__reasoning_effort_title"),
-        SettingsSearchEntry(R.string.dictate__system_prompt_title, R.string.dictate__rewording_title, Routes.Settings.DictateRewording, parentRes = R.string.dictate__title),
-        SettingsSearchEntry(R.string.dictate__system_prompt_custom_title, R.string.dictate__rewording_title, Routes.Settings.DictateRewording, parentRes = R.string.dictate__title),
         SettingsSearchEntry(R.string.dictate__formatting_title, R.string.dictate__title, Routes.Settings.DictateFormatting),
-        SettingsSearchEntry(R.string.dictate__rewording_title, R.string.dictate__title, Routes.Settings.DictateRewording),
         SettingsSearchEntry(R.string.dictate__recording_group, R.string.dictate__title, Routes.Settings.DictateRecording),
         SettingsSearchEntry(R.string.dictate__output_group, R.string.dictate__title, Routes.Settings.DictateOutput),
         SettingsSearchEntry(R.string.dictate__style_prompt_title, R.string.dictate__formatting_title, Routes.Settings.DictateFormatting, parentRes = R.string.dictate__title),

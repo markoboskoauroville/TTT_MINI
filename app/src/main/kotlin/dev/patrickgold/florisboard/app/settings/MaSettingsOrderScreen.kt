@@ -69,13 +69,11 @@ val MaSettingsEntry.icon: ImageVector
         // model; this presses a button on screen. This list is where the two sit closest together,
         // so it is where sharing a picture would confuse most.
         MaSettingsEntry.MAGIC -> Icons.Default.TouchApp
-        MaSettingsEntry.DEFAULT_VIEW -> Icons.Default.Visibility
-        MaSettingsEntry.DB -> Icons.Default.Dashboard
         MaSettingsEntry.KEYS -> Icons.Default.Key
         MaSettingsEntry.VOCABULARY -> Icons.Default.Spellcheck
         MaSettingsEntry.BUCKETS -> Icons.Default.ContentPasteGo
         MaSettingsEntry.RECORDING -> Icons.Default.Mic
-        MaSettingsEntry.REWORDING -> Icons.Default.AutoAwesome
+        MaSettingsEntry.PREDICTIONS -> Icons.Default.Spellcheck
         MaSettingsEntry.MAPPINGS -> Icons.Default.Spellcheck
         MaSettingsEntry.OUTPUT -> Icons.Default.Keyboard
         MaSettingsEntry.HISTORY -> Icons.Default.History
@@ -97,13 +95,11 @@ val MaSettingsEntry.route: Any
     get() = when (this) {
         MaSettingsEntry.FEATURE_ROW -> Routes.Settings.MaFeatureRow
         MaSettingsEntry.MAGIC -> Routes.Settings.MaMagic
-        MaSettingsEntry.DEFAULT_VIEW -> Routes.Settings.MaOpeningView
-        MaSettingsEntry.DB -> Routes.Settings.DbEditor
         MaSettingsEntry.KEYS -> Routes.Settings.DictateKeys
         MaSettingsEntry.VOCABULARY -> Routes.Settings.MaVocabulary
         MaSettingsEntry.BUCKETS -> Routes.Settings.MaBuckets
         MaSettingsEntry.RECORDING -> Routes.Settings.DictateRecording
-        MaSettingsEntry.REWORDING -> Routes.Settings.DictateRewording
+        MaSettingsEntry.PREDICTIONS -> Routes.Settings.MaPredictions
         MaSettingsEntry.MAPPINGS -> Routes.Settings.DictateMappings
         MaSettingsEntry.OUTPUT -> Routes.Settings.DictateOutput
         MaSettingsEntry.HISTORY -> Routes.Settings.DictateHistory

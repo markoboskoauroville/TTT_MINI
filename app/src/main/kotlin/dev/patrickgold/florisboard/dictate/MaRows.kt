@@ -154,24 +154,29 @@ object MaRows {
      * is more work than filling an empty one.
      */
     fun defaultRows(): List<Row> = listOf(
+        // The row Marko actually settled on, shipped as it stands.
+        //
+        // It is six keys rather than eleven, and that is the finding rather than a compromise: after
+        // weeks of arranging, what he kept was the gear, the keyboard zone, history, the dictation
+        // view, AC, and the magic row above it. Everything else he took off. Shipping the row he
+        // built beats shipping the row I guessed at, and a new install starts where he finished
+        // instead of where I started.
+        //
+        // Row one is nearest the keys, so this is the row under his thumb.
         Row(
             listOf(
-                MaFeatureKey.ALL_PASTE,
-                MaFeatureKey.ALL_CLEAR,
-                MaFeatureKey.SELECT_ALL,
-                MaFeatureKey.BACKSPACE,
-                MaFeatureKey.MIC,
-                MaFeatureKey.SPACE,
-                MaFeatureKey.ZONE_1,
-                MaFeatureKey.ZONE_2,
-                MaFeatureKey.ZONE_3,
-                MaFeatureKey.ENTER,
                 MaFeatureKey.SETTINGS,
+                MaFeatureKey.ZONE_2,
+                MaFeatureKey.HISTORY,
+                MaFeatureKey.MIC,
+                MaFeatureKey.ALL_CLEAR,
             ).map { Entry(Button.Builtin(it)) },
             enabled = true,
         ),
-        Row((1..CLIP_SLOTS).map { Entry(Button.Clip(it)) }, enabled = false),
-        Row((1..MACRO_SLOTS).map { Entry(Button.Macro(it)) }, enabled = false),
+        // Two and three start empty and off. A row arriving full of keys nobody chose has to be
+        // emptied before it can be used, which is more work than filling an empty one.
+        Row(emptyList(), enabled = false),
+        Row(emptyList(), enabled = false),
     )
 
     /** Every button that can be added, in the order the editor offers them. */

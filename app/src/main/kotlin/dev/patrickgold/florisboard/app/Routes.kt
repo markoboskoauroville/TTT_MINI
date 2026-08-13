@@ -65,6 +65,7 @@ import dev.patrickgold.florisboard.app.settings.dictate.DictateKeysScreen
 import dev.patrickgold.florisboard.app.settings.MaOpeningViewScreen
 import dev.patrickgold.florisboard.app.settings.MaSettingsOrderScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaMagicScreen
+import dev.patrickgold.florisboard.app.settings.dictate.MaPredictionsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaBucketsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaRowsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaVocabularyScreen
@@ -77,7 +78,6 @@ import dev.patrickgold.florisboard.app.settings.dictate.DbEditorScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateLayoutScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateOutputScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateRecordingScreen
-import dev.patrickgold.florisboard.app.settings.dictate.DictateRewordingScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateHistoryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.DictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreen
@@ -155,6 +155,10 @@ object Routes {
         object MaMagic
 
         @Serializable
+        @Deeplink("settings/dictate/predictions")
+        object MaPredictions
+
+        @Serializable
         @Deeplink("settings/dictate/settingsorder")
         object MaSettingsOrder
 
@@ -178,9 +182,6 @@ object Routes {
         @Deeplink("settings/dictate/mappings")
         object DictateMappings
 
-        @Serializable
-        @Deeplink("settings/dictate/rewording")
-        object DictateRewording
 
         @Serializable
         @Deeplink("settings/dictate/history")
@@ -396,11 +397,11 @@ object Routes {
             composableWithDeepLink(Settings.MaVocabulary::class) { MaVocabularyScreen() }
             composableWithDeepLink(Settings.MaBuckets::class) { MaBucketsScreen() }
             composableWithDeepLink(Settings.MaMagic::class) { MaMagicScreen() }
+            composableWithDeepLink(Settings.MaPredictions::class) { MaPredictionsScreen() }
             composableWithDeepLink(Settings.MaSettingsOrder::class) { MaSettingsOrderScreen() }
             composableWithDeepLink(Settings.MaOpeningView::class) { MaOpeningViewScreen() }
             composableWithDeepLink(Settings.DictateRecovered::class) { DictateRecoveredScreen() }
             composableWithDeepLink(Settings.DictateMappings::class) { DictateMappingsScreen() }
-            composableWithDeepLink(Settings.DictateRewording::class) { DictateRewordingScreen() }
             composableWithDeepLink(Settings.DictateFormatting::class) { DictateFormattingScreen() }
             composableWithDeepLink(Settings.DictateRecording::class) { DictateRecordingScreen() }
             composableWithDeepLink(Settings.DictateOutput::class) { DictateOutputScreen() }

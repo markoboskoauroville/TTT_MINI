@@ -74,17 +74,21 @@ object MaMagicTargets {
      * price did.
      */
     /**
-     * Nothing. The wand starts empty and is taught.
+     * The three Marko uses, shipped so a fresh install is useful before it is taught anything.
      *
-     * It shipped with five guesses — send, add url, generate image and two spellings of pošalji —
-     * and every one of them was wrong in the way that matters: they are labels somebody imagined
-     * rather than labels read off a real screen, they belonged to no app so they fired everywhere,
-     * and they filled the list so the terms Marko actually captured were buried among them.
+     * These are not guesses. They were read off Claude's own screen with the dump, checked against
+     * a screenshot, and have been in daily use since — which is the difference between a default
+     * and the five invented ones that were removed for firing everywhere and finding nothing.
      *
-     * A wand that does nothing until it is taught is honest. A wand that does the wrong thing
-     * because of a guess made here is not.
+     * They belong to no app on purpose. The button labels are Claude's, but "Send" and "Copy
+     * message" are what dozens of apps call those controls, so scoping them to one package would
+     * make them useless everywhere else for no gain.
      */
-    fun defaults(): List<Target> = emptyList()
+    fun defaults(): List<Target> = listOf(
+        Target(term = "Copy message", label = "copy"),
+        Target(term = "Stop responding", label = "stop"),
+        Target(term = "Send", label = "send"),
+    )
 
     /** What the wand actually searches, in order. Unticked terms are absent, not empty strings. */
     fun activeTerms(targets: List<Target>): List<String> =
