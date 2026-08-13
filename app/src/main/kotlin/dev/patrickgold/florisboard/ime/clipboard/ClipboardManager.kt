@@ -292,6 +292,9 @@ class ClipboardManager(
      * full. MaClipCapture holds the reasoning.
      */
     private suspend fun captureIntoClipSlots(clip: android.content.ClipData?) {
+        // Switched off means switched off: nothing is captured, so the buckets do not quietly fill
+        // in the background and present him with ten full keys when he turns them back on.
+        if (!prefs.dictate.maBucketsEnabled.get()) return
         val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString() ?: return
         val current = MaClipCapture.parse(prefs.dictate.maClipCaptured.get())
         // Which buckets exist for this user, read fresh on every copy rather than cached. The row is

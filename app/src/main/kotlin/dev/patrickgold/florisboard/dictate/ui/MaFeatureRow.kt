@@ -195,6 +195,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
 
 
     // What C1 to C10 currently hold, in the order they were copied.
+    val bucketsOn by prefs.dictate.maBucketsEnabled.collectAsState()
     val clipDelaySelect by prefs.dictate.maClipDelaySelect.collectAsState()
     val clipDelayDelete by prefs.dictate.maClipDelayDelete.collectAsState()
     val clipDelayPaste by prefs.dictate.maClipDelayPaste.collectAsState()
@@ -217,7 +218,8 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // the same rows the keyboard is drawing, so the answer here and the answer the capture uses
     // cannot disagree about how many buckets exist.
     val visibleClipSlots = remember(storedRows) { MaRows.visibleClipSlots(storedRows) }
-    val bucketsFull = MaClipCapture.isFull(capturedSlots, visibleClipSlots)
+    // Never full when they are off, so nothing turns red while he is not using them.
+    val bucketsFull = bucketsOn && MaClipCapture.isFull(capturedSlots, visibleClipSlots)
 
     // What the magic key looks for, newest first. Editable in settings so a new site costs a line
     // of text rather than a build.
@@ -352,7 +354,9 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
             is MaRows.Button.Clip -> {
                 // The slot's own text, not the history's newest-first ordering. C4 is the fourth
                 // thing copied since the row was cleared and stays that until it is cleared again.
-                val text = MaClipCapture.at(capturedSlots, button.slot)
+                // Switched off, a bucket holds nothing as far as the key is concerned: it draws
+                // dim and a press does nothing, rather than pasting something from before.
+                val text = if (bucketsOn) MaClipCapture.at(capturedSlots, button.slot) else null
                 ThemedKey(
                     code = KeyCode.NOOP,
                     // The key shows only its number: ten text previews across a row would be a few

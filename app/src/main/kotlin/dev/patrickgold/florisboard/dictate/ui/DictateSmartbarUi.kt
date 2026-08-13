@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DataUsage
+import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.animation.core.Animatable
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -325,6 +326,34 @@ private fun RecordingContent(state: DictateController.UiState.Recording) {
                     Icons.AutoMirrored.Filled.Send
                 },
                 contentDescription = stringRes(R.string.dictate__action_send),
+                tint = LocalContentColor.current,
+            )
+        }
+
+        // The way back to the settings, from a bar that can always be reached.
+        //
+        // Every key on the feature row can be removed, including the gear — which is right, it is
+        // his row — but it means an arrangement exists with no way into the settings at all, and
+        // Marko reached it. From there the app cannot be repaired from inside itself.
+        //
+        // This bar is not on the row and cannot be edited off it. Volume up always brings it up, so
+        // there is always a route back. It is the one thing in this app that must never be
+        // configurable, and it is here rather than on the row for exactly that reason.
+        //
+        // It discards first, and that is not a convenience. Reaching this means starting a
+        // recording he does not want, and leaving it running would send it — costing him credits
+        // for audio recorded only to press this button. Bin, then settings, in that order.
+        SnyggIconButton(
+            elementName = FlorisImeUi.SmartbarActionKey.elementName,
+            onClick = {
+                DictateController.cancelOrDiscardSegment(context)
+                MaSettingsResume.open(context)
+            },
+            modifier = Modifier.fillMaxHeight().aspectRatio(1f),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = stringRes(R.string.ma__escape_to_settings),
                 tint = LocalContentColor.current,
             )
         }

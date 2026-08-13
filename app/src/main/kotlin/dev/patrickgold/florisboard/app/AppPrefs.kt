@@ -1085,6 +1085,22 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * Zero is allowed. A field fast enough to need no wait should not be made to wait, and
          * somebody tuning these downward should be able to reach the bottom.
          */
+        /**
+         * Whether the copy buckets are working at all.
+         *
+         * Off, they stop capturing, stop turning red when full, and draw grey. The keys stay where
+         * they are rather than vanishing: they are part of an arrangement he built, and a row that
+         * rearranges itself when a feature is switched off is a row he has to relearn twice.
+         *
+         * This exists because the buckets are not always wanted and were never quiet about it. A
+         * feature that changes colour on the row while he is doing something else is asking for
+         * attention it has not earned.
+         */
+        val maBucketsEnabled = boolean(
+            key = "dictate__ma_buckets_enabled",
+            default = true,
+        )
+
         val maClipDelaySelect = int(
             key = "dictate__ma_clip_delay_select",
             default = 200,

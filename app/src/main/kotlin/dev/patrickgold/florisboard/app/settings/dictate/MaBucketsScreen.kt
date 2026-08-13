@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.datastore.model.PreferenceData
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
@@ -63,6 +64,25 @@ fun MaBucketsScreen() = FlorisScreen {
 
     content {
         val prefs by FlorisPreferenceStore
+
+        // The switch first, because it governs everything under it: tuning waits for a feature that
+
+        // is off is work nobody should be invited to do.
+
+        SwitchPreference(
+
+            prefs.dictate.maBucketsEnabled,
+
+            title = "Use the copy buckets",
+
+            summary = "Off, the C keys stay on the row but go grey, stop catching copies and stop " +
+
+                "turning red. Turn it back on and they carry on from empty.",
+
+        )
+
+        Spacer(Modifier.height(8.dp))
+
 
         Text(
             text = "The C bucket keys, AP and AC all do the same thing to a text field: select " +
