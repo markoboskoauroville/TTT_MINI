@@ -338,7 +338,10 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
             // One key per term, carrying the term itself. Pressing it presses that button and no
             // other — which is the whole difference from the wand, which guesses from a list.
             ThemedTextKey(
-                label = target.term,
+                // The face, which is the label when he has given one and the term when he has
+                // not. "Stop responding" is the right thing to search for and the wrong thing to
+                // write on a key.
+                label = target.face,
                 modifier = Modifier.fillMaxHeight().padding(2.dp),
                 tint = null,
             ) {

@@ -50,7 +50,21 @@ object MaMagicTargets {
         val term: String,
         val enabled: Boolean = true,
         val appPackage: String? = null,
-    )
+        /**
+         * What the key says, when that should not be what it searches for.
+         *
+         * "Stop responding" is the right thing to look for and the wrong thing to write on a key —
+         * it is wider than four ordinary keys and pushes everything else off the row. A label lets
+         * the term stay exact while the key stays short.
+         *
+         * Empty means use the term, so a target picked off a screen still shows something without
+         * being named first, and naming is an improvement rather than a step.
+         */
+        val label: String = "",
+    ) {
+        /** What to draw on the key. */
+        val face: String get() = label.ifBlank { term }
+    }
 
     /**
      * The starting list: Marko's three buttons, then the obvious neighbours.
@@ -81,7 +95,11 @@ object MaMagicTargets {
             // The package goes last so that anything written before it existed still reads: an old
             // entry simply has two fields instead of three and comes back meaning "any app", which
             // is exactly what it meant when it was written.
-            "${if (it.enabled) "1" else "0"}$FIELD${it.term}$FIELD${it.appPackage.orEmpty()}"
+            // Label last, for the same reason the package went last: anything written before it
+            // existed has one field fewer and still reads, meaning "no label" — which is what it
+            // meant when it was written.
+            "${if (it.enabled) "1" else "0"}$FIELD${it.term}$FIELD${it.appPackage.orEmpty()}" +
+                "$FIELD${it.label}"
         }
 
     /**
@@ -111,15 +129,16 @@ object MaMagicTargets {
         return raw.split(SEP).mapNotNull { chunk ->
             val idx = chunk.indexOf(FIELD)
             if (idx < 0) return@mapNotNull null
-            val enabled = chunk.substring(0, idx) == "1"
-            val rest = chunk.substring(idx + 1)
-            // Two fields or three. An entry written before terms carried an app has no third field
-            // and reads back as "any app", which is what it meant when it was written — so an
-            // existing list keeps working rather than being silently scoped to nothing.
-            val split = rest.lastIndexOf(FIELD)
-            val term = if (split < 0) rest else rest.substring(0, split)
-            val pkg = if (split < 0) null else rest.substring(split + 1).takeIf { it.isNotBlank() }
-            if (term.isBlank()) null else Target(term, enabled, pkg)
+            // Two, three or four fields. Everything after the first is optional and was added over
+            // time, so an older entry simply stops early and the missing parts take their defaults:
+            // no app means any app, no label means show the term. An existing list keeps working
+            // rather than being silently scoped to nothing or drawn blank.
+            val parts = chunk.split(FIELD)
+            val enabled = parts[0] == "1"
+            val term = parts.getOrNull(1).orEmpty()
+            val pkg = parts.getOrNull(2)?.takeIf { it.isNotBlank() }
+            val label = parts.getOrNull(3).orEmpty()
+            if (term.isBlank()) null else Target(term, enabled, pkg, label)
         }
     }
 

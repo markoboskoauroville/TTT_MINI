@@ -12,6 +12,7 @@ package dev.patrickgold.florisboard.app.settings.dictate
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -154,7 +155,8 @@ fun MaMagicScreen() = FlorisScreen {
                         modifier = Modifier.width(24.dp),
                     )
                     Text(
-                        text = target.term,
+                        // The face, so the row reads like the key it draws.
+                        text = target.face,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = if (lifted) FontWeight.SemiBold else FontWeight.Normal,
                         // Dimmed when off, the way an empty bucket is dimmed. Same signal
@@ -231,15 +233,16 @@ fun MaMagicScreen() = FlorisScreen {
         if (adding || editIndex != null) {
             MaTermEditor(
                 initial = editIndex?.let { targets.getOrNull(it)?.term } ?: "",
-                onSave = { term ->
+                initialLabel = editIndex?.let { targets.getOrNull(it)?.label } ?: "",
+                onSave = { term, label ->
                     if (editIndex != null) {
                         commit(
                             targets.mapIndexed { i, t ->
-                                if (i == editIndex) t.copy(term = term) else t
+                                if (i == editIndex) t.copy(term = term, label = label) else t
                             },
                         )
                     } else {
-                        commit(targets + MaMagicTargets.Target(term))
+                        commit(targets + MaMagicTargets.Target(term, label = label))
                     }
                     adding = false
                     editing = null
@@ -256,27 +259,50 @@ fun MaMagicScreen() = FlorisScreen {
 @Composable
 private fun MaTermEditor(
     initial: String,
-    onSave: (String) -> Unit,
+    initialLabel: String,
+    onSave: (String, String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf(initial) }
+    var label by remember { mutableStateOf(initialLabel) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initial.isBlank()) "Add a term" else "Edit the term") },
         text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("What the button says") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    // Named for what it is rather than for what it does. This is the text on the
+                    // real button, copied exactly; the key's own wording is the field below.
+                    label = { Text("The button on screen, word for word") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = label,
+                    onValueChange = { label = it },
+                    label = { Text("What the key says (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Leave this empty and the key shows the term itself. Give it something " +
+                        "short when the term is long \u2014 \"Stop responding\" is the right thing to " +
+                        "search for and too wide to write on a key.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(text.trim()) },
+                onClick = { onSave(text.trim(), label.trim()) },
                 // A blank term would match every control on screen, so the wand would press
                 // whatever it happened to reach first. Worse than a term that finds nothing.
+                // A blank label is fine: the key falls back to the term.
                 enabled = text.isNotBlank(),
             ) { Text("Save") }
         },
