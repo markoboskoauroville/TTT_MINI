@@ -14,11 +14,17 @@ He has tuned these by hand against real fields and settled on:
 | 2. Before delete | **500** |
 | 3. Before paste | **0** |
 
-Currently all three default to 200. His answer is more interesting than the guess: the wait that
-matters is **after asking the field to select everything**, and the other two are not needed at all.
-That is worth believing — it came from a phone, not from reasoning — but worth a second look before
-shipping, because 0 on step 3 contradicts the on-screen advice that step 3 is the one to raise
-first. Either the advice is wrong or his fields are unusually quick. Ask him.
+Currently all three default to 200. **Ship 0, 500, 0.** Confirmed by Marko: it is what works, tuned
+against real fields on his phone over weeks.
+
+It contradicts the advice printed on that screen, which tells the user to raise step 3 first. The
+advice is the thing that is wrong, not the numbers — measurement beats reasoning, and the numbers
+were measured. The wait that actually matters is **after asking the field to select everything**:
+that is the step where the field has real work to do and the app is waiting on another process. The
+other two are waits on this app's own calls, which have already returned.
+
+So when shipping these, fix the on-screen text as well, or the app will ship advice that argues with
+its own defaults.
 
 ## Settings order
 
