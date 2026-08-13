@@ -76,6 +76,7 @@ import dev.patrickgold.florisboard.dictate.MaCommandPalette
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import dev.patrickgold.florisboard.dictate.MaMacroSlots
 import dev.patrickgold.florisboard.dictate.MaRows
+import dev.patrickgold.florisboard.dictate.ui.MaZoneGlyph
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -460,9 +461,9 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 )
             // Green, the colour these three wear on the keyboard when their zone is showing. Colour
             // means state everywhere in this app, so it appears here only for the keys that carry it.
-            MaFeatureKey.ZONE_1 -> letters("1", Color(0xFF6FA85A))
-            MaFeatureKey.ZONE_2 -> letters("2", Color(0xFF6FA85A))
-            MaFeatureKey.ZONE_3 -> letters("3", Color(0xFF6FA85A))
+            MaFeatureKey.ZONE_1 -> MaZoneGlyph(1, Color(0xFF6FA85A), size = 24.dp)
+            MaFeatureKey.ZONE_2 -> MaZoneGlyph(2, Color(0xFF6FA85A), size = 24.dp)
+            MaFeatureKey.ZONE_3 -> MaZoneGlyph(3, Color(0xFF6FA85A), size = 24.dp)
         }
     }
 }

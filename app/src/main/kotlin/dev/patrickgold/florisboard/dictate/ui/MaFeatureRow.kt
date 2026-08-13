@@ -674,23 +674,35 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
 
                 MaFeatureKey.ZONE_1 -> {
                     // 1, the number row. Digits, or whichever set the row is showing.
-                    ThemedTextKey("1", keyMod, if (zone1) onGreen else null) {
-                        scope.launch { prefs.dictate.maExtraRow.set(!zone1) }
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        onClick = { scope.launch { prefs.dictate.maExtraRow.set(!zone1) } },
+                    ) { fg ->
+                        MaZoneGlyph(1, if (zone1) onGreen else fg)
                     }
                 }
 
                 MaFeatureKey.ZONE_2 -> {
                     // 2, the keyboard itself, all of it at once. This is the one that gives back real estate,
                     // and on a keyboard driven by voice it is off more often than it is on.
-                    ThemedTextKey("2", keyMod, if (zone2) onGreen else null) {
-                        scope.launch { prefs.dictate.maZoneKeyboard.set(!zone2) }
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        onClick = { scope.launch { prefs.dictate.maZoneKeyboard.set(!zone2) } },
+                    ) { fg ->
+                        MaZoneGlyph(2, if (zone2) onGreen else fg)
                     }
                 }
 
                 MaFeatureKey.ZONE_3 -> {
                     // 3, the copy and paste row along the top. Paste, copy, history and the rest of it.
-                    ThemedTextKey("3", keyMod, if (zone3) onGreen else null) {
-                        scope.launch { prefs.dictate.maEditRow.set(!zone3) }
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        onClick = { scope.launch { prefs.dictate.maEditRow.set(!zone3) } },
+                    ) { fg ->
+                        MaZoneGlyph(3, if (zone3) onGreen else fg)
                     }
                 }
 
