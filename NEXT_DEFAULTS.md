@@ -71,12 +71,19 @@ below.
 | `Send` | send | already shipping |
 | `Use Image URL` | url | **add this one** |
 | `Add URL` | +url | **add this one** — confirms the dialog the one above opens |
+| `Generate Images` | gen | **add this one** — starts the render |
 
 `Use Image URL` and `Add URL` are one workflow rather than two keys: the first opens the dialog, he
 pastes, the second confirms. Shipping one without the other leaves him reaching for the screen
 halfway through, which is the reaching this feature exists to remove.
 
-Both are phrases and both are safe. "Use Image URL" cannot fire on "Upload Image" beside it, and
+`Generate Images` completes that workflow: use URL, paste, add, generate. It is stored **without the
+number**, although the button reads "Generate Images 2" — the number is the coin cost and changes
+with the model, so a term carrying it would break the day he switches away from Nano Banana Pro.
+Phrase matching finds the characters inside the longer label, which is exactly what that behaviour
+is for.
+
+All three are phrases and all three are safe. "Use Image URL" cannot fire on "Upload Image" beside it, and
 "Add URL" cannot fire on the dialog's own title "Add Image URL" — phrase matching looks for the
 characters in sequence, and "add image url" does not contain "add url".
 
