@@ -439,15 +439,6 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.HISTORY ->
                 Icon(Icons.Default.History, contentDescription = null, tint = tint, modifier = size)
-            MaFeatureKey.SEND_BUTTON ->
-                // The wand, matching the row. The editor showing a different picture from the key
-                // is the mismatch this preview exists to prevent.
-                Icon(
-                    Icons.Default.AutoFixHigh,
-                    contentDescription = null,
-                    tint = tint,
-                    modifier = size,
-                )
             MaFeatureKey.SPACE -> letters("\u23B5")
             MaFeatureKey.SELECT_ALL ->
                 Icon(Icons.Default.SelectAll, contentDescription = null, tint = tint, modifier = size)

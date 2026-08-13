@@ -105,15 +105,6 @@ enum class MaFeatureKey(val id: String, val label: String) {
      */
     SCROLL("scroll", "S, scroll the page"),
 
-    /**
-     * Presses the send button of the chat app in front, so a prompt goes without leaving the keyboard.
-     *
-     * Not tied to any one app: it finds the control on screen that says it sends. Works wherever the
-     * send button is labelled, which is nearly everywhere, because an unlabelled one is unusable to
-     * a screen reader.
-     */
-    SEND_BUTTON("send", "Magic, press the button on screen"),
-
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),
     ZONE_3("zone3", "3, the copy row"),
@@ -183,7 +174,6 @@ object MaFeatureOrder {
         MaFeatureKey.HISTORY,
         MaFeatureKey.LANGUAGE,
         MaFeatureKey.SCROLL,
-        MaFeatureKey.SEND_BUTTON,
     )
 
     val DEFAULT_RAW: String = serialize(DEFAULT)

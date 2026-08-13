@@ -1057,6 +1057,22 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * Editable so a new site costs a line here rather than a build. Empty falls back to
          * MaMagicTargets.defaults(), so clearing it cannot leave a key that does nothing.
          */
+        /**
+         * Whether the magic row is on the keyboard.
+         *
+         * Its own row rather than a key on the feature rows, because its contents are not a fixed
+         * set of keys: it is one button per term, and the terms change as he learns them. A row that
+         * rewrites itself does not belong in an editor where every other row is arranged by hand.
+         *
+         * On, it cannot be removed from the keyboard except by coming back here and turning it off.
+         * That is the point of a switch rather than a key: the row is either part of the keyboard or
+         * it is not, and it does not drift out of an arrangement by accident.
+         */
+        val maMagicRowShown = boolean(
+            key = "dictate__ma_magic_row_shown",
+            default = false,
+        )
+
         val maMagicTargets = string(
             key = "dictate__ma_magic_targets",
             default = "",

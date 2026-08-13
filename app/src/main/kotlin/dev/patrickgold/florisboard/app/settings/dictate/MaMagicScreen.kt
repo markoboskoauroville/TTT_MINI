@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
+import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
@@ -80,6 +81,31 @@ fun MaMagicScreen() = FlorisScreen {
             targets = next
             scope.launch { prefs.dictate.maMagicTargets.set(MaMagicTargets.serialize(next)) }
         }
+
+        // The switch that puts the row on the keyboard, above the list it draws.
+
+        //
+
+        // A switch rather than a key in the row editor: this row's contents are these terms, so it
+
+        // belongs to this screen. And on means on — it cannot drift out of an arrangement by
+
+        // accident, which is what happened to the settings key.
+
+        SwitchPreference(
+
+            prefs.dictate.maMagicRowShown,
+
+            title = "Show the magic wand row",
+
+            summary = "A row of its own on the keyboard: the wand, then one key for each term below. " +
+
+                "Turn it off here to take it away.",
+
+        )
+
+        Spacer(Modifier.height(8.dp))
+
 
         Text(
             text = "The wand presses the first of these it finds on screen. Drag to change which " +

@@ -30,6 +30,8 @@ import dev.patrickgold.florisboard.dictate.overlay.MaScreenTargets
 import androidx.compose.material.icons.filled.History
 import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -235,6 +237,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // Observed rather than read once when the keyboard is drawn. He presses the button in another
     // app while the keyboard is still up, so nothing of ours is redrawn — which is exactly why the
     // wand appeared to do nothing at all. The bar has to be told, not asked.
+    val magicRowShown by prefs.dictate.maMagicRowShown.collectAsState()
     val learn by DictateAccessibilityService.learnState.collectAsState()
 
     val magicAll = remember(magicRaw) {
@@ -289,6 +292,66 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
               FlorisImeService.launchSettings("settings/dictate/magic")
           },
       )
+      // The magic row: the wand, then one key per term he has taught it.
+      //
+      // Its own row rather than keys in the editor, because its contents are not a fixed set: it is
+      // one button per term and the terms change as he learns them. A row that rewrites itself does
+      // not belong in an editor where every other row is arranged by hand.
+      //
+      // Drawn above the feature rows, so it sits furthest from the typing. It is pressed
+      // deliberately — send this, generate that — rather than reached for mid-sentence the way
+      // backspace is.
+      if (magicRowShown) {
+        val magicKeys = remember(magicRaw) {
+          MaMagicTargets.parse(magicRaw).filter { it.enabled }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(rowHeight)
+                .horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+          // The wand itself, first and always. Long press arms the screen dump, which is how a new
+          // term gets its name — so the way to grow this row is on the row.
+          ThemedIconKey(
+              code = KeyCode.NOOP,
+              icon = Icons.Default.AutoFixHigh,
+              contentDescription = stringRes(R.string.ma__magic_button),
+              modifier = Modifier.width(56.dp).fillMaxHeight().padding(2.dp),
+              tint = if (DictateAccessibilityService.isRunning) MaSand else MaDimmed,
+              onLongClick = {
+                  if (!DictateAccessibilityService.isRunning) {
+                      maOpenAccessibilitySettings(context)
+                  } else {
+                      DictateAccessibilityService.armLearn()
+                  }
+              },
+          ) {
+              if (!DictateAccessibilityService.isRunning) {
+                  maOpenAccessibilitySettings(context)
+              } else {
+                  FlorisImeService.launchSettings("settings/dictate/magic")
+              }
+          }
+          magicKeys.forEach { target ->
+            // One key per term, carrying the term itself. Pressing it presses that button and no
+            // other — which is the whole difference from the wand, which guesses from a list.
+            ThemedTextKey(
+                label = target.term,
+                modifier = Modifier.fillMaxHeight().padding(2.dp),
+                tint = null,
+            ) {
+                if (!DictateAccessibilityService.isRunning) {
+                    maOpenAccessibilitySettings(context)
+                } else {
+                    DictateAccessibilityService.pressScreenTarget(listOf(target.term))
+                }
+            }
+          }
+        }
+      }
+
       rows.forEach { rowButtons ->
         Row(
             modifier = Modifier.fillMaxWidth().height(rowHeight),
@@ -537,128 +600,6 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         modifier = keyMod,
                         ) {
                         keyboardManager.activeState.imeUiMode = ImeUiMode.HISTORY
-                    }
-                }
-
-                MaFeatureKey.SEND_BUTTON -> {
-                    // The magic wand: presses whichever of the listed buttons is on screen.
-                    //
-                    // One key for several buttons because they are never up at the same time — a
-                    // send arrow, an Add URL dialog, a Generate button. The list is editable in
-                    // settings, so a new site is a line of text rather than a new build.
-                    ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = Icons.Default.AutoFixHigh,
-                        contentDescription = stringRes(R.string.ma__magic_button),
-                        modifier = keyMod,
-                        tint = if (DictateAccessibilityService.isRunning) null else MaDimmed,
-                        // Long press opens the wand's own list, which is
-                        // what a long press does everywhere else here. The exception earns itself:
-                        // the list is the whole configuration of this key, it is edited far more
-                        // often than any other key's, and a key whose behaviour depends entirely on
-                        // a list should put that list one gesture away. Folding is still on every
-                        // other key in the row.
-                        // Long press reads the screen and offers what is on it.
-                        //
-                        // This replaced opening the settings screen, and it is the better use of
-                        // the gesture: the settings screen can be reached from settings, whereas
-                        // the labels on the screen in front can only be read while that screen is
-                        // in front. Claude's send button carries no visible text, so there was
-                        // nothing to type and no way to find out what to type.
-                        // Long press arms learning, then he presses the real button.
-                        //
-                        // The list this replaced was the wrong shape of help: a screen holds dozens
-                        // of pressable things, their labels are written for a screen reader rather
-                        // than for somebody choosing from a list, and he had to work out which of
-                        // thirty entries was the orange circle he wanted. Pointing at the thing is
-                        // what he asked for and it is simply better.
-                        //
-                        // Nothing is intercepted. He presses the button, it does what it always
-                        // does, and its name arrives here as a side effect of the click event the
-                        // service already receives.
-                        onLongClick = {
-                            if (!DictateAccessibilityService.isRunning) {
-                                maOpenAccessibilitySettings(context)
-                            } else {
-                                // No toast: the bar above says it, stays until it is answered, and
-                                // carries the cancel. A toast on top of that is the same sentence
-                                // twice, one copy of which vanishes on its own.
-                                DictateAccessibilityService.armLearn()
-                            }
-                        },
-                    ) {
-                        if (!DictateAccessibilityService.isRunning) {
-                            maOpenAccessibilitySettings(context)
-                        } else {
-                            // Only the terms belonging to the app in front, plus the ones that
-                            // belong to no app. Send in Claude and Send in Gemini are different
-                            // buttons, and a wand that pressed whichever it found first would press
-                            // the wrong one the moment both were in the list.
-                            val here = DictateAccessibilityService.foregroundPackage()
-                            val pressed = DictateAccessibilityService.pressScreenTarget(
-                                MaMagicTargets.activeTermsFor(magicAll, here),
-                            )
-                            if (pressed == null) {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.ma__magic_button_none),
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                            }
-                        }
-                    }
-                }
-
-                MaFeatureKey.LANGUAGE -> {
-                    // The language it will transcribe in, on its face, and one tap changes it.
-                    //
-                    // The same MaLanguage.toggle the recording bar uses, so the two cannot disagree.
-                    // It writes activeInputLanguage, which is what the transcription request reads,
-                    // what the keyboard's own suggestions follow, and what decides whether a clip
-                    // may take the fast path — one tap, all three.
-                    // Derived from the observed preference, not from MaLanguage.badge() alone.
-                    // badge() reads the store directly, which is not Compose state, so a key drawn
-                    // from it would keep its old face after a tap until something else redrew the
-                    // row — a toggle that appears not to have worked.
-                    ThemedTextKey(
-                        label = if (activeLangCode == MaLanguage.EN) "ENG" else "HR",
-                        modifier = keyMod,
-                        tint = null,
-                    ) {
-                        MaLanguage.toggle(context)
-                    }
-                }
-
-                MaFeatureKey.SCROLL -> {
-                    // S, and the number of pages beside it, so the key says what it will do before
-                    // it is pressed rather than after. An up arrow appears when the count is
-                    // negative: the sign is the direction, and a minus sign alone is easy to misread
-                    // at this size.
-                    val label = when {
-                        scrollPages < 0 -> "S\u2191${-scrollPages}"
-                        scrollPages > 1 -> "S\u2193$scrollPages"
-                        else -> "S"
-                    }
-                    ThemedTextKey(
-                        label = label,
-                        modifier = keyMod,
-                        tint = null,
-                        onLongClick = { scrollMenu = true },
-                    ) {
-                        if (!DictateAccessibilityService.isRunning) {
-                            maOpenAccessibilitySettings(context)
-                        } else {
-                            scope.launch {
-                                val service = DictateAccessibilityService.gestureService()
-                                if (service == null || !MaScreenTargets.scrollBy(service, scrollPages)) {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.ma__scroll_none),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                }
-                            }
-                        }
                     }
                 }
 
