@@ -53,10 +53,11 @@ class MaRowsTest {
             MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(1))), enabled = true),
             MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Macro(1))), enabled = true),
         )
+        // Reversed: row 1 sits nearest the keys, so it is drawn last and appears last in this list.
         val visible = MaRows.visibleRows(rows)
         assertEquals(2, visible.size)
-        assertEquals(MaRows.Button.Clip(1), visible[0][0])
-        assertEquals(MaRows.Button.Macro(1), visible[1][0])
+        assertEquals(MaRows.Button.Macro(1), visible[0][0])
+        assertEquals(MaRows.Button.Clip(1), visible[1][0])
     }
 
     @Test
@@ -66,9 +67,11 @@ class MaRowsTest {
             MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(2))), enabled = false),
             MaRows.Row(listOf(MaRows.Entry(MaRows.Button.Clip(3)))),
         )
+        // Row 3 is furthest from the keys and therefore first in the drawing order; row 1 is last.
+        // What must not change is their order relative to each other.
         val visible = MaRows.visibleRows(rows)
-        assertEquals(listOf(MaRows.Button.Clip(1)), visible[0])
-        assertEquals(listOf(MaRows.Button.Clip(3)), visible[1])
+        assertEquals(listOf(MaRows.Button.Clip(3)), visible[0])
+        assertEquals(listOf(MaRows.Button.Clip(1)), visible[1])
     }
 
     @Test
@@ -187,8 +190,10 @@ class MaRowsTest {
 
     @Test
     fun `a macro label longer than the limit is truncated rather than dropped`() {
-        val s = MaMacroSlots.slot("abcdef", "{Enter}")
-        assertEquals("abc", s.label)
+        // Twenty-four, not three: a macro key is named rather than numbered now, so "UPPER" fits
+        // where "UPP" had to be remembered.
+        val s = MaMacroSlots.slot("a".repeat(30), "{Enter}")
+        assertEquals(24, s.label.length)
         assertEquals("{Enter}", s.macro)
     }
 }

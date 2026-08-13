@@ -256,12 +256,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "assemblyai",
         )
 
-        // Voice Type: the keys file the user picked last, kept as a persisted SAF grant so an
-        // update or a reinstall over the top reloads the keys with no clicks at all.
-        val maKeysFileUri = string(
-            key = "dictate__ma_keys_file_uri",
-            default = "",
-        )
 
         // On-device offline fallback (issue #104): when the active provider is a cloud one and its call
         // fails because the device is offline (after the normal retries), retry once on-device using the
@@ -900,15 +894,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__ma_settings_order",
             default = "",
         )
-        /** Feature row keys switched off, as comma separated ids. See MaFeatureOrder.parseHidden. */
-        val maFeatureRowHidden = string(
-            key = "dictate__ma_feature_row_hidden",
-            default = MaFeatureOrder.DEFAULT_HIDDEN_RAW,
-        )
-        val maFeatureRowOrder = string(
-            key = "dictate__ma_feature_row_order",
-            default = MaFeatureOrder.DEFAULT_RAW,
-        )
         // Zone two: the keyboard itself, everything from the number row down to the bottom row,
         // switched as one from the feature row. Zone one is the edit strip and rides on maEditRow,
         // which already existed, so there is one switch for it rather than two that could disagree.
@@ -1140,21 +1125,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "",
         )
 
-        // The macro bar: every preset, serialized by MaMacros. One string because that is all a
-        // macro bar is, and because a control-character encoding lets a macro contain commas,
-        // quotes, newlines and braces without any escaping to get wrong.
-        //
-        // Read once by the migration into maRows, and not at runtime any more.
-        val maMacroBar = string(
-            key = "dictate__ma_macro_bar",
-            default = "",
-        )
-        // Which preset the bar is showing, as an index into that list. Out of range falls back to
-        // the first, so deleting a preset can never leave the bar pointing at nothing.
-        val maMacroPreset = int(
-            key = "dictate__ma_macro_preset",
-            default = 0,
-        )
         // The pinned view, set by the pin in each view's top-left corner. "TEXT" or "TRANSCRIBE"
         // means always open there; empty means nothing is pinned and the last-used view wins, which
         // is the behaviour that existed before the pin and is still a reasonable default.
@@ -1373,15 +1343,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
     val gestures = Gestures()
     inner class Gestures {
-        /**
-         * Talk to Type: swipe toward a symbol printed on a key to type it, rather than long
-         * pressing and choosing from the popup. Off by default so nobody's muscle memory changes
-         * without asking.
-         */
-        val maSwipeToSymbol = boolean(
-            key = "gestures__ma_swipe_to_symbol",
-            default = false,
-        )
 
         val swipeUp = enum(
             key = "gestures__swipe_up",
