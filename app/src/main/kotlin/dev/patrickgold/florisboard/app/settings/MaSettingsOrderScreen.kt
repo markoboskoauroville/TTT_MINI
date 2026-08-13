@@ -218,52 +218,7 @@ private fun MaSettingsOrderItem(position: Int, entry: MaSettingsEntry, lifted: B
  * Three choices and no more. The reader is deliberately not one of them: it is entered to read
  * something specific and a keyboard that opens into it would be a keyboard that cannot type.
  */
-@Composable
-fun MaOpeningViewScreen() = FlorisScreen {
-    title = "Opening view"
 
-    content {
-        val prefs by FlorisPreferenceStore
-        val scope = rememberCoroutineScope()
-        val current by prefs.dictate.maOpeningView.collectAsState()
-
-        Text(
-            text = "Which view appears when the keyboard opens.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-
-        val options = listOf(
-            Triple("keyboard", "Keyboard", "The typing keyboard, every time"),
-            // No dictation entry. The recording view is always secondary — it is opened when it is
-            // asked for and never arrives on its own, because a keyboard that opens as something
-            // other than a keyboard is a keyboard somebody has to escape before they can type.
-            Triple("clipboard", "Paste history", "The clipboard panel, where tapping an entry pastes it"),
-            Triple("last", "Whichever was last used", "Reopens the view you left"),
-        )
-        options.forEach { (value, title, summary) ->
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = if (current == value) {
-                    MaterialTheme.colorScheme.surfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.surface
-                },
-                onClick = { scope.launch { prefs.dictate.maOpeningView.set(value) } },
-            ) {
-                Box(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column2(title, summary, current == value)
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun Column2(title: String, summary: String, selected: Boolean) {

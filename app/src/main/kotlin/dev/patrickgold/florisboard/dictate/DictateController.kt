@@ -3535,13 +3535,12 @@ object DictateController {
         // read belongs on this list.
         if (lang !in SYNC_SAFE_LANGUAGES) return false
 
-        // Deliberately NOT gated on prefs.dictate.maSpeed any more, and this is not an oversight.
+        // Deliberately not gated on any speed preference, and this is not an oversight.
         //
-        // That preference defaults to SLOW and, worse, holds whatever the old FAST/SLOW key was last
-        // left on. Reading it here would mean English silently never taking the fast path on every
-        // install that had ever tapped that key to SLOW — a setting the user can no longer see, let
-        // alone change, because the key that set it is gone. A control that has been removed must
-        // not keep voting.
+        // There was one. It defaulted to SLOW and held whatever the old FAST/SLOW key was last left
+        // on, so reading it meant English silently never taking the fast path on any install that
+        // had tapped that key. A control that has been removed must not keep voting — and once
+        // nothing read it, the preference and its enum were deleted rather than left waiting.
         //
         // The language decides, and nothing else does.
         // Sync belongs to AssemblyAI and to no other account. Anything else keeps its own path.
