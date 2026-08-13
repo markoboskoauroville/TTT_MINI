@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import dev.patrickgold.florisboard.dictate.overlay.MaAppSwitcher
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import android.widget.Toast
-import androidx.compose.material.icons.filled.AutoFixHigh
 import dev.patrickgold.florisboard.dictate.overlay.MaScreenTargets
 import androidx.compose.material.icons.filled.History
 import dev.patrickgold.florisboard.dictate.MaLanguage
@@ -49,7 +48,6 @@ import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.outlined.AudioFile
-import androidx.compose.material.icons.outlined.AutoFixHigh
 import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
@@ -314,12 +312,13 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
         ) {
           // The wand itself, first and always. Long press arms the screen dump, which is how a new
           // term gets its name — so the way to grow this row is on the row.
-          ThemedIconKey(
+          // The circled wand, not the loose one. Rewording draws the loose wand for the feature
+          // that fixes grammar with a model; two features sharing a picture means the picture has
+          // stopped saying which one you are looking at, and these two are worth telling apart —
+          // one presses a button on screen, the other sends text away and costs money.
+          ThemedKey(
               code = KeyCode.NOOP,
-              icon = Icons.Default.AutoFixHigh,
-              contentDescription = stringRes(R.string.ma__magic_button),
               modifier = Modifier.width(56.dp).fillMaxHeight().padding(2.dp),
-              tint = if (DictateAccessibilityService.isRunning) MaSand else MaDimmed,
               onLongClick = {
                   if (!DictateAccessibilityService.isRunning) {
                       maOpenAccessibilitySettings(context)
@@ -327,12 +326,18 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                       DictateAccessibilityService.armLearn()
                   }
               },
-          ) {
-              if (!DictateAccessibilityService.isRunning) {
-                  maOpenAccessibilitySettings(context)
-              } else {
-                  FlorisImeService.launchSettings("settings/dictate/magic")
-              }
+              onClick = {
+                  if (!DictateAccessibilityService.isRunning) {
+                      maOpenAccessibilitySettings(context)
+                  } else {
+                      FlorisImeService.launchSettings("settings/dictate/magic")
+                  }
+              },
+          ) { fg ->
+              MaMagicGlyph(
+                  tint = if (DictateAccessibilityService.isRunning) MaSand else fg.copy(alpha = 0.4f),
+                  size = 22.dp,
+              )
           }
           magicKeys.forEach { target ->
             // One key per term, carrying the term itself. Pressing it presses that button and no

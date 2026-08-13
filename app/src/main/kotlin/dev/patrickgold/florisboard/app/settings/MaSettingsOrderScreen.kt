@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.ContentPasteGo
@@ -28,6 +27,7 @@ import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Spellcheck
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
@@ -65,7 +65,10 @@ import kotlinx.coroutines.launch
 val MaSettingsEntry.icon: ImageVector
     get() = when (this) {
         MaSettingsEntry.FEATURE_ROW -> Icons.Default.DragHandle
-        MaSettingsEntry.MAGIC -> Icons.Default.AutoFixHigh
+        // A finger pressing, not a wand. The wand belongs to rewording, which fixes grammar with a
+        // model; this presses a button on screen. This list is where the two sit closest together,
+        // so it is where sharing a picture would confuse most.
+        MaSettingsEntry.MAGIC -> Icons.Default.TouchApp
         MaSettingsEntry.DEFAULT_VIEW -> Icons.Default.Visibility
         MaSettingsEntry.DB -> Icons.Default.Dashboard
         MaSettingsEntry.KEYS -> Icons.Default.Key

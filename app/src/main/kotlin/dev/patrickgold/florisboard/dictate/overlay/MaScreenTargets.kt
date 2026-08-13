@@ -43,7 +43,7 @@ import java.util.Locale
  * ### One key, several buttons
  *
  * The targets are a list and the first one found on screen wins. Marko's three buttons are never on
- * screen at the same time, so one key presses whichever is showing: the magic wand.
+ * screen at the same time, so one key presses whichever is showing: the magic button.
  */
 object MaScreenTargets {
 

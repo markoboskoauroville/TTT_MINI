@@ -11,7 +11,7 @@
 package dev.patrickgold.florisboard.dictate
 
 /**
- * The search terms the magic wand looks for, in the order it tries them.
+ * The search terms the magic button looks for, in the order it tries them.
  *
  * ### Order is the whole feature
  *

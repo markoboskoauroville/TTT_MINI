@@ -915,13 +915,13 @@
     <string name="ma__clip_clear">Empty the C buckets</string>
     <string name="ma__app_switch">Switch to the last app</string>
     <string name="ma__app_switch_none">No app to switch back to yet</string>
-    <string name="ma__magic_button">Press the button on screen</string>
+    <string name="ma__magic_button">Magic button, press a button on screen</string>
     <string name="ma__magic_button_none">No matching button on this screen</string>
-    <string name="ma__magic_scan_title">Tap a button to add it to the wand</string>
+    <string name="ma__magic_scan_title">Tap a button to add it to the magic button</string>
     <string name="ma__magic_scan_edit">Edit list</string>
     <string name="ma__magic_scan_search">Search everything on screen</string>
-    <string name="ma__magic_learn_armed">Now press the button you want the wand to press</string>
-    <string name="ma__wand_waiting">Press the button you want the wand to press</string>
+    <string name="ma__magic_learn_armed">Now press the button you want it to press</string>
+    <string name="ma__wand_waiting">Press the button you want it to press</string>
     <string name="ma__wand_cancel">Cancel</string>
     <string name="ma__escape_to_settings">Discard and open settings</string>
     <string name="ma__wand_copy">COPY</string>

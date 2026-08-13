@@ -54,19 +54,19 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
 
 /**
- * What the magic wand looks for, and in what order.
+ * What the magic button presses, and in what order it tries.
  *
  * Deliberately the same screen as the feature row editor: a numbered list, a drag handle, a tick and
  * a bin. Two editors that behave differently are two things to learn, and this one is reached by
- * holding the wand, which is already a discovery — the screen it opens should not be a second one.
+ * holding the magic button, which is already a discovery — the screen it opens should not be a second one.
  *
- * The order is the feature rather than decoration. The wand presses the first term it finds, so a
+ * The order is the feature rather than decoration. The magic button presses the first term it finds, so a
  * screen carrying both `Send` and `Save` presses whichever sits higher here. Dragging is how the
  * user says which they meant.
  */
 @Composable
 fun MaMagicScreen() = FlorisScreen {
-    title = "Magic wand"
+    title = "Magic button"
 
     content {
         val prefs by FlorisPreferenceStore
@@ -98,9 +98,9 @@ fun MaMagicScreen() = FlorisScreen {
 
             prefs.dictate.maMagicRowShown,
 
-            title = "Show the magic wand row",
+            title = "Show the magic button row",
 
-            summary = "A row of its own on the keyboard: the wand, then one key for each term below. " +
+            summary = "A row of its own on the keyboard: the magic button, then one key for each term below. " +
 
                 "Turn it off here to take it away.",
 
@@ -110,7 +110,7 @@ fun MaMagicScreen() = FlorisScreen {
 
 
         Text(
-            text = "The wand presses the first of these it finds on screen. Drag to change which " +
+            text = "The magic button presses the first of these it finds on screen. Drag to change which " +
                 "is tried first.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -328,7 +328,7 @@ private fun MaTermEditor(
         confirmButton = {
             TextButton(
                 onClick = { onSave(text.trim(), label.trim()) },
-                // A blank term would match every control on screen, so the wand would press
+                // A blank term would match every control on screen, so the magic button would press
                 // whatever it happened to reach first. Worse than a term that finds nothing.
                 // A blank label is fine: the key falls back to the term.
                 enabled = text.isNotBlank(),
