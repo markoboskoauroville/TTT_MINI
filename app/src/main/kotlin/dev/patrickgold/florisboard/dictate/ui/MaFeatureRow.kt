@@ -603,6 +603,59 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     }
                 }
 
+                MaFeatureKey.LANGUAGE -> {
+                    // The language it will transcribe in, on its face, and one tap changes it.
+                    //
+                    // The same MaLanguage.toggle the recording bar uses, so the two cannot disagree.
+                    // It writes activeInputLanguage, which is what the transcription request reads,
+                    // what the keyboard's own suggestions follow, and what decides whether a clip
+                    // may take the fast path — one tap, all three.
+                    // Derived from the observed preference, not from MaLanguage.badge() alone.
+                    // badge() reads the store directly, which is not Compose state, so a key drawn
+                    // from it would keep its old face after a tap until something else redrew the
+                    // row — a toggle that appears not to have worked.
+                    ThemedTextKey(
+                        label = if (activeLangCode == MaLanguage.EN) "ENG" else "HR",
+                        modifier = keyMod,
+                        tint = null,
+                    ) {
+                        MaLanguage.toggle(context)
+                    }
+                }
+
+                MaFeatureKey.SCROLL -> {
+                    // S, and the number of pages beside it, so the key says what it will do before
+                    // it is pressed rather than after. An up arrow appears when the count is
+                    // negative: the sign is the direction, and a minus sign alone is easy to misread
+                    // at this size.
+                    val label = when {
+                        scrollPages < 0 -> "S\u2191${-scrollPages}"
+                        scrollPages > 1 -> "S\u2193$scrollPages"
+                        else -> "S"
+                    }
+                    ThemedTextKey(
+                        label = label,
+                        modifier = keyMod,
+                        tint = null,
+                        onLongClick = { scrollMenu = true },
+                    ) {
+                        if (!DictateAccessibilityService.isRunning) {
+                            maOpenAccessibilitySettings(context)
+                        } else {
+                            scope.launch {
+                                val service = DictateAccessibilityService.gestureService()
+                                if (service == null || !MaScreenTargets.scrollBy(service, scrollPages)) {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.ma__scroll_none),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            }
+                        }
+                    }
+                }
+
                 MaFeatureKey.SETTINGS -> {
                     // Settings, reopened where they were left rather than at the top.
                     //
