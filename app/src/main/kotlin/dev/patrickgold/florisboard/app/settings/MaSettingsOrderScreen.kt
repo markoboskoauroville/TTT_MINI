@@ -67,7 +67,6 @@ val MaSettingsEntry.icon: ImageVector
         MaSettingsEntry.FEATURE_ROW -> Icons.Default.DragHandle
         MaSettingsEntry.MAGIC -> Icons.Default.AutoFixHigh
         MaSettingsEntry.DEFAULT_VIEW -> Icons.Default.Visibility
-        MaSettingsEntry.MACROS -> Icons.Default.Bolt
         MaSettingsEntry.DB -> Icons.Default.Dashboard
         MaSettingsEntry.KEYS -> Icons.Default.Key
         MaSettingsEntry.VOCABULARY -> Icons.Default.Spellcheck
@@ -96,7 +95,6 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.FEATURE_ROW -> Routes.Settings.MaFeatureRow
         MaSettingsEntry.MAGIC -> Routes.Settings.MaMagic
         MaSettingsEntry.DEFAULT_VIEW -> Routes.Settings.MaOpeningView
-        MaSettingsEntry.MACROS -> Routes.Settings.DictateMacros
         MaSettingsEntry.DB -> Routes.Settings.DbEditor
         MaSettingsEntry.KEYS -> Routes.Settings.DictateKeys
         MaSettingsEntry.VOCABULARY -> Routes.Settings.MaVocabulary

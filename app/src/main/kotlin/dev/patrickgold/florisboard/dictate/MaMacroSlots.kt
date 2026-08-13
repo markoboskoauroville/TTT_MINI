@@ -32,7 +32,15 @@ object MaMacroSlots {
      * and a label that does not fit is either drawn too small to read — which on this phone means
      * not at all — or clipped into something that says nothing.
      */
-    const val MAX_LABEL = 3
+    /**
+     * How much of a label a key will show.
+     *
+     * Was three, which was right when a macro key was a numbered slot and wrong now that it is a
+     * thing he names. "UPPER" and "Title" say what they do; "UPP" and "Tit" have to be remembered.
+     * The key grows to fit its text and the row scrolls, so a long name costs width rather than
+     * legibility — and anything truly long is his own choice to make once and live with.
+     */
+    const val MAX_LABEL = 24
 
     /**
      * @param label what the key shows, up to [MAX_LABEL] characters

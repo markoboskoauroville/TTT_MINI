@@ -132,7 +132,23 @@ object MaCommandPalette {
         (1..12).map { Entry("F$it", "{F$it}", "Function key $it") },
     )
 
-    val GROUPS: List<Group> = listOf(EDITING, NAVIGATION, KEYS, TERMINAL, PUNCTUATION, FUNCTION)
+    /**
+     * Changing the case of what is already in the field.
+     *
+     * The only commands that read before they write. Grouped apart for that reason: everything else
+     * on this list types something, and these four replace what is there.
+     */
+    private val CASE = Group(
+        "Change the case",
+        listOf(
+            Entry("ABC", "{upper}", "ALL CAPS"),
+            Entry("abc", "{lower}", "all lowercase"),
+            Entry("Abc", "{title}", "Title Case"),
+            Entry("Ab.", "{sentence}", "Sentence case"),
+        ),
+    )
+
+    val GROUPS: List<Group> = listOf(CASE, EDITING, NAVIGATION, KEYS, TERMINAL, PUNCTUATION, FUNCTION)
 
     /** Flat, for a search field. */
     val ALL: List<Entry> = GROUPS.flatMap { it.entries }

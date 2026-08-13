@@ -68,7 +68,6 @@ import dev.patrickgold.florisboard.app.settings.dictate.MaMagicScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaBucketsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaRowsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaVocabularyScreen
-import dev.patrickgold.florisboard.app.settings.dictate.DictateMacroEditorScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateRecoveredScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictatePromptLibraryScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictatePromptsScreen
@@ -400,7 +399,6 @@ object Routes {
             composableWithDeepLink(Settings.MaSettingsOrder::class) { MaSettingsOrderScreen() }
             composableWithDeepLink(Settings.MaOpeningView::class) { MaOpeningViewScreen() }
             composableWithDeepLink(Settings.DictateRecovered::class) { DictateRecoveredScreen() }
-            composableWithDeepLink(Settings.DictateMacros::class) { DictateMacroEditorScreen() }
             composableWithDeepLink(Settings.DictateMappings::class) { DictateMappingsScreen() }
             composableWithDeepLink(Settings.DictateRewording::class) { DictateRewordingScreen() }
             composableWithDeepLink(Settings.DictateFormatting::class) { DictateFormattingScreen() }

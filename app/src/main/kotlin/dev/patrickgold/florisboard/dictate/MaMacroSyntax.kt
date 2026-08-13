@@ -215,7 +215,13 @@ object MaMacroSyntax {
                         )
                     )
                 }
-                is Step.Unknown -> Unit
+                // A brace nobody recognised is where a case transform arrives: {Upper} is not a
+                // key and never will be, so the key parser has already given up on it. Checking
+                // here rather than adding a step type keeps the parser exactly as it was.
+                //
+                // This is the one step that reads the field before it writes: it takes what is
+                // there, changes it, and puts it back. Everything else a macro does is typing.
+                is Step.Unknown -> applyCaseTransform(connection, step.token)
             }
         }
         return true
@@ -227,4 +233,112 @@ object MaMacroSyntax {
     /** Tokens in [macro] that resolve to nothing, for the editor to warn about. */
     fun unknownTokens(macro: String): List<String> =
         parse(macro).filterIsInstance<Step.Unknown>().map { it.token }
+}
+
+/**
+ * Replaces everything in the field with a cased version of itself.
+ *
+ * Selects all, reads the selection, puts the transformed text back. Reading has to happen through
+ * getSelectedText because the field belongs to another app and its contents are not otherwise
+ * visible; selecting first is what makes them readable at all.
+ *
+ * Does nothing when the token is not a transform, when the field is empty, or when the text cannot
+ * be read — a macro that silently emptied a field because it could not read it would be the worst
+ * possible failure for a key that is supposed to change case.
+ */
+private fun applyCaseTransform(connection: InputConnection, token: String) {
+    val name = token.trim().trim('{', '}')
+    if (!MaCaseTransform.isTransform(name)) return
+    connection.performContextMenuAction(android.R.id.selectAll)
+    val selected = connection.getSelectedText(0)?.toString()
+    if (selected.isNullOrEmpty()) {
+        // Nothing readable. Collapse the selection so the field is left exactly as it was found
+        // rather than sitting there fully selected, one keystroke from being wiped.
+        connection.setSelection(0, 0)
+        return
+    }
+    val changed = MaCaseTransform.apply(name, selected) ?: run {
+        connection.setSelection(0, 0)
+        return
+    }
+    connection.commitText(changed, 1)
+}
+
+/**
+ * Case transforms, run on the text already in the field.
+ *
+ * ### Why these are not key presses
+ *
+ * Everything else a macro does is typing: text goes in at the cursor, or a key is pressed. These
+ * four read what is already there, change it, and put it back — so they cannot be expressed as a
+ * sequence of keystrokes and need their own step.
+ *
+ * ### Why no model is called
+ *
+ * Changing case is arithmetic on characters. Sending a sentence to a server and waiting for it to
+ * come back in capitals would cost money, take a second, need a connection, and be wrong more often
+ * than the local answer. A model is worth calling when the answer is a judgement; this is not one.
+ *
+ * The model has a job in this feature, but it is at the other end: turning "make this all caps" into
+ * `{Upper}` once, when the button is made. After that the button is arithmetic forever.
+ */
+object MaCaseTransform {
+
+    /** What the macro syntax calls each transform. AutoHotkey-ish, and short enough to type. */
+    const val UPPER = "upper"
+    const val LOWER = "lower"
+    const val TITLE = "title"
+    const val SENTENCE = "sentence"
+
+    fun isTransform(name: String): Boolean =
+        name.lowercase() in setOf(UPPER, LOWER, TITLE, SENTENCE)
+
+    /**
+     * Applies a transform by name. Unknown names return null and the caller leaves the text alone.
+     *
+     * Locale-aware, because Croatian has letters that English does not and a naive uppercase gets
+     * them wrong. Turkish is the famous case — a dotless i — and while Marko does not write Turkish,
+     * using the field's own locale costs nothing and is right everywhere rather than in two places.
+     */
+    fun apply(name: String, text: String): String? = when (name.lowercase()) {
+        UPPER -> text.uppercase()
+        LOWER -> text.lowercase()
+        TITLE -> titleCase(text)
+        SENTENCE -> sentenceCase(text)
+        else -> null
+    }
+
+    /**
+     * Every word capitalised.
+     *
+     * Split on whitespace rather than on word characters, so punctuation stays attached: "don't"
+     * becomes "Don't" and not "Don'T", which is what splitting on non-letters would produce.
+     */
+    private fun titleCase(text: String): String =
+        text.split(' ').joinToString(" ") { word ->
+            word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+        }
+
+    /**
+     * First letter of each sentence capitalised, the rest lowered.
+     *
+     * The rest is lowered on purpose: this is most useful on dictated text that arrived in the wrong
+     * case throughout, and capitalising the first letter of SHOUTED TEXT while leaving the shout
+     * would be a transform nobody asked for.
+     */
+    private fun sentenceCase(text: String): String {
+        val lowered = text.lowercase()
+        val out = StringBuilder(lowered.length)
+        var capitaliseNext = true
+        for (ch in lowered) {
+            if (capitaliseNext && ch.isLetter()) {
+                out.append(ch.titlecase())
+                capitaliseNext = false
+            } else {
+                out.append(ch)
+                if (ch == '.' || ch == '!' || ch == '?' || ch == '\n') capitaliseNext = true
+            }
+        }
+        return out.toString()
+    }
 }
