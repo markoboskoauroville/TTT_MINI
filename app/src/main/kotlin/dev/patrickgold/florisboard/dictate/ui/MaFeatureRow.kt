@@ -501,158 +501,24 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 }
 
                 MaFeatureKey.MIC -> {
-                    // The record button. It was a door to the transcribe view until that view was
-                    // removed; now it is the recording control itself, in the same place the thumb
-                    // already knows. onMicClick is the same entry point volume up uses, so the two
-                    // routes cannot drift apart: start when idle, stop and send when recording.
+                    // The way into the transcribe view, not a record button.
                     //
-                    // Lit red while recording, dark otherwise. Colour is state here, not decoration,
-                    // and this is the recording red the lamp and the level meter already use. It
-                    // does not pulse and must not: a light that moves says "look at me" over and
-                    // over, and this one only has to say whether the microphone is open.
-                    val recording = DictateController.state.collectAsState().value is
-                        DictateController.UiState.Recording
+                    // It was the recording control because the transcribe view had been deleted and
+                    // this key was the only thing left in that position. The view is back, and
+                    // recording already has two ways in that nothing can take away: volume up, and
+                    // the mic on the recording bar itself. A third one on an editable row bought
+                    // nothing and cost the only route to the view.
+                    //
+                    // Red while recording is gone with it. This key no longer starts or stops
+                    // anything, so a colour saying "recording" would be describing something the
+                    // key is not doing.
                     ThemedIconKey(
                         code = KeyCode.NOOP,
                         icon = Icons.Default.Mic,
-                        contentDescription = stringRes(
-                            if (recording) R.string.ma__feature_record_stop else R.string.ma__feature_record,
-                        ),
+                        contentDescription = stringRes(R.string.ma__feature_transcribe_view),
                         modifier = keyMod,
-                        tint = if (recording) MaRecordRed else null,
-                        ) {
-                        DictateController.onMicClick(context)
-                    }
-                }
-
-                MaFeatureKey.CLIP_CLEAR -> {
-                    // Empties C1 to C10 so they fill again from the next copy.
-                    //
-                    // The slots stopped moving, so a full row is a finished row: capturing stops and
-                    // nothing changes until this is pressed. Without it the feature would work once
-                    // per install.
-                    //
-                    // The clipboard history is deliberately left alone. This key resets the ten
-                    // keys, and wiping somebody's whole clipboard as a side effect of tidying a row
-                    // is not recoverable — the history is still there behind a long press on any C
-                    // key, which is where anything wanted back can be found.
-                    val filled = MaClipCapture.filledCount(capturedSlots, visibleClipSlots)
-                    ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = Icons.Default.Delete,
-                        contentDescription = stringRes(
-                            if (filled == 0) R.string.ma__clip_clear_empty else R.string.ma__clip_clear,
-                        ),
-                        modifier = keyMod,
-                        // Dim when there is nothing to clear, red when the buckets are full and
-                        // this key is the only way forward. The trash turns red at the same moment
-                        // the buckets do, so the row shows both the problem and its answer.
-                        tint = when {
-                            filled == 0 -> MaDimmed
-                            bucketsFull -> MaRecordRed
-                            else -> null
-                        },
-                        ) {
-                        scope.launch { prefs.dictate.maClipCaptured.set("") }
-                    }
-                }
-
-                MaFeatureKey.APP_SWITCH -> {
-                    // Alt+Tab. Dim when nothing has been seen to switch to yet, which is the state
-                    // right after the phone starts or the accessibility service is switched off —
-                    // both cases where the key would do nothing and should say so first.
-                    ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = Icons.Default.SwapHoriz,
-                        contentDescription = stringRes(R.string.ma__app_switch),
-                        modifier = keyMod,
-                        // No longer dimmed on what this app has observed. Recents knows the task
-                        // order whether or not we saw it, so a dim key would understate what the key
-                        // can actually do.
-                        tint = null,
-                        ) {
-                        if (!DictateAccessibilityService.isRunning) {
-                            // The whole reason this key fires blanks, and the user cannot guess it.
-                            // Both these keys read the screen through the accessibility service,
-                            // which is switched on by hand in the system settings and is off until
-                            // somebody does. Opening that screen is more use than a message saying
-                            // something did not work.
-                            maOpenAccessibilitySettings(context)
-                        } else if (!MaAppSwitcher.switchViaRecents(scope) &&
-                            !MaAppSwitcher.switchToPrevious(context)
-                        ) {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.ma__app_switch_none),
-                                Toast.LENGTH_SHORT,
-                            ).show()
-                        }
-                    }
-                }
-
-                MaFeatureKey.HISTORY -> {
-                    // Everything dictated, ready to put back. The recovery route when a sentence
-                    // went into the wrong app or was replaced by the next one.
-                    ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = Icons.Default.History,
-                        contentDescription = stringRes(R.string.ma__feature_history),
-                        modifier = keyMod,
-                        ) {
-                        keyboardManager.activeState.imeUiMode = ImeUiMode.HISTORY
-                    }
-                }
-
-                MaFeatureKey.LANGUAGE -> {
-                    // The language it will transcribe in, on its face, and one tap changes it.
-                    //
-                    // The same MaLanguage.toggle the recording bar uses, so the two cannot disagree.
-                    // It writes activeInputLanguage, which is what the transcription request reads,
-                    // what the keyboard's own suggestions follow, and what decides whether a clip
-                    // may take the fast path — one tap, all three.
-                    // Derived from the observed preference, not from MaLanguage.badge() alone.
-                    // badge() reads the store directly, which is not Compose state, so a key drawn
-                    // from it would keep its old face after a tap until something else redrew the
-                    // row — a toggle that appears not to have worked.
-                    ThemedTextKey(
-                        label = if (activeLangCode == MaLanguage.EN) "ENG" else "HR",
-                        modifier = keyMod,
-                        tint = null,
                     ) {
-                        MaLanguage.toggle(context)
-                    }
-                }
-
-                MaFeatureKey.SCROLL -> {
-                    // S, and the number of pages beside it, so the key says what it will do before
-                    // it is pressed rather than after. An up arrow appears when the count is
-                    // negative: the sign is the direction, and a minus sign alone is easy to misread
-                    // at this size.
-                    val label = when {
-                        scrollPages < 0 -> "S\u2191${-scrollPages}"
-                        scrollPages > 1 -> "S\u2193$scrollPages"
-                        else -> "S"
-                    }
-                    ThemedTextKey(
-                        label = label,
-                        modifier = keyMod,
-                        tint = null,
-                        onLongClick = { scrollMenu = true },
-                    ) {
-                        if (!DictateAccessibilityService.isRunning) {
-                            maOpenAccessibilitySettings(context)
-                        } else {
-                            scope.launch {
-                                val service = DictateAccessibilityService.gestureService()
-                                if (service == null || !MaScreenTargets.scrollBy(service, scrollPages)) {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.ma__scroll_none),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                }
-                            }
-                        }
+                        keyboardManager.activeState.imeUiMode = ImeUiMode.TRANSCRIBE
                     }
                 }
 

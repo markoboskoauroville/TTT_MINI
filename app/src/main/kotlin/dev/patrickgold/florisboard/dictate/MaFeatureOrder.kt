@@ -55,7 +55,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * It was a door to the transcribe view until that view was removed. The id stays "mic" so that
      * a stored row order written before the change still finds it.
      */
-    MIC("mic", "Record"),
+    MIC("mic", "Dictation view"),
 
     /** Settings, reopened where they were left. */
     SETTINGS("settings", "Settings"),
