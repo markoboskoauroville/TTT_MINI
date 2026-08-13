@@ -101,3 +101,50 @@ search.
 `Open menu, new feature available` was in an earlier Claude dump and is a trap: the label changes
 when Anthropic stops showing the badge. Never ship a term containing words like "new feature
 available" — match on the stable part or not at all.
+
+---
+
+# The pinned row — Marko's idea, worth building
+
+He noticed the strip beside the pin at the bottom of the keyboard is empty, and it always has been.
+It exists to hold the pin and nothing else, so it is free height the app already pays for.
+
+**"It's government land. Let's use it."**
+
+## What it is
+
+A row at the very bottom, below the feature rows, permanently present because the pin lives there
+anyway. Anything that currently appears and disappears above the keys can move into it instead.
+
+## What should move there
+
+**The suggestion row.** This is the fix for the flicker properly, rather than the switch that
+merely keeps its height. Suggestions currently sit above the keys, so they push everything down when
+they arrive; from the pinned row they change nothing above them because there is nothing above them
+to move.
+
+**The recording bar.** It appears on top and shoves the whole keyboard down mid-sentence. Marko:
+*"put recording down, not to jump up."* He is right, and it is the same argument — a bar that
+appears where there is already space costs nothing, and one that appears above the keys costs every
+key its position.
+
+## Why this is worth doing rather than nice to have
+
+Every complaint about things jumping while he types has the same cause: transient rows are drawn
+**above** the keys, so appearing and disappearing moves the keys. Anything drawn **below** them
+cannot. This is not a workaround for the flicker — it is the actual fix, and the switch shipped in
+build 85 is the workaround.
+
+## Terms found in the Android photo picker
+
+For picking a reference image without touching the screen:
+
+| Term | Scope |
+|---|---|
+| `Done` | **must be scoped** to `com.google.android.photopicker` |
+| `Preview` | same |
+| `Deselect all` | same |
+
+`Done` is the first term where scoping is not optional. Every app has one, so unscoped it would fire
+in mail, in settings, anywhere. The six shipped defaults are specific enough to be safe unscoped;
+this one is not, and the difference is worth stating rather than discovering.
