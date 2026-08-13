@@ -79,6 +79,7 @@ import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisWarningCard
 import dev.patrickgold.florisboard.BuildConfig
+import dev.patrickgold.florisboard.app.settings.about.BUILD_NUMBER_OFFSET
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -102,7 +103,21 @@ fun HomeScreen() = FlorisScreen {
         // shown a credits page instead of the settings is a bug however it was justified, and a
         // version number is the only part of that page anybody opens it for.
         Text(
-            text = "${stringRes(R.string.app_name_full)} ${BuildConfig.VERSION_NAME}",
+            // The build number, not the version name.
+            //
+            // VERSION_NAME is "1.0" and has been since the fork; it does not move, so a line
+            // carrying it told Marko nothing about which build he was looking at — which is the one
+            // thing this line is for when a new APK lands every few minutes. The build number is
+            // what the release is called, so it is what the app should say.
+            //
+            // Same constant as the About screen, not a second copy of the number: the version code
+            // carries a permanent offset so it can never go backwards, and subtracting it gives
+            // back the number the release is named after.
+            text = "${stringRes(R.string.app_name_full)} ${
+                BuildConfig.VERSION_CODE.let {
+                    if (it > BUILD_NUMBER_OFFSET) it - BUILD_NUMBER_OFFSET else it
+                }
+            }",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier

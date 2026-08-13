@@ -188,6 +188,78 @@ object MaMacroSyntax {
     }
 
     /**
+     * Turns `{loop 5} … {endloop}` into the steps repeated five times.
+     *
+     * ### Why it expands rather than looping at run time
+     *
+     * A macro is a list of steps; making it a program with a counter would mean an interpreter, and
+     * an interpreter needs error handling, nesting rules and a way to stop. Repeating the steps
+     * before anything runs keeps the runner exactly as simple as it was — it still walks a flat list
+     * and does not know loops exist.
+     *
+     * It also makes the cost visible. A loop of 200 becomes 200 steps here, where the cap can see
+     * them, rather than a number that only turns into work once a finger is on the key.
+     *
+     * ### The cap, and why it is low
+     *
+     * [MAX_STEPS] is a guard on somebody's text field, not on this app. Every step is a round trip
+     * to another process, so a runaway loop is not a slow macro — it is a keyboard that has seized
+     * with a document being edited underneath it. A loop asking for more than the cap allows is
+     * clamped rather than refused, because half of what was wanted is more useful than an error
+     * message and a key that did nothing.
+     *
+     * Nesting is not supported and an inner loop is treated as ordinary text. Nested repetition
+     * multiplies, and a mistake of one digit inside another loop is exactly how the cap gets reached
+     * by accident.
+     */
+    fun expandLoops(steps: List<Step>): List<Step> {
+        if (steps.none { it is Step.Unknown && loopCountOf(it.token) != null }) return steps
+        val out = mutableListOf<Step>()
+        var i = 0
+        while (i < steps.size) {
+            val step = steps[i]
+            val count = (step as? Step.Unknown)?.let { loopCountOf(it.token) }
+            if (count == null) {
+                out += step
+                i++
+                continue
+            }
+            // Everything up to the matching endloop, or to the end if he never wrote one — an
+            // unclosed loop repeating the rest of the macro is what he meant, and refusing it would
+            // punish a missing word.
+            val body = mutableListOf<Step>()
+            i++
+            while (i < steps.size && !isEndLoop(steps[i])) {
+                body += steps[i]
+                i++
+            }
+            if (i < steps.size) i++
+            if (body.isNotEmpty()) {
+                val room = ((MAX_STEPS - out.size) / body.size).coerceAtLeast(0)
+                repeat(minOf(count, room)) { out += body }
+            }
+        }
+        return out
+    }
+
+    /** The number in `{loop 5}`, or null when this is not a loop. */
+    private fun loopCountOf(token: String): Int? {
+        val t = token.trim().trim('{', '}').trim().lowercase()
+        if (!t.startsWith("loop")) return null
+        val n = t.removePrefix("loop").trim().toIntOrNull() ?: return null
+        return n.coerceIn(1, MAX_LOOP)
+    }
+
+    private fun isEndLoop(step: Step): Boolean =
+        step is Step.Unknown && step.token.trim().trim('{', '}').trim().lowercase() == "endloop"
+
+    /** As many repeats as anybody sensibly wants, and a stop on a typed extra zero. */
+    private const val MAX_LOOP = 100
+
+    /** The ceiling on a whole expanded macro. See expandLoops. */
+    private const val MAX_STEPS = 500
+
+    /**
      * Runs a macro against the live input connection.
      *
      * Text is committed directly. Keys are sent as a matched down/up pair with the meta state on
@@ -197,7 +269,7 @@ object MaMacroSyntax {
      */
     fun run(macro: String, ic: InputConnection?): Boolean {
         val connection = ic ?: return false
-        for (step in parse(macro)) {
+        for (step in expandLoops(parse(macro))) {
             when (step) {
                 is Step.Text -> connection.commitText(step.value, 1)
                 is Step.Key -> {

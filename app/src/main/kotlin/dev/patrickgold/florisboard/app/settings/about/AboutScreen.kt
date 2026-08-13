@@ -203,4 +203,14 @@ fun AboutScreen() = FlorisScreen {
  * subtracted again for display. Never lower this: doing so would make a future build look older than
  * one already on the phone, and Android would refuse to install it.
  */
-private const val BUILD_NUMBER_OFFSET = 1000
+/**
+ * The permanent offset baked into every version code, subtracted to get the build number back.
+ *
+ * Internal rather than private because the home screen shows the same number and must arrive at it
+ * the same way. Two copies of this arithmetic would drift, and drift here renames every build the
+ * app claims to be.
+ *
+ * It must never be lowered: the version code has to keep climbing or Android refuses the install as
+ * a downgrade, and the workflow adds this same number on the way out.
+ */
+internal const val BUILD_NUMBER_OFFSET = 1000
