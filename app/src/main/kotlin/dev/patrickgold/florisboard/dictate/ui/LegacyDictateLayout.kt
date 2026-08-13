@@ -377,13 +377,14 @@ fun LegacyDictateLayout(
                 // height back, so it must not leave an empty row behind holding the space it was
                 // asked to give up. The way to bring it back lives in the arrow strip above, which
                 // is always there.
-                val maFeatureRowShown by prefs.dictate.maFeatureRowShown.collectAsState()
-                if (maFeatureRowShown) {
-                    MaFeatureRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        rowHeight = EditRowHeight,
-                    )
-                }
+                // The feature row is not drawn here, and that is the fix for a screen Marko could
+                // not read. It gave him a second gear beside the one this view already has, a mic
+                // that opens the view he is already in, and a zone key that folds a keyboard which
+                // is not on screen. Three keys that either repeated something or did nothing.
+                //
+                // The rows above belong to this view and are enough: record, space, backspace,
+                // enter, the language badge and the case keys. The feature row belongs to the
+                // typing keyboard, where each of its keys means something.
             }
         }
     }
@@ -1056,6 +1057,22 @@ private fun LegacyBottomRow(
             contentDescription = stringRes(R.string.dictate__action_settings),
             modifier = sideKey,
             onClick = { FlorisImeService.launchSettings("settings/dictate") },
+        )
+
+        // The way back to the typing keyboard, which this view did not have.
+        //
+        // It is the most obvious thing somebody needs on a screen that has replaced their keyboard,
+        // and it was reachable only from a key on the feature row — which is drawn on the keyboard
+        // this view replaces. The way out was on the other side of the door.
+        ThemedIconKey(
+            code = KeyCode.NOOP,
+            icon = Icons.Default.Keyboard,
+            contentDescription = stringRes(R.string.dictate__legacy_action_keyboard),
+            modifier = sideKey,
+            onClick = {
+                onExitToKeyboard?.invoke()
+                    ?: run { keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT }
+            },
         )
 
         LegacySpaceKey(

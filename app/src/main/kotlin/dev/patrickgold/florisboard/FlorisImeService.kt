@@ -542,10 +542,9 @@ class FlorisImeService : LifecycleInputMethodService() {
      * Only the two views worth returning to are stored; anything else is remembered as the keyboard.
      */
     private fun maRememberUiMode(mode: ImeUiMode) {
-        val keep = when (mode) {
-            ImeUiMode.TRANSCRIBE -> ImeUiMode.TRANSCRIBE
-            else -> ImeUiMode.TEXT
-        }
+        // Only ever the keyboard now. Nothing reads this to reopen the recording view, so recording
+        // which view was showing would be bookkeeping with no reader.
+        val keep = ImeUiMode.TEXT
         runCatching {
             lifecycleScope.launch { prefs.dictate.maLastImeUiMode.set(keep.name) }
         }
@@ -560,7 +559,9 @@ class FlorisImeService : LifecycleInputMethodService() {
      * hour ago, and a text field that greets you with a live microphone is a surprise every time.
      */
     private fun maRestoredUiMode(): ImeUiMode = when (prefs.dictate.maOpeningView.get()) {
-        "dictation" -> ImeUiMode.TRANSCRIBE
+        // "dictation" is deliberately absent. It was an opening view and is not one any more: this
+        // screen is always secondary, opened on request. A stored "dictation" from before falls
+        // through to the keyboard below, which is the right answer rather than an error.
         // Pinned from inside the clipboard panel. Tapping an entry pastes it, which makes the panel
         // a second route to the C keys' job with no ten-slot ceiling and the text visible rather
         // than a number to remember.
@@ -568,11 +569,12 @@ class FlorisImeService : LifecycleInputMethodService() {
         // The old behaviour, kept for anyone who wants it: reopen whichever view was last used. Only
         // the two main views are remembered; clipboard, emoji and history are transient and would be
         // wrong to reopen on an unrelated field.
-        "last" -> if (prefs.dictate.maLastImeUiMode.get() == ImeUiMode.TRANSCRIBE.name) {
-            ImeUiMode.TRANSCRIBE
-        } else {
-            ImeUiMode.TEXT
-        }
+        // "last" no longer reopens the recording view either. It was the same override by a second
+        // route: end a session in the recording view and every later open began there, which is the
+        // behaviour that has just been removed from the setting. There is nothing else worth
+        // remembering — the only two candidates were the keyboard and this — so "last" is now the
+        // keyboard, and is kept only so a stored value still resolves.
+        "last" -> ImeUiMode.TEXT
         // "keyboard", and anything unrecognised. An unreadable preference must open the typing
         // keyboard rather than the dictation view: one is a surprise, the other is a live microphone.
         else -> ImeUiMode.TEXT

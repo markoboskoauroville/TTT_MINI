@@ -240,7 +240,9 @@ fun MaOpeningViewScreen() = FlorisScreen {
 
         val options = listOf(
             Triple("keyboard", "Keyboard", "The typing keyboard, every time"),
-            Triple("dictation", "Dictation", "The recording view, every time"),
+            // No dictation entry. The recording view is always secondary — it is opened when it is
+            // asked for and never arrives on its own, because a keyboard that opens as something
+            // other than a keyboard is a keyboard somebody has to escape before they can type.
             Triple("clipboard", "Paste history", "The clipboard panel, where tapping an entry pastes it"),
             Triple("last", "Whichever was last used", "Reopens the view you left"),
         )
