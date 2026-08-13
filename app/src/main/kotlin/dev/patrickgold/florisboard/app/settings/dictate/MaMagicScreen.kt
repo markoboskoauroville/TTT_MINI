@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -172,7 +173,13 @@ fun MaMagicScreen() = FlorisScreen {
                     // "Send" for Claude and "Send" for Gemini are two rows that would otherwise be
                     // indistinguishable, and deleting the wrong one is silent.
                     Text(
-                        text = target.appPackage?.substringAfterLast('.') ?: "any app",
+                        // The term when a label is hiding it, so the row still says what it
+                        // searches for. A key labelled STOP that silently looks for something else
+                        // is a row nobody can check.
+                        text = buildString {
+                            if (target.label.isNotBlank()) append(target.term).append("  \u00b7  ")
+                            append(target.appPackage?.substringAfterLast('.') ?: "any app")
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -190,9 +197,16 @@ fun MaMagicScreen() = FlorisScreen {
                             )
                         },
                     )
+                    // A pencil, because this opens the editor.
+                    //
+                    // It was drawing a drag handle, which is why Marko could not find it: the row
+                    // is dragged to reorder, so a grip on it says "hold me and move", and he read
+                    // it as exactly that. An icon that describes a different gesture from the one it
+                    // performs is worse than no icon — he was looking straight at the control and
+                    // could not see it.
                     IconButton(onClick = { editing = index }) {
                         Icon(
-                            Icons.Default.DragHandle,
+                            Icons.Default.Edit,
                             contentDescription = "Edit this term",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(22.dp),
@@ -208,6 +222,20 @@ fun MaMagicScreen() = FlorisScreen {
                             modifier = Modifier.size(22.dp),
                         )
                     }
+                    // The grip, last, exactly where the feature row editor puts it.
+                    //
+                    // This list has been draggable all along and never showed one: the icon that
+                    // looked like a grip was the edit button. So the header said "drag to change
+                    // which is tried first" while the only thing resembling a handle opened a
+                    // dialog. Now the pencil edits and the grip is a grip, in the same order and
+                    // the same position as the other editor, because somebody who has learned one
+                    // screen should not have to learn the second.
+                    Icon(
+                        imageVector = Icons.Default.DragHandle,
+                        contentDescription = "Hold and drag to move",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp).size(22.dp),
+                    )
                 }
             }
         }
