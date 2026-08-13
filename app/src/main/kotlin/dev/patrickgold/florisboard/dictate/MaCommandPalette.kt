@@ -148,7 +148,23 @@ object MaCommandPalette {
         ),
     )
 
-    val GROUPS: List<Group> = listOf(CASE, EDITING, NAVIGATION, KEYS, TERMINAL, PUNCTUATION, FUNCTION)
+    /**
+     * Pressing a button on the screen, and repeating.
+     *
+     * {tap} takes the name of a real control, which is why the entry here is only a start: he
+     * finishes it by typing the name, or by copying the screen and asking for it. The palette can
+     * offer the shape of the command but never the name, because the name belongs to the app in
+     * front and changes with it.
+     */
+    private val SCREEN = Group(
+        "The screen and repeating",
+        listOf(
+            Entry("tap", "{tap }", "Press a button by name \u2014 type the name after tap"),
+            Entry("x5", "{loop 5}{endloop}", "Repeat what is between these five times"),
+        ),
+    )
+
+    val GROUPS: List<Group> = listOf(CASE, SCREEN, EDITING, NAVIGATION, KEYS, TERMINAL, PUNCTUATION, FUNCTION)
 
     /** Flat, for a search field. */
     val ALL: List<Entry> = GROUPS.flatMap { it.entries }

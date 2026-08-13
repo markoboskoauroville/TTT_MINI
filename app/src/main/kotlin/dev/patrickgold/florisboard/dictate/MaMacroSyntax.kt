@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.dictate
 
 import android.view.KeyEvent
+import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import android.view.inputmethod.InputConnection
 
 /**
@@ -293,7 +294,17 @@ object MaMacroSyntax {
                 //
                 // This is the one step that reads the field before it writes: it takes what is
                 // there, changes it, and puts it back. Everything else a macro does is typing.
-                is Step.Unknown -> applyCaseTransform(connection, step.token)
+                is Step.Unknown -> {
+                    val name = step.token.trim().trim('{', '}').trim()
+                    // Stripped by length rather than by matching a spelling, so TAP, Tap and tap
+                    // all work while the name after it keeps the capitals it needs — "Send message"
+                    // must not become "send message", because the match is against a real label.
+                    if (name.length > 4 && name.take(4).lowercase() == "tap ") {
+                        pressNamedButton(name.drop(4).trim())
+                    } else {
+                        applyCaseTransform(connection, step.token)
+                    }
+                }
             }
         }
         return true
@@ -305,6 +316,32 @@ object MaMacroSyntax {
     /** Tokens in [macro] that resolve to nothing, for the editor to warn about. */
     fun unknownTokens(macro: String): List<String> =
         parse(macro).filterIsInstance<Step.Unknown>().map { it.token }
+}
+
+/**
+ * Presses a button on the screen in front, by the name a screen reader would announce.
+ *
+ * ### This is the magic button, made ordinary
+ *
+ * The wand presses the first of a list it finds, which is right when there is one obvious button
+ * and wrong the moment two apps both have a Send. `{tap Send message}` says exactly which, so a
+ * macro key becomes a button that remembers what to click.
+ *
+ * The app it belongs to needs no storing, which is the part that makes this simple. He presses the
+ * key while looking at the app, so the app is whatever is in front — a key labelled CS in Claude
+ * finds Claude's send, and the same key in Gemini finds nothing and does nothing. The app is
+ * implied by where he is standing, and a stored package would only be a second chance to be wrong.
+ *
+ * A row of these is the magic row: M1 to M10 each holding one {tap}, put together in row three.
+ * Nothing new was needed to build it — the macro editor names them, the row editor arranges them,
+ * and they compose with everything else, so {upper}{tap Send} shouts and sends.
+ */
+private fun pressNamedButton(name: String) {
+    if (name.isBlank()) return
+    // Nothing when the accessibility service is off, which is the same silence as a name that is
+    // not on screen. Both are "this key found nothing to press", and neither is worth a toast from
+    // inside a macro that may have nine other steps to run.
+    DictateAccessibilityService.pressScreenTarget(listOf(name))
 }
 
 /**
