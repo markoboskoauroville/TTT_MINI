@@ -62,6 +62,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -629,7 +631,15 @@ private fun MaMacroEditor(
     onDismiss: () -> Unit,
 ) {
     var label by remember { mutableStateOf(current.label) }
-    var macro by remember { mutableStateOf(current.macro) }
+    // A TextFieldValue rather than a String, so the cursor can be placed after an insertion.
+    //
+    // With a plain String, Compose resets the selection to the start on every value change from
+    // outside the field. Picking a command therefore dropped the caret in front of everything, and
+    // the next command landed before the previous one — commands came out backwards, which is
+    // exactly what Marko saw.
+    var macro by remember {
+        mutableStateOf(TextFieldValue(current.macro, TextRange(current.macro.length)))
+    }
     var paletteOpen by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -686,7 +696,19 @@ private fun MaMacroEditor(
                                 onClick = {
                                     // Appended rather than replacing: a macro is usually a short
                                     // sequence rather than a single key.
-                                    macro += e.token
+                                    // One command per line, and the caret left after it.
+                                    //
+                                    // A newline because a macro of several commands is a list of
+                                    // steps and reads like one; running ignores the whitespace, so
+                                    // the layout is free. The caret goes to the end so the next
+                                    // pick lands after this one rather than in front of it.
+                                    val existing = macro.text
+                                    val joined = when {
+                                        existing.isBlank() -> e.token
+                                        existing.endsWith("\n") -> existing + e.token
+                                        else -> existing + "\n" + e.token
+                                    }
+                                    macro = TextFieldValue(joined, TextRange(joined.length))
                                     if (label.isBlank() || label == "M$slot") {
                                         label = e.label.take(MaMacroSlots.MAX_LABEL)
                                     }
@@ -703,7 +725,7 @@ private fun MaMacroEditor(
             TextButton(
                 // A blank label is filled back in with the slot's own name rather than left empty,
                 // so an unconfigured key still says which slot it is instead of showing nothing.
-                onClick = { onSave(label.ifBlank { "M$slot" }, macro) },
+                onClick = { onSave(label.ifBlank { "M$slot" }, macro.text) },
             ) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
