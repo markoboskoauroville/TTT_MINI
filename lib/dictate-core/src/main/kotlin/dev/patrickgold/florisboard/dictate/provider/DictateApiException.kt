@@ -26,6 +26,15 @@ class DictateApiException(
     enum class Kind {
         INVALID_API_KEY,
         QUOTA_EXCEEDED,
+
+        /**
+         * Going too fast, not out of credit.
+         *
+         * Its own kind because the two demand opposite responses: a cap means try another key, a
+         * rate limit means wait and try the same one. Sharing a kind meant every busy moment cost a
+         * key for six hours.
+         */
+        RATE_LIMITED,
         CONTENT_SIZE_LIMIT,
         FORMAT_NOT_SUPPORTED,
         TIMEOUT,
@@ -57,11 +66,24 @@ class DictateApiException(
                 status == 401 || status == 403 ||
                     hay.contains("api key") || hay.contains("api_key") || hay.contains("invalid_api_key") ||
                     hay.contains("unauthorized") || hay.contains("authentication") -> Kind.INVALID_API_KEY
-                status == 429 || status == 402 ||
-                    hay.contains("quota") || hay.contains("insufficient_quota") || hay.contains("billing") ||
-                    hay.contains("rate limit") || hay.contains("rate_limit") ||
+                // 429 first, and on its own. Rate limited is not out of credit — one says "you are
+                // going too fast, wait", the other says "this key is finished". They were the same
+                // branch, so a busy stretch benched a perfectly good key for six hours, and a few of
+                // those benched the whole keyring in an afternoon with every key still fine.
+                //
+                // MaKeyRing's own table has always said 429 must record nothing about the key. This
+                // is the line that never got the message.
+                //
+                // Wording is checked before the status, because a service that returns 429 for a
+                // genuine monthly cap will say so in the body, and the body is the more specific
+                // evidence. Only when it says nothing does the bare status decide.
+                hay.contains("insufficient_quota") || hay.contains("quota exceeded") ||
+                    hay.contains("billing") || hay.contains("credit") ||
                     // Soniox 402 billing signals: balance/budget exhausted.
-                    hay.contains("exhausted") || hay.contains("balance") || hay.contains("budget") -> Kind.QUOTA_EXCEEDED
+                    hay.contains("exhausted") || hay.contains("balance") || hay.contains("budget") ||
+                    status == 402 -> Kind.QUOTA_EXCEEDED
+                status == 429 || hay.contains("rate limit") || hay.contains("rate_limit") ||
+                    hay.contains("too many requests") -> Kind.RATE_LIMITED
                 status == 413 ||
                     hay.contains("audio duration") || hay.contains("content size limit") ||
                     hay.contains("too large") || hay.contains("maximum context length") -> Kind.CONTENT_SIZE_LIMIT

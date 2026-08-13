@@ -272,6 +272,12 @@ fun DictateKeysScreen() = FlorisScreen {
                                 KeyStatus(KeyHealth.REJECTED, "rejected by the service")
                             DictateApiException.Kind.QUOTA_EXCEEDED ->
                                 KeyStatus(KeyHealth.NO_QUOTA, "out of quota, will be skipped")
+                            // Rate limited says nothing about the key, so the test learned nothing.
+                            // It would otherwise fall to the else below and be reported as "no
+                            // connection", which is a different thing and would send him looking at
+                            // his wifi over a key that is perfectly good.
+                            DictateApiException.Kind.RATE_LIMITED ->
+                                KeyStatus(KeyHealth.OFFLINE, "too many requests, not checked")
                             DictateApiException.Kind.NETWORK, DictateApiException.Kind.TIMEOUT ->
                                 KeyStatus(KeyHealth.OFFLINE, "no connection, key not checked")
                             else -> KeyStatus(

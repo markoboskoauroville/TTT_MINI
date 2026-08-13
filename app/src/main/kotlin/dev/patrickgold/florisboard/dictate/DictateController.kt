@@ -781,6 +781,7 @@ object DictateController {
     private fun errorMessageRes(kind: DictateApiException.Kind): Int = when (kind) {
         DictateApiException.Kind.INVALID_API_KEY -> R.string.dictate__error_invalid_api_key
         DictateApiException.Kind.QUOTA_EXCEEDED -> R.string.dictate__error_quota_exceeded
+        DictateApiException.Kind.RATE_LIMITED -> R.string.dictate__error_rate_limited
         DictateApiException.Kind.CONTENT_SIZE_LIMIT -> R.string.dictate__error_content_size_limit
         DictateApiException.Kind.FORMAT_NOT_SUPPORTED -> R.string.dictate__error_format_not_supported
         DictateApiException.Kind.TIMEOUT -> R.string.dictate__error_timeout

@@ -246,10 +246,22 @@ object MaKeys {
                     found.add(if (shape === HEX32) m.value.lowercase() else m.value)
                 }
             }
-            if (found.isNotEmpty()) return found.toList()
-            // Nothing matched the expected shape. That does NOT mean the file holds no key: a
-            // provider can rebrand its format at any time, exactly as Google did. So fall through
-            // to the generic scan rather than telling the user their good key was not found.
+            // Whether or not anything matched, this is the answer for a provider whose shape we
+            // know. There is no falling through to a generic scan.
+            //
+            // The fallthrough was a real fault and not a small one. Marko imported a file holding
+            // only AssemblyAI keys; Anthropic's shape matched nothing, so the scan below picked up
+            // the 32-hex AssemblyAI keys and handed them to Anthropic, and then to Gemini. His
+            // AssemblyAI key was about to be posted to two companies it has nothing to do with,
+            // and the screen showed it as though it were configured.
+            //
+            // The reasoning behind the fallthrough — a provider might rebrand its format — was
+            // sound for a file whose keys are all one provider's. It is wrong the moment a file
+            // holds keys for several, which is exactly the file this app writes when it backs up.
+            // A key we cannot place should go nowhere, because the cost of guessing wrong is
+            // sending somebody's credential to a stranger, and the cost of guessing nothing is one
+            // key typed by hand.
+            return found.toList()
         }
         for (line in lines) {
             if (line.trim().startsWith("#")) continue
@@ -307,6 +319,7 @@ inline fun <T> maWithKeyFallback(
             last = e
             val reason = when (e.kind) {
                 DictateApiException.Kind.QUOTA_EXCEEDED -> "out of quota"
+                DictateApiException.Kind.RATE_LIMITED -> "too many requests, slow down"
                 else -> "rejected"
             }
             onKeyRejected(i + 1, keys.size, reason)
