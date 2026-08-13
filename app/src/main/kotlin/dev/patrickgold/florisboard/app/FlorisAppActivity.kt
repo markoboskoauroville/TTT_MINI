@@ -187,6 +187,32 @@ class FlorisAppActivity : ComponentActivity() {
         // screen added later that forgot to report itself would be a hole nobody notices until the
         // gear key sends them somewhere stale. The graph already knows where it is.
         val resumeContext = LocalContext.current
+
+        // Come back where he left, which is the half that was missing.
+        //
+        // The route has been recorded on every navigation since the gear key was built, and nothing
+        // ever read it on launch — so he would set something three screens down, go back to typing,
+        // reopen the settings, and land on the top of the tree again. Recording without restoring is
+        // the bookkeeping without the benefit.
+        //
+        // Once per process, not on every recomposition: it navigates, and a navigation that repeats
+        // would fight the back button. Home stays underneath, so back still leads out rather than
+        // trapping him on the screen he was resumed to.
+        var resumed by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            if (!resumed) {
+                resumed = true
+                val last = MaSettingsResume.lastPath(resumeContext)
+                if (last != MaSettingsResume.DEFAULT_PATH) {
+                    runCatching {
+                        navController.navigate(
+                            android.net.Uri.parse("ui://florisboard/" + last),
+                        )
+                    }
+                }
+            }
+        }
+
         DisposableEffect(navController) {
             val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
                 MaSettingsResume.pathFor(destination.route)

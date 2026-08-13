@@ -674,7 +674,10 @@ internal fun LegacyActionKey(
             onClick = { keyboardManager.tapKey(KeyCode.SPACE) },
         ) { fg ->
             Text(
-                text = "\u2013\u2013\u2013",
+                // U+23B5, the bottom square bracket: the shape a spacebar has on every keyboard
+                // anybody has used. Three dashes read as a dash key or a strikethrough, which is a
+                // key that appears to do something else entirely.
+                text = "\u23B5",
                 color = fg,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,

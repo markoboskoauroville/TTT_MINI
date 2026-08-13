@@ -448,7 +448,7 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                     tint = tint,
                     modifier = size,
                 )
-            MaFeatureKey.SPACE -> letters("\u2013\u2013\u2013")
+            MaFeatureKey.SPACE -> letters("\u23B5")
             MaFeatureKey.SELECT_ALL ->
                 Icon(Icons.Default.SelectAll, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.BACKSPACE ->

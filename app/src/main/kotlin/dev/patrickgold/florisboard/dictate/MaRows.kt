@@ -117,7 +117,16 @@ object MaRows {
         val drawn = rows.filter { it.enabled }
             .map { it.visibleButtons }
             .filter { it.isNotEmpty() }
-        return drawn.ifEmpty {
+        // Reversed, so row 1 is the one nearest the keys.
+        //
+        // The rows are numbered by how close they sit to the typing, not by how far down the editor
+        // they appear. Row 1 is the one his thumb reaches without moving, which is why it is the
+        // one he fills first, and it has to stay in that place as rows above it come and go. With
+        // 1 and 3 on, 1 is at the bottom and 3 above it; with all three, 1, 2, 3 from the bottom up.
+        //
+        // Drawn last means drawn lowest in a Column, so the list is reversed here rather than at the
+        // point of drawing — one place, and it cannot disagree with itself.
+        return drawn.reversed().ifEmpty {
             listOf(listOf(Button.Builtin(MaFeatureKey.SETTINGS)))
         }
     }
