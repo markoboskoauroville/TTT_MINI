@@ -964,6 +964,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // one that is read. The old three are left in place and unread rather than deleted, because
         // a migration that runs against an empty source produces an empty keyboard, and that is the
         // shape of bug that only shows up on the one install that mattered.
+
         val maRows = string(
             key = "dictate__ma_rows",
             default = "",
@@ -1343,6 +1344,16 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
     val gestures = Gestures()
     inner class Gestures {
+        /**
+         * Talk to Type: swipe toward a symbol printed on a key to type it, rather than long
+         * pressing and choosing from the popup. Off by default so nobody's muscle memory changes
+         * without asking.
+         */
+        val maSwipeToSymbol = boolean(
+            key = "gestures__ma_swipe_to_symbol",
+            default = false,
+        )
+
 
         val swipeUp = enum(
             key = "gestures__swipe_up",
