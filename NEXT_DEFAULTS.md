@@ -53,10 +53,29 @@ Also available: `New chat`, `Share`, `Narrate`, `Retry message`, `Add to chat`, 
 **imgtoimg.ai in Firefox** — `Use Image URL`, `Upload Image`, `Generate Images`, `Re-edit`,
 `Regenerate`, `Download`.
 
-The first three already ship. The imgtoimg ones are his second daily workflow and are the obvious
-next defaults — but they belong to a **web page**, not an app, so scoping them to
-`org.mozilla.firefox` would break the moment he opens the same site in another browser. Ship them
-unscoped, or scope them to nothing at all, which is the same thing.
+The first three already ship. They belong to no app on purpose, and the same reasoning applies
+below.
+
+### Ship these four as defaults
+
+| Term | Label | Why |
+|---|---|---|
+| `Copy message` | copy | already shipping |
+| `Stop responding` | stop | already shipping |
+| `Send` | send | already shipping |
+| `Use Image URL` | url | **add this one** |
+
+`Use Image URL` is the one he asked for by name. It is a phrase, so it matches as a phrase and
+cannot fire on "Upload Image" sitting beside it.
+
+Unscoped, like the other three. It belongs to a **web page** rather than an app, so scoping it to
+`org.mozilla.firefox` would break the moment he opens the same site in another browser — and the
+label is specific enough that it will not collide with anything else he uses.
+
+The remaining imgtoimg terms — `Upload Image`, `Generate Images`, `Re-edit`, `Regenerate`,
+`Download` — are his second daily workflow and the obvious candidates after that, but they are his
+to choose rather than mine to assume. Four keys is a row he can read; nine is a row he has to
+search.
 
 ## One thing not to forget
 
