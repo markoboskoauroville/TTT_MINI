@@ -77,6 +77,81 @@ object MaScreenTargets {
      * long press, listens for one click, and disarms — by success, by the timeout, or by being armed
      * again.
      */
+    /**
+     * The whole accessibility tree of what is on screen, as text, with nothing filtered out.
+     *
+     * ### Why a dump rather than a cleverer filter
+     *
+     * Three attempts at guessing which nodes matter have now failed on Marko's phone: everything
+     * clickable was too much, page-only missed things, furniture lists caught the wrong ones. The
+     * label a button carries is often nothing like the word on its face, and no rule written in
+     * this file can know that.
+     *
+     * So this stops guessing. He copies the tree, sends it with a screenshot, and is told exactly
+     * which name to use. The intelligence moves out of the heuristics and into the conversation,
+     * which is where it was working all along.
+     *
+     * Every node is included, clickable or not, named or not. A node with no label is exactly the
+     * kind of thing that turns out to be the button, and a dump that had already decided what
+     * mattered would be the same mistake in a new place.
+     */
+    fun dumpTree(service: AccessibilityService): String {
+        val sb = StringBuilder()
+        var count = 0
+        for (root in appWindowRoots(service)) {
+            try {
+                sb.append("=== ").append(root.packageName ?: "?").append(" ===\n")
+                count += dumpNode(root, sb, 0, count)
+            } finally {
+                runCatching { root.recycle() }
+            }
+        }
+        if (count >= MAX_DUMP_NODES) {
+            sb.append("\n… stopped at ").append(MAX_DUMP_NODES)
+                .append(" nodes. Scroll to what you want and dump again.\n")
+        }
+        return if (sb.isEmpty()) "Nothing on screen. Is the accessibility service on?" else sb.toString()
+    }
+
+    /**
+     * A ceiling, because a dump has to survive being pasted into a chat.
+     *
+     * Not filtering, which is the thing being avoided — this takes the first N in tree order and
+     * says so, rather than deciding which N deserve to be there.
+     */
+    private const val MAX_DUMP_NODES = 500
+
+    private fun dumpNode(
+        node: AccessibilityNodeInfo,
+        sb: StringBuilder,
+        depth: Int,
+        soFar: Int,
+    ): Int {
+        if (soFar >= MAX_DUMP_NODES || depth > 30) return 0
+        var written = 1
+        val r = Rect().also { node.getBoundsInScreen(it) }
+        sb.append("  ".repeat(depth.coerceAtMost(12)))
+        sb.append(node.className?.toString()?.substringAfterLast('.') ?: "?")
+        node.viewIdResourceName?.substringAfterLast('/')?.let { sb.append(" id=").append(it) }
+        node.text?.toString()?.takeIf { it.isNotBlank() }?.let {
+            sb.append(" txt=\"").append(it.replace('\n', ' ').take(60)).append('"')
+        }
+        node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let {
+            sb.append(" desc=\"").append(it.replace('\n', ' ').take(60)).append('"')
+        }
+        if (node.isClickable) sb.append(" CLICK")
+        if (!node.isVisibleToUser) sb.append(" hidden")
+        sb.append(" @").append(r.left).append(',').append(r.top)
+            .append('-').append(r.right).append(',').append(r.bottom)
+        sb.append('\n')
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            written += dumpNode(child, sb, depth + 1, soFar + written)
+            runCatching { child.recycle() }
+        }
+        return written
+    }
+
     object Learn {
 
         /** What the wand is doing, for the bar at the top of the keyboard to show. */

@@ -266,8 +266,23 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
       // is indistinguishable from doing nothing.
       MaWandBar(
           state = learn,
-          onStore = { label, pkg ->
+          onCopyDump = {
+              // Onto the clipboard, which is where it has to go: it is far too long to read on a
+              // phone and its whole purpose is to be pasted somewhere else.
+              val dump = DictateAccessibilityService.dumpScreen()
+              clipboardManager.addNewPlaintext(dump)
+              Toast.makeText(
+                  context,
+                  context.getString(R.string.ma__wand_copied),
+                  Toast.LENGTH_SHORT,
+              ).show()
+          },
+          onStore = { label, pkgOrNull ->
               scope.launch {
+                  // A name typed into the bar belongs to the app he is looking at, the same as one
+                  // that was caught. Passing null would have made it fire everywhere, which is the
+                  // fault the app scoping was added to fix.
+                  val pkg = pkgOrNull ?: DictateAccessibilityService.foregroundPackage()
                   val current = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
                   val duplicate = current.any {
                       it.term.equals(label, ignoreCase = true) && it.appPackage == pkg
@@ -905,11 +920,13 @@ private fun maStepScroll(pages: Int, delta: Int): Int {
 @Composable
 private fun MaWandBar(
     state: MaScreenTargets.Learn.State,
+    onCopyDump: () -> kotlin.Unit,
     onStore: (String, String?) -> kotlin.Unit,
     onDiscard: () -> kotlin.Unit,
     onEdit: () -> kotlin.Unit,
 ) {
     if (state is MaScreenTargets.Learn.State.Idle) return
+    var typed by remember { mutableStateOf("") }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -919,12 +936,50 @@ private fun MaWandBar(
     ) {
         when (state) {
             is MaScreenTargets.Learn.State.Waiting -> {
+                // Copy the whole tree, then paste the name back in.
+                //
+                // Three attempts at guessing which node is the button have failed on this phone,
+                // because the label a control carries is often nothing like the word on its face and
+                // no rule written in the app can know that. So the app stops guessing: it hands over
+                // everything it can see, and the name comes back from someone who can read it
+                // against a picture of the screen.
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringRes(R.string.ma__wand_dump_hint),
+                        color = Color(0x99FFFFFF),
+                        fontSize = 12.sp,
+                        maxLines = 2,
+                    )
+                    OutlinedTextField(
+                        value = typed,
+                        onValueChange = { typed = it },
+                        singleLine = true,
+                        placeholder = {
+                            Text(stringRes(R.string.ma__wand_paste_name), fontSize = 13.sp)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 Text(
-                    text = stringRes(R.string.ma__wand_waiting),
+                    text = stringRes(R.string.ma__wand_copy),
                     color = Color(0xFFE8B15C),
                     fontSize = 14.sp,
-                    maxLines = 2,
-                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .clickable { onCopyDump() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+                Text(
+                    text = stringRes(R.string.ma__wand_yes),
+                    color = if (typed.isBlank()) Color(0x55FFFFFF) else Color(0xFF6FA85A),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .clickable(enabled = typed.isNotBlank()) {
+                            onStore(typed.trim(), null)
+                            typed = ""
+                        }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                 )
                 Text(
                     text = stringRes(R.string.ma__wand_cancel),
@@ -932,7 +987,7 @@ private fun MaWandBar(
                     fontSize = 14.sp,
                     modifier = Modifier
                         .clickable { onDiscard() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
                 )
             }
 

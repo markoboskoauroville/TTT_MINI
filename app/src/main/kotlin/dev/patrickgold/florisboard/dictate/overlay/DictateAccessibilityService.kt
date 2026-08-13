@@ -674,6 +674,12 @@ class DictateAccessibilityService : AccessibilityService() {
             return true
         }
 
+        /** The whole tree of what is on screen, as text, for copying out. */
+        fun dumpScreen(): String {
+            val ims = instance ?: return "The accessibility service is off."
+            return MaScreenTargets.dumpTree(ims)
+        }
+
         /** What the wand is doing, for the bar at the top of the keyboard. */
         val learnState get() = MaScreenTargets.Learn.state
 
