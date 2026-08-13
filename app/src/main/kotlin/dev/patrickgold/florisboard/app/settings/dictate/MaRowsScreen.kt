@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Mic
@@ -438,6 +439,8 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.Delete, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.LANGUAGE -> letters("HR")
             MaFeatureKey.SCROLL -> letters("S")
+            MaFeatureKey.SWITCHBOARD ->
+                Icon(Icons.Default.ToggleOn, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.APP_SWITCH ->
                 Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.HISTORY ->

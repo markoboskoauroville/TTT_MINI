@@ -105,6 +105,15 @@ enum class MaFeatureKey(val id: String, val label: String) {
      */
     SCROLL("scroll", "S, scroll the page"),
 
+    /**
+     * The switchboard, straight from the keyboard.
+     *
+     * It answers "what is on my keyboard right now", and the fastest place to ask that is the
+     * keyboard itself rather than walking the settings tree to reach a screen whose whole purpose
+     * is to save that walk.
+     */
+    SWITCHBOARD("switchboard", "Switchboard, rows on and off"),
+
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),
     ZONE_3("zone3", "3, the copy row"),
@@ -174,6 +183,7 @@ object MaFeatureOrder {
         MaFeatureKey.HISTORY,
         MaFeatureKey.LANGUAGE,
         MaFeatureKey.SCROLL,
+        MaFeatureKey.SWITCHBOARD,
     )
 
     val DEFAULT_RAW: String = serialize(DEFAULT)

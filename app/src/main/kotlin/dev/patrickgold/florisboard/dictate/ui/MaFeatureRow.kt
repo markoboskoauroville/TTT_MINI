@@ -40,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
@@ -670,6 +671,18 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                                 }
                             }
                         }
+                    }
+                }
+
+                MaFeatureKey.SWITCHBOARD -> {
+                    // A switch, because that is what the screen is: a page of them.
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        icon = Icons.Default.ToggleOn,
+                        contentDescription = stringRes(R.string.ma__feature_switchboard),
+                        modifier = keyMod,
+                    ) {
+                        FlorisImeService.launchSettings("settings/dictate/switchboard")
                     }
                 }
 

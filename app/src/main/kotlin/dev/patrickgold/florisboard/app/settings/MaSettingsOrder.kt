@@ -22,6 +22,7 @@ package dev.patrickgold.florisboard.app.settings
  * reachable key screen is a keyboard that cannot be fixed from inside itself.
  */
 enum class MaSettingsEntry(val id: String, val title: String, val summary: String?) {
+    SWITCHBOARD("switchboard", "Switchboard", "Every row the keyboard can show, in one place"),
     FEATURE_ROW("feature_row", "Feature row", "Three rows of keys, drag them into the order you want"),
     MAGIC("magic", "Magic button", "What it presses on screen, and which it tries first"),
     KEYS("keys", "API keys", "Import, test and manage every key"),
@@ -56,6 +57,7 @@ object MaSettingsOrder {
      */
     val DEFAULT: List<MaSettingsEntry> = listOf(
         MaSettingsEntry.BUCKETS,
+        MaSettingsEntry.SWITCHBOARD,
         MaSettingsEntry.FEATURE_ROW,
         MaSettingsEntry.MAGIC,
         MaSettingsEntry.KEYS,

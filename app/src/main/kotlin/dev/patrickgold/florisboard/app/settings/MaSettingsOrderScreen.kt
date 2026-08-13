@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Spellcheck
+import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
@@ -64,6 +65,7 @@ import kotlinx.coroutines.launch
  */
 val MaSettingsEntry.icon: ImageVector
     get() = when (this) {
+        MaSettingsEntry.SWITCHBOARD -> Icons.Default.ToggleOn
         MaSettingsEntry.FEATURE_ROW -> Icons.Default.DragHandle
         // A finger pressing, not a wand. The wand belongs to rewording, which fixes grammar with a
         // model; this presses a button on screen. This list is where the two sit closest together,
@@ -93,6 +95,7 @@ val MaSettingsEntry.icon: ImageVector
  */
 val MaSettingsEntry.route: Any
     get() = when (this) {
+        MaSettingsEntry.SWITCHBOARD -> Routes.Settings.MaSwitchboard
         MaSettingsEntry.FEATURE_ROW -> Routes.Settings.MaFeatureRow
         MaSettingsEntry.MAGIC -> Routes.Settings.MaMagic
         MaSettingsEntry.KEYS -> Routes.Settings.DictateKeys
