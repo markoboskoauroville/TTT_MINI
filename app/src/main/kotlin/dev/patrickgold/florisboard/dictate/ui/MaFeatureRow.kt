@@ -50,6 +50,7 @@ import androidx.compose.material.icons.outlined.AudioFile
 import androidx.compose.material.icons.outlined.AutoFixHigh
 import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -279,6 +280,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                   Toast.LENGTH_SHORT,
               ).show()
           },
+          onDismiss = { MaScreenTargets.Learn.cancel() },
           onEdit = {
               // Straight to the wand's own screen, not to wherever the settings were last left.
               // The bookmark is right when he opens the settings to do something unrelated; here he
