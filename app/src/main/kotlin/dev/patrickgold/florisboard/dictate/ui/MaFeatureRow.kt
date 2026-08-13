@@ -279,30 +279,12 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                   Toast.LENGTH_SHORT,
               ).show()
           },
-          onStore = { label, pkgOrNull ->
-              scope.launch {
-                  // A name typed into the bar belongs to the app he is looking at, the same as one
-                  // that was caught. Passing null would have made it fire everywhere, which is the
-                  // fault the app scoping was added to fix.
-                  val pkg = pkgOrNull ?: DictateAccessibilityService.foregroundPackage()
-                  val current = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
-                  val duplicate = current.any {
-                      it.term.equals(label, ignoreCase = true) && it.appPackage == pkg
-                  }
-                  if (!duplicate) {
-                      prefs.dictate.maMagicTargets.set(
-                          MaMagicTargets.serialize(
-                              current + MaMagicTargets.Target(label, appPackage = pkg),
-                          ),
-                      )
-                  }
-                  MaScreenTargets.Learn.clear()
-              }
-          },
-          onDiscard = { MaScreenTargets.Learn.cancel() },
           onEdit = {
+              // Straight to the wand's own screen, not to wherever the settings were last left.
+              // The bookmark is right when he opens the settings to do something unrelated; here he
+              // is already looking at the wand and asking for its list.
               MaScreenTargets.Learn.cancel()
-              MaSettingsResume.open(context, "settings/dictate/magic")
+              FlorisImeService.launchSettings("settings/dictate/magic")
           },
       )
       rows.forEach { rowButtons ->
@@ -911,26 +893,32 @@ private fun maStepScroll(pages: Int, delta: Int): Int {
 }
 
 /**
- * The wand's status bar, above the keys.
+ * The wand's bar: copy the screen, or leave, or go and edit the list.
  *
- * Draws nothing at rest, so it costs no height until something is happening — the same rule the
- * status surface follows, and the reason the keyboard does not permanently carry a strip that is
- * usually empty.
+ * ### Three controls, and nothing else
  *
- * Asking before storing rather than storing and announcing. He may press the wrong thing, or press
- * the right thing and find it was called something unhelpful, and a wand that fills its own list
- * with whatever was tapped becomes a list he has to clean rather than one he built.
+ * It held a hint, a text field, Copy, Store, Cancel and a link, which is six things in a strip the
+ * height of a key. The field was the worst of them: typing a button's name into a box the width of a
+ * thumb, on a keyboard that is itself the thing being configured, when the same box exists on the
+ * wand's own settings screen with room to read it. Removing it removes the reason for Store as well.
+ *
+ * What is left is the loop that actually works. Copy the tree, ask someone who can read it against a
+ * picture of the screen, then add the name where terms are added.
+ *
+ * ### Yellow means this leaves the keyboard
+ *
+ * The gear is sand, and that is a rule rather than a colour: in this app sand marks a control that
+ * takes you somewhere else, the way red marks recording and green marks a level that is safe. A
+ * label saying "Wand" had to be read to know what it did; a gear in the colour of leaving does not.
  */
 @Composable
 private fun MaWandBar(
     state: MaScreenTargets.Learn.State,
     onCopyDump: () -> kotlin.Unit,
-    onStore: (String, String?) -> kotlin.Unit,
-    onDiscard: () -> kotlin.Unit,
+    onDismiss: () -> kotlin.Unit,
     onEdit: () -> kotlin.Unit,
 ) {
     if (state is MaScreenTargets.Learn.State.Idle) return
-    var typed by remember { mutableStateOf("") }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -938,109 +926,46 @@ private fun MaWandBar(
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        when (state) {
-            is MaScreenTargets.Learn.State.Waiting -> {
-                // Copy the whole tree, then paste the name back in.
-                //
-                // Three attempts at guessing which node is the button have failed on this phone,
-                // because the label a control carries is often nothing like the word on its face and
-                // no rule written in the app can know that. So the app stops guessing: it hands over
-                // everything it can see, and the name comes back from someone who can read it
-                // against a picture of the screen.
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringRes(R.string.ma__wand_dump_hint),
-                        color = Color(0x99FFFFFF),
-                        fontSize = 12.sp,
-                        maxLines = 2,
-                    )
-                    OutlinedTextField(
-                        value = typed,
-                        onValueChange = { typed = it },
-                        singleLine = true,
-                        placeholder = {
-                            Text(stringRes(R.string.ma__wand_paste_name), fontSize = 13.sp)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                Text(
-                    text = stringRes(R.string.ma__wand_copy),
-                    color = Color(0xFFE8B15C),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .clickable { onCopyDump() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
-                Text(
-                    text = stringRes(R.string.ma__wand_yes),
-                    color = if (typed.isBlank()) Color(0x55FFFFFF) else Color(0xFF6FA85A),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .clickable(enabled = typed.isNotBlank()) {
-                            onStore(typed.trim(), null)
-                            typed = ""
-                        }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
-                Text(
-                    text = stringRes(R.string.ma__wand_cancel),
-                    color = Color(0x99FFFFFF),
-                    fontSize = 14.sp,
-                    modifier = Modifier
-                        .clickable { onDiscard() }
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                )
-            }
-
-            is MaScreenTargets.Learn.State.Caught -> {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = state.label,
-                        color = Color(0xFFECEAE3),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                    )
-                    Text(
-                        // Which app, because the term will only ever fire there and he should know
-                        // that before agreeing to it.
-                        text = stringRes(R.string.ma__wand_store_in, "app" to state.appName),
-                        color = Color(0x99FFFFFF),
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                    )
-                }
-                Text(
-                    text = stringRes(R.string.ma__wand_no),
-                    color = Color(0x99FFFFFF),
-                    fontSize = 14.sp,
-                    modifier = Modifier
-                        .clickable { onDiscard() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
-                Text(
-                    text = stringRes(R.string.ma__wand_yes),
-                    color = Color(0xFF6FA85A),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .clickable { onStore(state.label, state.appPackage) }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
-            }
-
-            else -> Unit
-        }
         Text(
-            text = stringRes(R.string.ma__wand_settings),
-            color = Color(0xFFE8B15C),
+            text = stringRes(R.string.ma__wand_dump_hint),
+            color = Color(0x99FFFFFF),
             fontSize = 13.sp,
+            maxLines = 2,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = stringRes(R.string.ma__wand_copy),
+            color = MaSand,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                .clickable { onCopyDump() }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        )
+        Text(
+            text = stringRes(R.string.ma__wand_cancel),
+            color = Color(0x99FFFFFF),
+            fontSize = 15.sp,
+            modifier = Modifier
+                .clickable { onDismiss() }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        )
+        Icon(
+            imageVector = Icons.Default.Settings,
+            contentDescription = stringRes(R.string.ma__wand_settings),
+            tint = MaSand,
             modifier = Modifier
                 .clickable { onEdit() }
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .size(22.dp),
         )
     }
 }
+
+/**
+ * Sand: this control leaves the keyboard and takes you somewhere.
+ *
+ * One meaning, one colour, everywhere — the same discipline as the recording red. A person should be
+ * able to learn it once from any screen and read it on every other.
+ */
+private val MaSand = Color(0xFFE8B15C)

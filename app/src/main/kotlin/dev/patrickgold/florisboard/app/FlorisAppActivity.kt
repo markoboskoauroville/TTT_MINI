@@ -202,8 +202,16 @@ class FlorisAppActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             if (!resumed) {
                 resumed = true
+                // A deep link wins over the bookmark, always. Something asked for a particular
+                // screen — the wand's gear asks for the wand's list — and restoring wherever the
+                // settings were last left would answer a different question and look like the link
+                // is broken. The bookmark is for opening the settings with nothing in mind.
+                val askedFor = (resumeContext as? android.app.Activity)?.intent
+                    ?.takeIf { it.action == android.content.Intent.ACTION_VIEW }
+                    ?.data?.toString()
+                    ?.startsWith("ui://florisboard/") == true
                 val last = MaSettingsResume.lastPath(resumeContext)
-                if (last != MaSettingsResume.DEFAULT_PATH) {
+                if (!askedFor && last != MaSettingsResume.DEFAULT_PATH) {
                     runCatching {
                         navController.navigate(
                             android.net.Uri.parse("ui://florisboard/" + last),
