@@ -420,3 +420,52 @@ deprecated anyway.
 6. **Shape** (§8) — the big one, and it wants §7 finished first.
 7. **New copy row** (§5) — self-contained, can slot in anywhere.
 8. **Configurable symbol row** (§6) — last, alone, because it touches upstream layout code.
+
+---
+
+# 9. The Switchboard, three fixes
+
+## Rename: Magic Finger row
+
+"Magic button row" becomes **Magic Finger row**. His name for it, and the more distinctive one — the
+app already has a great many buttons and only one finger.
+
+Rename everywhere it faces the user: the switchboard line, the settings entry, the screen title, the
+row's own switch. Not in the code, where `MaMagic*` is fine and renaming files would cost a large
+diff for nothing.
+
+## Nothing shows what is tappable
+
+The names open settings and the switches toggle, and **the screen gives no sign which is which**. He
+built the row and still could not tell by looking. Two targets on one line is only safe when the
+targets look different, and here they do not.
+
+The fix is the rule the app already uses: **sand means this takes you somewhere**, established in
+build 76 for the wand's gear. Apply it here — the names in sand, so a tappable name reads as a link
+rather than as a label that happens to respond.
+
+The summaries stay grey. They are description, not destination, and colouring them would say they go
+somewhere too.
+
+Worth noting this is the same class of mistake as the drag handle that was really an edit button: a
+control that is present, correct and invisible because it looks like something else. Two of those in
+one app is a pattern rather than an accident, and the rule to take from it is that **anything
+tappable must look different from anything that is not** — not merely be tappable.
+
+## An icon on every line
+
+Every row gets a mark, matching the key it controls wherever one exists, so the switchboard reads
+like the keyboard rather than like a list of names:
+
+| Line | Icon |
+|---|---|
+| Feature row | the drag handle it already uses in the settings list |
+| Magic Finger row | the finger — same mark as the key and the settings entry |
+| Copy buckets | the paste mark from Paste timing |
+| Suggestion row | the spellcheck mark from Word predictions |
+| Number row | **the 1N keyboard glyph** from the note above, once that lands |
+
+The number row is the interesting one: it should carry the same little-keyboard glyph the zone key
+carries, so the switch and the key are visibly the same thing. That ties this note to the zone-key
+note above — do them together and both are better, do them apart and the icon has to be chosen
+twice.
