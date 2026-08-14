@@ -241,3 +241,182 @@ room, since the numeral was sized for one character and there is space beside it
 
 Worth keeping the numeral first, in that order. He has learned the positions by number, and a face
 reading `N1` would be a different key to relearn rather than the same key better labelled.
+
+---
+
+# The big batch — everything from the 14 August session
+
+Written from Marko's screenshots and dictation. No code. Ordered by what unblocks what, not by the
+order he said them.
+
+---
+
+## 1. Re-transcribe from the History screen
+
+**What is wrong.** The top entry in his history reads *"Transcription failed — re-transcribe to
+retry"* and there is no button to do it. The instruction names an action the screen does not offer.
+
+**What to add**, per row: a re-transcribe control, and a language beside it.
+
+The language matters more than it looks and he has hit it twice now. If the app was set to Croatian
+while he spoke English, the transcript is wrong and re-running it in the same language reproduces
+the same wrong answer. The keyboard's history panel already grew a language badge for exactly this
+in build 46; the settings History screen never did. Same fix, other screen.
+
+**Cheap, because the machinery exists.** `retranscribeHistoryEntry` already resolves the language
+through `MaLanguage.active()` at the moment it sends, so setting the language and pressing replay is
+all it takes. This is wiring, not new capability.
+
+**Failed rows first.** They are the ones with nothing to lose and the ones carrying the instruction.
+
+---
+
+## 2. Restore keys, and move Grant all-files access into setup
+
+**Restore is missing.** The screen has BACK UP KEYS and no way back. He said it plainly several
+sessions ago — *"why do I store keys for next installation when I cannot get it? We locked ourselves
+out of our own house."* Backup without restore is bookkeeping.
+
+The backup already lands at `Documents/TTTmini/keys.txt`, which survives uninstall. Restore is
+importing from that known path, and the importer already exists — with the provider mis-assignment
+bug fixed in build 81, so a restore now puts each key where it belongs.
+
+**Grant all-files access does not belong on this screen.** It is a permission, and permissions belong
+in setup beside the microphone. By the time somebody is on the API keys screen wanting their keys
+back, being told to go and grant a permission first is being told the door was locked after walking
+to it.
+
+**Sequence it in setup:** microphone, then all-files, then offer to restore keys from the backup
+immediately — because at that moment the permission is fresh and the file is exactly where the app
+put it.
+
+---
+
+## 3. Backup, restore and reset for settings
+
+At the very top of the settings, three controls:
+
+- **Backup** — write every preference to the same folder as the keys, `Documents/TTTmini/`.
+- **Restore** — read them back.
+- **Reset** — everything to shipped defaults, as it arrived.
+
+Same folder as the keys on purpose: one permission grant covers both, and one folder is one thing to
+remember when moving to a new phone.
+
+**Reset needs a confirmation and reset needs to be honest** about what it does not undo — it cannot
+bring back API keys, and it should say so rather than appear to have destroyed them.
+
+---
+
+## 4. Check the key before recording, not after
+
+**Today:** he records, it uploads, it fails, and he learns there was no key. The recording is spent
+and he has to re-transcribe.
+
+**Instead:** before the microphone opens, check a usable key exists for the active provider. If not,
+refuse immediately with a message that carries a button **straight to the API keys screen** — not to
+the settings, to the screen.
+
+Cheap to check, and it saves the worst kind of failure: one where the user did everything right and
+lost the work anyway.
+
+Less likely once §2 lands, but "less likely" is not "cannot happen" — a key can expire, be deleted,
+or be rejected between one sentence and the next.
+
+---
+
+## 5. The new copy row
+
+Scrap the old one. The new row is a text editor for the field in front, laid out like the transport
+controls on a media player, which is a shape everybody already reads.
+
+| Control | What it does |
+|---|---|
+| ⏮ / ⏭ | jump one word back / forward |
+| **Shift** | a **locking toggle** — press once and it stays down |
+| cut / copy / paste | the obvious three |
+| select all | |
+| delete | as on the keyboard |
+
+**The lock is the good idea in this.** With Shift locked, the skip buttons stop moving the cursor and
+start *selecting*. So selecting three words is: lock, skip, skip, skip. No dragging on glass, no
+handles to miss, which for someone working by voice on a phone is the difference between editing and
+not bothering.
+
+Worth stating: this makes the copy row the first thing in the app that is a **text editor** rather
+than a set of shortcuts. The buckets paste, this one *edits*.
+
+---
+
+## 6. The symbol row becomes configurable
+
+The `Z X C V B N M` row carries symbols on long press — `* " ' : ; ! ?`. He wants each of those
+long-press slots replaceable with **anything from the feature row**, and the chosen thing's symbol
+drawn on the key so he can see what is there.
+
+*"It is like a keyboard button and feature row in one."*
+
+**This is the most invasive item in the batch and should be last.** The others add screens and rows;
+this one reaches into FlorisBoard's key layout and popup system, which is upstream code the app has
+otherwise left alone. Worth doing — it is a genuinely new idea, and the long-press slots are wasted
+space at the moment — but not worth doing in the same build as anything else.
+
+---
+
+## 7. TRANSCRIPTION — one settings entry for the whole subject
+
+A new entry, named in capitals as he asked, gathering everything about turning speech into text and
+then working on that text. **Moved rather than copied** — the point is one place, and leaving the old
+entries behind would make two.
+
+What belongs in it:
+
+- Word predictions (moves from its own entry)
+- The transcription model, cloud and local
+- **Download the local model** — Parakeet TDT v3, 25 languages, ~670 MB
+- Translation, when it exists
+- **Shape** — see below
+
+The organising idea: *anything that recognises or then modifies the transcribed text*. That is a
+real category rather than a folder, which is why it will still make sense after three more features
+land in it.
+
+---
+
+## 8. Shape — prompts applied to text already transcribed
+
+The biggest of these, and the one the AssemblyAI research already cleared the way for.
+
+**How it works.** Text is already in the box. He presses **Shape**, picks a prompt, and the text is
+replaced by the model's version of it — grammar fixed, tone changed, translated, whatever the prompt
+says.
+
+**Where the button lives.** On the pinned line at the bottom — the free strip beside the pin from the
+note above. It appears when there is finished text to work on and costs nothing when there is not.
+
+**The prompt library:** twenty slots, four across and five down. Each slot has a **title** and a
+**prompt box**. The title is what he presses; the prompt is what gets sent.
+
+**Model choice:** a radio button per model, one selected. Through AssemblyAI's LLM Gateway, so
+Claude and the rest are reachable on the AssemblyAI key alone — no second credential, no second bill.
+This is why the Gemini and Anthropic providers can go: not because the models are unwanted, but
+because they arrive by a better road.
+
+**After the fact, by design.** The text is sent as text, not as audio, and only when he asks. That is
+the whole point of the Gateway over the transcription-time summarisation, which AssemblyAI has
+deprecated anyway.
+
+---
+
+## Suggested order
+
+1. **Restore keys + setup permissions** (§2) — unblocks fresh installs, and everything else assumes
+   keys are present.
+2. **Key check before recording** (§4) — small, and stops the worst failure.
+3. **History re-transcribe + language** (§1) — wiring only, high daily value.
+4. **Settings backup/restore/reset** (§3) — same folder, same permission as §2.
+5. **TRANSCRIPTION grouping** (§7) — do the move before adding Shape to it, or Shape lands in the
+   wrong place and has to be moved twice.
+6. **Shape** (§8) — the big one, and it wants §7 finished first.
+7. **New copy row** (§5) — self-contained, can slot in anywhere.
+8. **Configurable symbol row** (§6) — last, alone, because it touches upstream layout code.
