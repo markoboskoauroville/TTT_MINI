@@ -63,6 +63,13 @@ fun rememberPopupUiController(
 val ExceptionsForKeyCodes = listOf(
     KeyCode.ENTER,
     KeyCode.LANGUAGE_SWITCH,
+    // Marko: hold either switcher and the layouts are listed, so a view is one hold away
+    // instead of a walk. Extended popups are otherwise refused to any key whose code sits
+    // below SPACE, which is every system key — these three are named back in.
+    // Basic popups stay refused, so the faces do not sprout a preview bubble.
+    KeyCode.VIEW_CHARACTERS,
+    KeyCode.VIEW_SYMBOLS,
+    KeyCode.VIEW_SYMBOLS2,
     KeyCode.IME_UI_MODE_TEXT,
     KeyCode.IME_UI_MODE_MEDIA,
     KeyCode.IME_UI_MODE_CLIPBOARD,

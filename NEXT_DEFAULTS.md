@@ -7,13 +7,21 @@ reissued. This is the working menu — everything below this section is the deta
 
 | # | Feature | Size |
 |---|---|---|
-| 1 | Paste timing defaults: 0, 500, 0 — and fix the on-screen advice that contradicts them | tiny |
-| 2 | Settings order defaults, as he arranged them | tiny |
-| 3 | Three more magic defaults: `Use Image URL`, `Add URL`, `Generate Images` | tiny |
+| ~~1~~ | ~~Paste timing defaults: 0, 500, 0~~ — **done, and it was already done**: the prefs shipped 0/500/0 and the screen already advises raising step 2. The list was stale. | — |
+| ~~2~~ | ~~Settings order defaults~~ — **done, and it was already done**: `MaSettingsOrder.DEFAULT` already matched his thirteen exactly. | — |
+| ~~3~~ | ~~Three more magic defaults~~ — **shipped**: `Use Image URL` (url), `Add URL` (+url), `Generate Images` (gen), unscoped. **See the caveat below.** | — |
 | 4 | Check a key exists **before** recording, with a button straight to the API keys screen | small |
 | 5 | Restore keys — the button missing beside Back up | small |
 | 6 | Re-transcribe from the History screen, with a language beside it | small |
 | 7 | Switchboard: rename to Magic Finger row, sand for tappable names, an icon per line | small |
+
+**Caveat on 3, and a small job it creates.** `defaults()` is only ever reached through
+`parse(raw).ifEmpty { defaults() }`, so a new default reaches a **fresh install only**. Marko already
+has a stored target list, so the three new terms will not appear on his phone; the only route today
+is the Reset button on the Magic button screen, which discards anything he has taught. **Worth
+building: a one-time merge that appends missing built-in defaults to an existing list, guarded by a
+"defaults merged up to version N" flag.** Small, and it makes every future default actually arrive.
+
 
 **Needs a decision or a permission flow**
 
@@ -749,12 +757,25 @@ is one possible pair among many, and which pair he wants changes with what he is
 
 ## What exists and what does not
 
-**Long press already works** on keys in this app, so that third gesture is wiring rather than new
-capability.
+**Long press now opens the list — built, not yet confirmed on the phone.** Every view-switcher key
+in `charactersMod`, `symbolsMod` and `symbols2Mod` carries a popup listing the three text views, and
+`VIEW_CHARACTERS`, `VIEW_SYMBOLS`, `VIEW_SYMBOLS2` were added to `ExceptionsForKeyCodes` in
+`PopupUiController.kt`. That list is the gate: extended popups are refused to any key whose code
+sits below `SPACE`, which is every system key, and that refusal was why holding a switcher did
+nothing. Basic popups stay refused, so no preview bubble appears over the faces.
 
-**Swipe up and down on a specific key does not.** FlorisBoard has a gesture system, but it is built
-around swipe-on-the-whole-keyboard actions and long-press popups, not per-key vertical swipes. This
-is the part that needs real work and the reason this is not a small feature.
+**This is navigation, not slots.** Holding a switcher and choosing takes you to that view; the key
+does not remember. Slot memory and the face reading from a preference are still open, and are the
+real §25.
+
+**Numeric and phone are deliberately absent from the list.** `VIEW_NUMERIC`'s face is the two-line
+string `1 2\n3 4`, which is a key face rather than a list entry. Adding those views wants a
+single-line face first, and that face cannot simply be changed in `strings_dont_translate.xml`
+because the same string draws the real numeric key.
+
+**Swipe up and down on a specific key does not exist.** FlorisBoard has a gesture system, but it is
+built around swipe-on-the-whole-keyboard actions and long-press popups, not per-key vertical swipes.
+This is the part that needs real work and the reason this is not a small feature.
 
 **Suggested fallback if per-key swipe proves awkward:** long press opens the picker, and that alone
 delivers most of the value. Swipe is the refinement, not the feature.

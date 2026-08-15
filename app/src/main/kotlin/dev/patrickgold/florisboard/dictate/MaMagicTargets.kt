@@ -83,11 +83,28 @@ object MaMagicTargets {
      * They belong to no app on purpose. The button labels are Claude's, but "Send" and "Copy
      * message" are what dozens of apps call those controls, so scoping them to one package would
      * make them useless everywhere else for no gain.
+     *
+     * The imgtoimg workflow, added as three more defaults: use URL, paste, add, generate.
+     *
+     * Shipped as one group because they are one workflow rather than three keys — the first opens
+     * the dialog, the second confirms it, the third starts the render. Shipping any one without the
+     * others leaves him reaching for the screen halfway through, which is the reaching this feature
+     * exists to remove.
+     *
+     * `Generate Images` is stored without the number that follows it on screen. That number is the
+     * coin cost and changes with the model, so a term carrying it would break the day he switches
+     * away from Nano Banana Pro. Phrase matching finds the characters inside the longer label.
+     *
+     * Unscoped, like the three above. These belong to a web page rather than an app, so pinning them
+     * to Firefox would break the moment he opens the same site in another browser.
      */
     fun defaults(): List<Target> = listOf(
         Target(term = "Copy message", label = "copy"),
         Target(term = "Stop responding", label = "stop"),
         Target(term = "Send", label = "send"),
+        Target(term = "Use Image URL", label = "url"),
+        Target(term = "Add URL", label = "+url"),
+        Target(term = "Generate Images", label = "gen"),
     )
 
     /** What the wand actually searches, in order. Unticked terms are absent, not empty strings. */
