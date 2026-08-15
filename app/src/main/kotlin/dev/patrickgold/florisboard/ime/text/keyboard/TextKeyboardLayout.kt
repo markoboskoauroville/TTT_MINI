@@ -359,10 +359,19 @@ private fun TextKeyButton(
             if (key.computedData.code == KeyCode.SPACE) {
                 val prefs by FlorisPreferenceStore
                 val spaceBarMode by prefs.keyboard.spaceBarMode.collectAsState()
+                // The spacebar wears the spacebar mark and nothing else.
+                //
+                // The language was the widest label on the board and the one nobody needs to read,
+                // because nobody hunts for the spacebar. U+23B5, the bottom square bracket, is the
+                // shape every keyboard has used for this key for fifty years.
+                //
+                // NOTHING still means nothing, for anyone who wants a bare bar. The other two modes
+                // both draw the mark, so this does not depend on which one happens to be stored —
+                // an install that has been running since before this change gets the same keyboard
+                // as a fresh one.
                 when (spaceBarMode) {
                     SpaceBarMode.NOTHING -> return@let
-                    SpaceBarMode.CURRENT_LANGUAGE -> {}
-                    SpaceBarMode.SPACE_BAR_KEY -> customLabel = "␣"
+                    else -> customLabel = "\u23B5"
                 }
             }
             // The language sits in the spacebar's bottom-left corner rather than in the middle.
@@ -371,11 +380,9 @@ private fun TextKeyButton(
             // and it is the one label nobody needs to read, because nobody hunts for the spacebar.
             // In the corner it is still there to be checked and no longer competing for attention.
             // Marko's word for what it should be was chameleon.
-            val alignment = when {
-                isTelPadKey -> BiasAlignment(-0.5f, 0f)
-                key.computedData.code == KeyCode.SPACE -> BiasAlignment(-0.86f, 0.62f)
-                else -> Alignment.Center
-            }
+            // Centred again. The corner was for a label long enough to be in the way; a single
+            // mark is not, and a lone glyph pushed into a corner reads as a mistake.
+            val alignment = if (isTelPadKey) BiasAlignment(-0.5f, 0f) else Alignment.Center
             SnyggText(
                 modifier = Modifier
                     .wrapContentSize()
