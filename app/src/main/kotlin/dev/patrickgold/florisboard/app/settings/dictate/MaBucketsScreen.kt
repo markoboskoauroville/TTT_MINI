@@ -93,7 +93,9 @@ fun MaBucketsScreen() = FlorisScreen {
         )
         Text(
             text = "If a key does nothing in some app, or empties the field without filling it, " +
-                "raise the wait before the paste first. That is the step that gets dropped. AC " +
+                "raise step 2 first. It is the only step where the field has real work to do and " +
+                "this app is waiting on it; the other two follow calls that have already " +
+                "returned. AC " +
                 "stops after the delete, so the third wait does not affect it.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -117,7 +119,7 @@ fun MaBucketsScreen() = FlorisScreen {
         MaDelayRow(
             step = "3",
             title = "Before paste",
-            summary = "The one that matters most \u2014 raise this first if a bucket misbehaves",
+            summary = "Usually needs nothing. AC never uses it, since AC stops after the delete",
             pref = prefs.dictate.maClipDelayPaste,
         )
 

@@ -82,7 +82,7 @@ fun MaSwitchboardScreen() = FlorisScreen {
             route = Routes.Settings.MaFeatureRow,
         )
         MaSwitchRow(
-            title = "Magic button row",
+            title = "Magic Finger row",
             summary = "The magic button and one key for each thing it presses",
             pref = prefs.dictate.maMagicRowShown,
             route = Routes.Settings.MaMagic,

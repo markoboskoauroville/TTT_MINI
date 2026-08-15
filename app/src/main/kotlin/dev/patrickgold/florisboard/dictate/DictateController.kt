@@ -998,6 +998,28 @@ object DictateController {
      */
     private fun startRecording(context: Context, seedAccumulatedMs: Long = 0L) {
         if (_state.value is UiState.Recording) return
+
+        // Refuse before the microphone opens rather than after the upload fails.
+        //
+        // Without this he speaks a whole sentence, waits for it to go up, and only then learns there
+        // was no key — with the recording spent and a re-transcribe needed to recover it. The check
+        // costs one read of the stored account and turns the worst kind of failure, where he did
+        // everything right and lost the work anyway, into a message before any work is done.
+        //
+        // The error carries OPEN_SETTINGS, which already exists for exactly this and lands on the
+        // provider screen rather than the top of the settings.
+        // No key AND no local model. Both are checked because forceLocal is decided when he stops
+        // rather than when he starts — holding send picks the on-device engine — so refusing on a
+        // missing key alone would block a recording he intended to transcribe offline.
+        val noKey = transcriptionAccount().apiKey.isBlank()
+        val noLocalModel = LocalModelManager.installedIds(context.applicationContext).isEmpty()
+        if (noKey && noLocalModel) {
+            _state.value = UiState.Error(
+                message = context.getString(R.string.dictate__error_no_key_before_recording),
+                action = ErrorAction.OPEN_SETTINGS,
+            )
+            return
+        }
         // Starting a fresh recording supersedes any kept audio (a failed retry or an interrupted
         // recording the user chose not to send), so drop it instead of leaving a stale offer behind.
         // A continuation keeps its carry-over (seeded above), so only drop it for a normal start.

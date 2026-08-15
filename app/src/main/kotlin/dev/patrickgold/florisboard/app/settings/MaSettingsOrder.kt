@@ -56,19 +56,19 @@ object MaSettingsOrder {
      * any other and somebody who wants it at the top should be able to drag it there.
      */
     val DEFAULT: List<MaSettingsEntry> = listOf(
+        MaSettingsEntry.SETTINGS_ORDER,
         MaSettingsEntry.BUCKETS,
         MaSettingsEntry.SWITCHBOARD,
-        MaSettingsEntry.FEATURE_ROW,
         MaSettingsEntry.MAGIC,
+        MaSettingsEntry.FEATURE_ROW,
         MaSettingsEntry.KEYS,
-        MaSettingsEntry.VOCABULARY,
         MaSettingsEntry.RECORDING,
-        MaSettingsEntry.PREDICTIONS,
         MaSettingsEntry.MAPPINGS,
         MaSettingsEntry.OUTPUT,
         MaSettingsEntry.HISTORY,
         MaSettingsEntry.RECOVERED,
-        MaSettingsEntry.SETTINGS_ORDER,
+        MaSettingsEntry.VOCABULARY,
+        MaSettingsEntry.PREDICTIONS,
     )
 
     val DEFAULT_RAW: String = serialize(DEFAULT)

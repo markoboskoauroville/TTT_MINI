@@ -1104,15 +1104,15 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
         val maClipDelaySelect = int(
             key = "dictate__ma_clip_delay_select",
-            default = 200,
+            default = 0,
         )
         val maClipDelayDelete = int(
             key = "dictate__ma_clip_delay_delete",
-            default = 200,
+            default = 500,
         )
         val maClipDelayPaste = int(
             key = "dictate__ma_clip_delay_paste",
-            default = 200,
+            default = 0,
         )
 
         val maScrollPages = int(
