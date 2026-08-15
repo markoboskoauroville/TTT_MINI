@@ -124,26 +124,6 @@ object DefaultComputingEvaluator : ComputingEvaluator {
     override fun slotData(data: KeyData): KeyData? = null
 }
 
-private var cachedDisplayNameState = Triple(FlorisLocale.ROOT, DisplayLanguageNamesIn.SYSTEM_LOCALE, "")
-
-/**
- * Compute language name with a cache to prevent repetitive calling of `locale.displayName()`, which invokes the
- * underlying `LocaleNative.getLanguageName()` method and in turn uses the rather slow ICU data table to look up the
- * language name. This only caches the last display name, but that's more than enough, as a one-time re-computation when
- * the subtype changes does not hurt, the repetitive computation for the same language hurts.
- */
-private fun computeLanguageDisplayName(locale: FlorisLocale, displayLanguageNamesIn: DisplayLanguageNamesIn): String {
-    val (cachedLocale, cachedDisplayLanguageNamesIn, cachedDisplayName) = cachedDisplayNameState
-    if (cachedLocale == locale && cachedDisplayLanguageNamesIn == displayLanguageNamesIn) {
-        return cachedDisplayName
-    }
-    val displayName = when (displayLanguageNamesIn) {
-        DisplayLanguageNamesIn.SYSTEM_LOCALE -> locale.displayName()
-        DisplayLanguageNamesIn.NATIVE_LOCALE -> locale.displayName(locale)
-    }
-    cachedDisplayNameState = Triple(locale, displayLanguageNamesIn, displayName)
-    return displayName
-}
 
 fun ComputingEvaluator.computeLabel(data: KeyData): String? {
     val evaluator = this
@@ -157,9 +137,18 @@ fun ComputingEvaluator.computeLabel(data: KeyData): String? {
             KeyCode.PHONE_WAIT -> evaluator.context()?.getString(R.string.key__phone_wait)
             KeyCode.SPACE, KeyCode.CJK_SPACE -> {
                 when (evaluator.keyboard.mode) {
-                    KeyboardMode.CHARACTERS -> evaluator.subtype.primaryLocale.let { locale ->
-                        computeLanguageDisplayName(locale, evaluator.displayLanguageNamesIn())
-                    }
+                    // Two lowercase letters, not "English (United States)".
+                    //
+                    // The full display name is the widest label on the keyboard and says almost
+                    // nothing: Marko types in two languages and needs to know which one, not which
+                    // country's spelling of it. "en" and "hr" answer that, and lowercase keeps them
+                    // quiet — the spacebar is the one key nobody needs to read before pressing, so
+                    // its label should be available rather than loud.
+                    //
+                    // The language tag rather than the display name, so it is short in every
+                    // language including the ones this app has never seen. A display name shortened
+                    // by truncation would read as "Engli…" somewhere.
+                    KeyboardMode.CHARACTERS -> evaluator.subtype.primaryLocale.language.lowercase()
                     else -> null
                 }
             }
