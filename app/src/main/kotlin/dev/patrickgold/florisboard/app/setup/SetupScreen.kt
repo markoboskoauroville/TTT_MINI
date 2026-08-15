@@ -415,9 +415,19 @@ private fun FlorisStepLayoutScope.ProviderSetupStep(
         StepText(note)
     }
     Spacer(modifier = Modifier.height(4.dp))
+    // Naming the two that matter, and what stops working without each.
+    //
+    // The step used to name three providers and say what each one does, which reads as background
+    // rather than as a requirement. Somebody finishing setup with only a transcription key has a
+    // working app right up to the moment they press Ctrl+P, and then gets an error about a missing
+    // key for a feature they did not know needed a second one. Better said here, once, before the
+    // file is even chosen.
     StepText(
-        "AssemblyAI does the transcribing, Anthropic does the rewording, Gemini is an optional " +
-            "second engine. All of this can be changed later under API keys."
+        "You want two keys in that file:\n\n" +
+            "AssemblyAI — the transcribing. Without it, dictation cannot work at all.\n\n" +
+            "Anthropic (Claude) — the proofreading and rewording, including Ctrl+P. Without it, " +
+            "dictation still works and Ctrl+P shows an error.\n\n" +
+            "Gemini is an optional second engine. All of this can be changed later under API keys."
     )
 
     TextButton(

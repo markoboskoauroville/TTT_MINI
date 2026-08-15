@@ -936,3 +936,49 @@ as a gap to fill.
 system through `adjustSuggestedStreamVolume`. That is the user pressing a volume key and getting a
 volume change — the opposite of the app deciding something about somebody else's playback — and he
 asked for it by name in build 111.
+
+---
+
+# 30. Ctrl+P, proofreading — and the correction to §28
+
+## Ctrl+P
+
+Bound in `maHandleCtrlCombo` alongside the clipboard and undo shortcuts, and taken deliberately: it
+used to fall through to a real ctrl+P event, which means print on a desktop and nothing on a phone.
+
+It goes through `DictateController.applyPrompt` with a throwaway `PromptModel` from `MaProofread` —
+the same path the prompt library and the wand already use, so the network call, the key ring walk,
+the stop button and the no-key error that opens settings were all already built and tested.
+`requiresSelection = true` gives the right behaviour for free: correct the selection, or select the
+whole field and correct that.
+
+**The instruction is mostly prohibitions.** A model asked to correct will rewrite — shortening,
+formalising, dropping deliberate repetition — and a paragraph that comes back reading better but no
+longer sounding like him is worse than a missing comma, because it is harder to notice. It also
+names no language, since naming English would translate his Croatian.
+
+**Not yet done: pinning it to a model.** Ctrl+P uses whatever the rewording provider is set to. He
+asked for Claude Sonnet specifically, and the honest state is that this respects his setting rather
+than forcing one. Forcing a provider per prompt means an override threaded through `requestRewordRaw`,
+which reads the account, the ring id and the model together. **Worth building: an optional
+provider/model override on `applyPrompt`,** which would also let library prompts pick their own
+model — §18 wants exactly that, so the two should be built together.
+
+## §28 was wrong about Groq, and this is the correction
+
+**There is no `groq` provider in `ProviderRegistry`.** The ids are openai, openrouter, gemini,
+anthropic, together, deepinfra, mistral, soniox, elevenlabs, deepgram, assemblyai, assemblyai-sync,
+xai, deepseek, ollama, local, custom.
+
+What exists are references to one that is not there: `ProviderIcons` maps `"groq"` to a drawable,
+`DictateLegacyMigrator` writes accounts with `providerId = "groq"`, and `SetupScreen` declares
+`RECOMMENDED_PROVIDER_ID = "groq"` — **which is itself dead, never read anywhere**.
+
+So §28's step 2 is not "send the chunk to Groq". It is: add the Groq preset to the registry, get a
+key into the ring, wire and test the Whisper endpoint, and only then detect. Sizing it as medium was
+wrong.
+
+**Worth considering instead:** OpenAI runs Whisper on the same OpenAI-compatible shape and is already
+a registered provider with a key slot. Same one call, same returned language field, none of the new
+provider work. The clamp and the two-signal rule from §28 are unchanged either way — they read a
+language string and a transcript, and do not care who produced them.

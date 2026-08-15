@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import dev.patrickgold.florisboard.dictate.DictateController
+import dev.patrickgold.florisboard.dictate.MaProofread
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -578,6 +579,18 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             'v' -> editorInstance.performClipboardPaste()
             'z' -> if (shift) editorInstance.performRedo() else editorInstance.performUndo()
             'y' -> editorInstance.performRedo()
+            // Ctrl+P: proofread what is in the field, or what is selected in it.
+            //
+            // Taken deliberately, so it no longer falls through to a real ctrl+P key event. Ctrl+P
+            // means print on a desktop, and there is nothing on a phone that answers it, so the
+            // event this replaces did nothing in every app he uses.
+            //
+            // It goes through applyPrompt, which is the same path the prompt library and the wand
+            // already use: selection if there is one, otherwise select the whole field so he can
+            // see what is about to change. That reuse is the point — the network call, the key
+            // ring walk, the stop button, and the error that opens settings when no key is set are
+            // all already built and already tested here.
+            'p' -> DictateController.applyPrompt(appContext, MaProofread.prompt())
             else -> {
                 val androidCode = when (ch) {
                     in 'a'..'z' -> KeyEvent.KEYCODE_A + (ch - 'a')

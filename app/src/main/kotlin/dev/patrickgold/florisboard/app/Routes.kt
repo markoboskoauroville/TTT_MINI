@@ -65,6 +65,7 @@ import dev.patrickgold.florisboard.app.settings.dictate.DictateKeysScreen
 import dev.patrickgold.florisboard.app.settings.MaSettingsOrderScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaMagicScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaVoiceCommandsScreen
+import dev.patrickgold.florisboard.app.settings.dictate.MaShortcutsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPredictionsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaSwitchboardScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaBucketsScreen
@@ -158,6 +159,10 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictate/voice-commands")
         object MaVoiceCommands
+
+        @Serializable
+        @Deeplink("settings/dictate/shortcuts")
+        object MaShortcuts
 
         @Serializable
         @Deeplink("settings/dictate/predictions")
@@ -401,6 +406,7 @@ object Routes {
             composableWithDeepLink(Settings.MaBuckets::class) { MaBucketsScreen() }
             composableWithDeepLink(Settings.MaMagic::class) { MaMagicScreen() }
             composableWithDeepLink(Settings.MaVoiceCommands::class) { MaVoiceCommandsScreen() }
+            composableWithDeepLink(Settings.MaShortcuts::class) { MaShortcutsScreen() }
             composableWithDeepLink(Settings.MaPredictions::class) { MaPredictionsScreen() }
             composableWithDeepLink(Settings.MaSwitchboard::class) { MaSwitchboardScreen() }
             composableWithDeepLink(Settings.MaSettingsOrder::class) { MaSettingsOrderScreen() }
