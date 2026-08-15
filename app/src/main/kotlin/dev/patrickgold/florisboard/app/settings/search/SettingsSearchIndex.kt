@@ -124,7 +124,6 @@ object SettingsSearchIndex {
         SettingsSearchEntry(R.string.dictate__realtime_title, R.string.dictate__recording_group, Routes.Settings.DictateRecording, parentRes = R.string.dictate__title, anchor = "dictate__realtime_title"),
         SettingsSearchEntry(R.string.dictate__longform_title, R.string.dictate__recording_group, Routes.Settings.DictateRecording, parentRes = R.string.dictate__title, anchor = "dictate__longform_title"),
         SettingsSearchEntry(R.string.dictate__smart_turn_title, R.string.dictate__recording_group, Routes.Settings.DictateRecording, parentRes = R.string.dictate__title, anchor = "dictate__longform_title"),
-        SettingsSearchEntry(R.string.dictate__audio_focus_title, R.string.dictate__recording_group, Routes.Settings.DictateRecording, parentRes = R.string.dictate__title, anchor = "dictate__audio_focus_title"),
         SettingsSearchEntry(R.string.dictate__bluetooth_mic_title, R.string.dictate__recording_group, Routes.Settings.DictateRecording, parentRes = R.string.dictate__title, anchor = "dictate__bluetooth_mic_title"),
         SettingsSearchEntry(R.string.dictate__audio_source_title, R.string.dictate__recording_group, Routes.Settings.DictateRecording, parentRes = R.string.dictate__title, anchor = "dictate__audio_source_title"),
         SettingsSearchEntry(R.string.dictate__keep_screen_awake_title, R.string.dictate__recording_group, Routes.Settings.DictateRecording, parentRes = R.string.dictate__title, anchor = "dictate__keep_screen_awake_title"),

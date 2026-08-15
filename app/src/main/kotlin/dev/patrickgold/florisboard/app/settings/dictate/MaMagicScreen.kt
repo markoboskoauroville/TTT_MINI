@@ -37,6 +37,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,6 +84,31 @@ fun MaMagicScreen() = FlorisScreen {
         fun commit(next: List<MaMagicTargets.Target>) {
             targets = next
             scope.launch { prefs.dictate.maMagicTargets.set(MaMagicTargets.serialize(next)) }
+        }
+
+        // Bring an existing list up to the current crop of built-ins, once.
+        //
+        // Here rather than at app start because this is the screen where the change is visible. A
+        // list that quietly grew two entries while he was somewhere else is a list that looks like
+        // it changed itself; arriving on the screen that shows the terms means the new ones are
+        // simply there, in front of him, the first time he looks.
+        //
+        // LaunchedEffect keyed to Unit so it runs on entry and not on every recomposition, and the
+        // version is written whether or not anything was added — the flag records that the offer
+        // was made, not that it was accepted.
+        val defaultsVersion by prefs.dictate.maMagicDefaultsVersion.collectAsState()
+        LaunchedEffect(Unit) {
+            if (defaultsVersion < MaMagicTargets.DEFAULTS_VERSION) {
+                val merged = MaMagicTargets.mergeNewDefaults(
+                    MaMagicTargets.parse(prefs.dictate.maMagicTargets.get()),
+                    defaultsVersion,
+                )
+                prefs.dictate.maMagicDefaultsVersion.set(MaMagicTargets.DEFAULTS_VERSION)
+                if (merged.isNotEmpty()) {
+                    targets = merged
+                    prefs.dictate.maMagicTargets.set(MaMagicTargets.serialize(merged))
+                }
+            }
         }
 
         // The switch that puts the row on the keyboard, above the list it draws.

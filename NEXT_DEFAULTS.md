@@ -10,9 +10,9 @@ reissued. This is the working menu — everything below this section is the deta
 | ~~1~~ | ~~Paste timing defaults: 0, 500, 0~~ — **done, and it was already done**: the prefs shipped 0/500/0 and the screen already advises raising step 2. The list was stale. | — |
 | ~~2~~ | ~~Settings order defaults~~ — **done, and it was already done**: `MaSettingsOrder.DEFAULT` already matched his thirteen exactly. | — |
 | ~~3~~ | ~~Three more magic defaults~~ — **shipped**: `Use Image URL` (url), `Add URL` (+url), `Generate Images` (gen), unscoped. **See the caveat below.** | — |
-| 4 | Check a key exists **before** recording, with a button straight to the API keys screen | small |
-| 5 | Restore keys — the button missing beside Back up | small |
-| 6 | Re-transcribe from the History screen, with a language beside it | small |
+| ~~4~~ | ~~Check a key exists before recording~~ — **already done**: `startRecording` refuses on no key AND no local model, with OPEN_SETTINGS. The list was stale. | — |
+| ~~5~~ | ~~Restore keys button~~ — **shipped, build 112.** Restore existed but fired only on a completely empty keyring, which covers a fresh install and nothing else. Now a button beside Back up, merging through the same importer. | — |
+| ~~6~~ | ~~Re-transcribe with a language beside it~~ — **already done**: the in-keyboard history panel carries the HR/ENG badge next to replay, and `retranscribeHistoryEntry` reads it through `MaLanguage.active()`. | — |
 | 7 | Switchboard: rename to Magic Finger row, sand for tappable names, an icon per line | small |
 
 **Caveat on 3, and a small job it creates.** `defaults()` is only ever reached through
@@ -55,7 +55,7 @@ building: a one-time merge that appends missing built-in defaults to an existing
 | 23 | The hardware trigger for voice commands — **not** Power, see §27 for what is possible | medium |
 | ~~24~~ | ~~Voice commands settings entry~~ — **shipped**, build 111. Documents the commands; the trigger choice joins it with 23. | — |
 | 26 | **Groq language detection on the first 5 seconds** — see §28. The one he asked for. | medium |
-| 25 | Merge new built-in defaults into a list that already exists, once, behind a flag (see the caveat on 3) | small |
+| ~~25~~ | ~~Merge new built-in defaults into an existing list~~ — **shipped, build 112.** `MaMagicTargets.mergeNewDefaults` plus a version high-water mark; runs when the Magic finger screen opens. Raise `DEFAULTS_VERSION` whenever a default is added. | — |
 
 **Notes on order**
 
@@ -906,3 +906,33 @@ Detection is an improvement on the manual setting, never a precondition for dict
 was written when volume down toggled the language on a short press, which made an automatic write
 and an accidental write indistinguishable. Since build 111 the language only moves on a long press,
 so a badge that changes by itself now means exactly one thing.
+
+---
+
+# 29. Audio focus: removed, and not to be rebuilt
+
+Recording used to take `AUDIOFOCUS_GAIN_TRANSIENT` with `USAGE_VOICE_COMMUNICATION`, behind a
+`dictate__audio_focus` preference that defaulted **on**. Two things followed from that, and both were
+wrong:
+
+- Every other player on the phone was asked to duck or pause whenever he started dictating.
+- The focus listener **paused his recording** whenever another app took focus back.
+
+With MA Reader playing in the background and something else starting up, those two rules met: each
+program politely stopping for the other, which is why the behaviour read as backwards rather than
+merely unwanted.
+
+**Removed entirely**, not defaulted off: the request, the listener, the preference, the settings
+toggle, the settings-search entry, the legacy migration and the legacy key. Six files. Nothing
+replaces it.
+
+**Do not rebuild this.** Marko's instruction is that anything playing keeps playing, the way it does
+in a browser, and that no code should exist which reacts to what another app is doing with audio.
+This app records through the microphone; it has no business holding the phone's audio session. A
+future "pause music while recording" request should be read as a request to change *his* mind, not
+as a gap to fill.
+
+**Not covered by this:** the short press on volume down, which hands a volume change back to the
+system through `adjustSuggestedStreamVolume`. That is the user pressing a volume key and getting a
+volume change — the opposite of the app deciding something about somebody else's playback — and he
+asked for it by name in build 111.

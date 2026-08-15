@@ -153,7 +153,6 @@ object DictateLegacyMigrator {
 
             // --- Recording capture toggles (roadmap 11.7). These were read from the legacy snapshot
             // but previously never written, so an upgrading user silently lost them. ---
-            prefs.dictate.audioFocus.set(s.audioFocus)
             prefs.dictate.useBluetoothMic.set(s.useBluetoothMic)
             prefs.dictate.instantRecording.set(s.instantRecording)
 

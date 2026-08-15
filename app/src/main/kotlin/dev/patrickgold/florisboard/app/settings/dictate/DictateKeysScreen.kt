@@ -467,6 +467,39 @@ fun DictateKeysScreen() = FlorisScreen {
             ) {
                 Text("BACK UP KEYS")
             }
+            // Restore by hand, which is the half that was missing.
+            //
+            // Restoring already happened on its own, but only on a keyring that was completely
+            // empty. That covers a fresh install and nothing else — and the moment that most wants
+            // this is not a fresh install: it is one dud key deleted by mistake, or a phone where
+            // one provider was set up and the rest of the file never arrived. In both, a key exists,
+            // so the automatic path stays silent and there is no way in.
+            //
+            // Merging rather than replacing, and using the same importer as the automatic path, so
+            // a key already in the ring is not duplicated and nothing already there is lost. The
+            // count tells him what actually happened, including nothing, because a button that
+            // says nothing after being pressed reads as broken.
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    scope.launch {
+                        val text = MaVault.read()
+                        if (text.isNullOrBlank()) {
+                            note = "No backup found at ${MaVault.DISPLAY_PATH}"
+                            return@launch
+                        }
+                        val result = MaKeyImport.importAll(text, accounts)
+                        note = if (result.added > 0) {
+                            prefs.dictate.providerAccounts.set(result.accounts)
+                            "Restored ${result.added} keys from ${MaVault.DISPLAY_PATH}"
+                        } else {
+                            "Backup read, nothing new to add"
+                        }
+                    }
+                },
+            ) {
+                Text("RESTORE KEYS")
+            }
         }
 
         if (note.isNotEmpty()) {

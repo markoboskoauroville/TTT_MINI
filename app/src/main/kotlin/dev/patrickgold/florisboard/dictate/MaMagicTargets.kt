@@ -83,6 +83,45 @@ object MaMagicTargets {
     fun spacer(): Target = Target(term = SPACER)
 
     /**
+     * The version of the built-in defaults a stored list has already been brought up to.
+     *
+     * Raise this by one whenever a term is added to [defaults], and every existing list gains it
+     * once. Never lower it and never reuse a number: it is a high-water mark rather than a count,
+     * so a phone that skipped three versions catches up in a single step.
+     */
+    const val DEFAULTS_VERSION = 1
+
+    /**
+     * Adds any built-in default the stored list has never been offered, once.
+     *
+     * ### The problem this exists for
+     *
+     * [defaults] was only ever reached through `parse(raw).ifEmpty { defaults() }`, which means a
+     * new default arrived on a **fresh install and nowhere else**. Marko has had a stored list for
+     * months, so three keys shipped for him in build 110 were invisible on the one phone they were
+     * written for, and the only way to see them was Reset, which throws away everything he taught.
+     * A default that cannot reach the person who asked for it is a note in a changelog, not a
+     * feature.
+     *
+     * ### Why it appends rather than reconciles
+     *
+     * A term he **deleted** must stay deleted. So this cannot ask "which defaults are missing" —
+     * that question undeletes things every time it is asked. It asks a different one: has this list
+     * ever been shown the current crop. Each built-in is therefore offered exactly once in the life
+     * of the install, and what he does with it afterwards is his.
+     *
+     * Matching is by term, case-insensitively, so a default he already added by hand is not added
+     * twice. New arrivals go on the end, so a row he has already arranged stays arranged.
+     */
+    fun mergeNewDefaults(stored: List<Target>, fromVersion: Int): List<Target> {
+        if (fromVersion >= DEFAULTS_VERSION) return stored
+        if (stored.isEmpty()) return defaults()
+        val have = stored.map { it.term.lowercase() }.toSet()
+        val additions = defaults().filter { it.term.lowercase() !in have }
+        return if (additions.isEmpty()) stored else stored + additions
+    }
+
+    /**
      * The starting list: Marko's three buttons, then the obvious neighbours.
      *
      * `generate image` deliberately stops before the coin count that follows it on imgtoimg, because

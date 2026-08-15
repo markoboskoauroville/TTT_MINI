@@ -318,11 +318,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__custom_base_url",
             default = "",
         )
-        // Pause/duck other apps' audio while recording (default on, as in the legacy Dictate).
-        val audioFocus = boolean(
-            key = "dictate__audio_focus",
-            default = true,
-        )
         // Route recording through a connected Bluetooth (SCO) microphone when available.
         val useBluetoothMic = boolean(
             key = "dictate__use_bluetooth_mic",
@@ -1061,6 +1056,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val maMagicTargets = string(
             key = "dictate__ma_magic_targets",
             default = "",
+        )
+
+        /**
+         * Which crop of built-in magic defaults this install has already been shown.
+         *
+         * Zero means never — including every install that predates this preference, which is the
+         * point: those are exactly the lists that missed everything shipped so far.
+         */
+        val maMagicDefaultsVersion = int(
+            key = "dictate__ma_magic_defaults_version",
+            default = 0,
         )
 
         /**

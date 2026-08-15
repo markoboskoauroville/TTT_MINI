@@ -203,13 +203,6 @@ fun DictateRecordingScreen() = FlorisScreen {
             )
         }
         SwitchPreference(
-            prefs.dictate.audioFocus,
-            icon = Icons.Default.VolumeOff,
-            modifier = Modifier.settingsSearchAnchor("dictate__audio_focus_title"),
-            title = stringRes(R.string.dictate__audio_focus_title),
-            summary = stringRes(R.string.dictate__audio_focus_summary),
-        )
-        SwitchPreference(
             prefs.dictate.useBluetoothMic,
             icon = Icons.Default.Bluetooth,
             modifier = Modifier.settingsSearchAnchor("dictate__bluetooth_mic_title"),

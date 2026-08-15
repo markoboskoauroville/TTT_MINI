@@ -46,7 +46,6 @@ class DictateLegacyPreferences(context: Context) {
         instantRecording = sp.getBoolean(K_INSTANT_RECORDING, false),
         instantOutput = sp.getBoolean(K_INSTANT_OUTPUT, true),
         outputSpeed = sp.getInt(K_OUTPUT_SPEED, 5),
-        audioFocus = sp.getBoolean(K_AUDIO_FOCUS, true),
         useBluetoothMic = sp.getBoolean(K_USE_BLUETOOTH_MIC, false),
         vibration = sp.getBoolean(K_VIBRATION, true),
 
@@ -106,7 +105,6 @@ class DictateLegacyPreferences(context: Context) {
         private const val K_INSTANT_RECORDING = P + "instant_recording"
         private const val K_INSTANT_OUTPUT = P + "instant_output"
         private const val K_OUTPUT_SPEED = P + "output_speed"
-        private const val K_AUDIO_FOCUS = P + "audio_focus"
         private const val K_USE_BLUETOOTH_MIC = P + "use_bluetooth_mic"
         private const val K_VIBRATION = P + "vibration"
         private const val K_THEME = P + "theme"

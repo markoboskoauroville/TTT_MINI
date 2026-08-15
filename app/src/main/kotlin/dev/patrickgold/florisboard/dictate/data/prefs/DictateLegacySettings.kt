@@ -31,7 +31,6 @@ data class DictateLegacySettings(
     val instantRecording: Boolean,
     val instantOutput: Boolean,
     val outputSpeed: Int,
-    val audioFocus: Boolean,
     val useBluetoothMic: Boolean,
     val vibration: Boolean,
 
