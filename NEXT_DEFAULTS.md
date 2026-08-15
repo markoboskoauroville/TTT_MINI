@@ -1,3 +1,59 @@
+# THE LIST
+
+Marko picks by number. When a feature is tested and working, it is struck off and the list is
+reissued. This is the working menu — everything below this section is the detail behind it.
+
+**Ready to ship, no design left**
+
+| # | Feature | Size |
+|---|---|---|
+| 1 | Paste timing defaults: 0, 500, 0 — and fix the on-screen advice that contradicts them | tiny |
+| 2 | Settings order defaults, as he arranged them | tiny |
+| 3 | Three more magic defaults: `Use Image URL`, `Add URL`, `Generate Images` | tiny |
+| 4 | Check a key exists **before** recording, with a button straight to the API keys screen | small |
+| 5 | Restore keys — the button missing beside Back up | small |
+| 6 | Re-transcribe from the History screen, with a language beside it | small |
+| 7 | Switchboard: rename to Magic Finger row, sand for tappable names, an icon per line | small |
+
+**Needs a decision or a permission flow**
+
+| # | Feature | Size |
+|---|---|---|
+| 8 | Grant all-files access moves into setup, beside the microphone | medium |
+| 9 | Accessibility onboarding: the App info → ⋮ → Allow restricted settings walk | medium |
+| 10 | Settings backup / restore / reset, same folder as the keys | medium |
+| 11 | Strip Gemini and Anthropic; one AssemblyAI key for everything | medium |
+
+**New rows and keys**
+
+| # | Feature | Size |
+|---|---|---|
+| 12 | The pinned row: move the suggestion row and recording bar **below** the keys | medium |
+| 13 | Zone keys independent of the keyboard, faces `1N` `2K` `3P` | medium |
+| 14 | The new copy row: skip by word, locking Shift that selects, cut/copy/paste/all/delete | medium |
+| 15 | Magic keys light up when their button is on screen, grey when it is not | medium |
+| 16 | View switching: `?123` cycles, long press lists, Keyboard views screen, ticked quick-cycle | large |
+
+**The big ones**
+
+| # | Feature | Size |
+|---|---|---|
+| 17 | TRANSCRIPTION settings group — move everything about text into one place | medium |
+| 18 | Shape: prompt library, 20 slots, model radio, through the LLM Gateway | large |
+| 19 | Croatian suggestions that are actually good — dictionary work, not a switch | large |
+| 20 | Wire the ONNX predictor to a real model (contract already built, build 84) | large |
+| 21 | Configurable long-press symbols on `Z X C V B N M` — touches upstream layout code | large |
+| 22 | The sequencer — see SEQUENCER_PARKED.md; needs the action-extraction refactor first | large |
+
+**Notes on order**
+
+- 17 before 18, or Shape lands in the wrong place and moves twice.
+- 8 before 5 and 10 — those need the permission.
+- 12 and 13 together; the number row's icon is the `1N` glyph.
+- 21 and 22 alone, each in its own build.
+
+---
+
 # Defaults to ship — note for the next build
 
 Not code. A record of what Marko has actually arrived at on his own phone, so the next fresh
