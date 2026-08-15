@@ -18,7 +18,6 @@ package dev.patrickgold.florisboard.dictate
 
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.subtypeManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,9 +32,13 @@ import kotlinx.coroutines.launch
  * Croatian while wanting English suggestions, and the setup where that is possible is the setup
  * where one of the two is quietly wrong and there is no way to see which.
  *
- * So there is one switch and it moves both. Setting the language here sets the transcription hint
- * and the keyboard subtype together, and every control that changes language goes through this
- * object rather than writing either of them directly.
+ * So there is one switch, and what it moves is the **dictation** language: what the speech service
+ * is told to expect. Every control that changes it goes through this object rather than writing the
+ * preference directly.
+ *
+ * It deliberately does NOT move the keyboard's own language. That was tried and was wrong: typing
+ * and speaking are two acts at two moments, and a control meant for the microphone must not relay
+ * the keys.
  *
  * Two languages, Croatian and English, because that is what this app is for. Auto-detect is not one
  * of them: it exists in the catalog for the settings screen, but the toggle deliberately cannot land
@@ -76,21 +79,22 @@ object MaLanguage {
     fun badge(): String = if (active() == EN) "ENG" else "HR"
 
     /**
-     * Sets the language for everything at once.
+     * Sets the language **the microphone is told to expect**, and nothing else.
      *
-     * The transcription hint is a preference, the suggestion language is a keyboard subtype, and
-     * they are written together here so they cannot drift. A missing subtype is not an error worth
-     * reporting: the transcription language still changes, and the suggestions simply stay where
-     * they were until the subtype exists.
+     * It used to switch the keyboard subtype at the same time, on the argument that nobody speaks
+     * Croatian while wanting English suggestions. Marko's objection settles it: these are two
+     * different things that happen at two different moments. He dictates in one language and types
+     * in another all day, and a dictation language that quietly relaid his keyboard meant a press
+     * meant for the microphone changed the keys under his thumb.
+     *
+     * The keyboard's own language keeps its own two routes, which are the ones every Android
+     * keyboard has: hold the spacebar, or change it in settings. Neither of them touches this.
      */
+    @Suppress("UNUSED_PARAMETER")
     fun set(context: Context, code: String) {
         val target = if (code.substringBefore('-').lowercase() == EN) EN else HR
         val prefs by FlorisPreferenceStore
         scope.launch { prefs.dictate.activeInputLanguage.set(target) }
-        val subtypeManager by context.subtypeManager()
-        subtypeManager.subtypes
-            .firstOrNull { it.primaryLocale.language.lowercase() == target }
-            ?.let { subtypeManager.switchToSubtypeById(it.id) }
     }
 
     /** Moves to the other one. */

@@ -2308,20 +2308,31 @@ object DictateController {
         // instruction rather than a sentence, and this is the one place every finished
         // transcription passes through on its way to a field, whichever sink it is bound for.
         //
-        // The order matters: it is tried BEFORE the text is committed, and it only wins if the
-        // press actually lands. pressScreenTarget returns the term it found, or null when the
-        // screen has nothing by that name — and on null this falls through and types the words as
-        // usual. So a misheard command costs nothing, which is the whole reason the rule can be
-        // allowed to fire without asking first.
+        // A command may also END a dictation — say the message, pause, say "press send" — in which
+        // case the words in front of it are text and are written first. The press happens after
+        // the writing, always, because a send that fired before the words were in the field would
+        // send an empty one.
+        //
+        // It only wins if the press actually lands. pressScreenTarget returns the term it found, or
+        // null when the screen has nothing by that name — and on null the words are written exactly
+        // as they would have been. So a misheard command costs nothing, which is the whole reason
+        // the rule can be allowed to fire without asking first.
+        var pendingPress: List<String>? = null
+        var body = text
         if (prefs.dictate.maVoiceCommands.get() && DictateAccessibilityService.isRunning) {
-            val spoken = MaVoiceCommand.targetIn(text)
-            if (spoken != null) {
+            val split = MaVoiceCommand.splitTrailing(text)
+            if (split != null) {
                 val targets = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
                     .ifEmpty { MaMagicTargets.defaults() }
-                val pressed = DictateAccessibilityService.pressScreenTarget(
-                    MaVoiceCommand.candidatesFor(spoken, targets),
-                )
-                if (pressed != null) return true
+                val candidates = MaVoiceCommand.candidatesFor(split.target, targets)
+                if (split.text.isEmpty()) {
+                    // Nothing to write: the whole dictation was the command. If the press finds
+                    // nothing, fall through and type the words rather than swallowing them.
+                    if (DictateAccessibilityService.pressScreenTarget(candidates) != null) return true
+                } else {
+                    body = split.text
+                    pendingPress = candidates
+                }
             }
         }
         val sink = sink(context)
@@ -2336,11 +2347,11 @@ object DictateController {
         // System voice input (#67) returns the whole result at once — no typewriter animation, which only
         // makes sense when we're the one typing into a visible field.
         if (prefs.dictate.instantOutput.get() || outputTarget == OutputTarget.RECOGNITION_SERVICE) {
-            committed = sink.commitText(text)
+            committed = sink.commitText(body)
         } else {
             val perChar = perCharDelayMs(prefs.dictate.outputSpeed.get())
             committed = true
-            text.forEach { ch ->
+            body.forEach { ch ->
                 if (!sink.commitText(ch.toString())) committed = false
                 delay(perChar)
             }
@@ -2349,6 +2360,13 @@ object DictateController {
         if (prefs.dictate.autoEnter.get()) {
             sink.performEnter()
         }
+        // The trailing command, last of all: the words are in the field, so a send now sends them.
+        // Deliberately after the auto-enter too, since both are endings and the order between them
+        // is the order they were asked for — write, finish, then press.
+        //
+        // A press that finds nothing is not an error here. The words were written either way, which
+        // is the outcome he would have had before this feature existed.
+        pendingPress?.let { DictateAccessibilityService.pressScreenTarget(it) }
         return committed
     }
 

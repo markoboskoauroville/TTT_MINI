@@ -71,6 +71,10 @@ val MaSettingsEntry.icon: ImageVector
         // model; this presses a button on screen. This list is where the two sit closest together,
         // so it is where sharing a picture would confuse most.
         MaSettingsEntry.MAGIC -> Icons.Default.TouchApp
+        // The microphone, because a voice command is a dictation that presses. Deliberately the
+        // same icon as Recording rather than a new one hunted for in the artifact: this file's own
+        // note about Reorder is the reason to reuse an icon proven to resolve.
+        MaSettingsEntry.VOICE_COMMANDS -> Icons.Default.Mic
         MaSettingsEntry.KEYS -> Icons.Default.Key
         MaSettingsEntry.VOCABULARY -> Icons.Default.Spellcheck
         MaSettingsEntry.BUCKETS -> Icons.Default.ContentPasteGo
@@ -98,6 +102,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.SWITCHBOARD -> Routes.Settings.MaSwitchboard
         MaSettingsEntry.FEATURE_ROW -> Routes.Settings.MaFeatureRow
         MaSettingsEntry.MAGIC -> Routes.Settings.MaMagic
+        MaSettingsEntry.VOICE_COMMANDS -> Routes.Settings.MaVoiceCommands
         MaSettingsEntry.KEYS -> Routes.Settings.DictateKeys
         MaSettingsEntry.VOCABULARY -> Routes.Settings.MaVocabulary
         MaSettingsEntry.BUCKETS -> Routes.Settings.MaBuckets

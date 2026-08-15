@@ -73,6 +73,55 @@ object MaVoiceCommand {
         return target.ifBlank { null }
     }
 
+    /** Text to write, and a button to press once it is written. */
+    data class Split(val text: String, val target: String)
+
+    /**
+     * Splits a dictation into the words he meant and the command he ended with.
+     *
+     * ### Only at the end, and he was right to insist
+     *
+     * A command in the middle of a sentence would be a disaster, in his word and it is the correct
+     * one: the words around it are text he is still writing, and a press fired from inside them
+     * sends a half-finished message. So the verb and its word must be the **last two words**, and
+     * everything before them is text.
+     *
+     * ### The full stop is what makes it safe
+     *
+     * "Press send" at the end is not enough on its own, because `I will press send` also ends that
+     * way and is a sentence about pressing rather than an instruction to press. What separates them
+     * is that a command is **said after a pause**, and a pause is exactly what the transcriber
+     * writes as a full stop. So the two words must be preceded by a sentence ending — `.`, `!`, `?`
+     * — or be the whole dictation.
+     *
+     * That trade is deliberate and it is the safe direction. When the guard is wrong it fails by
+     * writing the words instead of pressing, and he taps the button himself; the other failure
+     * sends something unfinished, and there is no key that takes that back.
+     */
+    fun splitTrailing(text: String): Split? {
+        val cleaned = text.trim()
+        if (cleaned.isEmpty()) return null
+        // The whole thing being a command is the case already covered, and it needs no full stop
+        // in front of it because there is nothing in front of it.
+        targetIn(cleaned)?.let { return Split(text = "", target = it) }
+        val words = cleaned.split(Regex("\\s+"))
+        if (words.size < 3) return null
+        val verb = words[words.size - 2].trim(*TRIM.toCharArray()).lowercase()
+        if (verb !in VERBS) return null
+        val target = words.last().trim(*TRIM.toCharArray())
+        if (target.isBlank()) return null
+        // What stands immediately before the verb decides whether this was a new breath or the
+        // middle of a thought. Anything that is not a sentence ending means the thought was still
+        // running, so the words stay words.
+        val before = words[words.size - 3]
+        if (before.lastOrNull() !in SENTENCE_END) return null
+        val head = words.subList(0, words.size - 2).joinToString(" ")
+        return Split(text = head, target = target)
+    }
+
+    /** Marks that end a sentence, and so mark the pause a command is spoken after. */
+    private val SENTENCE_END = setOf('.', '!', '?', '\u2026')
+
     /**
      * What to look for on screen, best guess first.
      *

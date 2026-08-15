@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import android.view.WindowManager
 import android.os.SystemClock
+import android.media.AudioManager
 import kotlinx.coroutines.delay
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
@@ -272,6 +273,14 @@ class FlorisImeService : LifecycleInputMethodService() {
     /** Set when the user dismissed the keyboard themselves, so the pin does not undo it. */
     @Volatile
     private var maUserRequestedHide = false
+
+    /**
+     * When volume down went down, or zero when no press is open.
+     *
+     * Read once and cleared on release, so a press can only ever be spent on one meaning.
+     */
+    @Volatile
+    private var maVolDownAt = 0L
 
     /** When the pin last pushed the keyboard back up, for the governor in [maReshowIfPinned]. */
     private val maPinReshowAt = ArrayDeque<Long>()
@@ -735,7 +744,7 @@ class FlorisImeService : LifecycleInputMethodService() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (maHandleVolumeKey(keyCode)) return true
+        if (maHandleVolumeKey(keyCode, event)) return true
         return keyboardManager.onHardwareKeyDown(keyCode, event) || super.onKeyDown(keyCode, event)
     }
 
@@ -764,7 +773,7 @@ class FlorisImeService : LifecycleInputMethodService() {
      * The event is consumed so the system neither changes the volume nor flashes its slider, which
      * would otherwise happen on top of the keyboard on every press.
      */
-    private fun maHandleVolumeKey(keyCode: Int): Boolean {
+    private fun maHandleVolumeKey(keyCode: Int, event: KeyEvent?): Boolean {
         if (!prefs.dictate.maVolumeKeys.get()) return false
         if (!isInputViewShown) return false
         return when (keyCode) {
@@ -787,17 +796,24 @@ class FlorisImeService : LifecycleInputMethodService() {
                 true
             }
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                // Two meanings, decided by whether anything is being recorded, and they never
-                // overlap. Mid recording the only thing worth a physical key is throwing it away.
-                // With nothing recording there is nothing to cancel, and the thing most worth
-                // reaching for without looking is the language, because it has to be right *before*
-                // speaking and checking it means looking at the screen. The bar is held briefly on a
-                // discard so it reads as something that happened rather than the recording simply
-                // vanishing.
+                // Mid recording the only thing worth a physical key is throwing it away, and that
+                // still happens the moment the key goes down: a recording being cancelled is
+                // urgent, and nobody holds a button to abandon something.
+                //
+                // With nothing recording, NOTHING is decided here. It used to toggle the language
+                // on the way down, and that made a volume key a language key: on a bus, with music
+                // loud, reaching to turn it down changed the language of the next dictation
+                // silently. A press that changes what the microphone will be told cannot share
+                // itself with the commonest button on the phone.
+                //
+                // So the decision moves to the release, where the length of the press is a fact
+                // rather than a prediction. Short lowers the volume, long changes the language.
+                // Deciding on release rather than with a timer means no handler to leak, no state
+                // to get stuck, and no toggle firing for a key that was never let go.
                 if (DictateController.state.value is DictateController.UiState.Recording) {
                     DictateController.cancelRecording(keepBarForMs = 600L)
-                } else {
-                    MaLanguage.toggle(this)
+                } else if (event == null || event.repeatCount == 0) {
+                    maVolDownAt = SystemClock.uptimeMillis()
                 }
                 true
             }
@@ -812,11 +828,50 @@ class FlorisImeService : LifecycleInputMethodService() {
         if (prefs.dictate.maVolumeKeys.get() && isInputViewShown &&
             (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
         ) {
+            if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) maFinishVolumeDown()
             return true
         }
         return keyboardManager.onHardwareKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
     }
+
+    /**
+     * The end of a volume-down press, where its length decides what it meant.
+     *
+     * A press that was never opened — the recording branch took the key down, or the keyboard
+     * appeared with the key already held — leaves [maVolDownAt] at zero and does nothing at all.
+     * Doing nothing is the right answer there: neither meaning was asked for.
+     *
+     * The volume change is made by hand because the press was swallowed. Anything consumed by the
+     * keyboard never reaches the system, so a short press has to be handed back deliberately or it
+     * simply disappears — which is the failure this whole change exists to fix, in reverse.
+     * `USE_DEFAULT_STREAM_TYPE` lets the system pick the stream it would have picked itself, so
+     * music stays music and a call stays a call, and the slider is shown exactly as normal.
+     */
+    private fun maFinishVolumeDown() {
+        val startedAt = maVolDownAt
+        maVolDownAt = 0L
+        if (startedAt == 0L) return
+        val held = SystemClock.uptimeMillis() - startedAt
+        if (held >= MA_VOL_LANGUAGE_HOLD_MS) {
+            MaLanguage.toggle(this)
+        } else {
+            val audio = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            audio?.adjustSuggestedStreamVolume(
+                AudioManager.ADJUST_LOWER,
+                AudioManager.USE_DEFAULT_STREAM_TYPE,
+                AudioManager.FLAG_SHOW_UI,
+            )
+        }
+    }
 }
+
+/**
+ * How long volume down must be held before it means "change the language" instead of "quieter".
+ *
+ * Half a second: comfortably longer than a press aimed at the volume, comfortably shorter than the
+ * wait before a deliberate hold starts to feel broken.
+ */
+private const val MA_VOL_LANGUAGE_HOLD_MS = 500L
 
 /** How long the pin's re-show attempts are counted over. */
 private const val MA_PIN_WINDOW_MS = 6_000L

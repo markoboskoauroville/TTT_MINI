@@ -53,7 +53,8 @@ building: a one-time merge that appends missing built-in defaults to an existing
 | 21 | Configurable long-press symbols on `Z X C V B N M` — touches upstream layout code | large |
 | 22 | The sequencer — see SEQUENCER_PARKED.md; needs the action-extraction refactor first | large |
 | 23 | The hardware trigger for voice commands — **not** Power, see §27 for what is possible | medium |
-| 24 | Voice commands settings entry of its own, holding the switch and the trigger choice | small |
+| ~~24~~ | ~~Voice commands settings entry~~ — **shipped**, build 111. Documents the commands; the trigger choice joins it with 23. | — |
+| 26 | **Groq language detection on the first 5 seconds** — see §28. The one he asked for. | medium |
 | 25 | Merge new built-in defaults into a list that already exists, once, behind a flag (see the caveat on 3) | small |
 
 **Notes on order**
@@ -858,3 +859,50 @@ firing when the keyboard is up.
 A **Voice commands** entry of its own in the settings list, holding the on/off switch that now lives
 on the Magic finger screen plus the trigger choice. Deferred with the trigger, since a screen for one
 switch is a screen he has to find for no reason.
+
+---
+
+# 28. Groq decides the language, from the first five seconds
+
+**Groq, the inference service — never xAI's Grok.** Marko was explicit and it is worth writing down
+because dictation turns one into the other every time: when he says Grok he means the fast open
+service already in `ProviderRegistry` as `"groq"`, with a key slot and a legacy migration path
+(`DictateLegacySettings.transcriptionApiKeyGroq`).
+
+## The shape, as he specified it
+
+1. Cap the **first five seconds** of the recording into a second file, separate from the full audio.
+2. Send that chunk to Groq's Whisper.
+3. Take the language from the reply, **clamp it to {hr, en}** — `hr` stays `hr`, everything else
+   becomes `en`, per §23.
+4. **One millisecond before** the real request goes to AssemblyAI, apply that language.
+
+## One call, not two
+
+He asked for the chat model to be dropped and he is right: Groq's transcription response already
+carries the detected language, so a second call to a chat model would be asking a slower question
+that has already been answered. One call, and the answer arrives while he is still speaking.
+
+## What it must not break
+
+**Croatian must never reach the Sync path.** If detection returns `hr`, the request goes async, no
+matter that the language was decided by a machine rather than by him. `SYNC_SAFE_LANGUAGES` stays an
+allow-list, and the detection result is applied *before* `maUseSyncPath` reads it — that read
+already happens late, after the resample, which is exactly where this fits.
+
+## Where it plugs in
+
+The language and the speed are both read **when the request is built**, not when recording starts —
+see the note in `maHandleVolumeKey` about why the second volume press was reverted. That late read
+is what makes this feasible without touching the recorder: the detection has the whole length of the
+dictation to come back, and only has to win the race against the user pressing stop.
+
+**If it is not back in time, or it fails, or there is no Groq key: use the switch as it stands.**
+Detection is an improvement on the manual setting, never a precondition for dictating.
+
+## The switch still moves, and it is now safe for it to
+
+§23 said the detector should write to the HR/ENG badge so he can watch it flip and disagree. That
+was written when volume down toggled the language on a short press, which made an automatic write
+and an accidental write indistinguishable. Since build 111 the language only moves on a long press,
+so a badge that changes by itself now means exactly one thing.
