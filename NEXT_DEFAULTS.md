@@ -562,3 +562,45 @@ he visits a third view for one keystroke, and ticks are a statement of intent th
 Switching is not a feature next to the others — it is the tax paid on every one of them. Every view
 added makes reaching all the rest slower, so the app gets worse at this as it gets better at
 everything else. Worth over-building rather than under-building.
+
+---
+
+# 10b. Shiva and Shakti share a key — the layout update
+
+Marko's observation, and it is a real one about the layout rather than a flourish: **comma and dot
+each occupy a whole key, while every other key on the board carries two characters.** `Z` carries
+`*`, `X` carries `"`, `C` carries `'`. Only these two live alone.
+
+## The merge
+
+**Dot keeps the key. Comma moves onto its long press.**
+
+Dot leads because it does more work — every sentence ends with one, and dictated text ends with
+rather more than that. Comma is the second character on that key, reached by holding, exactly as `*`
+is reached by holding `Z`.
+
+This is the same rule the rest of the board already follows, so there is nothing new for anybody to
+learn — only one key that stops being an exception.
+
+## What the freed key becomes
+
+The `?123` key becomes the **quick layout switcher**, and the freed comma space gives it room.
+
+- **Tap** — jump straight between the layouts he has chosen. Not a cycle through all of them:
+  through the two or three he ticked.
+- **Long press** — *"beam me up, Scotty"* — straight into the settings screen where those layouts
+  are ticked.
+
+This is the same design as §10 above and should be built with it rather than beside it. §10 is the
+slow switcher, walking every view in order; this is the fast one, jumping only between the ticked
+few. Two keys, two speeds, one settings screen listing the layouts with tick boxes and a drag
+handle.
+
+## Note on effort
+
+The merge itself is a **layout change** — FlorisBoard keeps its key layouts as data, so moving comma
+onto the dot key's popup is editing that data rather than writing logic. Contained, and lower risk
+than most of the list.
+
+The switcher half is §16 and is large. **Do the comma merge first and on its own**: it is small, it
+is immediately visible, and it frees the space the switcher will want.
