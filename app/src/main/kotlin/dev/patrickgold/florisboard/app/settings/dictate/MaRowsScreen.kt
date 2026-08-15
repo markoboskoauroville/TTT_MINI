@@ -51,6 +51,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -160,6 +161,43 @@ fun MaRowsScreen() = FlorisScreen {
             summary = "The rows of keys above the keyboard. Turn this off to hide all of them.",
 
         )
+
+        // How wide a spacer is. Here rather than on the keyboard, because a spacer is invisible
+        // there and a control you cannot see is a control you cannot press.
+        val spacerTenths by prefs.dictate.maSpacerTenths.collectAsState()
+        val spacerScope = rememberCoroutineScope()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Spacer width", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = "Ten is one key wide. Add a spacer to a row to push the keys after it " +
+                        "across \u2014 useful for reaching send with the thumb you actually use.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            TextButton(
+                onClick = { spacerScope.launch { prefs.dictate.maSpacerTenths.set((spacerTenths - 5).coerceAtLeast(5)) } },
+                enabled = spacerTenths > 5,
+            ) { Text("\u2212", fontSize = 20.sp) }
+            Text(
+                text = "$spacerTenths",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.width(44.dp),
+                textAlign = TextAlign.Center,
+            )
+            TextButton(
+                // Forty tenths is four keys, which is already most of a row. Past that a spacer is
+                // not arranging the row, it is emptying it.
+                onClick = { spacerScope.launch { prefs.dictate.maSpacerTenths.set((spacerTenths + 5).coerceAtMost(40)) } },
+                enabled = spacerTenths < 40,
+            ) { Text("+", fontSize = 20.sp) }
+        }
 
 
         TabRow(selectedTabIndex = tab) {
@@ -439,6 +477,9 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.Delete, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.LANGUAGE -> letters("HR")
             MaFeatureKey.SCROLL -> letters("S")
+            // Visible here although invisible on the keyboard: he has to be able to find it in the
+            // list to move or remove it, and an empty row entry would be unreachable.
+            MaFeatureKey.SPACER -> letters("\u2194")
             MaFeatureKey.SWITCHBOARD ->
                 Icon(Icons.Default.ToggleOn, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.APP_SWITCH ->

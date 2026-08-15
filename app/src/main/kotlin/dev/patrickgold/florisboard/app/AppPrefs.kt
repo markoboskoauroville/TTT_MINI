@@ -1115,6 +1115,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = 0,
         )
 
+        /**
+         * How wide one spacer is, as a fraction of an ordinary key, in tenths.
+         *
+         * Ten is exactly one key. Adjustable because a row pushed right by one key is often too
+         * little and by two is too much, and the difference is a thumb's width rather than
+         * something anybody can reason about in advance — so it is his to set by eye.
+         */
+        val maSpacerTenths = int(
+            key = "dictate__ma_spacer_tenths",
+            default = 10,
+        )
+
         val maScrollPages = int(
             key = "dictate__ma_scroll_pages",
             default = 1,

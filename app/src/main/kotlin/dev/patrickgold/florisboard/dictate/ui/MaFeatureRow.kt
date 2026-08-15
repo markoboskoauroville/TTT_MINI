@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -198,6 +199,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
 
 
     // What C1 to C10 currently hold, in the order they were copied.
+    val spacerTenths by prefs.dictate.maSpacerTenths.collectAsState()
     val bucketsOn by prefs.dictate.maBucketsEnabled.collectAsState()
     val clipDelaySelect by prefs.dictate.maClipDelaySelect.collectAsState()
     val clipDelayDelete by prefs.dictate.maClipDelayDelete.collectAsState()
@@ -684,6 +686,23 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     ) {
                         FlorisImeService.launchSettings("settings/dictate/switchboard")
                     }
+                }
+
+                MaFeatureKey.SPACER -> {
+                    // Room, and nothing else. No background, no ripple, no click target — a spacer
+                    // that could be pressed would be a key that appears broken, and one that drew a
+                    // surface would be a key that appears blank.
+                    // Weight, not a fixed width, because every key in this row is weighted — the
+                    // row divides whatever width the phone has. A spacer measured in dp would be
+                    // one size on his phone and another on a wider one, and would not stay in
+                    // proportion when he adds a key beside it.
+                    //
+                    // Ten tenths is exactly one key, so the number means what it says.
+                    Spacer(
+                        modifier = Modifier
+                            .weight(spacerTenths / 10f)
+                            .fillMaxHeight(),
+                    )
                 }
 
                 MaFeatureKey.SETTINGS -> {

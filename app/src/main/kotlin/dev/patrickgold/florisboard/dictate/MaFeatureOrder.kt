@@ -114,6 +114,18 @@ enum class MaFeatureKey(val id: String, val label: String) {
      */
     SWITCHBOARD("switchboard", "Switchboard, rows on and off"),
 
+    /**
+     * Empty width. Draws nothing and does nothing.
+     *
+     * Marko sends with his right thumb, and as the magic row grew, send drifted left until it was
+     * across the board from the thumb that presses it. He had been padding the row with real keys he
+     * did not want, which is improvisation the app should not have made necessary.
+     *
+     * A spacer is the honest answer: a key that occupies room and no more, so a row can be pushed
+     * toward whichever hand is holding the phone. Add several for a wider gap.
+     */
+    SPACER("spacer", "Spacer, empty room on the row"),
+
     ZONE_1("zone1", "1, the number row"),
     ZONE_2("zone2", "2, the keys"),
     ZONE_3("zone3", "3, the copy row"),
@@ -184,6 +196,7 @@ object MaFeatureOrder {
         MaFeatureKey.LANGUAGE,
         MaFeatureKey.SCROLL,
         MaFeatureKey.SWITCHBOARD,
+        MaFeatureKey.SPACER,
     )
 
     val DEFAULT_RAW: String = serialize(DEFAULT)
