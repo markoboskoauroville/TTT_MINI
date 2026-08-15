@@ -600,14 +600,17 @@ handle.
 
 **Done:** the dot key now carries comma on its long press, so Shiva and Shakti share the seat.
 
-**Not done, deliberately:** freeing the comma key. Replacing it with `?123` gave the row two `?123`
-keys, which is worse than the exception it removed. What that slot becomes is part of §16 — the
-switcher wants the space, and until the switcher exists the slot has nothing better to hold than the
-comma already on it.
+**Also done in build 100:** the comma key is gone. Its slot now jumps straight to the second symbol
+layout, so the two switchers sit side by side — one tap to either, where reaching the second used to
+take two.
 
-So comma is now in both places: on its own key and on the dot's long press. That is not a compromise
-for its own sake — it means nobody has to relearn anything on the day the key is finally freed,
-because the new habit is already available.
+The faces changed with it. `?123` and `=\<` read as two unrelated keys and said nothing about
+layouts; they are now ☰1 and ☰2, three stacked bars for the rows of a keyboard and a numeral for
+which one. One family, and neither of them claims to be "the digits key" now that the layouts can be
+reordered.
+
+Still open from §16: the **ticked** cycle, where he chooses which layouts take part rather than
+having two fixed keys.
 
 ## Note on effort
 

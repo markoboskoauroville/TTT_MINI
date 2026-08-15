@@ -7,7 +7,7 @@
   [
     { "code":   -1, "label": "ctrl", "type": "modifier" },
     { "$": "variation_selector",
-      "default":  { "code":   44, "label": ",", "groupId": 1 },
+      "default":  { "code": -203, "label": "view_symbols2", "type": "system_gui" },
       "email":    { "code":   64, "label": "@", "groupId": 1 },
       "uri":      { "code":   47, "label": "/", "groupId": 1 }
     },
