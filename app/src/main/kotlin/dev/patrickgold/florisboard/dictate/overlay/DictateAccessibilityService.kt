@@ -221,7 +221,15 @@ class DictateAccessibilityService : AccessibilityService() {
             // then be somewhere the user cannot see, which reads as the key having done nothing —
             // the caveat he reported. This is the request that says "bring this into the frame",
             // and the container that can scroll is the one that answers it.
-            runCatching { candidate.performAction(AccessibilityNodeInfo.ACTION_SHOW_ON_SCREEN) }
+            //
+            // Reached through AccessibilityAction and its id, because unlike ACTION_FOCUS this one
+            // never had a plain int constant on AccessibilityNodeInfo — it arrived in API 23 as an
+            // AccessibilityAction only.
+            runCatching {
+                candidate.performAction(
+                    AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id,
+                )
+            }
             val ok = runCatching {
                 candidate.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
             }.getOrDefault(false)
