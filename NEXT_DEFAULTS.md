@@ -596,6 +596,19 @@ slow switcher, walking every view in order; this is the fast one, jumping only b
 few. Two keys, two speeds, one settings screen listing the layouts with tick boxes and a drag
 handle.
 
+## Status: half done in build 99
+
+**Done:** the dot key now carries comma on its long press, so Shiva and Shakti share the seat.
+
+**Not done, deliberately:** freeing the comma key. Replacing it with `?123` gave the row two `?123`
+keys, which is worse than the exception it removed. What that slot becomes is part of §16 — the
+switcher wants the space, and until the switcher exists the slot has nothing better to hold than the
+comma already on it.
+
+So comma is now in both places: on its own key and on the dot's long press. That is not a compromise
+for its own sake — it means nobody has to relearn anything on the day the key is finally freed,
+because the new habit is already available.
+
 ## Note on effort
 
 The merge itself is a **layout change** — FlorisBoard keeps its key layouts as data, so moving comma
