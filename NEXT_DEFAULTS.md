@@ -732,3 +732,36 @@ And every one of those numbers is also the app being taught: the re-transcribe c
 §23 is working, the word ranks are what §19 needs for Croatian suggestions.
 
 The same data serves both directions, which is what makes it worth building rather than merely nice.
+
+---
+
+# 25. The two switchers become two slots
+
+Today each switcher key leads somewhere fixed. Marko wants each to be a **slot holding a layout he
+chose**, so the pair becomes "my two layouts" rather than "the two layouts the app picked".
+
+- **Tap** — go to whatever that slot holds. Unchanged from his thumb's point of view.
+- **Swipe up / down** — change what the slot holds, cycling the available layouts.
+- **Long press** — open the full list and choose directly.
+
+Two keys, the same behaviour, **separate memories**. That is the whole design: `text`/`sym1` today
+is one possible pair among many, and which pair he wants changes with what he is doing.
+
+## What exists and what does not
+
+**Long press already works** on keys in this app, so that third gesture is wiring rather than new
+capability.
+
+**Swipe up and down on a specific key does not.** FlorisBoard has a gesture system, but it is built
+around swipe-on-the-whole-keyboard actions and long-press popups, not per-key vertical swipes. This
+is the part that needs real work and the reason this is not a small feature.
+
+**Suggested fallback if per-key swipe proves awkward:** long press opens the picker, and that alone
+delivers most of the value. Swipe is the refinement, not the feature.
+
+## Storage
+
+Two preferences holding a layout id each, defaulting to what ships now — `symbols` and `symbols2`
+from the letters view. The key's face comes from the slot rather than being fixed, so `sym1` becomes
+whatever is in it. That means the label logic in ComputingEvaluator stops being a constant and starts
+reading a preference; small, but it touches the file that draws every key face, so it wants care.
