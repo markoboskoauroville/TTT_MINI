@@ -365,10 +365,21 @@ private fun TextKeyButton(
                     SpaceBarMode.SPACE_BAR_KEY -> customLabel = "␣"
                 }
             }
+            // The language sits in the spacebar's bottom-left corner rather than in the middle.
+            //
+            // Centred, it is the largest thing on the bottom row and the eye goes to it every time —
+            // and it is the one label nobody needs to read, because nobody hunts for the spacebar.
+            // In the corner it is still there to be checked and no longer competing for attention.
+            // Marko's word for what it should be was chameleon.
+            val alignment = when {
+                isTelPadKey -> BiasAlignment(-0.5f, 0f)
+                key.computedData.code == KeyCode.SPACE -> BiasAlignment(-0.86f, 0.62f)
+                else -> Alignment.Center
+            }
             SnyggText(
                 modifier = Modifier
                     .wrapContentSize()
-                    .align(if (isTelPadKey) BiasAlignment(-0.5f, 0f) else Alignment.Center),
+                    .align(alignment),
                 text = customLabel,
             )
         }
