@@ -54,7 +54,7 @@ building: a one-time merge that appends missing built-in defaults to an existing
 | 22 | The sequencer — see SEQUENCER_PARKED.md; needs the action-extraction refactor first | large |
 | 23 | The hardware trigger for voice commands — **not** Power, see §27 for what is possible | medium |
 | ~~24~~ | ~~Voice commands settings entry~~ — **shipped**, build 111. Documents the commands; the trigger choice joins it with 23. | — |
-| 26 | **Groq language detection on the first 5 seconds** — see §28. The one he asked for. | medium |
+| 26 | **Groq language detection on the first 5 seconds** — see §28. Groq is now a registered provider (build 114), so this is back to medium: chunk, call, clamp. | medium |
 | ~~25~~ | ~~Merge new built-in defaults into an existing list~~ — **shipped, build 112.** `MaMagicTargets.mergeNewDefaults` plus a version high-water mark; runs when the Magic finger screen opens. Raise `DEFAULTS_VERSION` whenever a default is added. | — |
 
 **Notes on order**
@@ -982,3 +982,40 @@ wrong.
 a registered provider with a key slot. Same one call, same returned language field, none of the new
 provider work. The clamp and the two-signal rule from §28 are unchanged either way — they read a
 language string and a transcript, and do not care who produced them.
+
+---
+
+# 31. The keyring: Groq in, Gemini out
+
+## Why a Groq key could not be stored
+
+`ProviderRegistry.presets` was `ASSEMBLYAI, GEMINI, ANTHROPIC, LOCAL`. **A preset defined in that
+file but absent from that list does not exist**: `byId` returns null, and `MaKeyImport.importAll`
+does `byId(id) ?: continue`. Groq had no preset at all, and `MaKeyImport.PROVIDERS` never listed it.
+
+Meanwhile `MaKeys` has known the Groq shape all along — `GROQ = gsk_[0-9A-Za-z_-]{20,}`, with an
+`extract` branch and entries in both `belongsToAnotherProvider` and `mismatchWarning`. So a Groq key
+in a keys file was recognised, matched, and then dropped on the floor for want of a provider to file
+it under.
+
+Fixed by adding the preset (`api.groq.com/openai/v1/`, chat and transcription, dynamic models) and
+registering it. Also removed a dead branch in `extract`: `"groq" -> GROQ` was followed by
+`"openai", "groq" -> OPENAI`, whose groq half could never be reached.
+
+## Gemini, removed
+
+Unregistered rather than deleted. Its preset stays defined, because removing it would take the
+model-picker branch and the icon mapping with it for the sake of a few unread lines, and because
+unregistering is the reversible half.
+
+**A stored Gemini key is not erased.** It stops being importable and stops being shown — the keys
+screen ends in `ids.mapNotNull { ProviderRegistry.byId(it) }`, so an id the registry does not know
+drops out even when an account still holds it. If he wants the key actually gone from the ring, that
+is a separate deliberate wipe and should be asked for rather than assumed.
+
+## Model names to check
+
+`llama-3.3-70b-versatile` and `whisper-large-v3-turbo` are the defaults for an account that never
+chose one, and they are only as current as this was written. `supportsDynamicModels` is true, so the
+picker can fetch the live list; a stale default costs a trip to the model picker, not a broken
+provider.

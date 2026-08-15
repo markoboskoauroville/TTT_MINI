@@ -235,7 +235,7 @@ object MaKeys {
             "assemblyai" -> HEX32
             "speechify" -> SPEECHIFY
             "groq" -> GROQ
-            "openai", "groq" -> OPENAI
+            "openai" -> OPENAI
             else -> null
         }
         if (shape != null) {

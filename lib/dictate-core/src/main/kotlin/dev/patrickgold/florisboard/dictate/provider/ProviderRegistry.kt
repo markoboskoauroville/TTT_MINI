@@ -99,6 +99,44 @@ object ProviderRegistry {
         ),
     )
 
+    /**
+     * Groq — the fast inference service, and never xAI's Grok.
+     *
+     * Worth writing down because dictation turns one into the other every time it is spoken aloud:
+     * this is the OpenAI-compatible service at api.groq.com. `xai` in this same catalog is the other
+     * one, and they are unrelated.
+     *
+     * Registered because keys for it could not be stored at all. `MaKeys` has known the Groq key
+     * shape for a long time and `extract` has a branch for it, but `MaKeyImport.importAll` looks the
+     * provider up in this registry first and skipped anything it could not find — so a Groq key in a
+     * keys file was read, matched, and then silently dropped on the floor.
+     *
+     * `CHAT_AND_STT` because it serves both: Whisper for transcription, and Llama for chat. The
+     * transcription side is what §28's language detection wants, since its response carries the
+     * detected language and the transcript in one call.
+     *
+     * The model names below are the defaults for an account that never chose one. They are the
+     * current generation as far as this was written, and `supportsDynamicModels` means the picker
+     * can fetch the live list, so a name going stale costs a trip to the model picker rather than a
+     * broken provider.
+     */
+    val GROQ = ProviderPreset(
+        id = "groq",
+        displayName = "Groq",
+        baseUrl = "https://api.groq.com/openai/v1/",
+        capabilities = CHAT_AND_STT,
+        supportsDynamicModels = true,
+        apiKeyUrl = "https://console.groq.com/keys",
+        defaultChatModel = "llama-3.3-70b-versatile",
+        defaultTranscriptionModel = "whisper-large-v3-turbo",
+        curatedChatModels = listOf(
+            "llama-3.3-70b-versatile", "llama-3.1-8b-instant",
+        ),
+        curatedTranscriptionModels = listOf(
+            "whisper-large-v3-turbo", "whisper-large-v3", "distil-whisper-large-v3-en",
+        ),
+    )
+
     val OPENROUTER = ProviderPreset(
         id = "openrouter",
         displayName = "OpenRouter",
@@ -401,8 +439,20 @@ object ProviderRegistry {
     // listed has its keys silently dropped on import. That cost a build once. It is also exactly
     // why the list is short: a provider offered but unusable is a line that has to be read and
     // then ruled out, every time.
+    /**
+     * The providers this build actually offers.
+     *
+     * A preset defined above but absent from this list does not exist as far as the app is
+     * concerned: `byId` returns null for it, and `MaKeyImport` skips any provider `byId` cannot
+     * find. That is the whole reason a Groq key could not be stored.
+     *
+     * Gemini is out, at Marko's instruction. Its preset is left defined above rather than deleted,
+     * because deleting it would take the model-picker branch and the icon mapping with it for the
+     * sake of a few unread lines — and because unregistering is the reversible half of the change.
+     * A stored Gemini key is not erased by this; it stops being shown and stops being importable.
+     */
     val presets: List<ProviderPreset> = listOf(
-        ASSEMBLYAI, GEMINI, ANTHROPIC, LOCAL,
+        ASSEMBLYAI, ANTHROPIC, GROQ, LOCAL,
     )
 
     fun byId(id: String): ProviderPreset? = presets.firstOrNull { it.id == id }

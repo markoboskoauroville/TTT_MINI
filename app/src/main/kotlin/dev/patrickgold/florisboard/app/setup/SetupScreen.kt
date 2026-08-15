@@ -423,11 +423,13 @@ private fun FlorisStepLayoutScope.ProviderSetupStep(
     // key for a feature they did not know needed a second one. Better said here, once, before the
     // file is even chosen.
     StepText(
-        "You want two keys in that file:\n\n" +
+        "You want three keys in that file:\n\n" +
             "AssemblyAI — the transcribing. Without it, dictation cannot work at all.\n\n" +
             "Anthropic (Claude) — the proofreading and rewording, including Ctrl+P. Without it, " +
             "dictation still works and Ctrl+P shows an error.\n\n" +
-            "Gemini is an optional second engine. All of this can be changed later under API keys."
+            "Groq — fast Whisper, used to work out which language you are speaking. Optional: " +
+            "without it the language stays whatever you set by hand.\n\n" +
+            "All of this can be changed later under API keys."
     )
 
     TextButton(
