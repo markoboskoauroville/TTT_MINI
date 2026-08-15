@@ -78,6 +78,25 @@ enum class MaFeatureKey(val id: String, val label: String) {
     APP_SWITCH("tab", "TAB, the last app"),
 
     /**
+     * TAB for fields: focus the next text box on the screen.
+     *
+     * Named TAB because that is the key it replaces on a desktop, and kept separate from
+     * [APP_SWITCH] because they are different journeys that happen to share a word — one moves
+     * between apps, this moves inside one.
+     *
+     * A real `KEYCODE_TAB` exists already through the macro syntax and does not do this. Tested in
+     * Suno: it moves the caret inside the field it is already in and nothing else. That is not the
+     * app misbehaving — Tab only moves focus between views marked focusable in touch mode, which
+     * almost nothing is, because until recently no phone had a Tab key.
+     *
+     * So this reads the node tree instead, through the accessibility service that is already
+     * running for the magic finger. The tree exists because screen readers need it, which means it
+     * works in a native app, a web view and a browser alike, without any of them having been built
+     * with a keyboard in mind.
+     */
+    NEXT_FIELD("nextfield", "TAB, the next field"),
+
+    /**
      * The dictation history: everything transcribed, ready to put back into a field.
      *
      * A key rather than a menu because it is the recovery route. A dictation that went into the
@@ -192,6 +211,7 @@ object MaFeatureOrder {
         MaFeatureKey.SETTINGS,
         MaFeatureKey.CLIP_CLEAR,
         MaFeatureKey.APP_SWITCH,
+        MaFeatureKey.NEXT_FIELD,
         MaFeatureKey.HISTORY,
         MaFeatureKey.LANGUAGE,
         MaFeatureKey.SCROLL,

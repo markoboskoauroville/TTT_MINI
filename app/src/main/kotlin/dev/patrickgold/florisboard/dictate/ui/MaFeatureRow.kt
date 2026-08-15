@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.KeyboardTab
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Replay
@@ -592,6 +593,33 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     }
                 }
 
+                MaFeatureKey.NEXT_FIELD -> {
+                    // The tab arrow: an arrow meeting a bar, which is the symbol printed on the key
+                    // this replaces. KeyboardTab is the one Material glyph that draws it, and it is
+                    // already used elsewhere in this build, so it is known to resolve.
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        icon = Icons.Default.KeyboardTab,
+                        contentDescription = "Next field",
+                        modifier = keyMod,
+                        tint = null,
+                    ) {
+                        if (!DictateAccessibilityService.isRunning) {
+                            // Same reasoning as the key above: this reads the screen, the service is
+                            // off until somebody turns it on by hand, and opening that screen is
+                            // more use than a message saying nothing happened.
+                            maOpenAccessibilitySettings(context)
+                        } else if (!DictateAccessibilityService.focusNextField()) {
+                            // Nothing took focus: one field on screen, or none. Worth saying,
+                            // because a key that silently does nothing reads as broken.
+                            Toast.makeText(
+                                context,
+                                "No other field on this screen",
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    }
+                }
                 MaFeatureKey.APP_SWITCH -> {
                     // Alt+Tab. Dim when nothing has been seen to switch to yet, which is the state
                     // right after the phone starts or the accessibility service is switched off —

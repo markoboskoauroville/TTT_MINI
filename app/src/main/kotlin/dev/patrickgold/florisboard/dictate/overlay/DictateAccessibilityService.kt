@@ -176,6 +176,69 @@ class DictateAccessibilityService : AccessibilityService() {
     }
 
     /**
+     * Moves input focus to the next editable field on screen, wrapping to the first.
+     *
+     * ### Why this exists rather than a Tab key
+     *
+     * A real `KEYCODE_TAB` is already reachable through the macro syntax, and in Suno it does
+     * nothing useful — it moves the caret inside the field it is already in. That is not a bug in
+     * the app: Tab moves focus on Android only between views marked focusable in touch mode, and
+     * almost nothing is, because until recently nobody had a Tab key on a phone.
+     *
+     * Reading the node tree sidesteps the question entirely. It does not matter whether the app
+     * handles Tab, whether it is native or a web view, or whether anyone ever considered a keyboard:
+     * the fields are in the tree because the tree is what screen readers use, and every app has to
+     * provide it.
+     *
+     * ### Order
+     *
+     * Depth-first through the tree, which is the order the fields were declared and, in practice,
+     * the order they appear down the screen. That matches what the eye expects and what Tab does on
+     * a desktop.
+     *
+     * ### Wrapping
+     *
+     * From the last field it returns to the first, so the key always does something. On a screen
+     * with two fields — lyrics and style — that makes one key a toggle between them, which is the
+     * shape of the actual problem.
+     */
+    private fun focusNextEditableField(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        val fields = ArrayList<AccessibilityNodeInfo>(8)
+        collectEditable(root, 0, fields)
+        if (fields.isEmpty()) return false
+        // Where we are now. A field that reports focus is the anchor; with none, start at the top.
+        val currentIndex = fields.indexOfFirst { runCatching { it.isFocused }.getOrDefault(false) }
+        // Try each following field in turn, wrapping. A field can refuse focus — it may be off
+        // screen or disabled — and stopping at the first refusal would make the key look broken
+        // when the next one along would have worked.
+        for (step in 1..fields.size) {
+            val candidate = fields[(currentIndex + step + fields.size) % fields.size]
+            if (currentIndex >= 0 && candidate == fields[currentIndex]) continue
+            val ok = runCatching {
+                candidate.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+            }.getOrDefault(false)
+            if (ok) return true
+        }
+        return false
+    }
+
+    /** Depth-first collection of every editable field, capped so a deep tree cannot stall a keypress. */
+    private fun collectEditable(
+        node: AccessibilityNodeInfo?,
+        depth: Int,
+        out: MutableList<AccessibilityNodeInfo>,
+    ) {
+        if (node == null || depth > MA_FIELD_MAX_DEPTH || out.size >= MA_FIELD_MAX_COUNT) return
+        if (node.isLikelyEditable() && runCatching { node.isVisibleToUser }.getOrDefault(true)) {
+            out.add(node)
+        }
+        for (i in 0 until node.childCount) {
+            collectEditable(runCatching { node.getChild(i) }.getOrNull(), depth + 1, out)
+        }
+    }
+
+    /**
      * A node we should treat as a dictation target. [isEditable] is the canonical flag, but several apps
      * never set it on otherwise-editable fields; fall back to the EditText class hierarchy and to the
      * field advertising the text-editing actions, so detection is not limited to the few well-behaved apps.
@@ -591,6 +654,12 @@ class DictateAccessibilityService : AccessibilityService() {
         private const val NOTIF_CHANNEL = "dictate_overlay_recording"
         private const val CLIPBOARD_RESTORE_DELAY_MS = 400L
         private const val MAX_EDITABLE_SEARCH_DEPTH = 6
+
+        // The next-field walk goes deeper than the dictation-target search, because it has to find
+        // every field rather than the nearest one, and modern layouts nest hard. Both caps exist so
+        // a pathological tree cannot turn one keypress into a long walk.
+        private const val MA_FIELD_MAX_DEPTH = 40
+        private const val MA_FIELD_MAX_COUNT = 40
         // Floating-button commit reliability (#161): resolve + focus the field the user sees so the input
         // connection binds to it, retry briefly while the host app rebuilds its field right after a send.
         private const val COMMIT_ATTEMPTS = 2
@@ -691,6 +760,12 @@ class DictateAccessibilityService : AccessibilityService() {
         fun pressScreenTarget(targets: List<String>): String? {
             val ims = instance ?: return null
             return MaScreenTargets.pressFirstMatch(ims, targets)
+        }
+
+        /** Moves focus to the next editable field. False when the service is off or nothing took it. */
+        fun focusNextField(): Boolean {
+            val ims = instance ?: return false
+            return runCatching { ims.focusNextEditableField() }.getOrDefault(false)
         }
 
         private val _editableFocused = MutableStateFlow(false)

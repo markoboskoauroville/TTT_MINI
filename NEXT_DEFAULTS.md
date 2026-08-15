@@ -1119,3 +1119,39 @@ double the file. 50k is where the curve flattens.
 
 **If it is ever revisited, find a small multilingual model first.** An English-only model is the
 impressive answer to a question this app does not have.
+
+---
+
+# 34. TAB for fields, through the node tree
+
+**A real Tab key does not do this, and that was tested rather than assumed.** `MaMacroSyntax`
+already maps `{Tab}` to `KEYCODE_TAB` and sends it through `sendKeyEvent`. In Suno it moves the
+caret inside the field it is already in and nothing else.
+
+That is not the app misbehaving. Android moves focus on Tab only between views marked focusable in
+touch mode, and almost nothing is, because until recently no phone had a Tab key. So no amount of
+sending a better Tab would have worked.
+
+**`MaFeatureKey.NEXT_FIELD` reads the accessibility node tree instead.**
+`DictateAccessibilityService.focusNextEditableField()` collects every visible editable node
+depth-first, finds the one holding focus, and calls `ACTION_FOCUS` on the next, wrapping to the
+first. It tries each following field in turn rather than stopping at the first refusal, because a
+field can decline focus and stopping there makes the key look broken when the next would have
+worked.
+
+Depth-first is declaration order, which in practice is down the screen. Wrapping means that on a
+two-field screen — lyrics and style — one key is a toggle between them, which is the actual problem.
+
+**Why this works where Tab does not:** the tree exists because screen readers need it, so every app
+provides one whether or not it was built with a keyboard in mind. Native, web view and browser all
+behave the same.
+
+Caps: `MA_FIELD_MAX_DEPTH` and `MA_FIELD_MAX_COUNT`, both 40. Deeper than the dictation-target search
+because this must find every field rather than the nearest one, and modern layouts nest hard.
+
+**Two keys share the word TAB and must not be merged.** `APP_SWITCH` moves between apps;
+`NEXT_FIELD` moves inside one. Both are in the default row.
+
+The icon is `Icons.Default.KeyboardTab`, **verified to exist** by extracting
+`material-icons-extended-android` and finding `androidx/compose/material/icons/filled/KeyboardTabKt.class`
+— this file's own history says an icon that only exists in the documentation is a red build.
