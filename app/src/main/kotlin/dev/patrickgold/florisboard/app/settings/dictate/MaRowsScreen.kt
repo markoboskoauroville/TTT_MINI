@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.KeyboardTab
+import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ToggleOn
@@ -487,6 +488,9 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.NEXT_FIELD ->
                 Icon(Icons.Default.KeyboardTab, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.SHIFT ->
+                Icon(Icons.Default.KeyboardCapslock, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.CHANGE_CASE -> letters("Aa")
             MaFeatureKey.HISTORY ->
                 Icon(Icons.Default.History, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.SPACE -> letters("\u23B5")

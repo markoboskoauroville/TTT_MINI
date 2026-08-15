@@ -97,6 +97,29 @@ enum class MaFeatureKey(val id: String, val label: String) {
     NEXT_FIELD("nextfield", "TAB, the next field"),
 
     /**
+     * Shift, on the feature row, where it can be reached with the keyboard folded away.
+     *
+     * The letters have a shift already, and it is unreachable in the state this is for: the feature
+     * row alone on screen with the keys collapsed. A modifier that only exists on the thing that is
+     * put away is not a modifier, and [NEXT_FIELD] needed one to go backwards.
+     *
+     * It sets the same `inputShiftState` the letter shift sets, so it is the real shift rather than
+     * a private flag that happens to share a name — capitals still come out capital, and one press
+     * still means one letter.
+     */
+    SHIFT("shift", "Shift, for the feature row"),
+
+    /**
+     * Aa: through the four cases, one press at a time.
+     *
+     * lower, UPPER, Sentence case, Title Case, and round again. A cycle rather than four keys
+     * because it is the same wish four times over and the row has no room for the other three; and
+     * because the wrong case is recognised on sight, so pressing until it looks right is faster
+     * than choosing from a menu.
+     */
+    CHANGE_CASE("case", "Aa, cycle the case"),
+
+    /**
      * The dictation history: everything transcribed, ready to put back into a field.
      *
      * A key rather than a menu because it is the recovery route. A dictation that went into the

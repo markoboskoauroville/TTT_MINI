@@ -202,19 +202,26 @@ class DictateAccessibilityService : AccessibilityService() {
      * with two fields — lyrics and style — that makes one key a toggle between them, which is the
      * shape of the actual problem.
      */
-    private fun focusNextEditableField(): Boolean {
+    private fun focusNextEditableField(backwards: Boolean = false): Boolean {
         val root = rootInActiveWindow ?: return false
         val fields = ArrayList<AccessibilityNodeInfo>(8)
         collectEditable(root, 0, fields)
         if (fields.isEmpty()) return false
         // Where we are now. A field that reports focus is the anchor; with none, start at the top.
         val currentIndex = fields.indexOfFirst { runCatching { it.isFocused }.getOrDefault(false) }
-        // Try each following field in turn, wrapping. A field can refuse focus — it may be off
-        // screen or disabled — and stopping at the first refusal would make the key look broken
-        // when the next one along would have worked.
+        val direction = if (backwards) -1 else 1
+        // Try each field in turn, wrapping. A field can refuse focus — it may be disabled — and
+        // stopping at the first refusal would make the key look broken when the next one along
+        // would have worked.
         for (step in 1..fields.size) {
-            val candidate = fields[(currentIndex + step + fields.size) % fields.size]
+            val at = (currentIndex + direction * step) % fields.size
+            val candidate = fields[if (at < 0) at + fields.size else at]
             if (currentIndex >= 0 && candidate == fields[currentIndex]) continue
+            // Scroll it into view first. A field below the fold can be focused perfectly well and
+            // then be somewhere the user cannot see, which reads as the key having done nothing —
+            // the caveat he reported. This is the request that says "bring this into the frame",
+            // and the container that can scroll is the one that answers it.
+            runCatching { candidate.performAction(AccessibilityNodeInfo.ACTION_SHOW_ON_SCREEN) }
             val ok = runCatching {
                 candidate.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
             }.getOrDefault(false)
@@ -230,7 +237,13 @@ class DictateAccessibilityService : AccessibilityService() {
         out: MutableList<AccessibilityNodeInfo>,
     ) {
         if (node == null || depth > MA_FIELD_MAX_DEPTH || out.size >= MA_FIELD_MAX_COUNT) return
-        if (node.isLikelyEditable() && runCatching { node.isVisibleToUser }.getOrDefault(true)) {
+        // Visibility is deliberately NOT a condition.
+        //
+        // It was, and it was wrong: a form taller than the screen has its later fields reported as
+        // not visible to the user, so the key refused to reach exactly the fields that are hardest
+        // to reach by hand. Off-screen is a reason to scroll to a field, not a reason to pretend it
+        // does not exist.
+        if (node.isLikelyEditable()) {
             out.add(node)
         }
         for (i in 0 until node.childCount) {
@@ -763,9 +776,9 @@ class DictateAccessibilityService : AccessibilityService() {
         }
 
         /** Moves focus to the next editable field. False when the service is off or nothing took it. */
-        fun focusNextField(): Boolean {
+        fun focusNextField(backwards: Boolean = false): Boolean {
             val ims = instance ?: return false
-            return runCatching { ims.focusNextEditableField() }.getOrDefault(false)
+            return runCatching { ims.focusNextEditableField(backwards) }.getOrDefault(false)
         }
 
         private val _editableFocused = MutableStateFlow(false)

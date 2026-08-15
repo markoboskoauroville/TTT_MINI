@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.KeyboardTab
+import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Replay
@@ -92,6 +93,8 @@ import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.dictate.MaCaseCycle
+import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.stringRes
@@ -593,6 +596,63 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     }
                 }
 
+                MaFeatureKey.SHIFT -> {
+                    // The real shift, not a private flag: it writes the same inputShiftState the
+                    // letter shift writes, so capitals still come out capital and one press still
+                    // means one letter. Its whole reason to exist is that the letter shift is
+                    // unreachable with the keys folded away, which is the state this row is for.
+                    val shiftState = keyboardManager.activeState.inputShiftState
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        icon = Icons.Default.KeyboardCapslock,
+                        contentDescription = "Shift",
+                        modifier = keyMod,
+                        // Lit while it is holding, so a modifier that outlives the press says
+                        // so rather than leaving him to remember whether he armed it.
+                        tint = if (shiftState != InputShiftState.UNSHIFTED) MaSand else null,
+                    ) {
+                        keyboardManager.activeState.inputShiftState =
+                            when (keyboardManager.activeState.inputShiftState) {
+                                // Three states in a ring, the same three the letter shift uses:
+                                // off, once, locked. Locked matters here more than on the letters,
+                                // because backwards through a long form is several presses of TAB
+                                // and re-arming shift before each one would be the worse key.
+                                InputShiftState.UNSHIFTED -> InputShiftState.SHIFTED_MANUAL
+                                InputShiftState.SHIFTED_MANUAL -> InputShiftState.CAPS_LOCK
+                                else -> InputShiftState.UNSHIFTED
+                            }
+                    }
+                }
+
+                MaFeatureKey.CHANGE_CASE -> {
+                    // Aa. The selection if there is one, otherwise the whole field: the same rule
+                    // Ctrl+P uses, and for the same reason — correct what I marked, or all of it.
+                    ThemedTextKey(
+                        label = "Aa",
+                        modifier = keyMod,
+                        tint = null,
+                    ) {
+                        val content = editorInstance.activeContent
+                        val selected = content.selectedText
+                        if (selected.isNotEmpty()) {
+                            MaCaseCycle.next(selected)?.let { editorInstance.commitText(it) }
+                        } else {
+                            val whole = buildString {
+                                append(content.textBeforeSelection)
+                                append(content.textAfterSelection)
+                            }
+                            val next = MaCaseCycle.next(whole)
+                            if (next != null) {
+                                // Select everything, then replace it. Selecting first is what makes
+                                // this one undo step rather than a delete and a type, and it is also
+                                // how the field ends up with the cursor somewhere sensible.
+                                editorInstance.setSelection(0, whole.length)
+                                editorInstance.commitText(next)
+                            }
+                        }
+                    }
+                }
+
                 MaFeatureKey.NEXT_FIELD -> {
                     // The tab arrow: an arrow meeting a bar, which is the symbol printed on the key
                     // this replaces. KeyboardTab is the one Material glyph that draws it, and it is
@@ -609,14 +669,28 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                             // off until somebody turns it on by hand, and opening that screen is
                             // more use than a message saying nothing happened.
                             maOpenAccessibilitySettings(context)
-                        } else if (!DictateAccessibilityService.focusNextField()) {
-                            // Nothing took focus: one field on screen, or none. Worth saying,
-                            // because a key that silently does nothing reads as broken.
-                            Toast.makeText(
-                                context,
-                                "No other field on this screen",
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                        } else {
+                            // Shift means backwards, exactly as it does on a desktop. Either shift
+                            // counts: the one on the letters, or the one on this row when the keys
+                            // are folded away.
+                            val shift = keyboardManager.activeState.inputShiftState
+                            val backwards = shift != InputShiftState.UNSHIFTED
+                            val moved = DictateAccessibilityService.focusNextField(backwards)
+                            // A one-press shift is spent here, the way it is spent by a letter.
+                            // Caps lock is not, because somebody who locked it is walking a form
+                            // backwards and means to keep going.
+                            if (shift == InputShiftState.SHIFTED_MANUAL) {
+                                keyboardManager.activeState.inputShiftState = InputShiftState.UNSHIFTED
+                            }
+                            if (!moved) {
+                                // Nothing took focus: one field on screen, or none. Worth saying,
+                                // because a key that silently does nothing reads as broken.
+                                Toast.makeText(
+                                    context,
+                                    "No other field on this screen",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         }
                     }
                 }

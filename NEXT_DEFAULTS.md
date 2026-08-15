@@ -1155,3 +1155,50 @@ because this must find every field rather than the nearest one, and modern layou
 The icon is `Icons.Default.KeyboardTab`, **verified to exist** by extracting
 `material-icons-extended-android` and finding `androidx/compose/material/icons/filled/KeyboardTabKt.class`
 — this file's own history says an icon that only exists in the documentation is a red build.
+
+---
+
+# 35. Shift+Tab, a row Shift, and Aa
+
+## The visibility caveat, fixed
+
+`collectEditable` filtered on `isVisibleToUser`, which was wrong and was mine. A form taller than the
+screen reports its later fields as not visible, so the key refused to reach **exactly the fields that
+are hardest to reach by hand**. Off screen is a reason to scroll to a field, not a reason to pretend
+it is not there.
+
+The filter is gone and `ACTION_SHOW_ON_SCREEN` runs before `ACTION_FOCUS`, so the container scrolls
+the field into the frame and then it takes focus.
+
+## Shift on the feature row
+
+`MaFeatureKey.SHIFT` writes the same `inputShiftState` the letter shift writes — the real modifier,
+not a private flag sharing a name. It exists because the letter shift is unreachable in the state
+this row is for: the row alone with the keys folded away.
+
+Three states in a ring: off, once, locked. Locked earns its place here more than on the letters,
+because walking backwards through a long form is several presses of TAB and re-arming shift before
+each one would be the worse key. Lit in sand while it is holding.
+
+## Shift+TAB
+
+`NEXT_FIELD` reads `inputShiftState` and walks backwards when it is set, from either shift. A
+`SHIFTED_MANUAL` is **spent** by the press, the way a letter spends it; `CAPS_LOCK` is not, because
+somebody who locked it means to keep going.
+
+## Aa, the case cycle
+
+`MaCaseCycle`: lower → UPPER → Sentence → Title → lower. Selection if there is one, otherwise the
+whole field — the same rule Ctrl+P uses.
+
+**The next case is read from the text, never from a counter.** A remembered position would go wrong
+the moment anything else changed the text and would do it invisibly, so the key would seem to skip a
+step for no reason. Unrecognised text starts the ring rather than being refused.
+
+It steps twice when a transform would change nothing, because two cases can produce identical text —
+a single capitalised word is both Sentence and Title — and stopping there looks like a dead key.
+
+The four transforms are `MaCaseTransform`'s, not new ones: locale-aware, with `don't` not becoming
+`Don'T` and sentence case lowering the shout. **Verified against the ring** before wiring: four
+presses return to the start, text with no letters returns null, and Croatian diacritics uppercase
+correctly.
