@@ -65,6 +65,7 @@ import dev.patrickgold.florisboard.dictate.provider.TranscriptionApi
 import dev.patrickgold.florisboard.dictate.provider.TranscriptionRequest
 import dev.patrickgold.florisboard.dictate.provider.TranscriptionResult
 import dev.patrickgold.florisboard.dictate.overlay.AccessibilitySink
+import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.recognition.RecognitionSink
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.keyboardManager
@@ -2303,6 +2304,26 @@ object DictateController {
     private suspend fun commitOutput(context: Context, text: String): Boolean {
         // Empty result (e.g. silence): nothing to insert — a no-op is a success, not a failed write.
         if (text.isEmpty()) return true
+        // A voice command, before anything is written. "press send" said on its own is an
+        // instruction rather than a sentence, and this is the one place every finished
+        // transcription passes through on its way to a field, whichever sink it is bound for.
+        //
+        // The order matters: it is tried BEFORE the text is committed, and it only wins if the
+        // press actually lands. pressScreenTarget returns the term it found, or null when the
+        // screen has nothing by that name — and on null this falls through and types the words as
+        // usual. So a misheard command costs nothing, which is the whole reason the rule can be
+        // allowed to fire without asking first.
+        if (prefs.dictate.maVoiceCommands.get() && DictateAccessibilityService.isRunning) {
+            val spoken = MaVoiceCommand.targetIn(text)
+            if (spoken != null) {
+                val targets = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
+                    .ifEmpty { MaMagicTargets.defaults() }
+                val pressed = DictateAccessibilityService.pressScreenTarget(
+                    MaVoiceCommand.candidatesFor(spoken, targets),
+                )
+                if (pressed != null) return true
+            }
+        }
         val sink = sink(context)
         // A live prompt that worked on the whole field replaces it. commitText already replaces a
         // selection, so selecting everything first turns the insert into the rewrite that was asked

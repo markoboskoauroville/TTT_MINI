@@ -32,6 +32,16 @@ object MaMagicTargets {
     private const val SEP = '\u001E'
     private const val FIELD = '\u001D'
 
+    /**
+     * The term that means "this is not a term, it is room".
+     *
+     * A reserved string rather than a fifth field, because [parse] throws away any entry whose term
+     * is blank — a spacer has to carry something through storage or it will not survive being
+     * written and read back. Everything that walks this list already had to skip disabled entries,
+     * so skipping spacers is the same shape of check in the same places rather than a new concept.
+     */
+    const val SPACER = "\u001Fspacer"
+
     /** @param term what to look for, matched against the label a screen reader would announce */
     /**
      * @param term what to look for on screen
@@ -62,9 +72,15 @@ object MaMagicTargets {
          */
         val label: String = "",
     ) {
+        /** Room on the row, not a button to press. */
+        val isSpacer: Boolean get() = term == SPACER
+
         /** What to draw on the key. */
         val face: String get() = label.ifBlank { term }
     }
+
+    /** A new piece of room, ready to be dragged where he wants it. */
+    fun spacer(): Target = Target(term = SPACER)
 
     /**
      * The starting list: Marko's three buttons, then the obvious neighbours.
@@ -107,9 +123,15 @@ object MaMagicTargets {
         Target(term = "Generate Images", label = "gen"),
     )
 
-    /** What the wand actually searches, in order. Unticked terms are absent, not empty strings. */
+    /**
+     * What the wand actually searches, in order. Unticked terms are absent, not empty strings.
+     *
+     * Spacers drop out here. A spacer that reached the search would be a term nobody typed being
+     * hunted for on screen, and the one thing worse than a wand that finds nothing is a wand that
+     * finds something.
+     */
     fun activeTerms(targets: List<Target>): List<String> =
-        targets.filter { it.enabled && it.term.isNotBlank() }.map { it.term.trim() }
+        targets.filter { it.enabled && !it.isSpacer && it.term.isNotBlank() }.map { it.term.trim() }
 
     fun serialize(targets: List<Target>): String =
         targets.joinToString(SEP.toString()) {
@@ -131,8 +153,9 @@ object MaMagicTargets {
      * answering to Claude's term is the failure this exists to prevent.
      */
     fun activeTermsFor(targets: List<Target>, appPackage: String?): List<String> =
-        targets.filter { it.enabled && (it.appPackage == null || it.appPackage == appPackage) }
-            .map { it.term }
+        targets.filter {
+            it.enabled && !it.isSpacer && (it.appPackage == null || it.appPackage == appPackage)
+        }.map { it.term }
 
     /**
      * Parses the stored string, dropping anything malformed rather than throwing.

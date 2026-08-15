@@ -1064,6 +1064,20 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         /**
+         * Whether a transcription reading "press something" presses instead of being typed.
+         *
+         * On by default, because it was asked for and because it cannot lose anything: a command
+         * whose button is not on screen falls through and is written into the field exactly as it
+         * would have been. The switch exists for the case the rule is simply not wanted — somebody
+         * who dictates about pressing things would rather have their words than a keyboard second
+         * guessing them, and that person should be able to say so once and be left alone.
+         */
+        val maVoiceCommands = boolean(
+            key = "dictate__ma_voice_commands",
+            default = true,
+        )
+
+        /**
          * How far the S key scrolls, in pages. Negative scrolls up.
          *
          * One number with a sign rather than a direction and a distance, so one key does both and

@@ -52,6 +52,9 @@ building: a one-time merge that appends missing built-in defaults to an existing
 | 20 | Wire the ONNX predictor to a real model (contract already built, build 84) | large |
 | 21 | Configurable long-press symbols on `Z X C V B N M` — touches upstream layout code | large |
 | 22 | The sequencer — see SEQUENCER_PARKED.md; needs the action-extraction refactor first | large |
+| 23 | The hardware trigger for voice commands — **not** Power, see §27 for what is possible | medium |
+| 24 | Voice commands settings entry of its own, holding the switch and the trigger choice | small |
+| 25 | Merge new built-in defaults into a list that already exists, once, behind a flag (see the caveat on 3) | small |
 
 **Notes on order**
 
@@ -786,3 +789,72 @@ Two preferences holding a layout id each, defaulting to what ships now — `symb
 from the letters view. The key's face comes from the slot rather than being fixed, so `sym1` becomes
 whatever is in it. That means the label logic in ComputingEvaluator stops being a constant and starts
 reading a preference; small, but it touches the file that draws every key face, so it wants care.
+
+---
+
+# 26. Voice commands — "press send" (shipped, build 110)
+
+A finished transcription reading **exactly two words**, a press verb and one more word, presses that
+button instead of being typed. `MaVoiceCommand.targetIn` is the rule and `commitOutput` in
+`DictateController` is the seam — the one place every finished transcription passes through on its
+way to a field, whichever sink it is bound for.
+
+Verbs: `press`, `pritisni`, `stisni`, `klikni`. Trailing punctuation is stripped first, because
+AssemblyAI punctuates and "Press send." is what actually arrives.
+
+**Why exactly two words.** Dictated text is what this app is for, and a rule that ate part of a
+sentence would lose work that cannot be recovered — the words were spoken, not typed, so there is
+nothing to undo back to. Two words alone is not something anybody dictates mid-sentence: it is said
+to a machine, after a pause, on purpose. Tested against `I will press send now` and
+`press the send button`; both stay as text.
+
+**Nothing is lost when it misses.** `pressScreenTarget` returns the term it found, or null. On null
+the code falls through and types the words as it always would have. That is what makes it safe to
+fire without confirming.
+
+**The spoken word is matched against taught terms first**, by face and by term, so "press stop"
+finds the target labelled `stop` and searches for `Stop responding` — he never has to say the long
+name. The raw spoken word goes last as a fallback so an untaught button still answers to its own
+name.
+
+Switch: `dictate__ma_voice_commands`, on by default, on the Magic finger screen.
+
+---
+
+# 27. The hardware trigger — and why it cannot be Power
+
+**Volume Up + Power is not buildable. This is a platform limit, not a difficulty.** The power key is
+consumed by the system's window manager and is never dispatched to applications, and it is not
+delivered to accessibility services either, even ones holding `flagRequestFilterKeyEvents`. There is
+no permission that changes this. Any design resting on Power has to be redrawn rather than
+attempted.
+
+## What is actually available
+
+**Volume keys, globally, through the accessibility service.** An `AccessibilityService` declaring
+`android:canRequestFilterKeyEvents` and `flagRequestFilterKeyEvents` receives `onKeyEvent` for the
+volume keys **everywhere** — no keyboard, no focus, any app. This app already runs such a service
+for the finger, the floating button and TAB, so the trigger has a home already built.
+
+That gives these as real options:
+
+- **Volume Up + Volume Down together.** The closest thing to what he described: two buttons, one
+  gesture, works everywhere. Does not collide with the screenshot, which is Power + Volume Down.
+  The one caution is Android's own "hold both volume keys" accessibility shortcut — a short chord is
+  distinguishable from a three second hold, but it must be checked on his phone.
+- **Long press Volume Up.** One button, no chord. Cheapest of the three.
+- **Double press Volume Up.**
+
+## What already exists and overlaps
+
+`maHandleVolumeKey` in `FlorisImeService` already gives Volume Up start/stop dictation and Volume
+Down cancel-or-switch-language — but **only while the input view is shown**, deliberately, because
+an IME receives key events only then. The new trigger is the same idea moved into the service that
+can hear those keys with no keyboard on screen, and the two must be made to agree rather than both
+firing when the keyboard is up.
+
+## Settings
+
+A **Voice commands** entry of its own in the settings list, holding the on/off switch that now lives
+on the Magic finger screen plus the trigger choice. Deferred with the trigger, since a screen for one
+switch is a screen he has to find for no reason.

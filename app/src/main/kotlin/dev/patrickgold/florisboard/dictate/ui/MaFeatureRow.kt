@@ -355,6 +355,20 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
               )
           }
           magicKeys.forEach { target ->
+            if (target.isSpacer) {
+              // Room, and nothing else — the same idea as the feature row spacer and deliberately
+              // the same setting, so one number moves both.
+              //
+              // A fixed width here rather than a weight, because this row scrolls sideways. A
+              // weight inside a scrolling row has no finite width to take its share of, and the
+              // feature row can use one only because it does not scroll. Ten tenths is one wand
+              // key, so the number still means what it says on the other screen.
+              Spacer(
+                  modifier = Modifier
+                      .width((56 * spacerTenths / 10f).dp)
+                      .fillMaxHeight(),
+              )
+            } else {
             // One key per term, carrying the term itself. Pressing it presses that button and no
             // other — which is the whole difference from the wand, which guesses from a list.
             ThemedTextKey(
@@ -370,6 +384,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 } else {
                     DictateAccessibilityService.pressScreenTarget(listOf(target.term))
                 }
+            }
             }
           }
         }

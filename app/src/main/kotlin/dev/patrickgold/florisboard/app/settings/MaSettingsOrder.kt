@@ -24,7 +24,7 @@ package dev.patrickgold.florisboard.app.settings
 enum class MaSettingsEntry(val id: String, val title: String, val summary: String?) {
     SWITCHBOARD("switchboard", "Switchboard", "Every row the keyboard can show, in one place"),
     FEATURE_ROW("feature_row", "Feature row", "Three rows of keys, drag them into the order you want"),
-    MAGIC("magic", "Magic button", "What it presses on screen, and which it tries first"),
+    MAGIC("magic", "Magic finger", "What it presses on screen, and which it tries first"),
     KEYS("keys", "API keys", "Import, test and manage every key"),
     VOCABULARY("vocabulary", "Learn my words", "Teach the keyboard the names you dictate"),
     BUCKETS("buckets", "Paste timing", "How long each step waits, for the buckets, AP and AC"),

@@ -914,7 +914,7 @@
     <string name="ma__clip_clear">Empty the C buckets</string>
     <string name="ma__app_switch">Switch to the last app</string>
     <string name="ma__app_switch_none">No app to switch back to yet</string>
-    <string name="ma__magic_button">Magic button, press a button on screen</string>
+    <string name="ma__magic_button">Magic finger, press a button on screen</string>
     <string name="ma__wand_cancel">Cancel</string>
     <string name="ma__escape_to_settings">Discard and open settings</string>
     <string name="ma__wand_copy">COPY</string>

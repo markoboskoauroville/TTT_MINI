@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.SpaceBar
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -66,7 +67,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun MaMagicScreen() = FlorisScreen {
-    title = "Magic button"
+    title = "Magic finger"
 
     content {
         val prefs by FlorisPreferenceStore
@@ -98,9 +99,9 @@ fun MaMagicScreen() = FlorisScreen {
 
             prefs.dictate.maMagicRowShown,
 
-            title = "Show the magic button row",
+            title = "Show the magic finger row",
 
-            summary = "A row of its own on the keyboard: the magic button, then one key for each term below. " +
+            summary = "A row of its own on the keyboard: the magic finger, then one key for each term below. " +
 
                 "Turn it off here to take it away.",
 
@@ -108,9 +109,38 @@ fun MaMagicScreen() = FlorisScreen {
 
         Spacer(Modifier.height(8.dp))
 
+        // How it works, in his words rather than Android's. Somebody who knows what the finger is
+        // doing can tell a term that was typed wrong from a button that is not really a button, and
+        // that is the difference between fixing it and giving up on it.
+        Text(
+            text = "How it works: the finger reads the screen the way a screen reader does — every " +
+                "button on it announces a name — finds the name you gave it below, and presses it. " +
+                "It is the same accessibility service the floating button uses, so if it stops " +
+                "working, that service has been switched off.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        SwitchPreference(
+
+            prefs.dictate.maVoiceCommands,
+
+            title = "Voice commands",
+
+            summary = "Say \"press send\" on its own and the finger presses send instead of typing " +
+                "the words. Two words only — press, and the name of the button. A longer sentence " +
+                "is always text, and if nothing on screen answers to that name the words are " +
+                "typed as usual, so nothing is lost. Works in Croatian too: pritisni, stisni, klikni.",
+
+        )
+
+        Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "The magic button presses the first of these it finds on screen. Drag to change which " +
+            text = "The magic finger presses the first of these it finds on screen. Drag to change which " +
                 "is tried first.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -155,6 +185,28 @@ fun MaMagicScreen() = FlorisScreen {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.width(24.dp),
                     )
+                    if (target.isSpacer) {
+                        // A spacer has nothing to search for, nothing to name and nothing to
+                        // switch off, so it is drawn with none of those controls rather than with
+                        // controls that do nothing. It keeps the grip and the bin, because moving
+                        // it and removing it are the only two things it is for.
+                        Text(
+                            text = "Room",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (lifted) FontWeight.SemiBold else FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 12.dp),
+                        )
+                        Text(
+                            text = "a gap on the row, its width set in Feature row",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 8.dp),
+                        )
+                    } else {
                     Text(
                         // The face, so the row reads like the key it draws.
                         text = target.face,
@@ -212,6 +264,7 @@ fun MaMagicScreen() = FlorisScreen {
                             modifier = Modifier.size(22.dp),
                         )
                     }
+                    }
                     IconButton(
                         onClick = { commit(targets.filterIndexed { i, _ -> i != index }) },
                     ) {
@@ -252,6 +305,25 @@ fun MaMagicScreen() = FlorisScreen {
                 Spacer(Modifier.width(6.dp))
                 Text("Add a term")
             }
+            // Out here rather than at the foot of the term dialog, which is where it was first
+            // going to go. A spacer has no name to type, so putting it inside the naming dialog
+            // would mean opening a form to add the one thing with nothing to fill in. It arrives
+            // at the bottom of the list and is dragged to where the gap is wanted, exactly like a
+            // term.
+            OutlinedButton(
+                onClick = { commit(targets + MaMagicTargets.spacer()) },
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(Icons.Default.SpaceBar, contentDescription = null)
+                Spacer(Modifier.width(6.dp))
+                Text("Add a spacer")
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             TextButton(onClick = { commit(MaMagicTargets.defaults()) }) { Text("Reset") }
         }
 
