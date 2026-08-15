@@ -620,3 +620,69 @@ than most of the list.
 
 The switcher half is §16 and is large. **Do the comma merge first and on its own**: it is small, it
 is immediately visible, and it frees the space the switcher will want.
+
+---
+
+# 23. Automatic language, clamped to two
+
+Marko's objection to open detection is correct and settles the design: with 99 possible answers and
+only two possible truths, a detector can return Spanish for accented English or Chinese for a noisy
+room. **Whatever detects, its answer must be clamped to {hr, en} before anything acts on it.**
+
+AssemblyAI's own `language_detection` cannot be constrained to a candidate set. That alone rules it
+out as the router — not its accuracy, its unboundedness.
+
+## Two detectors, at two moments, for two different jobs
+
+### A. Before transcribing — audio, via Groq Whisper
+
+Needed because the path must be chosen **before** the audio is sent: English can take Sync and be
+fast; Croatian cannot, since Sync's eighteen languages do not include it.
+
+- Send only the **first few seconds**, not the whole recording. Language is obvious in one sentence
+  and this keeps it nearly free.
+- Smallest Whisper on Groq, chosen for latency rather than accuracy — the question is much easier
+  than transcription.
+- **Clamp the answer:** `hr` stays `hr`; **everything else becomes `en`.** Not "unknown", not the
+  raw guess. Two languages means two outcomes, and English is the safe default because it is the one
+  Sync supports.
+
+### B. After transcribing — text, and this one should be local and free
+
+Marko's second idea, and better than it sounds: check the **transcript** rather than the audio.
+
+**This needs no model and no network at all.** Telling Croatian from English in a sentence is easy
+enough to do on the phone in microseconds:
+
+- Croatian carries č ć ž š đ, which English never does — one of those is nearly conclusive.
+- Failing that, the commonest words separate cleanly: *je, i, na, se, da, u, ne, su* against
+  *the, and, of, to, is, it*.
+- A few dozen words and five letters, counted. No download, no latency, no cost, works offline.
+
+So the "send the text to another model to ask what language it is" step should never be built as an
+API call. It is a hundred lines of Kotlin and a word list.
+
+**What it is for:** disagreement. If the transcript looks Croatian but was transcribed as English,
+the History row says so and offers the re-transcribe with one tap — the failure Marko keeps hitting,
+caught automatically instead of noticed later.
+
+It also removes any need for a second Groq call, and eventually the first: once §20's on-device model
+exists, audio detection can be local too and Groq leaves entirely.
+
+## The switch stays, and starts moving on its own
+
+He was explicit: *"I want to see how it's switching automatically."*
+
+The HR/ENG key remains exactly where it is and keeps its tap-to-override. What changes is that the
+detector writes to it, so he watches it flip and can disagree. A setting that changes itself in front
+of you is trustworthy in a way a hidden one never is — and it means the override is always one tap,
+never a settings trip.
+
+**Manual and automatic in one control**, which is what he asked for.
+
+## Order
+
+1. **B first.** It is local, free, and needs no key — and it makes every wrong transcription visible
+   even before A exists.
+2. **A second**, once B is proving how often the language is actually wrong.
+3. **Drop Groq** when §20 lands and detection can be done on-device.
