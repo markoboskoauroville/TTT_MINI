@@ -469,3 +469,40 @@ The number row is the interesting one: it should carry the same little-keyboard 
 carries, so the switch and the key are visibly the same thing. That ties this note to the zone-key
 note above — do them together and both are better, do them apart and the icon has to be chosen
 twice.
+
+---
+
+# 10. Switching between keyboard views, properly
+
+Reaching a view takes several presses at different places on the screen. Marko: *"For Baba, that's
+too much."*
+
+The `?123` key becomes the switcher, and it stays in one place so his thumb does not have to move.
+
+- **Tap** — cycle to the next view. Tap tap tap, always the same spot.
+- **Long press** — a list of every view, tapped directly. Faster than cycling once there are more
+  than three.
+- **At the top of that list, Edit** — opens a new settings screen, **Keyboard views**, where the
+  views are dragged into the order the cycle follows. Same drag-to-reorder as everything else in this
+  app, so there is nothing new to learn.
+
+## The two-view swap, which is the part he actually needs
+
+*"Sometimes I need to go between numerical keyboard and normal keyboard. Even direct access is too
+slow."*
+
+A separate key that flips between the **last two views used**. Not a cycle, not a list — one key,
+two views, no thinking.
+
+**And the better version he arrived at while talking:** rather than remembering the last two, put
+**tick boxes in Keyboard views** marking which views take part. The key then cycles only the ticked
+ones. Two ticked gives the swap; three gives a small cycle of exactly the views he uses.
+
+That is better than "last two" because last-two is a guess about intent that goes wrong the moment
+he visits a third view for one keystroke, and ticks are a statement of intent that cannot.
+
+## Why this deserves real effort
+
+Switching is not a feature next to the others — it is the tax paid on every one of them. Every view
+added makes reaching all the rest slower, so the app gets worse at this as it gets better at
+everything else. Worth over-building rather than under-building.
