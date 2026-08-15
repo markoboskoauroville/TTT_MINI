@@ -686,3 +686,49 @@ never a settings trip.
    even before A exists.
 2. **A second**, once B is proving how often the language is actually wrong.
 3. **Drop Groq** when §20 lands and detection can be done on-device.
+
+---
+
+# 24. The corpus he already has
+
+Marko asked for his transcriptions to be collected and analysed so the app learns from them, with a
+cache he can inspect, delete, and read statistics from.
+
+**Most of it exists.** Saying so is more useful than building a second copy.
+
+- **The store is the History.** Every transcription is already kept with its text, language, model,
+  duration and size, and the storage limits screen already shows what is retained.
+- **The learning already happens twice.** `MaNgram` learns from what he commits and feeds the
+  suggestion row. `Learn my words` mines the history for vocabulary the dictionary lacks.
+
+So the answer is **not a transcription cache** — that would be a second copy of the History that can
+disagree with it, and the wrong kind of work. What is actually missing:
+
+## What to build
+
+**A statistics screen over the history that already exists.**
+
+- Total words dictated, total recordings, hours of audio.
+- The words he uses most, with counts — his own vocabulary ranked.
+- Croatian against English, by proportion.
+- How often a transcription was re-run, and in which language. That number is the app grading
+  itself.
+
+**Make the corpus openable.** Export the history as one text file to `Documents/TTTmini/`, beside
+the keys and the settings backup. Then he can read it, keep it, or feed it somewhere else — and
+deleting it in the app does not destroy it.
+
+**Say what it costs.** File size and word count on that screen, so deleting is an informed choice
+rather than a guess.
+
+## Why this fits the app rather than decorating it
+
+His words: *"we are building applications which are not only useful, which are teachers. Student and
+teacher at the same time."*
+
+Statistics on his own speech are the app teaching him something about himself he cannot otherwise
+see — which words he leans on, how much he actually dictates, how often the language guess is wrong.
+And every one of those numbers is also the app being taught: the re-transcribe count says whether
+§23 is working, the word ranks are what §19 needs for Croatian suggestions.
+
+The same data serves both directions, which is what makes it worth building rather than merely nice.
