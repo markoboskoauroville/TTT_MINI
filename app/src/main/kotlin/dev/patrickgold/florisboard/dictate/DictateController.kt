@@ -3456,8 +3456,11 @@ object DictateController {
 
     /** The active transcription provider's stored credentials (keyring). */
     private fun transcriptionAccount(): ProviderAccount {
-        val id = prefs.dictate.transcriptionProviderId.get()
-        return prefs.dictate.providerAccounts.get().getOrEmpty(id)
+        val accounts = prefs.dictate.providerAccounts.get()
+        // Resolved, not read. The stored id is a fallback for a setup with no AssemblyAI key; it is
+        // never allowed to point transcription at the language provider. See MaRoles.
+        val id = MaRoles.transcription(accounts, prefs.dictate.transcriptionProviderId.get())
+        return accounts.getOrEmpty(id)
     }
 
     /**
@@ -3491,8 +3494,9 @@ object DictateController {
 
     /** The active rewording provider's stored credentials (keyring). */
     private fun rewordingAccount(): ProviderAccount {
-        val id = prefs.dictate.rewordingProviderId.get()
-        return prefs.dictate.providerAccounts.get().getOrEmpty(id)
+        val accounts = prefs.dictate.providerAccounts.get()
+        val id = MaRoles.rewording(accounts, prefs.dictate.rewordingProviderId.get())
+        return accounts.getOrEmpty(id)
     }
 
     /** Effective rewording key: the rewording account's, falling back to the transcription account's. */

@@ -1019,3 +1019,43 @@ is a separate deliberate wipe and should be asked for rather than assumed.
 chose one, and they are only as current as this was written. `supportsDynamicModels` is true, so the
 picker can fetch the live list; a stale default costs a trip to the model picker, not a broken
 provider.
+
+---
+
+# 32. The roles are fixed, and the chips are gone
+
+## What went wrong
+
+The API keys screen asked which provider held which role: a `transcription` and a `rewording` chip
+per provider, writing `transcriptionProviderId` and `rewordingProviderId`.
+
+Groq arrived in build 114, advertised transcription because it genuinely can transcribe, and **took
+the transcription role**. Every dictated word went to Groq's Whisper instead of AssemblyAI, silently,
+with the screen showing what looked like a correct configuration. The Croatian-never-Sync rule lives
+inside the AssemblyAI path, so while that was true the rule protected nothing — AssemblyAI was not
+being called at all.
+
+A setting that can be wrong in a way nothing announces is a trap, not a setting.
+
+## What replaces it
+
+`MaRoles` holds the mapping: `assemblyai` transcribes, `anthropic` rewords and proofreads, `groq`
+detects language. `transcriptionAccount()` and `rewordingAccount()` **resolve** through it at the
+moment the job is done rather than reading a stored id, so a value that has drifted cannot survive,
+because nothing consults it.
+
+The stored preference remains as a fallback for a setup with no key for the fixed provider, which
+keeps custom endpoints working — but it can never resolve to the language provider, in either role.
+
+The chips are removed. Each provider now shows its role as a plain label, read from `MaRoles`, so the
+screen cannot describe an arrangement different from the one in use. `MaRoleChip` and the two
+`ProviderSection` parameters that fed it are deleted.
+
+**The on-device model is unaffected**: that path reads `localTranscriptionAccount()` against
+`ProviderRegistry.LOCAL` directly and never went through the role id.
+
+## The rule to keep
+
+When a new provider is added, give it a role in `MaRoles` — do not give the user a chip. Capability
+is not the same as job: Groq can transcribe and must not, and the difference is a fact about this
+app rather than about Groq.

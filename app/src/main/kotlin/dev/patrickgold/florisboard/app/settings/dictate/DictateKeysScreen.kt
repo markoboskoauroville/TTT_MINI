@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.dictate.MaKeyImport
+import dev.patrickgold.florisboard.dictate.MaRoles
 import dev.patrickgold.florisboard.dictate.MaKeyRingStore
 import dev.patrickgold.florisboard.dictate.MaUsageStore
 import dev.patrickgold.florisboard.dictate.MaVault
@@ -573,8 +574,6 @@ fun DictateKeysScreen() = FlorisScreen {
                 preset = preset,
                 accounts = accounts,
                 statuses = statuses,
-                isTranscription = preset.id == activeTranscriptionId,
-                isRewording = preset.id == activeRewordingId,
                 onTest = { key -> testKey(preset, key) },
                 onSave = ::save,
                 // Looked up, not computed. The map was built once above in a single pass over the
@@ -675,8 +674,6 @@ private fun ProviderSection(
     preset: ProviderPreset,
     accounts: ProviderAccounts,
     statuses: SnapshotStateMap<String, KeyStatus>,
-    isTranscription: Boolean,
-    isRewording: Boolean,
     onTest: (String) -> Unit,
     onSave: (ProviderAccounts) -> Unit,
     usageOf: (String) -> String = { "" },
@@ -707,29 +704,24 @@ private fun ProviderSection(
     // "the transcriber". A role only appears on a provider that can actually do it, so Anthropic
     // never offers to transcribe, and only on one that has a key, since pointing a role at an empty
     // provider is how the app ends up saying it has no key when it does.
-    val canTranscribe = preset.capabilities.transcription
-    val canReword = preset.capabilities.chat
-    if (keys.isNotEmpty() && (canTranscribe || canReword)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (canTranscribe) {
-                MaRoleChip(
-                    label = "transcription",
-                    selected = isTranscription,
-                    onSelect = { scope.launch { prefs.dictate.transcriptionProviderId.set(preset.id) } },
-                )
-            }
-            if (canReword) {
-                MaRoleChip(
-                    label = "rewording",
-                    selected = isRewording,
-                    onSelect = { scope.launch { prefs.dictate.rewordingProviderId.set(preset.id) } },
-                )
-            }
-        }
+    // What this provider does, stated rather than asked.
+    //
+    // These were two tappable chips, and one of them silently broke dictation: Groq advertises
+    // transcription because it genuinely can transcribe, it got selected, and every word went to
+    // Groq's Whisper instead of AssemblyAI while the screen showed a perfectly correct-looking
+    // configuration. The roles have not been an open question for a long time, so asking was
+    // offering a way to be wrong in exchange for a choice nobody wanted to make.
+    //
+    // The label reads from MaRoles, the same object the call path resolves through, so this cannot
+    // describe an arrangement different from the one actually in use.
+    val role = MaRoles.roleLabel(preset.id)
+    if (keys.isNotEmpty() && role != null) {
+        Text(
+            text = role,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+        )
     }
 
     if (keys.isEmpty()) {
@@ -827,38 +819,5 @@ private fun ProviderSection(
                 )
             }
         }
-    }
-}
-
-/**
- * One role, as a radio button with its name beside it.
- *
- * A radio rather than a checkbox because the choice is exclusive: selecting a provider for a role
- * takes that role away from whoever had it, which is precisely what a radio group means and what a
- * row of checkboxes would quietly fail to say.
- */
-@Composable
-private fun MaRoleChip(
-    label: String,
-    selected: Boolean,
-    onSelect: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(enabled = !selected, onClick = onSelect)
-            .padding(end = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = onSelect)
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (selected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-        )
     }
 }
