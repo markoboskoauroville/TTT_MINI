@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.dictate.nlp
 
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.MaLanguage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,6 +45,15 @@ object MaNgram {
     @Volatile
     private var loaded = false
 
+    /**
+     * The application context, kept for reading the shipped dictionary asset.
+     *
+     * The application context and never an Activity or the keyboard service: this object outlives
+     * both, and holding either would leak a whole view hierarchy for the sake of opening a file.
+     */
+    @Volatile
+    private var appContext: Context? = null
+
     private var saveJob: Job? = null
 
     /**
@@ -54,6 +64,7 @@ object MaNgram {
      * keyboard.
      */
     fun initialize(context: Context) {
+        appContext = context.applicationContext
         if (loaded) return
         loaded = true
         val target = File(context.filesDir, FILE_NAME)
@@ -143,9 +154,37 @@ object MaNgram {
         if (isIncognito) return emptyList()
         val prefs by FlorisPreferenceStore
         if (!prefs.dictate.maNgramEnabled.get()) return emptyList()
-        if (model.totalWords < MIN_WORDS_BEFORE_PREDICTING) return emptyList()
-        val (two, one) = model.contextOf(textBeforeCursor)
-        return model.predict(previousTwo = two, previousOne = one, prefix = currentWord)
+        // The personal model, when it has seen enough to be worth asking. Below that threshold it
+        // is not silent because it is broken; it is silent because a handful of words produces
+        // confident nonsense.
+        val personal = if (model.totalWords >= MIN_WORDS_BEFORE_PREDICTING) {
+            val (two, one) = model.contextOf(textBeforeCursor)
+            model.predict(previousTwo = two, previousOne = one, prefix = currentWord)
+        } else {
+            emptyList()
+        }
+        if (personal.size >= PREDICT_LIMIT) return personal
+        // The shipped Croatian list fills what is left, and only then.
+        //
+        // Three conditions, each of them the point rather than caution. A prefix, because a word
+        // list with no prefix is the commonest word in the language rather than a prediction.
+        // Croatian, because English already has a dictionary from upstream and offering both would
+        // put Croatian words under an English sentence. And last, always, so a word he has actually
+        // written outranks a word the language merely contains.
+        //
+        // Deliberately outside the totalWords gate: an empty personal model is exactly the state
+        // this exists for. A fresh install should suggest Croatian on the first word, not after
+        // three hundred.
+        if (currentWord.isEmpty()) return personal
+        if (MaLanguage.active() != MaLanguage.HR) return personal
+        val context = appContext ?: return personal
+        val already = personal.mapTo(HashSet()) { it.word.lowercase() }
+        return personal + MaBaseDictionary.suggest(
+            context = context,
+            prefix = currentWord,
+            limit = PREDICT_LIMIT - personal.size,
+            exclude = already,
+        )
     }
 
     /**
@@ -191,6 +230,9 @@ object MaNgram {
     private const val MAX_LEARN_LENGTH = 2_000
 
     /** Below this the model answers everything and is right about nothing. */
+    /** How many suggestions the row asks for. Matches MaNgramModel.predict's own default. */
+    private const val PREDICT_LIMIT = 3
+
     private const val MIN_WORDS_BEFORE_PREDICTING = 300L
 
     /** What ends a sentence for the purpose of handing it over. */

@@ -1,0 +1,36 @@
+hr_words.txt — Croatian word frequency list
+===========================================
+
+Source
+------
+Derived from the FrequencyWords project by Hermit Dave
+(https://github.com/hermitdave/FrequencyWords), 2018 Croatian list, which is
+itself built from the OpenSubtitles corpus (http://opus.nlpl.eu/OpenSubtitles.php).
+
+Licence
+-------
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+https://creativecommons.org/licenses/by-sa/4.0/
+
+This file and the derived list hr_words.txt are distributed under CC BY-SA 4.0.
+That licence applies to this data file only. It does not apply to the rest of
+the application, which is under the Apache License 2.0.
+
+What was changed
+----------------
+The original list is word/count pairs ordered by frequency. For this app it was:
+
+  - filtered to words of 2 to 22 characters using only the Croatian alphabet
+    (a-z plus c-caron, c-acute, z-caron, s-caron, d-stroke);
+  - filtered to remove subtitle noise: words that are a single letter repeated,
+    and any word containing three identical letters in a row;
+  - cut to the 50,000 most frequent remaining words, which covers roughly 90%
+    of running text;
+  - re-scored, replacing raw counts with a value from 1 to 255 on a logarithmic
+    scale, so the ranking survives in one byte per word;
+  - sorted alphabetically by code point, so the app can binary search it.
+
+Format
+------
+One word per line, then a single space, then the score. Higher scores are more
+common words. Sorted ascending by word.

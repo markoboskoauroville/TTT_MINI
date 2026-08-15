@@ -48,8 +48,8 @@ building: a one-time merge that appends missing built-in defaults to an existing
 |---|---|---|
 | 17 | TRANSCRIPTION settings group — move everything about text into one place | medium |
 | 18 | Shape: prompt library, 20 slots, model radio, through the LLM Gateway | large |
-| 19 | Croatian suggestions that are actually good — dictionary work, not a switch | large |
-| 20 | Wire the ONNX predictor to a real model (contract already built, build 84) | large |
+| ~~19~~ | ~~Croatian suggestions~~ — **shipped, build 116.** 50,000 Croatian words bundled, searched under the personal model. See §33. | — |
+| 20 | Wire the ONNX predictor to a real model — **measured and argued against, see §33.** Do not start this without reading it. | large |
 | 21 | Configurable long-press symbols on `Z X C V B N M` — touches upstream layout code | large |
 | 22 | The sequencer — see SEQUENCER_PARKED.md; needs the action-extraction refactor first | large |
 | 23 | The hardware trigger for voice commands — **not** Power, see §27 for what is possible | medium |
@@ -1059,3 +1059,63 @@ screen cannot describe an arrangement different from the one in use. `MaRoleChip
 When a new provider is added, give it a role in `MaRoles` — do not give the user a chip. Capability
 is not the same as job: Groq can transcribe and must not, and the difference is a fact about this
 app rather than about Groq.
+
+---
+
+# 33. Croatian suggestions, and why not the neural model
+
+## What shipped
+
+50,000 Croatian words in `assets/dictate/hr_words.txt`, 545 KB, searched by `MaBaseDictionary` and
+appended by `MaNgram.predict` **after** the personal tiers.
+
+Three conditions on it, each deliberate:
+
+- **Only with a prefix.** A word list with no prefix returns the commonest word in the language,
+  which is not a prediction.
+- **Only when Croatian is active.** English already has a dictionary from upstream, and offering both
+  would put Croatian under an English sentence.
+- **Always last.** A word he has written outranks a word the language merely contains. `tier` is not
+  read downstream, so position in the list *is* the ranking — which is why appending is the whole
+  mechanism and `TIER_BASE = 0` is documentation.
+
+It sits **outside** the `MIN_WORDS_BEFORE_PREDICTING` gate on purpose. An empty personal model is
+exactly the state this exists for: a fresh install should suggest Croatian on the first word, not
+after three hundred.
+
+**Memory.** Held as one string plus one `IntArray` of line offsets, not 50,000 `String` objects,
+which would cost megabytes in object headers alone inside a process Android kills for using what an
+app may use freely. Loaded on first Croatian use; an English-only session never pays for it.
+
+**Verified before building**: the binary search plus forward scan was run against brute force over
+the real file for fourteen prefixes including `ž`, `šta`, `đ`, a one-letter prefix and a miss, plus
+the exclude path. All identical.
+
+**Licence.** CC BY-SA 4.0, from hermitdave/FrequencyWords over OpenSubtitles. Attribution and the
+list of modifications are in `assets/dictate/hr_words_LICENSE.txt`. **That licence covers the data
+file only**, not the app. Share-alike applies if the list is redistributed.
+
+## Sizing, if it is ever revisited
+
+Coverage of running text by list size, measured on the source corpus: 10k → 81%, 20k → 85%, 30k →
+87.5%, **50k → 89.7%**, 80k → 91.3%, 120k → 92.3%. The next 50,000 words buy about three points and
+double the file. 50k is where the curve flattens.
+
+## §20, the neural predictor — measured, and argued against
+
+`Xenova/distilgpt2` int8 was downloaded and its graph inspected rather than guessed:
+
+- **81 MB**, 15 inputs (`input_ids`, `attention_mask`, twelve `past_key_values.N.key/value`,
+  `use_cache_branch`), output `logits [batch, seq, 50257]`.
+- **50257 is the GPT-2 BPE vocabulary: English only.** It cannot help the language that was actually
+  missing.
+- 81 MB inside an input method risks the keyboard being killed mid-sentence.
+- `MaNeuralPredictor.BUDGET_MS` is 60 ms and discards slower passes, disabling the model after five.
+  distilgpt2 int8 on this class of phone lands near that line, so it could install and then silently
+  switch itself off.
+- Uncounted work: a byte-level BPE tokenizer in Kotlin plus ~1.5 MB of vocab and merges, and a
+  downloader, since 81 MB cannot go in the repo.
+- `MaNeuralPredictor` is also called from nowhere; wiring it into `NlpManager` is a further step.
+
+**If it is ever revisited, find a small multilingual model first.** An English-only model is the
+impressive answer to a question this app does not have.
