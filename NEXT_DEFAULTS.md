@@ -1527,3 +1527,40 @@ back when the user returns. So the wizard re-checks `MaVault.hasFullAccess()` an
 
 Both new steps can be skipped, and a skip is remembered for the session, so neither can trap someone
 whose phone does not offer the setting at all.
+
+---
+
+# 44. The bottom row gives its width to the spacebar
+
+`ctrl`, both switchers and `enter` were each `1.56f` — half again a letter's width. Four wide keys on
+one row, and the spacebar took only what was left.
+
+All four are now `1.00f`. **Nothing else had to change**: space carries `flayGrow = 1.0f`, so every
+tenth taken from them is handed straight to it. Shift and delete keep `1.56f`, because they are the
+two keys hit most often without looking and they have the edge of the row to aim at.
+
+The switcher faces are `sy`, with the digit as a **corner hint**. It has its own branch in
+`computeLabelsAndDrawables` rather than coming from a popup, because that digit is not a second
+character the key can type — holding `sy` lists the layouts (§25), it does not insert a 1.
+
+---
+
+# 45. Global volume keys: what to check when they do nothing
+
+Reported twice as not working. The code path is: config flag → service re-granted → preference on →
+keyboard not in front. **All four are required, and three of them are invisible.**
+
+1. `flagRequestFilterKeyEvents` and `canRequestFilterKeyEvents` — in `accessibility_service_config.xml`
+   since build 124.
+2. **The service must be re-enabled after that config change.** Android binds a service with the
+   capabilities it had when it was switched on; a service left running across the update keeps the
+   old ones and never receives `onKeyEvent`. Off and on again in Accessibility settings.
+3. `dictate__ma_global_volume_keys` — **ships off**, switch in Gestures → Volume keys.
+4. `FlorisImeService.ownsVolumeKeys()` must be false, i.e. the keyboard not on screen. That one is
+   correct behaviour and is the intended case anyway.
+
+**Worth building: make the state visible.** The Gestures switch should say whether the service is
+actually receiving keys — a line reading "the service is running and receiving keys" versus "the
+service needs re-enabling after the last update". Three of the four requirements currently fail
+silently and identically, and no amount of explaining in a chat message substitutes for the screen
+saying which one is unmet.

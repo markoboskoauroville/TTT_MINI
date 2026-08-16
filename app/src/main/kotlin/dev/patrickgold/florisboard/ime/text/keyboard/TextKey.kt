@@ -160,15 +160,23 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
                     else -> 1.56f
                 }
                 else -> when (computed.code) {
-                    // Ctrl carries Shift's width because it sits directly beneath it, and a modifier
-                    // column that lines up is easier to hit without looking.
+                    // Shift and delete keep the wide ends of their row: they are the two keys hit
+                    // most often without looking, and they have the edge to aim at.
                     KeyCode.SHIFT,
-                    KeyCode.CTRL,
                     KeyCode.DELETE -> 1.56f
+                    // The bottom row goes to plain key width.
+                    //
+                    // Ctrl, the two switchers and enter were each half again as wide as a letter,
+                    // which is four wide keys on one row and left the spacebar squeezed into what
+                    // was left. On a keyboard whose words arrive by voice the spacebar is pressed
+                    // far more than any of them, and it is the one key worth being able to hit
+                    // without aiming. Space has flayGrow, so every tenth taken from these is given
+                    // straight to it — nothing else has to change.
+                    KeyCode.CTRL,
                     KeyCode.VIEW_CHARACTERS,
                     KeyCode.VIEW_SYMBOLS,
                     KeyCode.VIEW_SYMBOLS2,
-                    KeyCode.ENTER -> 1.56f
+                    KeyCode.ENTER -> 1.00f
                     else -> 1.00f
                 }
             }
@@ -249,6 +257,15 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
                 57 /* 9 */ -> "WXYZ"
                 else -> null
             }
+        } else if (data.code == KeyCode.VIEW_SYMBOLS || data.code == KeyCode.VIEW_SYMBOLS2) {
+            // The digit moves to the corner, where every other key already keeps its second
+            // meaning. `sym1` and `sym2` were the widest faces on the bottom row and most of that
+            // width was carrying information rather than a name: the key is the symbols key, and
+            // the number only says which of the two.
+            //
+            // Its own branch rather than a popup hint, because this digit is not a second character
+            // the key can type. Holding `sy` lists the layouts (§25); it does not insert a 1.
+            hintedLabel = if (data.code == KeyCode.VIEW_SYMBOLS) "1" else "2"
         } else if (!data.isSpaceKey() || data.type == KeyType.NUMERIC) {
             val prefs by FlorisPreferenceStore
             computedPopups.getPopupKeys(prefs.keyboard.keyHintConfiguration()).hint.let { hintData ->
