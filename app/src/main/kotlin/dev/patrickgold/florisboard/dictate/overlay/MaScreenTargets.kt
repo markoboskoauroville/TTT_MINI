@@ -521,10 +521,23 @@ object MaScreenTargets {
      * screen with several possible targets that is the difference between trusting the key and
      * wondering what it just did.
      */
-    fun pressFirstMatch(service: AccessibilityService, targets: List<String>): String? {
+    fun pressFirstMatch(service: AccessibilityService, targets: List<String>): String? =
+        pressMatch(service, targets, rank = 0)
+
+    /**
+     * Presses the match [rank] places **up** the screen from the bottom-most one.
+     *
+     * Rank 0 is the lowest, which is the newest answer in a chat. Rank 1 is the one above it. That
+     * is what the automatic bucket counts through: press, press, press, and it walks up the page
+     * taking one code block each time.
+     *
+     * Returns null when there is no match that far up, which is how the caller learns it has reached
+     * the top of what the screen currently holds.
+     */
+    fun pressMatch(service: AccessibilityService, targets: List<String>, rank: Int): String? {
         for (root in appWindowRoots(service)) {
             try {
-                val hit = findIn(root, targets)
+                val hit = findIn(root, targets, rank)
                 if (hit != null) return hit
             } finally {
                 runCatching { root.recycle() }
@@ -558,7 +571,11 @@ object MaScreenTargets {
         return roots.ifEmpty { listOfNotNull(service.rootInActiveWindow) }
     }
 
-    private fun findIn(root: AccessibilityNodeInfo, targets: List<String>): String? {
+    private fun findIn(
+        root: AccessibilityNodeInfo,
+        targets: List<String>,
+        rank: Int = 0,
+    ): String? {
         val found = mutableListOf<Pair<AccessibilityNodeInfo, String>>()
         collect(root, targets, found, 0)
         if (found.isEmpty()) return null
@@ -574,9 +591,17 @@ object MaScreenTargets {
         // Since a node scrolled below the fold has a larger bottom than anything on screen, this
         // reaches the newest answer even when he has scrolled away from it, instead of handing him
         // a copy button from last month.
-        val best = found.maxByOrNull { (node, _) ->
+        // Ordered lowest first, then counted into. Rank 0 is the bottom-most, which is what every
+        // caller but the automatic bucket wants; rank 1 is the one above it, and so on.
+        //
+        // Sorting the whole list rather than taking a maximum is what makes "the next one up" a
+        // question this can answer at all. On a chat that is the answer before last, the one before
+        // that, and so on up the page — which is the order somebody actually collecting code blocks
+        // wants them in.
+        val ordered = found.sortedByDescending { (node, _) ->
             Rect().also { node.getBoundsInScreen(it) }.bottom
         }
+        val best = ordered.getOrNull(rank)
         var pressed: String? = null
         if (best != null) {
             // The label often sits on an icon inside the button rather than on the button, so walk

@@ -634,6 +634,44 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     }
                 }
 
+                MaFeatureKey.AUTO_BUCKET -> {
+                    // The face carries the count, because the count is the only thing about this
+                    // key that cannot be guessed by looking at the screen. "A1" means the next
+                    // press takes the last code block; "A3" means it takes the third one up.
+                    // Without it he would be pressing blind and, on a mistake, would have no way to
+                    // know he was collecting from last month.
+                    ThemedTextKey(
+                        label = "A${maBucketRank + 1}",
+                        modifier = keyMod,
+                        tint = null,
+                        onLongClick = {
+                            maBucketRank = 0
+                            Toast.makeText(context, "Back to the last code block", Toast.LENGTH_SHORT).show()
+                        },
+                    ) {
+                        if (!DictateAccessibilityService.isRunning) {
+                            maOpenAccessibilitySettings(context)
+                        } else {
+                            val hit = DictateAccessibilityService.pressScreenTargetAt(
+                                listOf("copy code"),
+                                maBucketRank,
+                            )
+                            if (hit != null) {
+                                // Only advance on a press that landed. A rank that ran past the end
+                                // would otherwise keep climbing while nothing happened, and the
+                                // number on the key would stop meaning anything.
+                                maBucketRank++
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "No more code blocks — hold to start again",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
+                        }
+                    }
+                }
+
                 MaFeatureKey.CHANGE_CASE -> {
                     // Aa. The selection if there is one, otherwise the whole field: the same rule
                     // Ctrl+P uses, and for the same reason — correct what I marked, or all of it.
@@ -1152,4 +1190,18 @@ private fun MaWandBar(
  * One meaning, one colour, everywhere — the same discipline as the recording red. A person should be
  * able to learn it once from any screen and read it on every other.
  */
+/**
+ * How far up the page the automatic bucket has reached. 0 is the last code block.
+ *
+ * A Compose state at file level rather than `remember` inside the row, so it survives the keyboard
+ * closing and reopening. Collecting code blocks means leaving the keyboard to look at what was
+ * copied and coming back for the next one — a counter that reset on every close would make the key
+ * useless for the one thing it is for.
+ *
+ * Not a stored preference either: it is about the screen in front of him now, and a rank restored
+ * from last week would point somewhere meaningless. Reset by a long press, and by the process
+ * ending, which are both moments when starting again is what he would want.
+ */
+private var maBucketRank by mutableStateOf(0)
+
 private val MaSand = Color(0xFFE8B15C)

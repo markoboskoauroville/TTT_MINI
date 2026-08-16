@@ -120,6 +120,23 @@ enum class MaFeatureKey(val id: String, val label: String) {
     CHANGE_CASE("case", "Aa, cycle the case"),
 
     /**
+     * The automatic bucket: one press per code block, walking up the page.
+     *
+     * Press once and the last code block on screen is copied; press again and the one above it goes
+     * to the next bucket; again for the one above that. The buckets fill themselves — the clipboard
+     * capture in ClipboardManager already files every copy into the next free slot and stops when
+     * they are full — so this key only has to press the right button in the right order.
+     *
+     * It looks for `copy code` and nothing else. Code blocks announce that name; the copy button
+     * under a whole answer announces `copy message`. So a chat full of both gives up only its code,
+     * which is what he wanted it for.
+     *
+     * Long press resets the count to the first block. Without that, one mistaken press leaves the
+     * counter pointing at last month, and there would be no way back down the page.
+     */
+    AUTO_BUCKET("autobucket", "A-bucket, code blocks into the buckets"),
+
+    /**
      * The dictation history: everything transcribed, ready to put back into a field.
      *
      * A key rather than a menu because it is the recovery route. A dictation that went into the
@@ -239,6 +256,9 @@ object MaFeatureOrder {
         MaFeatureKey.LANGUAGE,
         MaFeatureKey.SCROLL,
         MaFeatureKey.SWITCHBOARD,
+        MaFeatureKey.SHIFT,
+        MaFeatureKey.CHANGE_CASE,
+        MaFeatureKey.AUTO_BUCKET,
         MaFeatureKey.SPACER,
     )
 

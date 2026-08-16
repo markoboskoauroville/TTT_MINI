@@ -1803,3 +1803,47 @@ It was not done here because the Ctrl+P failure was writing AI commentary into m
 people, and that had to stop first. **Do this next, before item 26.** The branch to be careful about
 is the `isActionsOverflowVisible` / `GifSearchPanel` split at the top of the same `Column`, which
 also composes a fixed-height `Box` and must keep doing so.
+
+---
+
+# 52. The status line moved to the bottom, and the automatic bucket
+
+## The status line is under the keys now
+
+`Smartbar()` was the first thing in `TextInputLayout`'s `Column`, directly above the keys — which
+put the recorder, the errors and the word suggestions in the band of screen immediately below what
+he was writing, covering the line he was reading. A keyboard takes the bottom of the screen and
+gives back the top; a status line at the top of the keyboard took a second bite.
+
+It is now composed **last**, below the feature rows and beside the pin, at the edge the eye already
+goes to for the navigation buttons. Same component, so suggestions, the recording bar and the error
+line all followed it down without any of them knowing. The `GifSearchPanel` branch still composes its
+fixed-height box, since both sides of that `if` are measured the same way.
+
+## The automatic bucket
+
+`MaFeatureKey.AUTO_BUCKET`. Press once: the **last code block on screen** is copied. Press again:
+the one above it. Again: the one above that.
+
+**It only presses `copy code`.** Code blocks announce that name; the copy button under a whole
+answer announces `copy message`. Confirmed from a real node dump (§37). So a chat full of both gives
+up only its code.
+
+**It does not touch the buckets.** `ClipboardManager.captureIntoClipSlots` already files every copy
+into the next free slot and stops when they are full. This key only presses the right button in the
+right order — which is why the feature is small at all.
+
+**`MaScreenTargets.findIn` now takes a rank.** It sorts matches lowest-first instead of taking a
+maximum, so "the next one up" becomes a question it can answer. Rank 0 is the bottom-most, which is
+what every other caller wants and what `pressFirstMatch` still asks for.
+
+**The face carries the count** — `A1`, `A2`, `A3` — because the count is the only thing about this
+key that cannot be seen by looking at the screen. **Long press resets to A1**; without it one
+mistaken press leaves the counter pointing at last month with no way back down the page.
+
+The rank only advances on a press that landed, so running off the top does not keep climbing while
+nothing happens.
+
+`maBucketRank` is file-level Compose state, not `remember` and not a preference: collecting blocks
+means leaving the keyboard to look at what was copied, so it must survive a close — but a rank
+restored from last week would point at nothing.

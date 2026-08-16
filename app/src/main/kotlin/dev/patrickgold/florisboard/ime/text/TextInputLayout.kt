@@ -105,12 +105,12 @@ fun TextInputLayout(
                 GifSearchPanel()
             }
         } else {
-            // The pin sits at the very left of the top row, so it is the first thing in the corner
-            // of the keyboard view. The Smartbar takes the rest of the width unchanged.
-            // No pin. Remembering the last view unconditionally does the same job without a
-            // control to understand, and a pin that has to be found and pressed to keep a view is a
-            // worse answer than simply not losing it.
-            Smartbar()
+            // The Smartbar is NOT here any more. It is composed at the very end of this Column,
+            // down beside the pin. See the note there for why.
+            //
+            // This branch still has to compose nothing at all rather than something empty: the
+            // other side of the `if` draws the GIF panel at a fixed height, and both sides are
+            // measured the same way.
         }
         // The macro bar is gone. It was the editable strip of user macros — undo, redo, all, copy —
         // and it has been superseded by the M1 to M10 buttons in the feature rows, which do the same
@@ -223,6 +223,21 @@ fun TextInputLayout(
                         .padding(start = 10.dp),
                 )
             }
+
+            // The status line, along the very bottom, under everything.
+            //
+            // It was the first thing in this Column, directly above the keys — which put the
+            // recorder, the errors and the word suggestions in the band of screen immediately below
+            // the text being written, where they covered the line he was reading. A keyboard is
+            // supposed to take the bottom of the screen and give back the top; a status line at the
+            // top of the keyboard takes a second bite.
+            //
+            // Down here it is beside the pin, at the edge the eye already goes to for the
+            // navigation buttons, and nothing it displays can ever sit on top of his text.
+            //
+            // Composed last but drawn identically: it is the same Smartbar, so suggestions, the
+            // recording bar and the error line all follow it down without any of them knowing.
+            Smartbar()
         }
     }
 }

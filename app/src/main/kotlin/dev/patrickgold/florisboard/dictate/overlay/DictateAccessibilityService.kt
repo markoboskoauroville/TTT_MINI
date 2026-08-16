@@ -828,6 +828,12 @@ class DictateAccessibilityService : AccessibilityService() {
             return MaScreenTargets.pressFirstMatch(ims, targets)
         }
 
+        /** Presses the match [rank] places up from the bottom-most. Null when there is no such match. */
+        fun pressScreenTargetAt(targets: List<String>, rank: Int): String? {
+            val ims = instance ?: return null
+            return MaScreenTargets.pressMatch(ims, targets, rank)
+        }
+
         /** Moves focus to the next editable field. False when the service is off or nothing took it. */
         fun focusNextField(backwards: Boolean = false): Boolean {
             val ims = instance ?: return false
