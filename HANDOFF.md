@@ -1,6 +1,16 @@
 # TTT mini — where things stand
 
-Written at build 107. Read this first, then `NEXT_DEFAULTS.md`.
+Last updated at build 122. Read this first, then `NEXT_DEFAULTS.md`.
+
+## Where it is now
+
+Build 122. Since 108: the switcher long-press list, magic finger spacers and rename, voice commands
+("press send"), volume keys reshaped twice, audio focus removed entirely, Groq registered and Gemini
+unregistered, roles hard-wired, Ctrl+P proofread and Ctrl+F flow, a shipped Croatian dictionary, TAB
+and Shift+TAB by accessibility tree, a row Shift, and the Aa case cycle.
+
+Open and designed but not built, all in `NEXT_DEFAULTS.md`: §28 Groq language detection (26), bucket
+copy (§37), the pinned row, the three-state language button, configurable spacer width.
 
 ## What this app is
 
@@ -28,7 +38,39 @@ real.
 
 **He is paying for every build.** A red build costs him the same as a green one.
 
-## What this session learned the hard way
+## What the last session learned the hard way (builds 108-122)
+
+**A comment is not evidence.** The spacebar carried a comment saying it "always wears the spacebar
+mark now", and `computeLabel` returned null for it, and the drawing code reads `key.label?.let { }`.
+So the mark existed in a comment and nowhere on the keyboard, and he asked for it repeatedly across
+sessions while the code claimed it was done. When he says something is missing, believe the phone,
+not the comment.
+
+**Verify constants and icons by extracting the artifact, not by recognising the name.**
+`Icons.Default.KeyboardTab` was checked by downloading `material-icons-extended-android` and finding
+`KeyboardTabKt.class` — that one was fine. `AccessibilityNodeInfo.ACTION_SHOW_ON_SCREEN` was not
+checked and does not exist as a plain int; it is an `AccessibilityAction` only. Red build 118, paid
+for, and the correct form was eleven lines further down the same file.
+
+**Adding an enum entry breaks exhaustive `when` blocks elsewhere.** Every `MaFeatureKey` or
+`MaSettingsEntry` addition needs its branch in `MaRowsScreen`/`MaSettingsOrderScreen` too. Find them
+by extracting the enum names with a regex and diffing against what each `when` covers; do not go by
+memory of how many there are.
+
+**Balance-check every edited file against `HEAD`, not against zero.** Counting braces and parens in
+the new text only tells you it is self-consistent. Comparing the counts to the committed version
+catches a splice that ate one line too many, which happened once and was caught this way.
+
+**A filter that seems like caution can be the bug.** `isVisibleToUser` was added to the field walk as
+a safety check and made TAB refuse exactly the fields hardest to reach by hand; the same filter in
+`MaScreenTargets` had been quietly crippling the magic finger for far longer. Off screen is a reason
+to scroll to something, not a reason to decide it does not exist.
+
+**Keep both documents current as you go.** This session updated `NEXT_DEFAULTS.md` after every build
+and did not touch this file once until asked, which would have handed the next session a briefing
+twelve builds stale. Update both, in the same commit as the work.
+
+## What an earlier session learned the hard way
 
 **Cutting code by eye fails.** Four times a change spanning several files removed more than intended
 — twice pushed. The pattern was always the same: replacing a range by naming its two ends, where the
@@ -54,10 +96,31 @@ tree before writing.
   present but inactive.
 - **The accessibility service powers the magic button, TAB and the floating button.** It must be
   declared in the manifest — it once was not, and everything depending on it failed silently.
-- **One AssemblyAI key is the direction.** LLM Gateway reaches Claude and the rest on that key, which
-  is why Gemini and Anthropic are slated for removal (§11).
+- **Roles are wired, not chosen.** `MaRoles` decides: AssemblyAI transcribes, Anthropic rewords and
+  proofreads, Groq detects language. The call path resolves through it at the moment of use, so a
+  stale stored id cannot survive. Give a new provider a role there; never give the user a chip.
+  Capability is not the same as job — Groq can transcribe and must not.
+- **Anthropic is no longer slated for removal.** Ctrl+P and Ctrl+F depend on it. Gemini is
+  unregistered (§31); a stored Gemini key is hidden, not erased.
+- **A preset absent from `ProviderRegistry.presets` does not exist.** `byId` returns null and key
+  import skips it. That is why a Groq key could not be stored for months.
+- **Both hardware keys decide on release.** Short press is volume, a 500 ms hold is the other
+  meaning: volume up records and stops, volume down presses a magic finger term. Neither may take
+  the volume away on a quick tap — he adjusts bhajan on the same phone.
+- **Croatian has a shipped dictionary** (`assets/dictate/hr_words.txt`, CC BY-SA, see §33). It is
+  searched only with a prefix, only when Croatian is active, and always after the personal model.
+- **`MaNeuralPredictor` and `MaLanguageGuess` are both dead code** — written, never called. Check for
+  callers before assuming a file is live.
 
 ## Working agreement
 
 Ship small, verified builds rather than large ones. Tell him plainly what was not done and why. When
 a request is bigger than the room left, write it to `NEXT_DEFAULTS.md` rather than starting it badly.
+
+He pays for every build, red or green. Verify before pushing and read the result before committing —
+not in the same command. Where the logic can be checked without a phone, check it: the case ring, the
+voice-command parser and the dictionary search were each run against brute force or a table of cases
+before being wired in, and none of them needed a build to find their bugs.
+
+He dictates, so messages arrive garbled. Read through it, and ask when a word could mean two things —
+Groq and Grok cost a whole exchange before that was written down.

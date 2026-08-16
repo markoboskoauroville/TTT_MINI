@@ -1336,3 +1336,50 @@ explicit "nothing" option that leaves it a plain volume key.
 
 The old summary there described behaviour that no longer existed — volume up starting on a short
 press, volume down swapping views — and has been rewritten to match the code.
+
+---
+
+# 39. Dictation with no text field, from anywhere
+
+**Asked: can a long press on volume up start dictation when the keyboard is not on screen — in any
+app, with no input box — and keep the result in History?**
+
+**Yes, and the parts nearly all exist. It is not free.**
+
+## Why it does not work today
+
+The volume keys are handled in `FlorisImeService.onKeyDown`, which is guarded by `isInputViewShown`
+and, more fundamentally, only receives key events at all while the IME has an input connection. No
+text field means no keyboard means no key events. Nothing about the current wiring can reach outside
+that.
+
+## What makes it possible
+
+`DictateAccessibilityService` already runs for the magic finger, TAB and the floating button. An
+accessibility service that declares `android:canRequestFilterKeyEvents="true"` and adds
+`flagRequestFilterKeyEvents` to its config receives `onKeyEvent` **globally** — every app, no
+keyboard, including the volume keys.
+
+`accessibility_service_config.xml` currently declares
+`flagDefault|flagRetrieveInteractiveWindows|flagReportViewIds|flagInputMethodEditor`. Neither the
+flag nor the attribute is there, and `onKeyEvent` is not overridden. That is the whole gap for the
+capture half.
+
+## What to build
+
+1. The flag, the attribute, and `onKeyEvent` in the service, with the same press-length rule the IME
+   uses so a short press stays volume.
+2. A destination when there is no field. `commitOutput` writes through a sink; with nothing to write
+   to it must not simply fail. It should land in History and on the clipboard, and say so.
+3. **Check History is written even when the commit fails** — `DictateHistoryEntry` has a `failed`
+   flag, so the shape is there, but confirm the row is saved before assuming the note is recoverable.
+   A dictation that is lost because there was nowhere to put it is the one outcome that must not
+   happen.
+
+## Warn him before building it
+
+Granting "observe your keystrokes" is a serious-sounding Android prompt, and the service will need
+re-enabling after the config change. Both are worth saying out loud rather than discovering.
+
+Note this is also the honest home for §27's hardware trigger for voice commands: same mechanism, same
+`onKeyEvent`, and the two should be built together rather than each growing its own key handling.
