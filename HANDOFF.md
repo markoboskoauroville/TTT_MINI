@@ -38,6 +38,24 @@ real.
 
 **He is paying for every build.** A red build costs him the same as a green one.
 
+**He runs several projects at once, and sometimes a message lands in the wrong chat.** He asked for
+this check by name. If a message does not belong to TTT mini — another repo, another app, a website,
+a film, a design note about something this app does not contain — say so and stop:
+
+> Please notice you are in the wrong chat.
+
+Nothing more. Do not answer the question anyway, do not guess which project it was, and do not
+lecture him about it. One line, and wait.
+
+**Check before saying it.** The tell is content with no counterpart in this app — the giveaway is
+usually a noun that does not exist here at all. Look first: a grep or a `find` costs one tool call
+and is the difference between a useful warning and an irritating one. A screenshot of an unfamiliar
+screen is not enough on its own, since this app has many screens; a portrait photo in a keyboard
+with no images anywhere is.
+
+**If it is ambiguous, ask rather than assert.** He switches context faster than the chat does, and
+being told he is in the wrong place when he is not is worse than a question.
+
 ## What the last session learned the hard way (builds 108-122)
 
 **A comment is not evidence.** The spacebar carried a comment saying it "always wears the spacebar
