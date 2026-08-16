@@ -1462,3 +1462,31 @@ Two honest ways to build it:
    Cheap, uses code already written, and honest so long as the button says so.
 
 Do not ship a third state that has neither.
+
+---
+
+# 42. Dictating into a field nobody tapped
+
+When nothing on screen has input focus, `activeWindowEditable` used to return
+`findEditableDescendant(root, 0)` — **the first editable node depth-first, bounded to depth 6**. Two
+things wrong with that for the case he described: first is whatever the layout declares earliest,
+which is a search box at the top far more often than the composer at the bottom; and depth 6 does not
+reach a composer inside a modern nested layout at all.
+
+Now it collects every editable node and takes the **lowest on screen**, brings it into view, and
+focuses it before writing. The box worth writing into is the one nearest the thumb, and on every
+messaging screen ever built that is the last one down the page.
+
+So: open the app, hold volume up, speak, release — the words land in the obvious box without tapping
+it first to raise a keyboard he was never going to type on.
+
+## Still open from this batch
+
+- **Setup flow**: all-files access as its own step, restore-from-backup on the keys step, and a
+  guided accessibility step that opens App info → ⋮ → Allow restricted settings and then the
+  accessibility screen. §8 and §9 hold the earlier notes; this is now the priority of the three.
+- **Three-state language + §28.** His design confirmed and correct: **English and Croatian skip Groq
+  entirely** — the label is set, the language goes with the request, no detection call at all. Only
+  **Auto** sends the first seconds to Groq, and the answer is applied when the request is built. That
+  is exactly the seam §28 describes, and it means the cost of detection is paid only by the state
+  that asked for it.

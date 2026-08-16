@@ -16,6 +16,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ClipData
 import android.content.Context
+import android.graphics.Rect
 import android.media.AudioManager
 import android.view.KeyEvent
 import dev.patrickgold.florisboard.FlorisImeService
@@ -499,6 +500,34 @@ class DictateAccessibilityService : AccessibilityService() {
             findEditableDescendant(focused, 0)?.let { return it }
         }
         if (root.isLikelyEditable()) return root
+        // Nothing has focus: take the LOWEST field on the screen and focus it ourselves.
+        //
+        // This is the case where he never tapped the box. He opens an app, holds volume up, speaks,
+        // and expects the words to land in the obvious place — without first tapping a field to
+        // raise a keyboard he is not going to type on.
+        //
+        // Lowest rather than first, and the difference matters: depth-first from the root returns
+        // whatever is declared earliest, which is a search box at the top of a chat far more often
+        // than the composer at the bottom. The box worth writing into is the one nearest the
+        // thumb, and on every messaging screen ever built that is the last one down the page.
+        //
+        // `collectEditable` is used rather than `findEditableDescendant` because the latter stops
+        // at depth 6, and a composer inside a modern nested layout sits deeper than that.
+        val fields = ArrayList<AccessibilityNodeInfo>(8)
+        collectEditable(root, 0, fields)
+        val lowest = fields.maxByOrNull { node ->
+            Rect().also { node.getBoundsInScreen(it) }.bottom
+        }
+        if (lowest != null) {
+            // Focus it, so the input connection points at this field rather than at nothing. Shown
+            // on screen first for the same reason as everywhere else: a field written into while
+            // out of view looks like a press that did nothing.
+            runCatching {
+                lowest.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)
+            }
+            runCatching { lowest.performAction(AccessibilityNodeInfo.ACTION_FOCUS) }
+            return lowest
+        }
         return findEditableDescendant(root, 0)
     }
 
