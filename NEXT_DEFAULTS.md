@@ -1202,3 +1202,48 @@ The four transforms are `MaCaseTransform`'s, not new ones: locale-aware, with `d
 `Don'T` and sentence case lowering the shout. **Verified against the ring** before wiring: four
 presses return to the start, text with no letters returns null, and Croatian diacritics uppercase
 correctly.
+
+---
+
+# 36. Volume keys, and the finger's reach
+
+## Volume keys, settled
+
+**Volume down is released entirely.** It has held three jobs — language, cancel-a-recording,
+language again on a hold — and every one made the commonest button on the phone mean something other
+than quieter. Marko changes language rarely and turns the volume down constantly. `maHandleVolumeKey`
+returns false for it, so nothing is consumed and Android does what it always did. **Do not give this
+key a job again.**
+
+**Volume up decides on release.** Short raises the volume through `adjustSuggestedStreamVolume`; a
+hold of `MA_VOL_RECORD_HOLD_MS` (500 ms) calls `onMicClick`, which is both ends of a dictation, so
+the same hold starts and stops. The frequent action is the cheap gesture and the rare one costs a
+deliberate hold — which is the right way round for somebody playing bhajan through the same phone.
+
+Cancelling a recording lost its key and keeps the bar's own control and the mic key, both on screen
+while recording.
+
+## The finger reaches off screen now
+
+`matchOf` refused any node that was not `isVisibleToUser`, which made the finger refuse the presses
+worth most: a button five screens down is exactly the one that saves the most scrolling, and it was
+the one press that could not be made.
+
+The check is gone, and `ACTION_SHOW_ON_SCREEN` runs before the click so the app scrolls to what it
+acted on — a press whose effect happens unseen is indistinguishable from one that did nothing.
+
+**The bottom-most match wins, and that is now the whole rule rather than a tiebreak.** A node below
+the fold has a larger `bottom` than anything on screen, so in a chat carrying a copy button under
+every answer ever given, the finger takes the newest rather than the newest *visible* one.
+
+### The limit that remains, and it is Android's
+
+**A list only puts materialised rows in the tree.** `RecyclerView` and its equivalents recycle rows
+that are far off screen, so those nodes do not exist to be found — not filtered out, absent. Removing
+the visibility check reaches everything the app has built, which is typically the viewport plus a
+screen or so either side. It cannot reach a button ten screens up, because there is nothing there.
+
+**Worth building, for the "hundreds of copy buttons" problem:** a target that names an occurrence —
+`copy 1`, `copy 2`, counted from the bottom — and a finger that scrolls and re-searches when a target
+is not found. The second is what actually removes the limit above, since scrolling is what makes the
+rows exist.

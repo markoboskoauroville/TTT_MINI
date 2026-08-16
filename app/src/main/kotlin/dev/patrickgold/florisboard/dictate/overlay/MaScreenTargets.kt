@@ -563,8 +563,17 @@ object MaScreenTargets {
         collect(root, targets, found, 0)
         if (found.isEmpty()) return null
 
-        // Lowest on screen wins. A page can carry the word "send" in its text and a send button in
-        // the composer below it; the control is always the lower of the two.
+        // Bottom-most wins, and now that means the LAST one rather than the last one on screen.
+        //
+        // Two reasons, and they turn out to be the same reason. A page can carry the word "send" in
+        // its text and a send button in the composer below it; the control is always the lower of
+        // the two. And a chat carries a copy button under every answer ever given, where the one
+        // worth pressing is under the newest — which is the lowest.
+        //
+        // So the ordering is not a tiebreak, it is the whole rule: scan the tree, take the lowest.
+        // Since a node scrolled below the fold has a larger bottom than anything on screen, this
+        // reaches the newest answer even when he has scrolled away from it, instead of handing him
+        // a copy button from last month.
         val best = found.maxByOrNull { (node, _) ->
             Rect().also { node.getBoundsInScreen(it) }.bottom
         }
@@ -580,6 +589,16 @@ object MaScreenTargets {
                 hops++
             }
             if (target != null && target.isClickable && target.isEnabled) {
+                // Bring it into the frame first. A control below the fold can be clicked perfectly
+                // well without this, but the app then scrolls to wherever it acted, and a press
+                // whose effect happens somewhere unseen is indistinguishable from a press that did
+                // nothing. Reached through AccessibilityAction and its id because this one never
+                // had a plain int constant on AccessibilityNodeInfo.
+                runCatching {
+                    target.performAction(
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id,
+                    )
+                }
                 if (target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) pressed = best.second
             }
         }
@@ -605,7 +624,19 @@ object MaScreenTargets {
     }
 
     private fun matchOf(node: AccessibilityNodeInfo, targets: List<String>): String? {
-        if (!node.isVisibleToUser) return null
+        // Visibility is deliberately NOT a condition.
+        //
+        // It was, and it made the finger refuse the presses worth most. A button five screens down
+        // a long list is reported as not visible to the user, so the one press that saves the most
+        // scrolling was the one press that could not be made — the finger only ever reached what
+        // was already under his thumb.
+        //
+        // Off screen is a reason to scroll to a control, not a reason to decide it does not exist.
+        // The press step asks for it to be brought into the frame first.
+        //
+        // What replaces the check is the ordering in findIn and the NEVER list: a match still has
+        // to carry the label, still has to be clickable or sit under something clickable, and the
+        // lowest match on screen still wins.
         // Description, text and the view's id all count. A button drawn as an icon carries only a
         // description; one drawn as a word carries only text; and an unlabelled button sometimes
         // still has a telling id such as send_button.
