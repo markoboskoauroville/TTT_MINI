@@ -16,20 +16,24 @@
   around watching the user's own finger, which Android does not permit while the app underneath is
   still responding.
 
-  canRequestFilterKeyEvents plus flagRequestFilterKeyEvents is what lets onKeyEvent see the volume
-  keys with no keyboard on screen, in any app. It is what makes dictation possible where there is no
-  text field at all — a spoken note in a gallery, a map, a book — with the result kept in History.
-  It is also why Android shows a stronger warning when enabling this service, since the same
-  capability is how a keylogger would work. The service reads volume keys only, hands every other
-  key straight back untouched, and the whole behaviour is behind a preference that ships off.
+  canRequestFilterKeyEvents was added at build 124 and REMOVED at build 131, and must not come back
+  without a way to test it first.
+
+  Declaring it made the whole service unusable on a Nothing Phone 2a running Android 16: the
+  accessibility toggle could not be turned on at all, so the magic finger, TAB and the floating
+  button all stopped with it. Key filtering is the capability a keylogger would need, and a
+  sideloaded app that asks for it is gated behind "Allow restricted settings" — which that phone
+  did not offer in the App info menu, leaving no way through.
+
+  The cost of asking is therefore not a scarier warning, as build 124 assumed. It is the entire
+  service, including the parts that had nothing to do with keys.
 
   The description is shown verbatim in the system Accessibility settings as the user-facing disclosure.
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeViewFocused|typeViewClicked|typeViewTextSelectionChanged|typeWindowStateChanged|typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagReportViewIds|flagInputMethodEditor|flagRequestFilterKeyEvents"
-    android:canRequestFilterKeyEvents="true"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagReportViewIds|flagInputMethodEditor"
     android:canRetrieveWindowContent="true"
     android:canPerformGestures="true"
     android:notificationTimeout="0"

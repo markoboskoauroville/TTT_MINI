@@ -16,6 +16,9 @@
 
 package dev.patrickgold.florisboard.app.settings
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -103,6 +106,7 @@ fun HomeScreen() = FlorisScreen {
         // whole screen of its own. About stopped being a destination: opening the settings and being
         // shown a credits page instead of the settings is a bug however it was justified, and a
         // version number is the only part of that page anybody opens it for.
+        Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             // The build number, not the version name.
             //
@@ -122,10 +126,47 @@ fun HomeScreen() = FlorisScreen {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable { navController.navigate(Routes.Settings.About) }
+                .weight(1f)
+                // Straight to App info, not to the About page.
+                //
+                // This line is the one place in the app that names the build, so it is where the
+                // hand goes when something about the install itself needs changing — permissions,
+                // storage access, force stop. It used to open About, which is a page about the
+                // version of an app whose version is already written on the line you tapped.
+                .clickable {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.parse("package:" + context.packageName)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            },
+                        )
+                    }
+                }
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         )
+        // Accessibility, one tap, from the top of the list.
+        //
+        // Everything built on the service — the magic finger, TAB, the floating button, dictating
+        // with no keyboard — dies together when it is off, and it is switched off by Android often
+        // enough to need a door rather than a set of directions. Nothing in this app can turn it on
+        // for him; the least it can do is not make him look for it.
+        Text(
+            text = "Accessibility",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clickable {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                    }
+                }
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+        )
+        }
 
         val isCollapsed by prefs.internal.homeIsBetaToolboxCollapsed.collectAsState()
 

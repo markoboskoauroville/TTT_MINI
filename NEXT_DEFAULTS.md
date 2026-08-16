@@ -1564,3 +1564,40 @@ actually receiving keys — a line reading "the service is running and receiving
 service needs re-enabling after the last update". Three of the four requirements currently fail
 silently and identically, and no amount of explaining in a chat message substitutes for the screen
 saying which one is unmet.
+
+---
+
+# 46. Build 124 broke the accessibility service. Reverted at 131.
+
+**`android:canRequestFilterKeyEvents="true"` made the whole service unusable on a Nothing Phone 2a
+running Android 16.** Not degraded — unusable: the accessibility toggle could not be turned on at
+all, so the magic finger, TAB, the floating button and overlay dictation all died with it.
+
+**Why.** Key filtering is the capability a keylogger needs. A sideloaded app that declares it is put
+behind Android's "restricted settings" gate, and on that phone the App info overflow menu offering
+"Allow restricted settings" **did not appear at all** — so there was no way through. §39 assumed the
+cost of asking was a scarier warning. The real cost was the entire service, including every part
+that had nothing to do with keys.
+
+**Reverted.** The config is byte-identical to build 123. `onKeyEvent` and the global-volume-key code
+remain but can never fire, which is harmless and keeps the work for when it can be tested.
+
+**Do not re-declare that attribute without a way to verify on his phone first.** The next attempt
+should be a separate debug APK, not the one he uses all day.
+
+**This is also why §39 must be reconsidered rather than retried.** Dictating with no keyboard needs
+another route entirely — the floating button and the OVERLAY sink already work without key filtering,
+and that is the direction.
+
+## Two shortcuts on the settings header
+
+The build-number line now opens **App info** rather than the About page: it is the one line naming
+the install, so it is where the hand goes when the install itself needs changing. Beside it,
+**Accessibility** opens that settings screen directly. Everything built on the service dies together
+when it is off, and Android switches it off often enough to deserve a door rather than directions.
+
+## Still wanted: the log screen
+
+He asked for a log with timestamps he can paste back. Nothing in the app records why the service is
+not running, so every diagnosis so far has been guesswork across a chat window. **This is the next
+thing worth building** — it is what would have found §46 in one step instead of three builds.
