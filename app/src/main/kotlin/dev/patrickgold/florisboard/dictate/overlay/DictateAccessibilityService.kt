@@ -834,6 +834,12 @@ class DictateAccessibilityService : AccessibilityService() {
             return MaScreenTargets.pressMatch(ims, targets, rank)
         }
 
+        /** Scrolls the match at [rank] into view without pressing it. */
+        fun revealScreenTargetAt(targets: List<String>, rank: Int): Boolean {
+            val ims = instance ?: return false
+            return MaScreenTargets.revealMatch(ims, targets, rank)
+        }
+
         /** Moves focus to the next editable field. False when the service is off or nothing took it. */
         fun focusNextField(backwards: Boolean = false): Boolean {
             val ims = instance ?: return false

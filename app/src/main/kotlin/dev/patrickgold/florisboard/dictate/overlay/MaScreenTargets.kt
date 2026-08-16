@@ -547,6 +547,34 @@ object MaScreenTargets {
     }
 
     /**
+     * Scrolls the match at [rank] into view without pressing it. True when one was found.
+     *
+     * ### What this is for
+     *
+     * After the automatic bucket copies a block, it reveals the **next** one up. The list scrolls to
+     * bring that into view, which pushes the block just copied down towards the bottom of the
+     * screen — so the last thing he collected is the last thing he sees, and he can read down the
+     * page to check what went into the buckets without counting.
+     *
+     * ### And it is what makes a long chat reachable at all
+     *
+     * A list destroys the rows far from the viewport and rebuilds them on demand, so the ones he has
+     * not scrolled near **do not exist** to be found (§58). Revealing the next block is what causes
+     * the rows above it to be built, which is why the ladder can keep climbing instead of stopping
+     * at whatever happened to be in memory when he started.
+     */
+    fun revealMatch(service: AccessibilityService, targets: List<String>, rank: Int): Boolean {
+        for (root in appWindowRoots(service)) {
+            try {
+                if (findIn(root, targets, rank, clickIt = false) != null) return true
+            } finally {
+                runCatching { root.recycle() }
+            }
+        }
+        return false
+    }
+
+    /**
      * The roots of the application windows, front-most first, never the keyboard's own.
      *
      * `rootInActiveWindow` alone is not enough and is the likeliest reason a press finds nothing:
@@ -575,6 +603,7 @@ object MaScreenTargets {
         root: AccessibilityNodeInfo,
         targets: List<String>,
         rank: Int = 0,
+        clickIt: Boolean = true,
     ): String? {
         val found = mutableListOf<Pair<AccessibilityNodeInfo, String>>()
         collect(root, targets, found, 0)
@@ -630,7 +659,14 @@ object MaScreenTargets {
                         AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id,
                     )
                 }
-                if (target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) pressed = best.second
+                pressed = if (clickIt) {
+                    // The ordinary path: bring it into the frame, then press it.
+                    if (target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) best.second else null
+                } else {
+                    // Reveal only. The scroll above has already happened; this reports that the
+                    // match exists and was brought into view, without touching it.
+                    best.second
+                }
             }
         }
         found.forEach { runCatching { it.first.recycle() } }

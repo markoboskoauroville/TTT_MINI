@@ -2039,3 +2039,28 @@ touched.
 **The limit remains Android's** (§37): recycled list rows are absent from the tree, not hidden in it,
 so one run collects the blocks near the viewport rather than a whole conversation. A finger that
 scrolls and re-searches is what would lift that, and it is still unbuilt.
+
+---
+
+# 59. A-bucket scrolls the ladder along
+
+After a copy lands, A-bucket now **reveals the next block up** —
+`MaScreenTargets.revealMatch`, which is `findIn` with `clickIt = false`: it finds and scrolls into
+view, and does not press.
+
+**Two things at once, and they are the same action.**
+
+The list scrolls to show the block about to be collected, which pushes the one just collected down
+toward the bottom of the screen. So the last thing copied is the last thing visible, and he can read
+down the page to check what went into the buckets instead of counting presses. That was his idea and
+it is a better confirmation than any indicator on the key.
+
+And it is what makes a long conversation reachable at all. His ten-box dump proved the limit exactly:
+seven boxes present (two of them `hidden` but complete), one caught mid-recycle with its container
+but no button, and **three absent from the tree entirely**. Rows far from the viewport do not exist
+until something scrolls near them. Revealing the next block is what causes the ones above it to be
+built — so the ladder keeps climbing instead of stopping at whatever was in memory when he started.
+
+**Also confirmed from that dump:** each Claude code box carries exactly one copy button,
+`desc="Copy code"` at the top right, with `Expand code` beside it. The fenced-backtick copy he wants
+to avoid is `Copy message`, under the whole answer, and A-bucket has never targeted it.

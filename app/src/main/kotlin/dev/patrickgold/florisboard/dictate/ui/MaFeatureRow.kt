@@ -687,6 +687,23 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                                 // would otherwise keep climbing while nothing happened, and the
                                 // number on the key would stop meaning anything.
                                 maBucketRank++
+                                // Then bring the NEXT block up into view.
+                                //
+                                // Two things at once, and they are the same action. The list
+                                // scrolls to show the block he is about to collect, which pushes
+                                // the one he just collected down to the bottom of the screen — so
+                                // the last thing copied is the last thing visible, and he can read
+                                // down the page to check the buckets instead of counting.
+                                //
+                                // And it is what makes a long chat reachable. Rows far from the
+                                // viewport do not exist until something scrolls near them, so
+                                // revealing the next block is what causes the ones above it to be
+                                // built. Without this the ladder stops at whatever happened to be
+                                // in memory when he started.
+                                DictateAccessibilityService.revealScreenTargetAt(
+                                    listOf("copy code"),
+                                    maBucketRank,
+                                )
                             } else {
                                 Toast.makeText(
                                     context,
