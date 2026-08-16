@@ -1631,3 +1631,37 @@ before it: the keys are the app's while the keyboard is up, and the phone's the 
 app records why the accessibility service is not running, which is why §46 took three builds and a
 broken app to find. It should hold a timestamped list he can copy in one tap. **Build this before
 anything else.**
+
+---
+
+# 48. The dot key has two functions again
+
+Build 126 gave the dot its comma by setting a **symbol hint**, which was the wrong mechanism. A
+symbol hint does not merely draw a glyph in the corner: `addComputedHints` also merges the hinted
+key's own popup set into this key's. The dot ended up carrying a third thing. He asked for two
+functions and got three.
+
+Now:
+
+- The layout gives the dot `popup.relevant = [comma]` and nothing else. **Tap is a dot, hold is a
+  comma, and there is no third meaning to find.**
+- The corner glyph is set directly in `computeLabelsAndDrawables`, beside the switchers' branch,
+  because it is a label and nothing more.
+- The §41 rule in `LayoutManager` that derived hints from `popup.main` is **removed**. It was the
+  cause, and it existed to serve this one key.
+
+**The lesson: a symbol hint is a behaviour, not a decoration.** To draw something in a corner, write
+the label. To give a key a second character, give it a popup. Do not use one to get the other.
+
+## Key widths, settled
+
+Shift, delete, **ctrl and enter** are all `1.56f`, so the four corners of the two bottom rows match
+and the block reads as one shape. Only the **switchers** stay at `1.00f` — they were merely wide,
+not hit without looking, and their width is what the spacebar gained.
+
+## The spacebar mark is drawn at 1.8×
+
+`SnyggText` gained `fontSizeScale`, which **multiplies** the themed size rather than replacing it, so
+the font scale, the theme and the user's size multiplier all still apply underneath. U+23B5 is a low
+flat bracket about a third the height of a capital, so at letter size it read as a speck on the
+widest key of the board.

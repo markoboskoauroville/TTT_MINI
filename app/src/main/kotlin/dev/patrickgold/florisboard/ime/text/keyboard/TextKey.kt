@@ -172,11 +172,15 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
                     // far more than any of them, and it is the one key worth being able to hit
                     // without aiming. Space has flayGrow, so every tenth taken from these is given
                     // straight to it — nothing else has to change.
+                    // Ctrl and enter match shift and delete, so the four corners of the two bottom
+                    // rows are the same size and the block reads as one shape rather than four.
                     KeyCode.CTRL,
+                    KeyCode.ENTER -> 1.56f
+                    // The switchers stay narrow. They are the two that were merely wide, not the
+                    // two that are hit without looking, and their width is what the spacebar got.
                     KeyCode.VIEW_CHARACTERS,
                     KeyCode.VIEW_SYMBOLS,
-                    KeyCode.VIEW_SYMBOLS2,
-                    KeyCode.ENTER -> 1.00f
+                    KeyCode.VIEW_SYMBOLS2 -> 1.00f
                     else -> 1.00f
                 }
             }
@@ -257,6 +261,17 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
                 57 /* 9 */ -> "WXYZ"
                 else -> null
             }
+        } else if (data.code == 46 && evaluator.keyboard.mode == KeyboardMode.CHARACTERS) {
+            // The dot wears a comma in the corner, and that is ALL the corner means here.
+            //
+            // Set directly rather than derived from the popup, which was tried at build 126 and
+            // went wrong: a symbol hint does not merely draw a glyph, it merges the hinted key's
+            // own popup set into this key's, and the dot ended up with a third thing on it. He
+            // wanted two functions and got three.
+            //
+            // So the label is written here and the popup stays exactly what the layout says:
+            // tap gives a dot, hold gives a comma, and there is no third meaning to find.
+            hintedLabel = ","
         } else if (data.code == KeyCode.VIEW_SYMBOLS || data.code == KeyCode.VIEW_SYMBOLS2) {
             // The digit moves to the corner, where every other key already keeps its second
             // meaning. `sym1` and `sym2` were the widest faces on the bottom row and most of that

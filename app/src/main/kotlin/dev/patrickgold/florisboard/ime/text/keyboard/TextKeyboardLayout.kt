@@ -383,11 +383,18 @@ private fun TextKeyButton(
             // Centred again. The corner was for a label long enough to be in the way; a single
             // mark is not, and a lone glyph pushed into a corner reads as a mistake.
             val alignment = if (isTelPadKey) BiasAlignment(-0.5f, 0f) else Alignment.Center
+            val isSpaceMark = key.computedData.code == KeyCode.SPACE && customLabel == "\u23B5"
             SnyggText(
                 modifier = Modifier
                     .wrapContentSize()
                     .align(alignment),
                 text = customLabel,
+                // The spacebar mark is drawn larger than a letter, because it is not a letter.
+                //
+                // U+23B5 is a low, flat bracket that occupies about a third of the height a capital
+                // does, so at the same font size it reads as a speck on the widest key of the
+                // board. Scaling it up is what makes it look like a mark rather than a smudge.
+                fontSizeScale = if (isSpaceMark) 1.8f else null,
             )
         }
         key.hintedLabel?.let { hintedLabel ->

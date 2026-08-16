@@ -61,6 +61,10 @@ fun SnyggText(
     // instead of the themed values; null falls back to the stylesheet.
     maxLines: Int? = null,
     overflow: TextOverflow? = null,
+    // Multiplies the themed size rather than replacing it, so a caller can say "bigger than a
+    // letter" without knowing what a letter currently is — the font scale, the theme and the user's
+    // size multiplier all still apply underneath.
+    fontSizeScale: Float? = null,
     text: String,
 ) {
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
@@ -77,7 +81,9 @@ fun SnyggText(
             // scale multiplies every sp size, a NaN/∞ would reach Compose's Text and crash it on measure
             // ("lineHeight can't be negative (NaN)"). Coerce those to Unspecified so a bad theme can't crash
             // the keyboard (issue: SnyggText NaN lineHeight).
-            fontSize = style.fontSize().finiteOrUnspecified(),
+            fontSize = style.fontSize().finiteOrUnspecified().let { size ->
+                if (fontSizeScale != null && size.isSpecified) size * fontSizeScale else size
+            },
             fontStyle = style.fontStyle(),
             // Optional override (e.g. bold the autocorrect/auto-commit candidate, issue #150) — falls back
             // to the themed weight when null.
