@@ -104,6 +104,19 @@ class FlorisImeService : LifecycleInputMethodService() {
             return FlorisImeServiceReference.get()?.currentInputConnection
         }
 
+        /**
+         * Whether the keyboard is on screen and taking the volume keys itself.
+         *
+         * The accessibility service can hear those keys everywhere, including here, so without this
+         * a single press would be handled twice — once by each — and a hold would start a recording
+         * and immediately stop it. The rule is simply that the nearer handler wins: if the keyboard
+         * is up it owns the keys, and the global one stands down.
+         */
+        fun ownsVolumeKeys(): Boolean {
+            val ims = FlorisImeServiceReference.get() ?: return false
+            return ims.isInputViewShown
+        }
+
         fun inputFeedbackController(): InputFeedbackController? {
             return FlorisImeServiceReference.get()?.inputFeedbackController
         }

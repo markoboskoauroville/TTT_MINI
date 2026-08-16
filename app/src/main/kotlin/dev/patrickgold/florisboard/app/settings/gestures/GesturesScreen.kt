@@ -67,6 +67,18 @@ fun GesturesScreen() = FlorisScreen {
                     "still just the volume, and both are ordinary volume keys the moment the " +
                     "keyboard closes.",
             )
+            SwitchPreference(
+                prefs.dictate.maGlobalVolumeKeys,
+                modifier = Modifier.settingsSearchAnchor("ma__global_volume_keys"),
+                title = "Work everywhere, with no keyboard",
+                summary = "Hold volume up in any app \u2014 a gallery, a map, a book \u2014 and it " +
+                    "records. With no text field to write into, the note is kept in History. " +
+                    "Needs the accessibility service, and Android will warn you more strongly " +
+                    "when granting it, because seeing every key is also how a keylogger works. " +
+                    "This app reads the two volume keys and hands every other key straight back. " +
+                    "Short presses stay volume.",
+            )
+
             // Which taught term the long press carries.
             //
             // Offered as a list of the terms he has already taught the finger rather than a text

@@ -1339,7 +1339,7 @@ press, volume down swapping views — and has been rewritten to match the code.
 
 ---
 
-# 39. Dictation with no text field, from anywhere
+# 39. Dictation with no text field, from anywhere — SHIPPED, build 123
 
 **Asked: can a long press on volume up start dictation when the keyboard is not on screen — in any
 app, with no input box — and keep the result in History?**
@@ -1383,3 +1383,32 @@ re-enabling after the config change. Both are worth saying out loud rather than 
 
 Note this is also the honest home for §27's hardware trigger for voice commands: same mechanism, same
 `onKeyEvent`, and the two should be built together rather than each growing its own key handling.
+
+---
+
+# 40. How §39 was actually built
+
+`DictateAccessibilityService.onKeyEvent` now sees the volume keys everywhere, behind
+`android:canRequestFilterKeyEvents` and `flagRequestFilterKeyEvents`.
+
+**The destination question answered itself.** Dictation runs with `OutputTarget.OVERLAY`, the target
+the floating button already uses, so everything needed was built: a focused field still receives the
+text, a screen with no field fails the commit and takes the `!committed` branch — which calls
+`rememberLastDictation`, `recordHistory` and surfaces Reinsert. **`recordHistory` runs on both the
+success and the failure path**, so the note is kept either way. Nothing new had to be written for it.
+
+**Three rules the handler obeys, each load-bearing:**
+
+- **The keyboard wins when it is up.** `FlorisImeService.ownsVolumeKeys()` was added for this. Both
+  handlers can hear one press, and without it a hold would start a recording and stop it at once.
+- **A short press is always the volume.** The release decides and hands the change back by hand,
+  since the press was swallowed. Consuming a volume key and giving nothing back is what would make
+  the phone feel broken.
+- **Every other key is handed straight back.** The service can see all of them and looks at two.
+
+**It ships off** (`dictate__ma_global_volume_keys`, default false), with the switch in Gestures. This
+is the one setting whose failure mode is "the volume buttons stop working", which must not arrive by
+update. He turns it on having read what it does.
+
+**This is also §27's hardware trigger.** Voice commands should reuse this `onKeyEvent` rather than
+growing a second key handler.

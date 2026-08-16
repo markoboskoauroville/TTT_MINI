@@ -1085,6 +1085,24 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * without new code — and so the key and the row cannot disagree about what a word means.
          * Empty leaves the key as a plain volume key.
          */
+        /**
+         * Whether the volume keys work with no keyboard on screen, anywhere on the phone.
+         *
+         * **Ships off, deliberately.** Turning it on means the accessibility service consumes both
+         * volume presses everywhere and hands the volume back itself on a short press. That works,
+         * and it is also the one setting in this app whose failure mode is "the volume buttons stop
+         * working" — which is not a thing to inflict on somebody by updating. He turns it on
+         * knowingly, having read what it does, and can turn it off the same way.
+         *
+         * Android also shows a stronger warning when granting the service this capability, because
+         * seeing every key is how a keylogger works. Better that he meets that warning having
+         * chosen the feature than while updating for something else.
+         */
+        val maGlobalVolumeKeys = boolean(
+            key = "dictate__ma_global_volume_keys",
+            default = false,
+        )
+
         val maVolumeDownTerm = string(
             key = "dictate__ma_volume_down_term",
             default = "Send",
