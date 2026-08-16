@@ -47,7 +47,7 @@ import android.media.AudioManager
 import kotlinx.coroutines.delay
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
-import dev.patrickgold.florisboard.dictate.MaLanguage
+import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -281,6 +281,10 @@ class FlorisImeService : LifecycleInputMethodService() {
      */
     @Volatile
     private var maVolUpAt = 0L
+
+    /** When volume down went down, or zero when no press is open. */
+    @Volatile
+    private var maVolDownAt = 0L
 
     /** When the pin last pushed the keyboard back up, for the governor in [maReshowIfPinned]. */
     private val maPinReshowAt = ArrayDeque<Long>()
@@ -791,16 +795,19 @@ class FlorisImeService : LifecycleInputMethodService() {
                 }
                 true
             }
-            // Volume down is released entirely and deliberately.
-            //
-            // It has held three jobs — language, then cancel-a-recording, then language again on a
-            // hold — and every one of them made the commonest button on the phone mean something
-            // other than quieter. Marko changes language rarely and turns the volume down
-            // constantly, so the key goes back to the system untouched. Returning false here is
-            // what hands it back: nothing is consumed, and Android does what it always did.
-            //
-            // Cancelling a recording went with it. It has the bar's own control and the mic key,
-            // both of which are on screen while a recording is running.
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                // Same shape as volume up, and for the same reason: nothing is decided on the way
+                // down, so a short press stays a volume press and only a hold means anything else.
+                //
+                // What the hold does is press a magic finger term — Send by default. Both hardware
+                // keys now cost a deliberate hold, which is what he asked for: the volume is
+                // wanted constantly while adjusting bhajan, and neither key may take it away on a
+                // quick tap.
+                if (event == null || event.repeatCount == 0) {
+                    maVolDownAt = SystemClock.uptimeMillis()
+                }
+                true
+            }
             else -> false
         }
     }
@@ -810,9 +817,9 @@ class FlorisImeService : LifecycleInputMethodService() {
         // more, so consuming its release would leave the system half a press and no way to act on
         // it.
         if (prefs.dictate.maVolumeKeys.get() && isInputViewShown &&
-            keyCode == KeyEvent.KEYCODE_VOLUME_UP
+            (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
         ) {
-            maFinishVolumeUp()
+            if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) maFinishVolumeUp() else maFinishVolumeDown()
             return true
         }
         return keyboardManager.onHardwareKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
@@ -834,6 +841,37 @@ class FlorisImeService : LifecycleInputMethodService() {
      * itself, so music stays music and a call stays a call, and the slider is shown as normal —
      * which is the whole point when the thing being turned up is a bhajan.
      */
+    /**
+     * The end of a volume-down press: short is quieter, a hold presses a magic finger term.
+     *
+     * The term is a preference so any button he has taught the finger can live on this key, and it
+     * defaults to Send because that is the one he named. Nothing here knows what Send means — it
+     * goes through the same `pressScreenTarget` the finger uses, so a term that works on the row
+     * works on the key, and one that stops working stops in both places at once.
+     *
+     * With the accessibility service off there is nothing to press, so the key stays a volume key
+     * rather than swallowing the press and doing nothing.
+     */
+    private fun maFinishVolumeDown() {
+        val startedAt = maVolDownAt
+        maVolDownAt = 0L
+        if (startedAt == 0L) return
+        val held = SystemClock.uptimeMillis() - startedAt
+        val term = prefs.dictate.maVolumeDownTerm.get().trim()
+        if (held >= MA_VOL_RECORD_HOLD_MS && term.isNotEmpty() &&
+            DictateAccessibilityService.isRunning
+        ) {
+            DictateAccessibilityService.pressScreenTarget(listOf(term))
+        } else {
+            val audio = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            audio?.adjustSuggestedStreamVolume(
+                AudioManager.ADJUST_LOWER,
+                AudioManager.USE_DEFAULT_STREAM_TYPE,
+                AudioManager.FLAG_SHOW_UI,
+            )
+        }
+    }
+
     private fun maFinishVolumeUp() {
         val startedAt = maVolUpAt
         maVolUpAt = 0L

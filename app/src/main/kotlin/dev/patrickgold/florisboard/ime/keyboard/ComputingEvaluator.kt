@@ -134,9 +134,18 @@ fun ComputingEvaluator.computeLabel(data: KeyData): String? {
         when (data.code) {
             KeyCode.PHONE_PAUSE -> evaluator.context()?.getString(R.string.key__phone_pause)
             KeyCode.PHONE_WAIT -> evaluator.context()?.getString(R.string.key__phone_wait)
-            // The spacebar's face is decided where it is drawn, not here: it always wears the
-            // spacebar mark now, so computing a language for it would be work nobody sees.
-            KeyCode.SPACE, KeyCode.CJK_SPACE -> null
+            // The spacebar's face is the spacebar mark, and it is given here so that there IS one.
+            //
+            // This returned null, on the reasoning that the face was decided where the key is
+            // drawn. It is — but that code reads `key.label?.let { ... }`, so a null label meant
+            // the block never ran and the bar was drawn bare. The mark existed in a comment and
+            // nowhere on the keyboard.
+            //
+            // U+23B5, the bottom square bracket: the shape every keyboard has used for this key
+            // for fifty years. The drawing code still honours SpaceBarMode.NOTHING for anyone who
+            // wants the bar empty, and still substitutes its own mark, so what is returned here
+            // only has to be non-null and sensible.
+            KeyCode.SPACE, KeyCode.CJK_SPACE -> "\u23B5"
             KeyCode.IME_UI_MODE_TEXT,
             KeyCode.VIEW_CHARACTERS -> {
                 evaluator.context()?.getString(R.string.key__view_characters)

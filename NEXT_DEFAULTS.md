@@ -1247,3 +1247,56 @@ screen or so either side. It cannot reach a button ten screens up, because there
 `copy 1`, `copy 2`, counted from the bottom — and a finger that scrolls and re-searches when a target
 is not found. The second is what actually removes the limit above, since scrolling is what makes the
 rows exist.
+
+---
+
+# 37. The spacebar mark, and volume down carries a term
+
+## The spacebar was bare, and the comment said otherwise
+
+`computeLabel` returned **null** for `KeyCode.SPACE`, with a comment saying the face was decided
+where the key is drawn. It is — but that code reads `key.label?.let { ... }`, so a null label meant
+the block never ran and the bar was drawn empty. **The mark existed in a comment and nowhere on the
+keyboard.** A worked example of why a comment is not evidence.
+
+Now returns `U+23B5`. The drawing code still honours `SpaceBarMode.NOTHING` and still substitutes its
+own mark, so what is returned here only has to be non-null.
+
+## Volume down: a hold presses a magic finger term
+
+Both hardware keys now have the same shape — nothing decided on the way down, a short press is
+volume, a hold is the other meaning. Neither key can take the volume away on a quick tap, which is
+the requirement when bhajan is playing through the same phone.
+
+The hold presses a term through `pressScreenTarget`, the same path the finger uses, so a term that
+works on the row works on the key. `dictate__ma_volume_down_term`, default `Send`. Empty leaves it a
+plain volume key, and with the accessibility service off it stays a volume key rather than swallowing
+the press.
+
+**Still to build: the settings UI for it** — a way to pick which taught term the key carries, rather
+than the preference only being reachable in code.
+
+## Bucket copy — designed, not built
+
+Confirmed from a real node dump: **code boxes are distinguishable.** They carry
+`desc="Copy code"`; message footers carry `desc="Copy message"`. A term of `copy code` finds only
+code blocks.
+
+`ClipboardManager.captureIntoClipSlots` already files every clipboard change into the next free
+bucket, reads which buckets are visible on each copy, and stops when they are full. **So bucket copy
+does not write buckets at all** — it presses copy buttons one after another and the existing system
+fills them in order. Resetting the buckets already sends the next copy back to the first.
+
+To build:
+- A key that collects every `copy code` match, orders them **bottom-up** (newest first), and presses
+  each with a settle pause between — the clipboard must land before the next press or a bucket is
+  skipped. Start at 250 ms and tune on the phone.
+- A second plain copy key that takes the last match whatever it is, code or not.
+- **A face that says which bucket is next** — a `B` with a pouring arrow — because without it he
+  cannot tell where the sequence has got to.
+- **Long press to reset to bucket one.** This is the part that makes it usable rather than a trap:
+  without it a mistake means copying from last month.
+
+**The limit that remains is Android's**: recycled rows are absent from the tree, not hidden in it, so
+one press reaches the code boxes near the viewport rather than the whole conversation. A finger that
+scrolls and re-searches is what actually removes it.

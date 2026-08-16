@@ -1078,6 +1078,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * who dictates about pressing things would rather have their words than a keyboard second
          * guessing them, and that person should be able to say so once and be left alone.
          */
+        /**
+         * The magic finger term that a long press on volume down presses.
+         *
+         * A term rather than an action, so anything he has taught the finger can live on the key
+         * without new code — and so the key and the row cannot disagree about what a word means.
+         * Empty leaves the key as a plain volume key.
+         */
+        val maVolumeDownTerm = string(
+            key = "dictate__ma_volume_down_term",
+            default = "Send",
+        )
+
         val maVoiceCommands = boolean(
             key = "dictate__ma_voice_commands",
             default = true,
