@@ -34,6 +34,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import androidx.compose.runtime.collectAsState as collectFlowAsState
+import androidx.compose.ui.platform.LocalContext
+import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.dictate.MaClipCapture
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.dictate.MaRows
@@ -70,6 +73,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun MaBucketStrip(modifier: Modifier = Modifier) {
     val prefs by FlorisPreferenceStore
+    val context = LocalContext.current
+    val clipboardManager by context.clipboardManager()
     val scope = rememberCoroutineScope()
     val rowsRaw by prefs.dictate.maRows.collectAsState()
     val capturedRaw by prefs.dictate.maClipCaptured.collectAsState()
@@ -83,9 +88,42 @@ fun MaBucketStrip(modifier: Modifier = Modifier) {
     val filled = visible.sorted().mapNotNull { n ->
         MaClipCapture.at(slots, n)?.let { n to it }
     }
-    // Nothing held yet, so nothing to legend. Drawn empty it would be a bar of blank space above the
-    // keyboard for as long as the buckets stay empty, which is most of the time.
-    if (filled.isEmpty()) return
+    // With no buckets holding anything, show what was last copied instead.
+    //
+    // The strip is meant to follow what he is doing: the recorder while recording, suggestions while
+    // typing, the buckets when they hold something — and until now, nothing at all after a plain
+    // copy, which is one of the commonest things anybody does. A line saying what is on the
+    // clipboard costs no space that was being used and answers the question he would otherwise
+    // open the clipboard panel to answer.
+    //
+    // Below the buckets in priority, because a bucket is something he put there deliberately and
+    // the clipboard is merely the last thing that happened.
+    if (filled.isEmpty()) {
+        val clip by clipboardManager.primaryClipFlow.collectFlowAsState()
+        val text = clip?.stringRepresentation()?.trim().orEmpty().replace('\n', ' ')
+        if (text.isNotEmpty()) {
+            Row(
+                modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "copied",
+                    color = MaStripNumber,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = text,
+                    color = MaStripText,
+                    fontSize = 15.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        return
+    }
 
     Row(
         modifier = modifier
@@ -195,5 +233,14 @@ fun maBucketStripHasContent(): Boolean {
     }
     val visible = remember(storedRows) { MaRows.visibleClipSlots(storedRows) }
     val slots = remember(capturedRaw) { MaClipCapture.parse(capturedRaw) }
-    return visible.any { MaClipCapture.at(slots, it) != null }
+    if (visible.any { MaClipCapture.at(slots, it) != null }) return true
+    // Or something on the clipboard, which the strip shows when no bucket holds anything.
+    //
+    // Asked separately from the buckets because it is a separate reason to draw. Without this the
+    // strip would compute its clipboard line and then never be given the slot to draw it in — the
+    // caller asks this question first.
+    val context = LocalContext.current
+    val clipboardManager by context.clipboardManager()
+    val clip by clipboardManager.primaryClipFlow.collectFlowAsState()
+    return !clip?.stringRepresentation()?.trim().isNullOrEmpty()
 }

@@ -2064,3 +2064,28 @@ built — so the ladder keeps climbing instead of stopping at whatever was in me
 **Also confirmed from that dump:** each Claude code box carries exactly one copy button,
 `desc="Copy code"` at the top right, with `Expand code` beside it. The fenced-backtick copy he wants
 to avoid is `Copy message`, under the whole answer, and A-bucket has never targeted it.
+
+---
+
+# 60. The top strip always has something to say
+
+The strip is meant to follow what he is doing, and one common case said nothing at all: a plain copy.
+Now it shows `copied` and the clipboard text when no bucket holds anything.
+
+**The order it resolves in, highest first:**
+
+1. **Recording** — the recorder bar, in `DictateSmartbarUi`.
+2. **Typing** — word suggestions. They exist only while a word is in progress (§55), which is exactly
+   when they are wanted.
+3. **Buckets** — the legend, number and contents per slot. Something he put there deliberately.
+4. **Clipboard** — the last thing copied. Merely the last thing that happened, so it sits below a
+   bucket, and it answers the question he would otherwise open the clipboard panel for.
+5. Nothing.
+
+**`maBucketStripHasContent` had to learn about the clipboard too.** The strip computes what to draw,
+but the caller decides whether it gets the slot at all — so a clipboard line computed inside a strip
+that is never composed would never have appeared. Two places, one rule; they are asked in the same
+order.
+
+`primaryClipFlow` is a `StateFlow`, so it needs Compose's `collectAsState` while the preferences
+around it use JetPref's. Imported under an alias, the way `DictateHistoryScreen` already does it.
