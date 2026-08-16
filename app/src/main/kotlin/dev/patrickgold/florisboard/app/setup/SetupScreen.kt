@@ -64,7 +64,6 @@ import dev.patrickgold.florisboard.dictate.provider.MaKeys
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
-import dev.patrickgold.florisboard.dictate.MaVault
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.provider.ProviderAccounts
 import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
@@ -291,7 +290,8 @@ private fun FlorisScreenScope.content(
             },
             steps = steps(
                 context, navController, requestNotification, requestMic,
-                isProviderConfigured, onSkipProvider, onPassFloatingButton, accounts, scope,
+                isProviderConfigured, onSkipProvider, onPassFloatingButton, accounts,
+                hasAllFiles, onSkipAllFiles, hasAccessibility, onSkipAccessibility, scope,
             ),
             footer = {
                 footer(context)
@@ -331,6 +331,10 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
     onSkipProvider: () -> Unit,
     onPassFloatingButton: () -> Unit,
     accounts: ProviderAccounts,
+    hasAllFiles: Boolean,
+    onSkipAllFiles: () -> Unit,
+    hasAccessibility: Boolean,
+    onSkipAccessibility: () -> Unit,
     scope: CoroutineScope,
 ): List<FlorisStep> {
 
