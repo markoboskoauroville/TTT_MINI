@@ -297,8 +297,12 @@ class LayoutManager(context: Context) {
             for (row in computedArrangement) {
                 for (key in row) {
                     if (key.computedSymbolHint != null) continue
-                    val main = key.data.popup?.main?.compute(DefaultComputingEvaluator) ?: continue
-                    if (main.type == KeyType.CHARACTER && main.code != key.data.code) {
+                    // Computed first: `data` is an AbstractKeyData, which only knows how to compute
+                    // itself. `popup` lives on the KeyData that comes out of it — the same step the
+                    // pairing loop below takes for exactly the same reason.
+                    val computed = key.data.compute(DefaultComputingEvaluator) ?: continue
+                    val main = computed.popup?.main?.compute(DefaultComputingEvaluator) ?: continue
+                    if (main.type == KeyType.CHARACTER && main.code != computed.code) {
                         key.computedSymbolHint = main
                     }
                 }
