@@ -20,6 +20,8 @@ import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.content.pm.PackageManager
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -62,6 +64,8 @@ import dev.patrickgold.florisboard.dictate.provider.MaKeys
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.dictate.MaVault
+import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.provider.ProviderAccounts
 import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -135,6 +139,24 @@ fun SetupScreen() = FlorisScreen {
             isMicGranted = isGranted
         }
 
+    // The two grants that happen on a system screen we cannot get a result from.
+    //
+    // Neither returns anything when the user comes back — there is no launcher contract for
+    // all-files access or for the accessibility toggle — so the only honest way to know is to look
+    // again. Polling while the wizard is open costs nothing and means the step ticks itself off the
+    // moment he returns, instead of sitting there completed but looking undone.
+    var hasAllFiles by remember { mutableStateOf(MaVault.hasFullAccess()) }
+    var allFilesSkipped by rememberSaveable { mutableStateOf(false) }
+    var hasAccessibility by remember { mutableStateOf(DictateAccessibilityService.isRunning) }
+    var accessibilitySkipped by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(400L)
+            hasAllFiles = MaVault.hasFullAccess()
+            hasAccessibility = DictateAccessibilityService.isRunning
+        }
+    }
+
     content(
         isFlorisBoardEnabled,
         isFlorisBoardSelected,
@@ -150,6 +172,12 @@ fun SetupScreen() = FlorisScreen {
         requestNotification,
         requestMic,
         hasNotificationPermission,
+        hasAllFiles,
+        allFilesSkipped,
+        { allFilesSkipped = true },
+        hasAccessibility,
+        accessibilitySkipped,
+        { accessibilitySkipped = true },
         scope,
     )
 }
@@ -191,6 +219,12 @@ private fun FlorisScreenScope.content(
     requestNotification: ManagedActivityResultLauncher<String, Boolean>,
     requestMic: ManagedActivityResultLauncher<String, Boolean>,
     hasNotificationPermission: NotificationPermissionState,
+    hasAllFiles: Boolean,
+    allFilesSkipped: Boolean,
+    onSkipAllFiles: () -> Unit,
+    hasAccessibility: Boolean,
+    accessibilitySkipped: Boolean,
+    onSkipAccessibility: () -> Unit,
     scope: CoroutineScope,
 ) {
 
@@ -198,7 +232,12 @@ private fun FlorisScreenScope.content(
         !isFlorisBoardEnabled -> Steps.EnableIme.id
         !isFlorisBoardSelected -> Steps.SelectIme.id
         !isMicGranted -> Steps.GrantMicPermission.id
+        // Storage before keys: the backup this step unlocks is what the next step reads.
+        !hasAllFiles && !allFilesSkipped -> Steps.GrantAllFiles.id
         !isProviderConfigured && !providerSkipped -> Steps.SetUpProvider.id
+        // Accessibility last of the grants, because it is the one that is optional in the sense
+        // that dictation works without it — everything it powers is a convenience on top.
+        !hasAccessibility && !accessibilitySkipped -> Steps.GrantAccessibility.id
         else -> Steps.FinishUp.id
     }
 
@@ -211,6 +250,9 @@ private fun FlorisScreenScope.content(
             isFlorisBoardEnabled, isFlorisBoardSelected, isMicGranted,
             hasNotificationPermission, isProviderConfigured, providerSkipped,
             floatingButtonStepPassed,
+            // Without these two in the key list the wizard would not notice a grant returning from
+            // the system screen, and would sit on a step he had already completed.
+            hasAllFiles, allFilesSkipped, hasAccessibility, accessibilitySkipped,
         ) {
             stepState.setCurrentAuto(targetStep())
         }
@@ -342,13 +384,90 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             }
         },
         FlorisStep(
+            id = Steps.GrantAllFiles.id,
+            title = "Let it read your files",
+        ) {
+            StepText(
+                "Android will not let this app open a file it does not own without this. Your key " +
+                    "backup in Documents is such a file \u2014 so without this, the next step cannot " +
+                    "read the backup the previous version left for you.\n\n" +
+                    "Find TTT mini in the list and turn it on."
+            )
+            if (hasAllFiles) {
+                StepText("Granted. You can go on.")
+            } else {
+                StepButton("Grant all-files access") {
+                    runCatching { context.startActivity(MaVault.accessIntent(context)) }
+                }
+                TextButton(
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 4.dp),
+                    onClick = { onSkipAllFiles() },
+                ) {
+                    Text(
+                        text = "Skip \u2014 I will type my keys in",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
+        FlorisStep(
             id = Steps.SetUpProvider.id,
             title = stringRes(R.string.setup__provider__title),
         ) {
             ProviderSetupStep(
                 onImport = ::importKeys,
                 onSkip = onSkipProvider,
+                hasAllFiles = hasAllFiles,
             )
+        },
+        FlorisStep(
+            id = Steps.GrantAccessibility.id,
+            title = "Turn on the accessibility service",
+        ) {
+            StepText(
+                "This is what lets the app press buttons on screen, jump between fields, and " +
+                    "record with no keyboard open. Dictation works without it; everything built " +
+                    "on top of it does not."
+            )
+            if (hasAccessibility) {
+                StepText("Running. You can go on.")
+            } else {
+                // Two buttons in the order the phone wants them, which is not the obvious order.
+                //
+                // A sideloaded app has its accessibility switch greyed out until restricted
+                // settings are allowed, and that lives behind the three-dot menu of App info —
+                // somewhere nobody finds without being told. Sending him straight to the
+                // accessibility list first would show him a switch he cannot move and no reason
+                // why.
+                StepText(
+                    "1. Open App info, tap the three dots at the top right, and choose " +
+                        "\"Allow restricted settings\". Skip this if your phone does not offer it."
+                )
+                StepButton("Open App info") {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.parse("package:" + context.packageName)
+                            },
+                        )
+                    }
+                }
+                StepText("2. Then find TTT mini in Accessibility and switch it on.")
+                StepButton("Open Accessibility settings") {
+                    runCatching {
+                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    }
+                }
+                TextButton(
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 4.dp),
+                    onClick = { onSkipAccessibility() },
+                ) {
+                    Text(
+                        text = "Skip \u2014 set this up later",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         },
         FlorisStep(
             id = Steps.FinishUp.id,
@@ -391,6 +510,7 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
 private fun FlorisStepLayoutScope.ProviderSetupStep(
     onImport: (String) -> String,
     onSkip: () -> Unit,
+    hasAllFiles: Boolean,
 ) {
     val context = LocalContext.current
     var note by remember { mutableStateOf("") }
@@ -408,6 +528,23 @@ private fun FlorisStepLayoutScope.ProviderSetupStep(
             "so one file with all of them is the normal case. Nothing is ever pasted."
     )
     Spacer(modifier = Modifier.height(8.dp))
+    // Restore first, because for him it is the answer.
+    //
+    // The previous version left a backup in Documents, and reading it needs no picker and no
+    // remembering where the file was put — the location is known. It only appears when all-files
+    // access has actually been granted and a backup is actually there, so it is never a button
+    // that cannot work.
+    if (hasAllFiles && MaVault.exists()) {
+        StepButton(label = "Restore keys from backup") {
+            val text = MaVault.read()
+            note = if (text.isNullOrBlank()) {
+                "The backup at " + MaVault.DISPLAY_PATH + " is empty."
+            } else {
+                onImport(text)
+            }
+        }
+        StepText("Found a backup at " + MaVault.DISPLAY_PATH + ".")
+    }
     StepButton(label = "Load keys from file") {
         picker.launch(arrayOf("*/*"))
     }
@@ -454,6 +591,24 @@ private sealed class Steps(val id: Int) {
     data object EnableIme : Steps(id = 1)
     data object SelectIme : Steps(id = 2)
     data object GrantMicPermission : Steps(id = 3)
-    data object SetUpProvider : Steps(id = 4)
-    data object FinishUp : Steps(id = 5)
+
+    /**
+     * All-files access, and it sits **before** the keys on purpose.
+     *
+     * The previous version leaves a key backup in Documents, and Android will not let the app read
+     * a file it does not own without this. So a setup that asked for the keys first sent him to a
+     * picker to find a backup the app was not allowed to open — which is exactly how it went.
+     */
+    data object GrantAllFiles : Steps(id = 4)
+    data object SetUpProvider : Steps(id = 5)
+
+    /**
+     * Accessibility, guided, because the switch alone is not enough on this phone.
+     *
+     * A sideloaded app has its accessibility toggle greyed out until restricted settings are
+     * allowed, which lives behind the overflow menu of App info and is findable by nobody who has
+     * not been told. Two buttons, in the order the phone wants them.
+     */
+    data object GrantAccessibility : Steps(id = 6)
+    data object FinishUp : Steps(id = 7)
 }

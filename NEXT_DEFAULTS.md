@@ -1490,3 +1490,40 @@ it first to raise a keyboard he was never going to type on.
   **Auto** sends the first seconds to Groq, and the answer is applied when the request is built. That
   is exactly the seam §28 describes, and it means the cost of detection is paid only by the state
   that asked for it.
+
+---
+
+# 43. The setup flow, rebuilt
+
+Seven steps now: enable IME, select IME, microphone, **all-files access**, keys, **accessibility**,
+finish.
+
+## All-files access sits before the keys, and that is the whole point
+
+The previous version leaves a key backup in `Documents/`, and Android will not let the app open a
+file it does not own without this grant. Asking for the keys first sent him to a picker to find a
+backup the app was not allowed to read — which is exactly how it went.
+
+## Restore, not just import
+
+The keys step now offers **Restore keys from backup** above the file picker, reading
+`MaVault.DISPLAY_PATH` directly: no picker, no remembering where the file was put, because the
+location is known. It appears **only** when all-files access has been granted and a backup actually
+exists, so it is never a button that cannot work.
+
+## The accessibility step is two buttons in an order that looks wrong
+
+A sideloaded app has its accessibility toggle **greyed out** until restricted settings are allowed,
+and that lives behind the three-dot menu of App info. So the step sends him to **App info first**,
+then to the accessibility list. Going straight to the accessibility list would show him a switch he
+cannot move and no reason why.
+
+## Polling, because these grants have no result
+
+There is no launcher contract for all-files access or for the accessibility toggle — nothing comes
+back when the user returns. So the wizard re-checks `MaVault.hasFullAccess()` and
+`DictateAccessibilityService.isRunning` every 400 ms while it is open, and both are in the
+`LaunchedEffect` key list; without that it would sit on a step already completed.
+
+Both new steps can be skipped, and a skip is remembered for the session, so neither can trap someone
+whose phone does not offer the setting at all.
