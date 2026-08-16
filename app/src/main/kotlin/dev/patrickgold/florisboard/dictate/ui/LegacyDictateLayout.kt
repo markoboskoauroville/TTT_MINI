@@ -67,7 +67,8 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SelectAll
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.filled.SpaceBar
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.CircularProgressIndicator
@@ -1037,26 +1038,49 @@ private fun LegacyBottomRow(
     onExitToKeyboard: (() -> Unit)? = null,
 ) {
     val prefs by FlorisPreferenceStore
+    val scope = rememberCoroutineScope()
+    val openingView by prefs.dictate.maOpeningView.collectAsState()
     val sideKey = Modifier.fillMaxHeight().aspectRatio(1f)
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // The gear, in the corner, where a left thumb reaches it without the hand moving.
+        // The corner, where a left thumb reaches it without the hand moving.
         //
         // The little man's switch was here and is gone. It was a third way to do one thing: his row
         // is shared by both views, so it belongs in the dashboard with every other show-and-hide
         // switch rather than having a key of its own on one screen. One switch in one place beats
         // the same switch in three.
         //
-        // Settings takes the corner and the dashboard takes the slot above, because settings is
-        // opened rarely and deliberately while the dashboard is opened mid sentence.
+        // The pin takes the corner, and settings has gone from this view.
+        //
+        // Settings was here on the reasoning that it is opened rarely and deliberately — which is
+        // exactly the argument for it NOT having a key on the screen he uses most. It is two taps
+        // away on the feature row and in the app itself, and the corner of a screen this size is
+        // worth more than a third route to it.
+        //
+        // What earns the corner is the pin: make this the view the keyboard opens on. He dictates
+        // far more than he types, so the keyboard is his secondary screen, and until now every
+        // single open began on the wrong one.
+        //
+        // Filled when pinned, outlined when not — the pair used everywhere in this app — and it can
+        // always be unpinned from the same corner it was pinned in, which is what stops a default
+        // that opens somewhere unexpected from being a trap.
+        val pinnedHere = openingView == "dictation"
         ThemedIconKey(
-            code = KeyCode.SETTINGS,
-            icon = Icons.Default.Settings,
-            contentDescription = stringRes(R.string.dictate__action_settings),
+            code = KeyCode.NOOP,
+            icon = if (pinnedHere) Icons.Default.PushPin else Icons.Outlined.PushPin,
+            contentDescription = if (pinnedHere) {
+                "Stop opening on this view"
+            } else {
+                "Open the keyboard on this view"
+            },
             modifier = sideKey,
-            onClick = { FlorisImeService.launchSettings("settings/dictate") },
+            onClick = {
+                scope.launch {
+                    prefs.dictate.maOpeningView.set(if (pinnedHere) "keyboard" else "dictation")
+                }
+            },
         )
 
         // The way back to the typing keyboard, which this view did not have.

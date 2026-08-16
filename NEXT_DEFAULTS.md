@@ -2089,3 +2089,25 @@ order.
 
 `primaryClipFlow` is a `StateFlow`, so it needs Compose's `collectAsState` while the preferences
 around it use JetPref's. Imported under an alias, the way `DictateHistoryScreen` already does it.
+
+---
+
+# 61. The dictation view can be pinned as the opening view
+
+The gear is gone from that screen and a **pin** takes the corner.
+
+**Settings did not deserve the corner.** It was there on the reasoning that it is opened rarely and
+deliberately — which is the argument for it *not* having a key on the screen he uses most. It is
+already on the feature row and in the app; a third route was worth less than the corner it occupied.
+
+**`"dictation"` is restored to `maOpeningView`.** It was removed earlier on two arguments. One was
+wrong: the view shows a mic key, it does not press it, and recording on open is a separate setting.
+The other — that this screen is always secondary — was mine to assume and his to decide. **He
+dictates far more than he types**, so for him the keyboard is the secondary screen, and until now
+every open began on the wrong one.
+
+The pin is the **only** thing that sets this preference, so it can always be unset from the same
+corner it was set in. That reversibility is what the earlier removal was really protecting against,
+and it is cheaper than removing the option.
+
+Filled when pinned, outlined when not, as everywhere else in this app.

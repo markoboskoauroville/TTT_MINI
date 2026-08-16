@@ -575,9 +575,17 @@ class FlorisImeService : LifecycleInputMethodService() {
      * hour ago, and a text field that greets you with a live microphone is a surprise every time.
      */
     private fun maRestoredUiMode(): ImeUiMode = when (prefs.dictate.maOpeningView.get()) {
-        // "dictation" is deliberately absent. It was an opening view and is not one any more: this
-        // screen is always secondary, opened on request. A stored "dictation" from before falls
-        // through to the keyboard below, which is the right answer rather than an error.
+        // "dictation" is back, pinned from the dictation view itself.
+        //
+        // It was removed on the argument that this screen is always secondary and that opening onto
+        // it means opening onto a live microphone. The second half is not true — the view shows a
+        // mic key, it does not press it, and recording on open is a separate setting he can leave
+        // off. The first half was mine to assume and his to decide: he dictates far more than he
+        // types, so for him the keyboard is the secondary screen.
+        //
+        // The pin on that view is the only thing that sets this, so it can always be unset from the
+        // same place it was set — which is what the earlier removal was really protecting against.
+        "dictation" -> ImeUiMode.TRANSCRIBE
         // Pinned from inside the clipboard panel. Tapping an entry pastes it, which makes the panel
         // a second route to the C keys' job with no ten-slot ceiling and the text visible rather
         // than a number to remember.
