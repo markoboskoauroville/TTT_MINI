@@ -179,6 +179,34 @@ object MaMagicTargets {
     fun activeTerms(targets: List<Target>): List<String> =
         targets.filter { it.enabled && !it.isSpacer && it.term.isNotBlank() }.map { it.term.trim() }
 
+    /**
+     * The term a key or a hardware button should actually press, given the name it was set to.
+     *
+     * ### Why this exists
+     *
+     * Volume down and the magic finger's send key are **the same button pressed two ways**, and
+     * they must never be able to disagree about what "send" means. They nearly did: volume down
+     * held its own copy of the word in a preference, so renaming the term on the Magic finger
+     * screen — or teaching send a longer name because some app announces it differently — would
+     * have fixed the key on the row and left the hardware button pressing a word that no longer
+     * existed. Silently, and only in the app where it mattered.
+     *
+     * So the row is the single source. The stored name is looked up among the taught terms, by
+     * face or by term, and what comes back is that target's term. Rename it once and both follow.
+     *
+     * Falls back to the name as given when nothing matches, so a term typed by hand still works and
+     * a list that has not loaded yet cannot make the button dead.
+     */
+    fun resolveTerm(targets: List<Target>, name: String): String {
+        val wanted = name.trim()
+        if (wanted.isEmpty()) return ""
+        val hit = targets.firstOrNull {
+            it.enabled && !it.isSpacer &&
+                (it.face.equals(wanted, ignoreCase = true) || it.term.equals(wanted, ignoreCase = true))
+        }
+        return hit?.term?.trim() ?: wanted
+    }
+
     fun serialize(targets: List<Target>): String =
         targets.joinToString(SEP.toString()) {
             // The package goes last so that anything written before it existed still reads: an old

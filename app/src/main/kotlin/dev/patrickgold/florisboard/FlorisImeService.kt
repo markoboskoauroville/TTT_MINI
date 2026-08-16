@@ -47,6 +47,7 @@ import kotlinx.coroutines.delay
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaLog
+import dev.patrickgold.florisboard.dictate.MaMagicTargets
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.app.FlorisAppActivity
@@ -802,9 +803,17 @@ class FlorisImeService : LifecycleInputMethodService() {
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
                 // The magic finger term, Send by default, also on the way down. Same reasoning: if
                 // the key is taken at all it should answer immediately.
-                val term = prefs.dictate.maVolumeDownTerm.get().trim()
+                // Resolved through the magic finger's own list, never read straight from the
+                // preference. This key and the send key on the row are the same button pressed two
+                // ways, and they must not be able to disagree: renaming the term on the Magic
+                // finger screen has to move both, or the hardware button quietly goes on pressing a
+                // word that no longer exists.
+                val stored = prefs.dictate.maVolumeDownTerm.get()
+                val targets = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
+                    .ifEmpty { MaMagicTargets.defaults() }
+                val term = MaMagicTargets.resolveTerm(targets, stored)
                 val serviceUp = DictateAccessibilityService.isRunning
-                MaLog.add("keys", "volume down: term='$term', service=$serviceUp")
+                MaLog.add("keys", "volume down: '$stored' -> '$term', service=$serviceUp")
                 if (term.isNotEmpty() && serviceUp) {
                     val pressed = DictateAccessibilityService.pressScreenTarget(listOf(term))
                     MaLog.add("keys", "pressed=${pressed ?: "nothing found"}")

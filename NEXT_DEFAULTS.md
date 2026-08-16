@@ -1994,3 +1994,23 @@ were left with no readers and were removed with them. `MaClipCapture.isFull` sti
 copy is accepted — the state is unchanged, only its colour.
 
 **The rule worth keeping: red is for a fault, and a full container is not one.**
+
+---
+
+# 57. Send has one definition and two triggers
+
+The send key on the magic finger row and a long press on volume down are **the same press made two
+ways**. They were nearly able to disagree: volume down held its own copy of the word in
+`dictate__ma_volume_down_term` and pressed that directly, so renaming the term on the Magic finger
+screen — or teaching send a longer name because some app announces it differently — would have fixed
+the key on the row and left the hardware button pressing a word that no longer existed. Silently,
+and only in the app where it mattered.
+
+`MaMagicTargets.resolveTerm(targets, name)` is now the single source: the stored name is looked up
+among the taught terms, by face or by term, and the target's own term comes back. Falls back to the
+name as given, so a hand-typed term still works and a list that has not loaded cannot make the
+button dead. The log records both — `volume down: 'Send' -> 'Send'` — so a mismatch is visible
+rather than inferred.
+
+**Written into HANDOFF as a standing rule**, because he asked for it to survive the session: any
+future way of firing send joins the same way. One list, one term, no copies.

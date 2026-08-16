@@ -114,6 +114,11 @@ tree before writing.
   present but inactive.
 - **The accessibility service powers the magic button, TAB and the floating button.** It must be
   declared in the manifest — it once was not, and everything depending on it failed silently.
+- **Send is one thing with two triggers, and they must never drift apart.** The send key on the
+  magic finger row and a long press on volume down are the same press. Volume down resolves its
+  term through `MaMagicTargets.resolveTerm` against the taught list — it must never read a term
+  straight out of a preference and press that. Rename it once on the Magic finger screen and both
+  follow. **Any future way of firing send joins them the same way**: one list, one term, no copies.
 - **Roles are wired, not chosen.** `MaRoles` decides: AssemblyAI transcribes, Anthropic rewords and
   proofreads, Groq detects language. The call path resolves through it at the moment of use, so a
   stale stored id cannot survive. Give a new provider a role there; never give the user a chip.
