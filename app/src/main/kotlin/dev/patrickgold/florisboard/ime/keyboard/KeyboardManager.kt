@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import dev.patrickgold.florisboard.dictate.DictateController
+import dev.patrickgold.florisboard.dictate.MaFlow
 import dev.patrickgold.florisboard.dictate.MaProofread
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
@@ -591,6 +592,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             // ring walk, the stop button, and the error that opens settings when no key is set are
             // all already built and already tested here.
             'p' -> DictateController.applyPrompt(appContext, MaProofread.prompt())
+            // Ctrl+F: the other half of Ctrl+P. P fixes what is wrong and touches nothing else;
+            // F is allowed to move the words, cut the repetition speech leaves behind, and put the
+            // ideas in an order that follows. Two keys rather than one compromise, because the two
+            // wishes are genuinely different at the moment of wanting them.
+            //
+            // Taken deliberately, like P. Ctrl+F means find on a desktop, and there is nothing on
+            // a phone that answers it, so the event this replaces did nothing in every app he uses.
+            'f' -> DictateController.applyPrompt(appContext, MaFlow.prompt())
             else -> {
                 val androidCode = when (ch) {
                     in 'a'..'z' -> KeyEvent.KEYCODE_A + (ch - 'a')

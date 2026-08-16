@@ -63,6 +63,7 @@ fun MaShortcutsScreen() = FlorisScreen {
 
         Section("Writing")
         Shortcut("Ctrl + P", "Proofread", "Punctuation, spelling and grammar only. Your words and your style are left alone. Works on the selection, or on the whole field when nothing is selected.")
+        Shortcut("Ctrl + F", "Better flow", "Rewrites for flow: cuts the repetition dictation leaves behind and puts the ideas in an order that follows. Keeps your voice, your facts and your language. This one moves your words \u2014 Ctrl + P never does.")
 
         Spacer(Modifier.height(16.dp))
 
@@ -94,13 +95,13 @@ fun MaShortcutsScreen() = FlorisScreen {
 
         Spacer(Modifier.height(16.dp))
 
-        Section("Proofreading needs a key")
+        Section("Proofreading and flow need a key")
         Text(
-            text = "Ctrl + P sends your text to the rewording model set in API keys, so it needs a " +
+            text = "Ctrl + P and Ctrl + F send your text to the rewording model set in API keys, so they need a " +
                 "key with credit on it. Anthropic's Claude Sonnet is the one to choose for this: " +
                 "it follows \"change only what is wrong\" more faithfully than the cheaper models, " +
                 "which tend to improve your writing when you asked them to correct it.\n\n" +
-                "Set it under API keys, as the rewording provider. Without a key, Ctrl + P shows an " +
+                "Set it under API keys, as the rewording provider. Without a key, they show an " +
                 "error with a button that takes you there.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

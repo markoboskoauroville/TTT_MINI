@@ -16,11 +16,25 @@
 
 package dev.patrickgold.florisboard.app.settings.gestures
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import dev.patrickgold.florisboard.dictate.MaMagicTargets
+import dev.patrickgold.jetpref.datastore.model.collectAsState
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.settings.search.settingsSearchAnchor
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
@@ -47,11 +61,67 @@ fun GesturesScreen() = FlorisScreen {
             SwitchPreference(
                 prefs.dictate.maVolumeKeys,
                 modifier = Modifier.settingsSearchAnchor("ma__volume_keys"),
-                title = "Volume keys control dictation",
-                summary = "Volume up starts recording, then sends it. Volume down swaps between " +
-                    "the keyboard and the transcribe view. Only while the keyboard is on screen; " +
-                    "they are ordinary volume keys again the moment it closes.",
+                title = "Volume keys do more on a long press",
+                summary = "Hold volume up to start recording, hold it again to stop and send. " +
+                    "Hold volume down to press a button on screen. A short press on either is " +
+                    "still just the volume, and both are ordinary volume keys the moment the " +
+                    "keyboard closes.",
             )
+            // Which taught term the long press carries.
+            //
+            // Offered as a list of the terms he has already taught the finger rather than a text
+            // field, because a term typed here that does not match one on the Magic finger screen
+            // is a key that silently does nothing, and nothing on this screen would say why.
+            // Named explicitly. The JetPref preference composables above reach the store through
+            // their own scope; plain Compose code in the same block does not, so it has to ask.
+            val store by FlorisPreferenceStore
+            val magicRaw by store.dictate.maMagicTargets.collectAsState()
+            val terms = remember(magicRaw) {
+                MaMagicTargets.parse(magicRaw)
+                    .ifEmpty { MaMagicTargets.defaults() }
+                    .filter { !it.isSpacer && it.term.isNotBlank() }
+                    .map { it.term }
+                    .distinct()
+            }
+            val current by store.dictate.maVolumeDownTerm.collectAsState()
+            val scope = rememberCoroutineScope()
+            Text(
+                text = "Long press on volume down presses:",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            )
+            terms.forEach { term ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { scope.launch { store.dictate.maVolumeDownTerm.set(term) } }
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = current == term,
+                        onClick = { scope.launch { store.dictate.maVolumeDownTerm.set(term) } },
+                    )
+                    Text(text = term, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { scope.launch { store.dictate.maVolumeDownTerm.set("") } }
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = current.isBlank(),
+                    onClick = { scope.launch { store.dictate.maVolumeDownTerm.set("") } },
+                )
+                Text(
+                    text = "Nothing \u2014 leave it a plain volume key",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__gestures__space_bar_title)) {

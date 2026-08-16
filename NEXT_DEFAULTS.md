@@ -1300,3 +1300,39 @@ To build:
 **The limit that remains is Android's**: recycled rows are absent from the tree, not hidden in it, so
 one press reaches the code boxes near the viewport rather than the whole conversation. A finger that
 scrolls and re-searches is what actually removes it.
+
+---
+
+# 38. Ctrl+F, better flow
+
+**Ctrl+P is unchanged and stays unchanged.** It fixes what is wrong and may not touch a word he
+chose. `MaFlow` is the other half: it is *allowed* to rewrite, and that difference is why there are
+two keys rather than one compromise. When he wants the commas fixed he wants only the commas fixed;
+when he wants the paragraph to read well he is asking for the words to move.
+
+**What it targets is what speech leaves behind.** Dictation says the same thought three times in
+three shapes, because the mouth finds the sentence while saying it and the false starts stay in the
+transcript. A proofreader will not touch any of that, so the result reads as careless writing, which
+is the opposite of true. The instruction is aimed at redundancy and order: say each thing once, put
+them in the sequence that follows.
+
+**Register named explicitly** — warm and direct, half friendly and half professional, and *not*
+corporate. A model told to "improve" text reaches for the flattened business voice, which strips out
+exactly what makes a message recognisably his.
+
+**The line it may not cross: it may cut, join and reorder; it may not add.** Given permission to
+rewrite, a model will invent a politeness he did not offer or a commitment he did not make, and a
+message that goes out carrying an invented promise is worse than one that rambles.
+
+The spinning dust already shows the running prompt's name, so the two keys are told apart mid-flight
+by naming this one `Better flow` against the proofreader's `Proofread` — no new UI needed.
+
+## Volume down's term now has a picker
+
+In Gestures, under Volume keys. Offered as a **list of the terms already taught to the finger**
+rather than a text field, because a term typed by hand that matches nothing on the Magic finger
+screen is a key that silently does nothing, with nothing on that screen to say why. Includes an
+explicit "nothing" option that leaves it a plain volume key.
+
+The old summary there described behaviour that no longer existed — volume up starting on a short
+press, volume down swapping views — and has been rewritten to match the code.
