@@ -1738,3 +1738,33 @@ meant to be pasted. `keys` the volume path, including whether the service was up
 found.
 
 **Add a line whenever a failure would otherwise be silent.** That is the rule this screen is for.
+
+---
+
+# 50. The magic finger defaults are his row now
+
+Was: `Copy message`, `Stop responding`, `Send`, `Use Image URL`, `Add URL`, `Generate Images`. Six
+terms guessed at what a button-pressing keyboard ought to offer.
+
+**He kept one.** The other five were keys he deleted on every reinstall, and he reinstalls
+constantly, so the list cost him work each time and bought nothing.
+
+Now: a **spacer 5.4 keys wide**, then **send**. The spacer is not decoration — it pushes send to the
+right-hand end of the row, under the thumb that holds the phone, which is the entire reason the
+spacer feature exists. Shipping the row without it would ship the feature without its point.
+
+**`DEFAULTS_VERSION` deliberately stays at 1.** Bumping it would run `mergeNewDefaults` against
+lists that already exist and append a second spacer to his. Defaults are for fresh installs here;
+that flag is for genuinely new terms.
+
+## The feature row defaults are NOT changed, and here is what is needed
+
+He asked for these too, and only Row 1 was visible in the screenshot: **History, Settings, Dictation
+view**. Rows 2 and 3 were not shown.
+
+The feature row's default is a single flat list in `MaFeatureOrder.DEFAULT`, split into rows by
+`MaRows` — so setting Row 1 alone means guessing the other two, and a wrong guess is worse than the
+current default because it looks deliberate. **Ask for screenshots of Row 2 and Row 3, then set all
+three together.**
+
+The spacer width on that screen already defaults to 10, which matches what he has.

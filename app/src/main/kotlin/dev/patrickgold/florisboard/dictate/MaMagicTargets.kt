@@ -154,12 +154,19 @@ object MaMagicTargets {
      * to Firefox would break the moment he opens the same site in another browser.
      */
     fun defaults(): List<Target> = listOf(
-        Target(term = "Copy message", label = "copy"),
-        Target(term = "Stop responding", label = "stop"),
+        // A spacer, then send. What he actually keeps, so a fresh install starts where he would
+        // have dragged it to anyway.
+        //
+        // The six terms this replaces were a guess at what a keyboard for pressing buttons ought to
+        // offer. He kept one of them. The other five were keys he had to delete on every reinstall,
+        // and he reinstalls constantly — so the old list cost him work every time and bought
+        // nothing.
+        //
+        // The spacer is 5.4 keys wide, which is not arbitrary: it pushes send to the right-hand end
+        // of the row, under the thumb that holds the phone. That is the whole reason the spacer
+        // feature exists, and shipping the row without it would ship the feature without its point.
+        Target(term = SPACER, label = "54"),
         Target(term = "Send", label = "send"),
-        Target(term = "Use Image URL", label = "url"),
-        Target(term = "Add URL", label = "+url"),
-        Target(term = "Generate Images", label = "gen"),
     )
 
     /**
