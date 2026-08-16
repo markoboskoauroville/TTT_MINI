@@ -1085,6 +1085,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * without new code — and so the key and the row cannot disagree about what a word means.
          * Empty leaves the key as a plain volume key.
          */
+        /**
+         * Whether the word model has already read the dictation history.
+         *
+         * A flag rather than a check for an empty model: a model that has learned a little is still
+         * worth backfilling, and running the pass twice would double every count and tilt the
+         * ranking towards whatever happened to be in history.
+         */
+        val maNgramBackfilled = boolean(
+            key = "dictate__ma_ngram_backfilled",
+            default = false,
+        )
+
         val maVolumeDownTerm = string(
             key = "dictate__ma_volume_down_term",
             default = "Send",

@@ -140,6 +140,9 @@ class FlorisApplication : Application() {
             DictateLegacyMigrator.applyActionRowV20IfNeeded()
             MaLog.initialize(this@FlorisApplication)
             MaNgram.initialize(this@FlorisApplication)
+            // After initialize, which loads whatever the model already knows, so the backfill adds
+            // to it rather than racing the load and being overwritten by it.
+            MaNgram.backfillFromHistory(this@FlorisApplication)
             DictateLegacyMigrator.restoreKeysFromVaultIfEmpty(this@FlorisApplication)
             DictateLegacyMigrator.reofferRateAndDonateIfNeeded()
             preferenceStoreLoaded.value = true

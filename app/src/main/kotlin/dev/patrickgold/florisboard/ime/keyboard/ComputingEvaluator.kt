@@ -56,7 +56,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SpaceBar
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.patrickgold.florisboard.FlorisImeService
@@ -343,17 +342,16 @@ fun ComputingEvaluator.computeImageVector(data: KeyData): ImageVector? {
                     context()?.vectorResource(id = R.drawable.ic_ma_shift_filled)
             }
         }
-        KeyCode.SPACE, KeyCode.CJK_SPACE -> {
-            when (evaluator.keyboard.mode) {
-                KeyboardMode.NUMERIC,
-                KeyboardMode.NUMERIC_ADVANCED,
-                KeyboardMode.PHONE,
-                KeyboardMode.PHONE2 -> {
-                    Icons.Default.SpaceBar
-                }
-                else -> null
-            }
-        }
+        // No icon for the spacebar, on any keyboard.
+        //
+        // This drew the space icon on the numeric and phone layouts back when `computeLabel`
+        // returned null for space and the bar would otherwise have been blank. Since build 121 the
+        // label IS the mark, on every mode — so on those four layouts both fired and the key wore
+        // two space marks at two different sizes.
+        //
+        // The label is the one that stays: it is the same glyph everywhere, it scales with the key
+        // face, and it still honours SpaceBarMode.NOTHING for anyone who wants the bar empty.
+        KeyCode.SPACE, KeyCode.CJK_SPACE -> null
         KeyCode.UNDO -> {
             Icons.AutoMirrored.Filled.Undo
         }

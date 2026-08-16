@@ -174,6 +174,17 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
     val nlpManager by context.nlpManager()
+    // Read here so both layouts below can ask the same question.
+    //
+    // Suggestions take the strip whenever there are any, and the bucket legend has it the rest of
+    // the time. It used to be the other way round, and the effect was that anybody who actually
+    // uses the buckets never saw a word suggestion again: a bucket keeps its text until it is
+    // replaced, so the legend held the strip permanently and the row meant to appear the moment he
+    // starts typing could not appear at all.
+    //
+    // Candidates exist only while a word is being typed, which is exactly when they are wanted and
+    // exactly when nobody is reading the legend. The moment he stops, the legend returns on its own.
+    val maCandidates by nlpManager.activeCandidatesFlow.collectAsState()
     val subtypeManager by context.subtypeManager()
     val scope = rememberCoroutineScope()
 
@@ -255,7 +266,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                     // that legend is the only way to tell which bucket holds which text, and it
                     // steps aside the moment they are all empty. hasContent() asks exactly what the
                     // strip itself asks before drawing, so the two cannot disagree about the slot.
-                    if (maBucketStripHasContent()) {
+                    if (maCandidates.isEmpty() && maBucketStripHasContent()) {
                         MaBucketStrip()
                     } else {
                         CandidatesRow()
@@ -372,7 +383,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                     // that legend is the only way to tell which bucket holds which text, and it
                     // steps aside the moment they are all empty. hasContent() asks exactly what the
                     // strip itself asks before drawing, so the two cannot disagree about the slot.
-                    if (maBucketStripHasContent()) {
+                    if (maCandidates.isEmpty() && maBucketStripHasContent()) {
                         MaBucketStrip()
                     } else {
                         CandidatesRow()

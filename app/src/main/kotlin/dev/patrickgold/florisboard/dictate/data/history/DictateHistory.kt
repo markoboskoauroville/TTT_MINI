@@ -196,6 +196,9 @@ object DictateHistoryStore {
 
     suspend fun getById(context: Context, id: Long): DictateHistoryEntry? = db(context).dao().getById(id)
 
+    /** Every transcript, newest first. Used once, to teach the word model what he already writes. */
+    suspend fun getAll(context: Context): List<DictateHistoryEntry> = db(context).dao().getAllNewestFirst()
+
     /**
      * Records one finished dictation: inserts the transcript row, copies the audio in when retention is on,
      * then prunes to the configured caps. Blank text is ignored (nothing was produced). Returns the new

@@ -19,6 +19,8 @@ package dev.patrickgold.florisboard.dictate.nlp
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaLanguage
+import dev.patrickgold.florisboard.dictate.MaLog
+import dev.patrickgold.florisboard.dictate.data.history.DictateHistoryStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -143,6 +145,55 @@ object MaNgram {
     }
 
     /**
+     * Reads every past transcription into the model, once.
+     *
+     * ### Why this is the single best thing that can be done for prediction
+     *
+     * The model only ever learned from words committed **through this keyboard**, which meant a
+     * fresh install knew nothing and had to be taught his vocabulary again by hand, one sentence at
+     * a time, over weeks. Meanwhile every dictation he has ever made was sitting in the history
+     * database — thousands of his own words, in his own phrasing, about his own subjects.
+     *
+     * That is a better corpus for predicting his writing than any general model, because it is not
+     * a sample of how people write. It is a record of how *he* writes.
+     *
+     * ### Once, and marked
+     *
+     * Guarded by a preference rather than by "is the model empty", because a model that has learned
+     * a little is still worth backfilling, and a second pass would double every count and skew the
+     * ranking towards whatever happened to be in history.
+     *
+     * ### Newest first, and capped
+     *
+     * [BACKFILL_MAX] entries, taken from the most recent, because the far past is the least like
+     * what he is writing today and reading all of it on a first run would stall the app behind a
+     * database it does not need yet. The work happens on the io scope like every other write here.
+     */
+    fun backfillFromHistory(context: Context) {
+        val prefs by FlorisPreferenceStore
+        if (!prefs.dictate.maNgramEnabled.get()) return
+        if (prefs.dictate.maNgramBackfilled.get()) return
+        scope.launch {
+            runCatching {
+                val entries = DictateHistoryStore.getAll(context.applicationContext)
+                    .take(BACKFILL_MAX)
+                var learned = 0
+                for (entry in entries) {
+                    val text = entry.text
+                    if (text.isBlank() || text.length > MAX_LEARN_LENGTH) continue
+                    model.learn(text)
+                    learned++
+                }
+                prefs.dictate.maNgramBackfilled.set(true)
+                if (learned > 0) {
+                    scheduleSave()
+                    MaLog.add("ngram", "learned $learned past dictations, ${model.totalWords} words known")
+                }
+            }.onFailure { MaLog.add("ngram", "backfill failed: ${it.message}") }
+        }
+    }
+
+    /**
      * The next-word predictions for the text before the cursor.
      *
      * Returns nothing when the feature is off, in incognito mode, or before the model has read
@@ -250,6 +301,9 @@ object MaNgram {
     /** Below this the model answers everything and is right about nothing. */
     /** How many suggestions the row asks for. Matches MaNgramModel.predict's own default. */
     private const val PREDICT_LIMIT = 3
+
+    /** How many past dictations the first run reads. Newest first; the far past predicts least. */
+    private const val BACKFILL_MAX = 2000
 
     private const val MIN_WORDS_BEFORE_PREDICTING = 300L
 

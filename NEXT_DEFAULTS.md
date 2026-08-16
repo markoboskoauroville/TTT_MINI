@@ -1915,3 +1915,40 @@ the prefix was being dropped before any predictor saw it.
    only serves the suggestion strip via its own provider, not `MaNgram`.
 3. **A small multilingual model**, and only after 1 and 2 have been tried and measured. An
    English-only model remains the impressive answer to a question this app does not have.
+
+---
+
+# 55. The model learns from his history, the suggestion row can appear, and the spacebar stops doubling
+
+## The word model reads the dictation history, once
+
+`MaNgram` only ever learned from words committed **through this keyboard**, so a fresh install knew
+nothing and had to be taught his vocabulary again by hand, over weeks — while every dictation he had
+ever made sat in the history database. Thousands of his words, his phrasing, his subjects.
+
+**That is a better corpus for predicting his writing than any general model**, because it is not a
+sample of how people write, it is a record of how *he* writes.
+
+`MaNgram.backfillFromHistory` runs after `initialize` (so it adds to the loaded model rather than
+racing the load), takes the newest `BACKFILL_MAX = 2000` entries, skips anything over
+`MAX_LEARN_LENGTH`, and marks `dictate__ma_ngram_backfilled`. **A flag, not an is-the-model-empty
+check**: a model that has learned a little is still worth backfilling, and a second pass would double
+every count. It logs how many it learned and the resulting word total.
+
+## The suggestion row was structurally unable to appear
+
+`MaBucketStrip` and `CandidatesRow` share one slot, and the bucket legend won **whenever any bucket
+held text**. A bucket keeps its text until it is replaced — so for anybody who actually uses the
+buckets, the legend held the strip permanently and the word suggestions could never be seen.
+
+Reversed: candidates take the slot whenever there are any, the legend has it otherwise. Candidates
+exist only while a word is being typed, which is exactly when they are wanted and exactly when nobody
+is reading the legend. Patched in **both** smartbar layouts — the block appears twice.
+
+## Two space marks on the numeric keyboard
+
+`computeIcon` drew `Icons.Default.SpaceBar` on the numeric and phone layouts, from when
+`computeLabel` returned null for space and the bar would have been blank. Since build 121 **the label
+is the mark, on every mode** — so on those four layouts both fired, at two different sizes. The icon
+branch is gone; the label is the one that stays, since it is the same glyph everywhere and scales
+with the key face.
