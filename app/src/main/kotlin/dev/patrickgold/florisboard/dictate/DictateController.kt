@@ -3191,6 +3191,21 @@ object DictateController {
             }
         }
 
+        if (prompt.requiresSelection && input.isNullOrBlank()) {
+            // The first failure in his screenshots: the model replied "I don't see any text to
+            // edit", which is what it says when it is handed an instruction and nothing else.
+            //
+            // The whole-field branch below already refuses a blank field, but the selection branch
+            // did not — a selection can be reported as present and come back empty when the field
+            // is one the accessibility path cannot read. Guarded here so both routes end the same
+            // way: say so, spend nothing, and leave the field alone.
+            _state.value = UiState.Error(
+                message = "Nothing to correct — no text in this field.",
+                kind = DictateApiException.Kind.UNKNOWN,
+            )
+            return
+        }
+
         if (rewordingApiKey().isBlank()) {
             _state.value = UiState.Error(
                 message = appContext.getString(R.string.dictate__error_no_api_key),
@@ -3205,6 +3220,34 @@ object DictateController {
         rewordJob = scope.launch {
             try {
                 val text = requestReword(raw, input, prompt.reasoningEffort, prompt.reasoningEffortCustom)
+                // A reply that is not his text back does not go into his text.
+                //
+                // Ctrl+P and Ctrl+F replace the field with whatever returns, and a model that
+                // answers conversationally instead of obeying — "I need you to provide the text
+                // you'd like me to rewrite", "I've reviewed the text you provided" — had that
+                // pasted straight into the message he was writing to somebody. The instruction
+                // forbids preamble and the model ignored it, which is a thing models do and no
+                // amount of rewording the prompt makes impossible.
+                //
+                // The tell is length. Proofreading and reflowing return roughly what they were
+                // given: shorter, or a little different, never several times longer. Commentary
+                // about a short phrase is always far longer than the phrase. So a reply that has
+                // grown out of all proportion is refused and shown instead of written, and his
+                // words are left exactly as they were.
+                //
+                // Generous on purpose — three times plus eighty characters. A real correction never
+                // comes close to that, and the cost of guessing wrong in this direction is one
+                // visible message rather than a ruined one already sent.
+                val grew = text.length > input.orEmpty().length * 3 + 80
+                if (grew && !input.isNullOrBlank()) {
+                    MaLog.add("reword", "refused a reply of ${text.length} chars for ${input.length} in")
+                    _state.value = UiState.Error(
+                        message = "The model answered instead of correcting. Your text is unchanged.",
+                        kind = DictateApiException.Kind.UNKNOWN,
+                        detail = text.take(300),
+                    )
+                    return@launch
+                }
                 // commitText replaces the active selection if any, else inserts at the cursor.
                 sink.commitText(text)
                 _state.value = UiState.Idle

@@ -1768,3 +1768,38 @@ current default because it looks deliberate. **Ask for screenshots of Row 2 and 
 three together.**
 
 The spacer width on that screen already defaults to 10, which matches what he has.
+
+---
+
+# 51. Ctrl+P and Ctrl+F stop typing the model's chatter into his messages
+
+Two failures, both from his screenshots, both now guarded.
+
+**Empty input reached the model.** It replied "I don't see any text to edit in your message", and
+that sentence was written into the field he was typing in. The whole-field branch already refused a
+blank field; the selection branch did not, and a selection can be reported present and come back
+empty when the field is one the accessibility path cannot read. Now both routes end the same way:
+say so, spend nothing, leave the field alone.
+
+**The model answered instead of obeying.** "I've reviewed the text you provided. It appears to
+contain only the phrase…" — pasted into a message to another person. The instruction forbids
+preamble; the model ignored it. **No amount of rewording the prompt makes that impossible**, so the
+guard is on the output rather than the input.
+
+**The tell is length.** Proofreading and reflowing return roughly what they were given — shorter, or
+a little different, never several times longer. Commentary about a short phrase is always far longer
+than the phrase. Over `3 × input + 80` characters, the reply is refused, shown as an error with the
+first 300 characters as detail, and **his text is left exactly as it was**. Deliberately generous: a
+real correction never comes close, and guessing wrong this way costs one visible message rather than
+a ruined one already sent.
+
+## The status row at the bottom is still not done, and it is now the oldest debt
+
+Asked for repeatedly since §12. It is a `Column` reorder in `TextInputLayout`: `Smartbar()` is
+composed first, above the edit row, the number row, the keys and the feature row. Moving it after
+the feature-row `Box` puts it where the pin already is.
+
+It was not done here because the Ctrl+P failure was writing AI commentary into messages he sends to
+people, and that had to stop first. **Do this next, before item 26.** The branch to be careful about
+is the `isActionsOverflowVisible` / `GifSearchPanel` split at the top of the same `Column`, which
+also composes a fixed-height `Box` and must keep doing so.
