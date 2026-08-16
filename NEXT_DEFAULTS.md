@@ -1847,3 +1847,33 @@ nothing happens.
 `maBucketRank` is file-level Compose state, not `remember` and not a preference: collecting blocks
 means leaving the keyboard to look at what was copied, so it must survive a close — but a rank
 restored from last week would point at nothing.
+
+---
+
+# 53. Rolled back: the status line returns to the top, and the pin becomes a key
+
+## The status line is above the keys again
+
+Build 139 moved it to the bottom so nothing it showed could cover the text being written. **That
+reasoning was sound and the result was still wrong.** At the bottom it sits below the feature rows,
+past where his eye goes, and he reads it by hunting for it rather than by noticing it. Habit beat
+the argument — which is the right way round for something read a hundred times a day.
+
+**The lesson worth keeping: a correct argument about layout can still lose to where somebody's eye
+already goes.** Ship the reasoning, but believe the person using it.
+
+## The pin's strip is gone; the pin is a feature key
+
+It held **half a key row, permanently**, for a switch set once and then forgotten. `MaFeatureKey.PIN`
+now does the same job as an ordinary key that can be placed, moved or removed like any other.
+
+The old strip existed on the argument that a pin removable from the row cannot be reached to put
+back. True, and survivable: the same preference is in Settings, so unticking the key is inconvenient
+rather than a locked door. **He was told the trade and chose it** — the same shape of decision as
+`MIC` leaving `ALWAYS_ON`.
+
+Filled when pinned, outlined when not — the pair the clipboard panel uses — and lit in sand while it
+holds, like the row's other sticky key.
+
+**`MaKeyboardPin.kt` is now referenced from nowhere.** Left in place rather than deleted at the end
+of a build; delete it in a pass of its own, after confirming nothing else wants it.

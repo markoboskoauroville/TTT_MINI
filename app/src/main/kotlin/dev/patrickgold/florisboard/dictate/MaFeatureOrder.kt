@@ -137,6 +137,19 @@ enum class MaFeatureKey(val id: String, val label: String) {
     AUTO_BUCKET("autobucket", "A-bucket, code blocks into the buckets"),
 
     /**
+     * The pin: keep the keyboard up when the app it is typing into would close it.
+     *
+     * It had a strip of its own along the bottom — half a key row, permanently, for a switch set
+     * once and then forgotten. That is a bad trade on a screen this size, and he made it: put the
+     * pin in the row with everything else and take the strip back.
+     *
+     * The old strip existed because a pin that can be removed from the row cannot be reached to put
+     * back. That is true and it is survivable: the same switch is in Settings under the keyboard,
+     * so unticking the key here is inconvenient rather than a locked door.
+     */
+    PIN("pin", "Pin, keep the keyboard up"),
+
+    /**
      * The dictation history: everything transcribed, ready to put back into a field.
      *
      * A key rather than a menu because it is the recovery route. A dictation that went into the
@@ -259,6 +272,7 @@ object MaFeatureOrder {
         MaFeatureKey.SHIFT,
         MaFeatureKey.CHANGE_CASE,
         MaFeatureKey.AUTO_BUCKET,
+        MaFeatureKey.PIN,
         MaFeatureKey.SPACER,
     )
 

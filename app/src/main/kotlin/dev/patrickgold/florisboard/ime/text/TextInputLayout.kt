@@ -26,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import dev.patrickgold.florisboard.dictate.ui.MaKeyboardPin
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
@@ -105,12 +104,14 @@ fun TextInputLayout(
                 GifSearchPanel()
             }
         } else {
-            // The Smartbar is NOT here any more. It is composed at the very end of this Column,
-            // down beside the pin. See the note there for why.
+            // Back above the keys, where it was before build 139 and where he is used to it.
             //
-            // This branch still has to compose nothing at all rather than something empty: the
-            // other side of the `if` draws the GIF panel at a fixed height, and both sides are
-            // measured the same way.
+            // It was moved to the bottom so nothing it showed could cover the text being written.
+            // That reasoning was sound and the result was still wrong: a status line at the bottom
+            // is below the feature rows, past the edge of where his eye goes, and he reads it by
+            // looking for it rather than by noticing it. Habit beat the argument, which is the
+            // right way round for something read a hundred times a day.
+            Smartbar()
         }
         // The macro bar is gone. It was the editable strip of user macros — undo, redo, all, copy —
         // and it has been superseded by the M1 to M10 buttons in the feature rows, which do the same
@@ -199,45 +200,10 @@ fun TextInputLayout(
                 // Column.
             }
 
-            // The pin, on its own strip along the very bottom, hard against the left edge.
-            //
-            // It used to overlap the first row's corner, which read as a badge attached to whatever
-            // key happened to be there rather than as a control of its own. Down here it lines up
-            // with Android's navigation buttons directly beneath it, which is where it belongs: both
-            // are about what stays on the screen rather than about what gets typed.
-            //
-            // Its own strip rather than a corner of the feature row, because the feature row is the
-            // user's to arrange and this control is not. Nothing here can be reordered, unticked or
-            // deleted — somebody who removed the pin would have no way to reach it to put it back.
-            //
-            // Half the height of a key row: enough to hit without looking, small enough that it is
-            // plainly not one of the keys.
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(FlorisImeSizing.smartbarHeight * 0.5f),
-            ) {
-                MaKeyboardPin(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 10.dp),
-                )
-            }
-
-            // The status line, along the very bottom, under everything.
-            //
-            // It was the first thing in this Column, directly above the keys — which put the
-            // recorder, the errors and the word suggestions in the band of screen immediately below
-            // the text being written, where they covered the line he was reading. A keyboard is
-            // supposed to take the bottom of the screen and give back the top; a status line at the
-            // top of the keyboard takes a second bite.
-            //
-            // Down here it is beside the pin, at the edge the eye already goes to for the
-            // navigation buttons, and nothing it displays can ever sit on top of his text.
-            //
-            // Composed last but drawn identically: it is the same Smartbar, so suggestions, the
-            // recording bar and the error line all follow it down without any of them knowing.
-            Smartbar()
+            // Nothing along the bottom any more. The pin's half-height strip is gone with it:
+            // it cost a permanent band of screen to a control he sets once and then forgets, and
+            // the same switch now lives in the feature row as an ordinary key he can place, move
+            // or take off like any other.
         }
     }
 }

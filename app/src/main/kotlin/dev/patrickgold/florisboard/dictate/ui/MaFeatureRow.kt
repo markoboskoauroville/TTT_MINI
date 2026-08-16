@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.KeyboardTab
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Dashboard
@@ -631,6 +633,25 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                                 InputShiftState.SHIFTED_MANUAL -> InputShiftState.CAPS_LOCK
                                 else -> InputShiftState.UNSHIFTED
                             }
+                    }
+                }
+
+                MaFeatureKey.PIN -> {
+                    // Filled when pinned, outlined when not — the same pair the clipboard panel
+                    // uses, so a pin means one thing everywhere in this app.
+                    //
+                    // Lit in sand while it is holding, like the row's other sticky key. Both report
+                    // a state that outlasts the press, and a key that changes what happens later
+                    // has to say so on its face or it is a switch with no indicator.
+                    val pinned by prefs.dictate.maKeyboardPinned.collectAsState()
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        icon = if (pinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
+                        contentDescription = if (pinned) "Unpin the keyboard" else "Pin the keyboard up",
+                        modifier = keyMod,
+                        tint = if (pinned) MaSand else null,
+                    ) {
+                        scope.launch { prefs.dictate.maKeyboardPinned.set(!pinned) }
                     }
                 }
 
