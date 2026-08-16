@@ -2014,3 +2014,28 @@ rather than inferred.
 
 **Written into HANDOFF as a standing rule**, because he asked for it to survive the session: any
 future way of firing send joins the same way. One list, one term, no copies.
+
+---
+
+# 58. The automatic bucket and the bin are one mechanism
+
+**A-bucket shipped in build 139** (§52) and he asked for it again, which usually means it was not
+findable. Two things fixed rather than rebuilt:
+
+**The bin now resets the ladder.** They are halves of one thing: A-bucket presses copy buttons and
+the clipboard capture files each copy into the next free slot. Clearing the slots without clearing
+`maBucketRank` left the two disagreeing — buckets ready for the newest block, the ladder still
+pointing eight blocks up the page — so the next press collected something from far above and dropped
+it into bucket one. The bin is the reset for both, which is what he expected, and it saves a second
+control nobody would remember. Long press on A-bucket still resets it alone.
+
+**It sits beside the bin in the default order**, not off among the unrelated keys. He asked for it in
+the same part of the row as the buckets; the bin is where the eye already goes for them.
+
+Behaviour is otherwise as built: press for the last code block, press again for the one above, `A1`
+`A2` `A3` on the face showing which is next, `copy code` only so message-copy buttons are never
+touched.
+
+**The limit remains Android's** (§37): recycled list rows are absent from the tree, not hidden in it,
+so one run collects the blocks near the viewport rather than a whole conversation. A finger that
+scrolls and re-searches is what would lift that, and it is still unbuilt.

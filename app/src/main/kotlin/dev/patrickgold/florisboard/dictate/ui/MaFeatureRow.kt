@@ -599,6 +599,16 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                         // nothing to answer.
                         tint = if (filled == 0) MaDimmed else null,
                         ) {
+                        // Emptying the buckets restarts the automatic bucket too.
+                        //
+                        // They are one mechanism: A-bucket presses copy buttons and the capture
+                        // files each copy into the next free slot. Clearing the slots without
+                        // clearing the rank left the two halves disagreeing — the buckets ready for
+                        // the newest code block, the ladder still pointing eight blocks up the page
+                        // — so the next press collected something from far above and dropped it in
+                        // bucket one. The bin is the reset for both, which is what he expects and
+                        // saves a second control nobody would remember.
+                        maBucketRank = 0
                         scope.launch { prefs.dictate.maClipCaptured.set("") }
                     }
                 }

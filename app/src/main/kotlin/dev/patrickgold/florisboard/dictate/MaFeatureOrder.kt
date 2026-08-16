@@ -262,6 +262,7 @@ object MaFeatureOrder {
         MaFeatureKey.ZONE_3,
         MaFeatureKey.ENTER,
         MaFeatureKey.SETTINGS,
+        MaFeatureKey.AUTO_BUCKET,
         MaFeatureKey.CLIP_CLEAR,
         MaFeatureKey.APP_SWITCH,
         MaFeatureKey.NEXT_FIELD,
@@ -271,7 +272,6 @@ object MaFeatureOrder {
         MaFeatureKey.SWITCHBOARD,
         MaFeatureKey.SHIFT,
         MaFeatureKey.CHANGE_CASE,
-        MaFeatureKey.AUTO_BUCKET,
         MaFeatureKey.PIN,
         MaFeatureKey.SPACER,
     )
