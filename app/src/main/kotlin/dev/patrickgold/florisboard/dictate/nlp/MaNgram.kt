@@ -157,9 +157,27 @@ object MaNgram {
         // The personal model, when it has seen enough to be worth asking. Below that threshold it
         // is not silent because it is broken; it is silent because a handful of words produces
         // confident nonsense.
+        // The word being typed, worked out from the text when the editor will not say.
+        //
+        // `currentWordText` comes from the composing region, and many apps never set one — a web
+        // view, a dialog, anything drawing its own input. In those the prefix arrived empty, and an
+        // empty prefix means something entirely different downstream: it stops being "complete this
+        // word" and becomes "what word comes next". That is why typing `other` offered `things` and
+        // `parts`. They were not wrong answers to the question asked; the wrong question was asked.
+        //
+        // So when the editor does not tell us, read it off the end of the text. The trailing run of
+        // letters before the cursor IS the word in progress, apostrophes and hyphens included so
+        // `don't` and `well-known` are not cut in half.
+        val trailing = textBeforeCursor.takeLastWhile { it.isLetter() || it == '\'' || it == '-' }
+        val derived = currentWord.isBlank() && trailing.isNotEmpty()
+        val word = if (derived) trailing else currentWord
+        // And when the word was derived, the context has to lose it too. `contextOf` reads the last
+        // complete words before the cursor, and it would otherwise count the half-typed word as the
+        // previous one — predicting what follows `other` while he is still writing `other`.
+        val context = if (derived) textBeforeCursor.dropLast(trailing.length) else textBeforeCursor
         val personal = if (model.totalWords >= MIN_WORDS_BEFORE_PREDICTING) {
-            val (two, one) = model.contextOf(textBeforeCursor)
-            model.predict(previousTwo = two, previousOne = one, prefix = currentWord)
+            val (two, one) = model.contextOf(context)
+            model.predict(previousTwo = two, previousOne = one, prefix = word)
         } else {
             emptyList()
         }
@@ -175,13 +193,13 @@ object MaNgram {
         // Deliberately outside the totalWords gate: an empty personal model is exactly the state
         // this exists for. A fresh install should suggest Croatian on the first word, not after
         // three hundred.
-        if (currentWord.isEmpty()) return personal
+        if (word.isEmpty()) return personal
         if (MaLanguage.active() != MaLanguage.HR) return personal
-        val context = appContext ?: return personal
+        val appCtx = appContext ?: return personal
         val already = personal.mapTo(HashSet()) { it.word.lowercase() }
         return personal + MaBaseDictionary.suggest(
-            context = context,
-            prefix = currentWord,
+            context = appCtx,
+            prefix = word,
             limit = PREDICT_LIMIT - personal.size,
             exclude = already,
         )

@@ -1877,3 +1877,41 @@ holds, like the row's other sticky key.
 
 **`MaKeyboardPin.kt` is now referenced from nowhere.** Left in place rather than deleted at the end
 of a build; delete it in a pass of its own, after confirming nothing else wants it.
+
+---
+
+# 54. Why it suggested "things" while he was typing "other"
+
+**They were not wrong answers. The wrong question was being asked.**
+
+`currentWordText` comes from the editor's composing region, and a great many apps never set one — a
+web view, a dialog, anything drawing its own input. In those the prefix arrived **empty**, and an
+empty prefix means something completely different downstream: `MaNgramModel.predict` stops filtering
+by prefix and the bigram tier answers "what word follows `other`". Hence `things`, `parts`.
+
+Now `MaNgram.predict` reads the word off the end of the text when the editor will not supply it —
+the trailing run of letters before the cursor, apostrophes and hyphens kept so `don't` and
+`well-known` survive. **And the context loses that word too**, or `contextOf` would count the
+half-typed word as the previous one and predict what comes after `other` while he is still writing
+it.
+
+Which gives exactly the two behaviours he described, from one change: mid-word it completes the word;
+after a space the trailing run is empty, the prefix is empty, and the bigram tier answers what comes
+next. Tested against eight cases including the screenshot, `don't`, `well-known` and Croatian.
+
+## On putting a model behind this
+
+He asked again for AI. **§33 still stands and should be read before starting**: the only verifiable
+candidate was 81 MB, English-only — the language that already had a dictionary — and close enough to
+`MaNeuralPredictor`'s own 60 ms budget to disable itself. It would not have fixed this bug either;
+the prefix was being dropped before any predictor saw it.
+
+**What would actually raise the ceiling now, in order of value per effort:**
+
+1. **Learn from a longer history.** `MaNgram` learns only from what is committed through this
+   keyboard. Every transcription in `DictateHistory` is his own text and is already stored — feeding
+   it in at first run would give the personal model months of his vocabulary immediately.
+2. **An English base dictionary**, the counterpart of §33's Croatian one. Upstream's English list
+   only serves the suggestion strip via its own provider, not `MaNgram`.
+3. **A small multilingual model**, and only after 1 and 2 have been tried and measured. An
+   English-only model remains the impressive answer to a question this app does not have.
