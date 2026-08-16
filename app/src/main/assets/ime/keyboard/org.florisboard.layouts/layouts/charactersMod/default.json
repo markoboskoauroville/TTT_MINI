@@ -83,12 +83,10 @@
       "label": ".",
       "groupId": 2,
       "popup": {
-        "relevant": [
-          {
-            "code": 44,
-            "label": ","
-          }
-        ]
+        "main": {
+          "code": 44,
+          "label": ","
+        }
       }
     },
     {

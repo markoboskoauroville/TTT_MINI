@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.DragHandle
@@ -223,15 +224,40 @@ fun MaMagicScreen() = FlorisScreen {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 12.dp),
                         )
+                        // Minus, the width, plus. Tapping, tapping, tapping — no dialog to open and
+                        // no field to type in, because the only question is "wider or narrower" and
+                        // the answer is judged by looking at the row rather than by choosing a
+                        // number. Ten tenths is one key wide.
+                        val tenths = target.label.trim().toIntOrNull()?.coerceIn(1, 200) ?: 10
+                        fun setWidth(next: Int) {
+                            commit(
+                                targets.toMutableList().also {
+                                    it[index] = target.copy(label = next.coerceIn(1, 200).toString())
+                                },
+                            )
+                        }
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = { setWidth(tenths - 2) }, enabled = tenths > 1) {
+                            Icon(
+                                Icons.Default.Remove,
+                                contentDescription = "Narrower",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
                         Text(
-                            text = "a gap on the row, its width set in Feature row",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 8.dp),
+                            text = "%.1f".format(tenths / 10f),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
+                        IconButton(onClick = { setWidth(tenths + 2) }) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Wider",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
                     } else {
                     Text(
                         // The face, so the row reads like the key it draws.

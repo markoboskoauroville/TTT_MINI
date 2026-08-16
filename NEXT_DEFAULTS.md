@@ -1412,3 +1412,53 @@ update. He turns it on having read what it does.
 
 **This is also §27's hardware trigger.** Voice commands should reuse this `onKeyEvent` rather than
 growing a second key handler.
+
+---
+
+# 41. The dot key's comma, and per-spacer width
+
+## Why the dot key showed no comma
+
+Hints are paired **by position** between the letter rows and the symbol rows, in
+`LayoutManager.addRowHints`. The bottom row — ctrl, the switchers, space, dot, enter — has no symbol
+row lined up with it, so it was never given a hint at all. The comma was reachable only by holding,
+while every letter above advertised its second character in the corner.
+
+A key on the board keeping its second meaning secret is worse than none of them showing it.
+
+Fixed by a narrow rule after the pairing loop: a key with no symbol hint, whose popup declares a
+CHARACTER `main`, takes that as its hint. The comma moved from `relevant` to `main` in
+`charactersMod/default.json` to match.
+
+**Keyed on `main` and not on the first `relevant` entry, deliberately.** The switcher keys carry a
+popup listing every view (§25); a hint reading "text" in the corner of `sym1` would be noise. They
+declare only `relevant`, so the rule passes them over. **Anything given a `main` popup from now on
+will grow a hint — that is the trade.**
+
+## Per-spacer width
+
+Stored in the spacer's own `label`, which is unused on a spacer — there is nothing to write on a gap
+— so it costs no change to how targets are serialised or parsed. Blank falls back to
+`maSpacerTenths`, which is what every spacer made before this will have.
+
+Minus, the number, plus, on the spacer's own row: no dialog and no text field, because the only
+question is wider or narrower and the answer is judged by looking at the row rather than by choosing
+a number. Ten tenths is one wand key, the same unit the Feature row screen uses, so the number means
+the same on both screens. Steps of two tenths, clamped 1..200.
+
+## Three-state language — still open, and why it was not built here
+
+The button needs `English / Croatian / Auto`, and **Auto has no engine**: §28's Groq detection is
+designed and not built, `MaLanguageGuess` is dead code that reads finished text rather than audio,
+and a third state that silently resolves to English would give him English words for Croatian speech
+— the exact failure that started this thread.
+
+Two honest ways to build it:
+
+1. **After 26.** Auto means what he asked for: the first seconds go to Groq, the answer is clamped by
+   the not-English rule plus the free text check, and applied before the request is built.
+2. **Before 26, as a stopgap:** Auto means "follow the language the last dictation actually turned
+   out to be", using `MaLanguageGuess` on each finished transcription and remembering the verdict.
+   Cheap, uses code already written, and honest so long as the button says so.
+
+Do not ship a third state that has neither.

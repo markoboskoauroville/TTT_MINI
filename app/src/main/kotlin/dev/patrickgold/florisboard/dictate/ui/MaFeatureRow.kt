@@ -367,9 +367,19 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
               // weight inside a scrolling row has no finite width to take its share of, and the
               // feature row can use one only because it does not scroll. Ten tenths is one wand
               // key, so the number still means what it says on the other screen.
+              // Its own width, stored on the spacer itself.
+              //
+              // The label field is unused on a spacer — there is nothing to write on a gap — so the
+              // width lives there and costs no change to how targets are stored or parsed. A blank
+              // one falls back to the shared setting, which is what every spacer made before this
+              // existed will have.
+              //
+              // Ten tenths is one wand key, the same unit the Feature row screen uses, so a number
+              // means the same thing on both screens.
+              val tenths = target.label.trim().toIntOrNull()?.coerceIn(1, 200) ?: spacerTenths
               Spacer(
                   modifier = Modifier
-                      .width((56 * spacerTenths / 10f).dp)
+                      .width((56 * tenths / 10f).dp)
                       .fillMaxHeight(),
               )
             } else {

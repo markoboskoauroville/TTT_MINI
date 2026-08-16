@@ -283,6 +283,26 @@ class LayoutManager(context: Context) {
                     addRowHints(row, symbolRow, KeyType.CHARACTER)
                 }
             }
+            // The bottom row gets its hint from its own popup, since no symbol row lines up with it.
+            //
+            // Hints are paired by position between the letter rows and the symbol rows, and the mod
+            // row — ctrl, the switchers, space, dot, enter — has no counterpart to pair with. So the
+            // dot key carried a comma that could only be found by holding it, while every letter
+            // above advertised its second character in the corner. One key on the board keeping its
+            // second meaning secret is worse than none of them showing it.
+            //
+            // Deliberately keyed on `main` rather than on the first relevant entry. The switcher
+            // keys carry a popup listing every view, and a hint reading "text" in the corner of
+            // sym1 would be noise; they declare only `relevant`, so this passes them over.
+            for (row in computedArrangement) {
+                for (key in row) {
+                    if (key.computedSymbolHint != null) continue
+                    val main = key.data.popup?.main?.compute(DefaultComputingEvaluator) ?: continue
+                    if (main.type == KeyType.CHARACTER && main.code != key.data.code) {
+                        key.computedSymbolHint = main
+                    }
+                }
+            }
         }
 
         val array = Array(computedArrangement.size) { computedArrangement[it] }
