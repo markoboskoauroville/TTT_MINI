@@ -598,9 +598,15 @@ object MaScreenTargets {
         // question this can answer at all. On a chat that is the answer before last, the one before
         // that, and so on up the page — which is the order somebody actually collecting code blocks
         // wants them in.
-        val ordered = found.sortedByDescending { (node, _) ->
-            Rect().also { node.getBoundsInScreen(it) }.bottom
-        }
+        val ordered = found.sortedWith(
+            // Announced names first, then lowest. A wrapper matching only through its view id can
+            // never outrank the button that says its own name, however the boxes happen to sit.
+            compareByDescending<Pair<AccessibilityNodeInfo, String>> { (node, _) ->
+                isAnnounced(node, targets)
+            }.thenByDescending { (node, _) ->
+                Rect().also { node.getBoundsInScreen(it) }.bottom
+            },
+        )
         val best = ordered.getOrNull(rank)
         var pressed: String? = null
         if (best != null) {
@@ -681,6 +687,36 @@ object MaScreenTargets {
             } else {
                 // A single word matches whole, so "send" does not fire on "resend" or "sendbird".
                 label.split(' ', '/', ':', '.', '-', ',').any { it == target }
+            }
+        }
+    }
+
+    /**
+     * Whether the match came from a name the app *announces*, rather than from its view id.
+     *
+     * This is the difference between the send button and its wrapper in Gemini. The button carries
+     * `contentDescription="Send"`; the ComposeView around it carries no name at all and matches only
+     * because its id happens to read `..._input_send_button_compose`. Both are called "send" by
+     * [matchOf], and the wrapper's box is a few pixels taller — so bottom-most chose the wrapper,
+     * whose nearest clickable ancestor is the whole input sheet. The finger tapped the text field
+     * and nothing was ever sent.
+     *
+     * A description or a text is what a person means by a button's name. An id is a programmer's
+     * spelling that leaked into the tree. So an announced name outranks an id match always, and
+     * position only decides between equals.
+     */
+    private fun isAnnounced(node: AccessibilityNodeInfo, targets: List<String>): Boolean {
+        val spoken = buildString {
+            node.contentDescription?.let { append(it).append(' ') }
+            node.text?.let { append(it) }
+        }.lowercase(Locale.ROOT)
+        if (spoken.isBlank()) return false
+        return targets.any { t ->
+            val target = t.lowercase(Locale.ROOT)
+            if (target.contains(' ')) {
+                spoken.contains(target)
+            } else {
+                spoken.split(' ', '/', ':', '.', '-', ',').any { it == target }
             }
         }
     }

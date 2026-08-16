@@ -1952,3 +1952,37 @@ is reading the legend. Patched in **both** smartbar layouts — the block appear
 is the mark, on every mode** — so on those four layouts both fired, at two different sizes. The icon
 branch is gone; the label is the one that stays, since it is the same glyph everywhere and scales
 with the key face.
+
+---
+
+# 56. Why send worked in Claude and not in Gemini
+
+**Not case, and not a missing label.** Both apps carry `contentDescription="Send"` on the button,
+capital S. His two dumps made the real cause visible.
+
+`matchOf` builds its label from description **plus text plus view id**. In Gemini the send button is
+wrapped in a `ComposeView` whose id reads `assistant_robin_input_send_button_compose` — no name of
+its own, but the id contains the token `send`, so **both nodes matched**. The wrapper's box is 26px
+taller than the button's, and bottom-most wins, so the wrapper was chosen. Its nearest clickable
+ancestor is `assistant_robin_chat_input_half_sheet` — the whole input sheet. The finger tapped the
+text field, focus moved, and nothing was sent.
+
+Claude has no such wrapper, so its only match was the button. That is the entire difference, and it
+is why "try both commands" would not have helped: the term was right both times.
+
+**Fixed by ranking, not by matching.** `isAnnounced` asks whether the match came from a name the app
+*announces* — a description or a text — rather than from a view id. Announced names sort first;
+position only decides between equals. A description is what a person means by a button's name; an id
+is a programmer's spelling that leaked into the tree.
+
+Verified against both dumps before building: Gemini now picks the button rather than the wrapper,
+Claude is unchanged.
+
+## Asked but not built: the bucket fill/empty cycle
+
+He described "fill, then empty, then again fill" and it can be read two ways — a press that empties
+the bucket it just filled, or an auto-bucket that reuses a bucket once it has been pasted out. Wrong
+guess here loses copied text, so **ask which before building**.
+
+The colour note is unambiguous and still to do: **buckets are never red — highlighted or dark grey
+only.**
