@@ -17,6 +17,7 @@ import android.app.NotificationManager
 import android.content.ClipData
 import android.content.Context
 import android.graphics.Rect
+import dev.patrickgold.florisboard.dictate.MaLog
 import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -84,6 +85,17 @@ class DictateAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        // The single most useful line in the log.
+        //
+        // Everything this app does beyond typing runs through this service, and when it will not
+        // turn on there is otherwise no way to tell "Android refused it" from "it started and then
+        // died". The capabilities are printed with it because a service can connect with fewer
+        // than it asked for, which is silent and looks exactly like a bug in the app.
+        MaLog.add(
+            "a11y",
+            "service connected, flags=0x${serviceInfo?.flags?.toString(16) ?: "?"}, " +
+                "capabilities=0x${serviceInfo?.capabilities?.toString(16) ?: "?"}",
+        )
         flogDebug { "DictateAccessibilityService connected" }
         createNotificationChannel()
         bubble = DictateBubbleController(this).also { it.start() }
@@ -91,11 +103,13 @@ class DictateAccessibilityService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        MaLog.add("a11y", "service unbound")
         clearInstance()
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
+        MaLog.add("a11y", "service destroyed")
         mainHandler.removeCallbacks(focusUpdateRunnable)
         clearInstance()
         super.onDestroy()

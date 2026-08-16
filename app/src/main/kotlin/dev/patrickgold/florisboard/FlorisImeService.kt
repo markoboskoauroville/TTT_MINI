@@ -46,6 +46,7 @@ import android.os.SystemClock
 import kotlinx.coroutines.delay
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
+import dev.patrickgold.florisboard.dictate.MaLog
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.app.FlorisAppActivity
@@ -786,6 +787,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         if (event != null && event.repeatCount > 0) return true
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
+                MaLog.add("keys", "volume up taken by the keyboard")
                 // Straight away, on the way down, which is how it was before build 121 and how he
                 // wants it again.
                 //
@@ -801,8 +803,11 @@ class FlorisImeService : LifecycleInputMethodService() {
                 // The magic finger term, Send by default, also on the way down. Same reasoning: if
                 // the key is taken at all it should answer immediately.
                 val term = prefs.dictate.maVolumeDownTerm.get().trim()
-                if (term.isNotEmpty() && DictateAccessibilityService.isRunning) {
-                    DictateAccessibilityService.pressScreenTarget(listOf(term))
+                val serviceUp = DictateAccessibilityService.isRunning
+                MaLog.add("keys", "volume down: term='$term', service=$serviceUp")
+                if (term.isNotEmpty() && serviceUp) {
+                    val pressed = DictateAccessibilityService.pressScreenTarget(listOf(term))
+                    MaLog.add("keys", "pressed=${pressed ?: "nothing found"}")
                 }
                 true
             }

@@ -2296,6 +2296,10 @@ object DictateController {
      * suspends rather than blocks.
      */
     private suspend fun commitOutput(context: Context, text: String): Boolean {
+        // Length rather than content: the log is pasted into a chat, and a transcription is his
+        // writing. Knowing that 47 characters arrived answers "did it transcribe" without putting
+        // his words somewhere he did not choose to put them.
+        MaLog.add("dictate", "commit ${text.length} chars, target=$outputTarget")
         // Empty result (e.g. silence): nothing to insert — a no-op is a success, not a failed write.
         if (text.isEmpty()) return true
         // A voice command, before anything is written. "press send" said on its own is an

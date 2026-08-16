@@ -1627,7 +1627,7 @@ before it: the keys are the app's while the keyboard is up, and the phone's the 
 
 ## Not built, and asked for twice
 
-**The log screen.** He asked for it in two consecutive messages and it does not exist. Nothing in the
+**The log screen.** ~~Asked for repeatedly and missing~~ — **shipped, build 136. See §49.** Nothing in the
 app records why the accessibility service is not running, which is why §46 took three builds and a
 broken app to find. It should hold a timestamped list he can copy in one tap. **Build this before
 anything else.**
@@ -1702,3 +1702,39 @@ Apps → TTT mini → Force stop, then enable.
 
 **And this is exactly why the log screen must come first.** Every diagnosis in this thread has been
 inference from a chat message. Nothing in the app records whether the service ever started.
+
+---
+
+# 49. The log — shipped, build 136
+
+Asked for four times before it was built, and he was right every time. Every diagnosis in this
+project has been inference from a chat message; §46 took three builds and a broken app precisely
+because nothing recorded whether the accessibility service had ever started.
+
+**`log` sits in the settings header**, left of `access`. In the header rather than in the settings
+list because that list is ordered by a stored preference — a new default entry would appear at the
+*bottom* for anyone who has rearranged it, which is him, on every install.
+
+## Shape
+
+- **Writes to a file** in `filesDir`, not just memory. The interesting failures are the ones where
+  something does not start, and the process dies and restarts constantly; an in-memory list would be
+  empty at exactly the moment it was wanted.
+- **400 lines**, then trimmed in batches of 100 so trimming does not cost a rewrite per line. Small
+  enough to paste into a chat in one go — a log nobody can paste is a log nobody reads.
+- **Never throws.** Every write is inside `runCatching`. A log that could break the accessibility
+  service would produce exactly the silence it exists to end.
+- **Newest first on screen**, oldest first in the file. Appending is what makes writing cheap;
+  reading reversed is what makes the last failure the first thing seen.
+
+## What it records
+
+`app` start with build number, Android level and device model — so a paste identifies the phone
+without asking. `a11y` service connected, **with flags and capabilities in hex**: a service can
+connect with fewer capabilities than it asked for, which is silent and looks exactly like an app
+bug. Also unbind and destroy, so "never started" reads differently from "started and died".
+`dictate` commits, by **length not content** — his transcriptions are his writing, and the log is
+meant to be pasted. `keys` the volume path, including whether the service was up and what the finger
+found.
+
+**Add a line whenever a failure would otherwise be silent.** That is the rule this screen is for.

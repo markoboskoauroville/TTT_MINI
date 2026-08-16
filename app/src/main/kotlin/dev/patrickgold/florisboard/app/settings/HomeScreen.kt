@@ -153,6 +153,18 @@ fun HomeScreen() = FlorisScreen {
         // with no keyboard — dies together when it is off, and it is switched off by Android often
         // enough to need a door rather than a set of directions. Nothing in this app can turn it on
         // for him; the least it can do is not make him look for it.
+        // The log, first of the two, because it is the one he came here for when something is
+        // wrong. It sits in the header rather than in the settings list on purpose: the list is
+        // ordered by a stored preference, and an entry added to the defaults would appear at the
+        // bottom for anybody who has ever rearranged it — which is him, on every install.
+        Text(
+            text = "log",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clickable { navController.navigate(Routes.Settings.MaLog) }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+        )
         Text(
             text = "access",
             style = MaterialTheme.typography.labelMedium,
