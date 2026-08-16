@@ -61,25 +61,12 @@ fun GesturesScreen() = FlorisScreen {
             SwitchPreference(
                 prefs.dictate.maVolumeKeys,
                 modifier = Modifier.settingsSearchAnchor("ma__volume_keys"),
-                title = "Volume keys do more on a long press",
-                summary = "Hold volume up to start recording, hold it again to stop and send. " +
-                    "Hold volume down to press a button on screen. A short press on either is " +
-                    "still just the volume, and both are ordinary volume keys the moment the " +
-                    "keyboard closes.",
+                title = "Volume keys control dictation",
+                summary = "While the keyboard is on screen, volume up starts recording and stops " +
+                    "it, and volume down presses the button below. They are ordinary volume keys " +
+                    "again the moment the keyboard closes \u2014 put it away to change the volume.",
             )
-            SwitchPreference(
-                prefs.dictate.maGlobalVolumeKeys,
-                modifier = Modifier.settingsSearchAnchor("ma__global_volume_keys"),
-                title = "Work everywhere, with no keyboard",
-                summary = "Hold volume up in any app \u2014 a gallery, a map, a book \u2014 and it " +
-                    "records. With no text field to write into, the note is kept in History. " +
-                    "Needs the accessibility service, and Android will warn you more strongly " +
-                    "when granting it, because seeing every key is also how a keylogger works. " +
-                    "This app reads the two volume keys and hands every other key straight back. " +
-                    "Short presses stay volume.",
-            )
-
-            // Which taught term the long press carries.
+            // Which taught term volume down presses.
             //
             // Offered as a list of the terms he has already taught the finger rather than a text
             // field, because a term typed here that does not match one on the Magic finger screen
@@ -98,7 +85,7 @@ fun GesturesScreen() = FlorisScreen {
             val current by store.dictate.maVolumeDownTerm.collectAsState()
             val scope = rememberCoroutineScope()
             Text(
-                text = "Long press on volume down presses:",
+                text = "Volume down presses:",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),

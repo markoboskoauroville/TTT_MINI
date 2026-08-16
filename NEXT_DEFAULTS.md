@@ -1601,3 +1601,33 @@ when it is off, and Android switches it off often enough to deserve a door rathe
 He asked for a log with timestamps he can paste back. Nothing in the app records why the service is
 not running, so every diagnosis so far has been guesswork across a chat window. **This is the next
 thing worth building** — it is what would have found §46 in one step instead of three builds.
+
+---
+
+# 47. Rolled back: the volume keys act on press again, and the global handler is gone
+
+**Volume up starts and stops the recording the moment it goes down**, as before build 121. The hold
+was introduced so a short press could still be the volume while bhajan played. It solved that and
+cost more than it saved: every dictation, dozens a day, began by waiting half a second for a key
+that used to answer at once. **The volume is the rarer need while the keyboard is up, and it has an
+easy answer — put the keyboard away and the keys are ordinary volume keys again.**
+
+Volume down presses the magic finger term on the way down too, same reasoning.
+
+Repeats are swallowed: a held key repeats, and a repeat would start a recording and stop it while
+the finger is still down.
+
+**The global handler is removed entirely** — `onKeyEvent`, `finishGlobalVolume`, both timestamps, the
+hold constant, `dictate__ma_global_volume_keys` and its switch. It could not fire since §46 reverted
+the capability, and a feature that cannot work is worse kept than deleted. §39 and §45 are history
+now, not plans.
+
+**Together, §46 and §47 undo builds 121 through 130's volume work.** What is left is what worked
+before it: the keys are the app's while the keyboard is up, and the phone's the rest of the time.
+
+## Not built, and asked for twice
+
+**The log screen.** He asked for it in two consecutive messages and it does not exist. Nothing in the
+app records why the accessibility service is not running, which is why §46 took three builds and a
+broken app to find. It should hold a timestamped list he can copy in one tap. **Build this before
+anything else.**

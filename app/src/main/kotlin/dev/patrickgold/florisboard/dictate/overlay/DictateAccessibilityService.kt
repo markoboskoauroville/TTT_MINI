@@ -17,11 +17,6 @@ import android.app.NotificationManager
 import android.content.ClipData
 import android.content.Context
 import android.graphics.Rect
-import android.media.AudioManager
-import android.view.KeyEvent
-import dev.patrickgold.florisboard.FlorisImeService
-import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.dictate.DictateController
 import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -58,15 +53,6 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class DictateAccessibilityService : AccessibilityService() {
 
-    private val prefs by FlorisPreferenceStore
-
-    /** When volume up went down globally, or zero when no press is open. */
-    @Volatile
-    private var maGlobalVolUpAt = 0L
-
-    /** When volume down went down globally, or zero when no press is open. */
-    @Volatile
-    private var maGlobalVolDownAt = 0L
 
     private var bubble: DictateBubbleController? = null
     private var isForeground = false
@@ -273,96 +259,6 @@ class DictateAccessibilityService : AccessibilityService() {
         }
         for (i in 0 until node.childCount) {
             collectEditable(runCatching { node.getChild(i) }.getOrNull(), depth + 1, out)
-        }
-    }
-
-    /**
-     * The volume keys, heard everywhere — including where there is no text field at all.
-     *
-     * ### What this is for
-     *
-     * The keyboard's own handler only ever runs while the keyboard is up, because an input method
-     * receives key events only when it has a field. That leaves the case he actually wanted: a
-     * thought worth keeping while looking at a map, a photograph, a book — nowhere to type, and by
-     * the time a note app is open the thought has moved on.
-     *
-     * Here the press is caught before any of that. Dictation runs with `OutputTarget.OVERLAY`, the
-     * same target the floating button uses, so a field that happens to be focused still receives
-     * the text and a screen with no field keeps it in History instead. `recordHistory` runs on both
-     * the success and the failure path, so the note survives either way.
-     *
-     * ### The rules it must obey
-     *
-     * **A short press is the volume, always.** Nothing is decided on the way down; the release
-     * decides, and a short press hands the volume change back by hand because the press was
-     * swallowed. Consuming a volume key and giving nothing back is the one failure that would make
-     * the phone feel broken rather than the feature feel absent.
-     *
-     * **The keyboard wins when it is up.** Both handlers can hear the same press, and without this
-     * a hold would start a recording and immediately stop it.
-     *
-     * **Every other key is handed straight back.** This service can see all of them, and it looks
-     * at two.
-     */
-    override fun onKeyEvent(event: KeyEvent?): Boolean {
-        if (event == null) return false
-        val code = event.keyCode
-        if (code != KeyEvent.KEYCODE_VOLUME_UP && code != KeyEvent.KEYCODE_VOLUME_DOWN) return false
-        if (!prefs.dictate.maGlobalVolumeKeys.get()) return false
-        // The nearer handler owns the keys while the keyboard is on screen.
-        if (FlorisImeService.ownsVolumeKeys()) return false
-        return when (event.action) {
-            KeyEvent.ACTION_DOWN -> {
-                if (event.repeatCount == 0) {
-                    if (code == KeyEvent.KEYCODE_VOLUME_UP) {
-                        maGlobalVolUpAt = SystemClock.uptimeMillis()
-                    } else {
-                        maGlobalVolDownAt = SystemClock.uptimeMillis()
-                    }
-                }
-                true
-            }
-            KeyEvent.ACTION_UP -> {
-                if (code == KeyEvent.KEYCODE_VOLUME_UP) {
-                    finishGlobalVolume(
-                        startedAt = maGlobalVolUpAt,
-                        raise = true,
-                    ) { DictateController.onMicClick(this, DictateController.OutputTarget.OVERLAY) }
-                    maGlobalVolUpAt = 0L
-                } else {
-                    finishGlobalVolume(
-                        startedAt = maGlobalVolDownAt,
-                        raise = false,
-                    ) {
-                        val term = prefs.dictate.maVolumeDownTerm.get().trim()
-                        if (term.isNotEmpty()) MaScreenTargets.pressFirstMatch(this, listOf(term))
-                    }
-                    maGlobalVolDownAt = 0L
-                }
-                true
-            }
-            else -> true
-        }
-    }
-
-    /**
-     * Short press hands the volume back, long press runs [onHold].
-     *
-     * A press that was never opened leaves [startedAt] at zero. That still adjusts the volume rather
-     * than doing nothing, because the release reaching here at all means he pressed the key, and the
-     * only safe reading of a press whose beginning was missed is the ordinary one.
-     */
-    private inline fun finishGlobalVolume(startedAt: Long, raise: Boolean, onHold: () -> Unit) {
-        val held = if (startedAt == 0L) 0L else SystemClock.uptimeMillis() - startedAt
-        if (held >= MA_GLOBAL_HOLD_MS) {
-            onHold()
-        } else {
-            val audio = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-            audio?.adjustSuggestedStreamVolume(
-                if (raise) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER,
-                AudioManager.USE_DEFAULT_STREAM_TYPE,
-                AudioManager.FLAG_SHOW_UI,
-            )
         }
     }
 
@@ -814,14 +710,6 @@ class DictateAccessibilityService : AccessibilityService() {
         // The next-field walk goes deeper than the dictation-target search, because it has to find
         // every field rather than the nearest one, and modern layouts nest hard. Both caps exist so
         // a pathological tree cannot turn one keypress into a long walk.
-        /**
-         * How long a volume key must be held globally before it means something other than volume.
-         *
-         * The same half second the keyboard uses, on purpose: the gesture must not change depending
-         * on whether the keyboard happens to be up.
-         */
-        private const val MA_GLOBAL_HOLD_MS = 500L
-
         private const val MA_FIELD_MAX_DEPTH = 40
         private const val MA_FIELD_MAX_COUNT = 40
         // Floating-button commit reliability (#161): resolve + focus the field the user sees so the input

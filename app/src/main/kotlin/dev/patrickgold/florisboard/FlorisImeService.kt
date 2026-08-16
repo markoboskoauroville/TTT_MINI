@@ -43,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import android.view.WindowManager
 import android.os.SystemClock
-import android.media.AudioManager
 import kotlinx.coroutines.delay
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
@@ -287,17 +286,6 @@ class FlorisImeService : LifecycleInputMethodService() {
     @Volatile
     private var maUserRequestedHide = false
 
-    /**
-     * When volume up went down, or zero when no press is open.
-     *
-     * Read once and cleared on release, so a press can only ever be spent on one meaning.
-     */
-    @Volatile
-    private var maVolUpAt = 0L
-
-    /** When volume down went down, or zero when no press is open. */
-    @Volatile
-    private var maVolDownAt = 0L
 
     /** When the pin last pushed the keyboard back up, for the governor in [maReshowIfPinned]. */
     private val maPinReshowAt = ArrayDeque<Long>()
@@ -793,31 +781,28 @@ class FlorisImeService : LifecycleInputMethodService() {
     private fun maHandleVolumeKey(keyCode: Int, event: KeyEvent?): Boolean {
         if (!prefs.dictate.maVolumeKeys.get()) return false
         if (!isInputViewShown) return false
+        // Only the first press of a hold. The system repeats a held volume key, and a repeat here
+        // would start a recording and stop it again while the finger is still down.
+        if (event != null && event.repeatCount > 0) return true
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
-                // Nothing is decided here. Both meanings are settled on the release, where the
-                // length of the press is a fact rather than a prediction: a short press is volume,
-                // a long press starts or stops a recording.
+                // Straight away, on the way down, which is how it was before build 121 and how he
+                // wants it again.
                 //
-                // It used to record on the way down, on a short press. That is the wrong way round
-                // for somebody playing bhajan through the same phone: the volume is wanted often
-                // and the microphone occasionally, so the frequent thing should be the cheap
-                // gesture and the rare one should cost a deliberate hold.
-                if (event == null || event.repeatCount == 0) {
-                    maVolUpAt = SystemClock.uptimeMillis()
-                }
+                // The hold was introduced so a short press could still be the volume while bhajan
+                // was playing. It solved that and cost more than it saved: every dictation, dozens
+                // a day, began with waiting half a second for a key that used to answer at once.
+                // The volume is the rarer need of the two while the keyboard is up, and it has an
+                // easy answer — put the keyboard away and the keys are ordinary volume keys again.
+                DictateController.onMicClick(this)
                 true
             }
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                // Same shape as volume up, and for the same reason: nothing is decided on the way
-                // down, so a short press stays a volume press and only a hold means anything else.
-                //
-                // What the hold does is press a magic finger term — Send by default. Both hardware
-                // keys now cost a deliberate hold, which is what he asked for: the volume is
-                // wanted constantly while adjusting bhajan, and neither key may take it away on a
-                // quick tap.
-                if (event == null || event.repeatCount == 0) {
-                    maVolDownAt = SystemClock.uptimeMillis()
+                // The magic finger term, Send by default, also on the way down. Same reasoning: if
+                // the key is taken at all it should answer immediately.
+                val term = prefs.dictate.maVolumeDownTerm.get().trim()
+                if (term.isNotEmpty() && DictateAccessibilityService.isRunning) {
+                    DictateAccessibilityService.pressScreenTarget(listOf(term))
                 }
                 true
             }
@@ -832,86 +817,12 @@ class FlorisImeService : LifecycleInputMethodService() {
         if (prefs.dictate.maVolumeKeys.get() && isInputViewShown &&
             (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
         ) {
-            if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) maFinishVolumeUp() else maFinishVolumeDown()
             return true
         }
         return keyboardManager.onHardwareKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
     }
 
-    /**
-     * The end of a volume-up press, where its length decides what it meant.
-     *
-     * Short raises the volume, long starts or stops a recording. Deciding on release rather than
-     * with a timer means no handler to leak, no state to get stuck, and nothing firing for a key
-     * that was never let go.
-     *
-     * A press that was never opened — the keyboard appeared with the key already held — leaves
-     * [maVolUpAt] at zero and does nothing, which is right: neither meaning was asked for.
-     *
-     * The volume change is made by hand because the press was swallowed. Anything consumed by the
-     * keyboard never reaches the system, so a short press has to be handed back deliberately or it
-     * disappears. `USE_DEFAULT_STREAM_TYPE` lets the system pick the stream it would have picked
-     * itself, so music stays music and a call stays a call, and the slider is shown as normal —
-     * which is the whole point when the thing being turned up is a bhajan.
-     */
-    /**
-     * The end of a volume-down press: short is quieter, a hold presses a magic finger term.
-     *
-     * The term is a preference so any button he has taught the finger can live on this key, and it
-     * defaults to Send because that is the one he named. Nothing here knows what Send means — it
-     * goes through the same `pressScreenTarget` the finger uses, so a term that works on the row
-     * works on the key, and one that stops working stops in both places at once.
-     *
-     * With the accessibility service off there is nothing to press, so the key stays a volume key
-     * rather than swallowing the press and doing nothing.
-     */
-    private fun maFinishVolumeDown() {
-        val startedAt = maVolDownAt
-        maVolDownAt = 0L
-        if (startedAt == 0L) return
-        val held = SystemClock.uptimeMillis() - startedAt
-        val term = prefs.dictate.maVolumeDownTerm.get().trim()
-        if (held >= MA_VOL_RECORD_HOLD_MS && term.isNotEmpty() &&
-            DictateAccessibilityService.isRunning
-        ) {
-            DictateAccessibilityService.pressScreenTarget(listOf(term))
-        } else {
-            val audio = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-            audio?.adjustSuggestedStreamVolume(
-                AudioManager.ADJUST_LOWER,
-                AudioManager.USE_DEFAULT_STREAM_TYPE,
-                AudioManager.FLAG_SHOW_UI,
-            )
-        }
-    }
-
-    private fun maFinishVolumeUp() {
-        val startedAt = maVolUpAt
-        maVolUpAt = 0L
-        if (startedAt == 0L) return
-        val held = SystemClock.uptimeMillis() - startedAt
-        if (held >= MA_VOL_RECORD_HOLD_MS) {
-            // onMicClick is both ends of a dictation: it starts when idle, and stops and sends
-            // when recording. So the same hold begins and finishes, which is what was asked for.
-            DictateController.onMicClick(this)
-        } else {
-            val audio = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-            audio?.adjustSuggestedStreamVolume(
-                AudioManager.ADJUST_RAISE,
-                AudioManager.USE_DEFAULT_STREAM_TYPE,
-                AudioManager.FLAG_SHOW_UI,
-            )
-        }
-    }
 }
-
-/**
- * How long volume up must be held before it means "record" instead of "louder".
- *
- * Half a second: comfortably longer than a press aimed at the volume, comfortably shorter than the
- * wait before a deliberate hold starts to feel broken.
- */
-private const val MA_VOL_RECORD_HOLD_MS = 500L
 
 /** How long the pin's re-show attempts are counted over. */
 private const val MA_PIN_WINDOW_MS = 6_000L

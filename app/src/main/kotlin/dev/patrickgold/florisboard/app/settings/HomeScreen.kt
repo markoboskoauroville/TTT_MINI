@@ -124,7 +124,9 @@ fun HomeScreen() = FlorisScreen {
                 }
             }",
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            // Blue, because it goes somewhere. Grey said "this is a caption" while the finger was
+            // expected to know it was a door.
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .weight(1f)
                 // Straight to App info, not to the About page.
@@ -152,7 +154,7 @@ fun HomeScreen() = FlorisScreen {
         // enough to need a door rather than a set of directions. Nothing in this app can turn it on
         // for him; the least it can do is not make him look for it.
         Text(
-            text = "Accessibility",
+            text = "access",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
