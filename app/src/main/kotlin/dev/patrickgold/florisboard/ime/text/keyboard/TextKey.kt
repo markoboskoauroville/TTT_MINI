@@ -32,6 +32,12 @@ import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.lib.lowercase
 
+/** ASCII period. Named because it decides both this key's popup and its face. */
+private const val KEY_CODE_PERIOD = 46
+
+/** ASCII comma. */
+private const val KEY_CODE_COMMA = 44
+
 class TextKey(override val data: AbstractKeyData) : Key(data) {
     var computedData: KeyData = TextKeyData.UNSPECIFIED
         private set
@@ -113,6 +119,21 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
                 computedPopups.apply {
                     keySpecificPopupSet?.let { merge(it, evaluator) }
                     popupSet?.let { merge(it, evaluator) }
+                }
+                // The dot key gets exactly two meanings, and this is enforced after every merge.
+                //
+                // Its popup was arriving with an ellipsis and more besides — not from the layout,
+                // which declares only a comma, but from the mappings merged in above. So a tap gave
+                // a dot, a second tap gave `…`, and the comma the key was supposed to carry was
+                // buried in a list. Three functions where he asked for two, and the wrong one on
+                // top.
+                //
+                // Cleared and rebuilt rather than filtered, because the point is not to remove one
+                // unwanted entry: it is that this key's popup is decided here and nowhere else, so
+                // no future mapping can add to it again.
+                if (computed.code == KEY_CODE_PERIOD) {
+                    computedPopups.clear()
+                    computedPopups.main = TextKeyData(code = KEY_CODE_COMMA, label = ",")
                 }
                 if (computed.type == KeyType.CHARACTER) {
                     addComputedHints(computed.code, evaluator, extendedPopups, extendedPopupsDefault)

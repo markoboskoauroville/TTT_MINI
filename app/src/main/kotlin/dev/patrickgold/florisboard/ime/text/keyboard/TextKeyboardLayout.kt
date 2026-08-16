@@ -394,7 +394,12 @@ private fun TextKeyButton(
                 // U+23B5 is a low, flat bracket that occupies about a third of the height a capital
                 // does, so at the same font size it reads as a speck on the widest key of the
                 // board. Scaling it up is what makes it look like a mark rather than a smudge.
-                fontSizeScale = if (isSpaceMark) 1.8f else null,
+                //
+                // 1.8 was not enough — the glyph is squat rather than small, so a scale that would
+                // be huge on a letter is still modest here. 2.6 is roughly the height of a capital,
+                // which is what "the same size as the other keys' faces" actually means for a mark
+                // that sits on the baseline and has no ascender.
+                fontSizeScale = if (isSpaceMark) 2.6f else null,
             )
         }
         key.hintedLabel?.let { hintedLabel ->

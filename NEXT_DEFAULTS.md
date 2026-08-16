@@ -1665,3 +1665,40 @@ not hit without looking, and their width is what the spacebar gained.
 the font scale, the theme and the user's size multiplier all still apply underneath. U+23B5 is a low
 flat bracket about a third the height of a capital, so at letter size it read as a speck on the
 widest key of the board.
+
+---
+
+# 48. The dot key, pinned to two meanings
+
+It had three. A tap gave `.`, a second gave `…`, and the comma it was supposed to carry was buried in
+a list — the wrong one on top and the wanted one hardest to reach.
+
+The layout declares only a comma. The extra entries arrive from the **popup mappings merged in
+`TextKey.compute`**, which run after the layout's own popup and add to it. Chasing which mapping
+supplies them was the wrong fix: any future mapping could add more.
+
+So the popup is now **cleared and rebuilt** for code 46, after every merge: main is the comma, and
+nothing else. The corner label is set in the same file by the same code rather than derived from the
+popup through §41's rule, which did not survive the merges on this key. **One place decides what the
+dot key means and what it shows, and they cannot drift apart.**
+
+## Bottom row, settled
+
+Ctrl and enter return to `1.56f`, matching shift and delete, so the four corners of the two bottom
+rows are one shape and the columns line up. **Only the switchers stay at `1.00f`** — they were the
+keys genuinely too wide for what they say, and their width is what the spacebar gained.
+
+The space mark goes from `1.8f` to `2.6f`. It is squat rather than small: a scale that would be huge
+on a letter is modest on a glyph with no ascender, and 2.6 is about the height of a capital.
+
+## The accessibility service is still not enabling, and I am out of ways to guess
+
+The capability was reverted at 131 and the config is byte-identical to 123, which was working. If the
+toggle is still refused, **the cause is no longer in this repo's diff** — it is the phone's state:
+Android may have remembered the app as restricted from when 124–130 were installed.
+
+Worth trying, in order: uninstall and reinstall (this clears the restricted flag), or Settings →
+Apps → TTT mini → Force stop, then enable.
+
+**And this is exactly why the log screen must come first.** Every diagnosis in this thread has been
+inference from a chat message. Nothing in the app records whether the service ever started.
