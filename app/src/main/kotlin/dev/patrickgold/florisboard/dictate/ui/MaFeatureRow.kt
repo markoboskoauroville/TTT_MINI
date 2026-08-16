@@ -230,8 +230,6 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     // cannot disagree about how many buckets exist.
     val visibleClipSlots = remember(storedRows) { MaRows.visibleClipSlots(storedRows) }
     // Never full when they are off, so nothing turns red while he is not using them.
-    val bucketsFull = bucketsOn && MaClipCapture.isFull(capturedSlots, visibleClipSlots)
-
     // What the magic key looks for, newest first. Editable in settings so a new site costs a line
     // of text rather than a build.
     val magicRaw by prefs.dictate.maMagicTargets.collectAsState()
@@ -513,15 +511,15 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     Text(
                         text = "C${button.slot}",
                         // Three states, read at a glance without pressing anything: dim means the
-                        // bucket is empty, normal means it is holding something, and red means every
-                        // bucket is full so the next copy has nowhere to go until the trash key is
-                        // pressed. Red is the app's one recording red — it means "this is state you
-                        // need to act on", which is exactly what a full row is.
-                        color = when {
-                            text == null -> fg.copy(alpha = 0.4f)
-                            bucketsFull -> MaRecordRed
-                            else -> fg
-                        },
+                        // bucket is empty and normal means it is holding something. Two states, and
+                        // that is all there is to say.
+                        //
+                        // There was a third: red, for every bucket full. Full is not a fault — it is
+                        // the ordinary end of filling them — and red on a keyboard reads as
+                        // something being wrong, so it sent him looking for a problem that did not
+                        // exist every time he used the feature as intended. The bin key empties them
+                        // and they fill again.
+                        color = if (text == null) fg.copy(alpha = 0.4f) else fg,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -595,14 +593,11 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                             if (filled == 0) R.string.ma__clip_clear_empty else R.string.ma__clip_clear,
                         ),
                         modifier = keyMod,
-                        // Dim when there is nothing to clear, red when the buckets are full and
-                        // this key is the only way forward. The trash turns red at the same moment
-                        // the buckets do, so the row shows both the problem and its answer.
-                        tint = when {
-                            filled == 0 -> MaDimmed
-                            bucketsFull -> MaRecordRed
-                            else -> null
-                        },
+                        // Dim when there is nothing to clear, ordinary otherwise. It used to turn
+                        // red alongside the buckets, on the reasoning that the row should show both
+                        // the problem and its answer — but full is not a problem, so there was
+                        // nothing to answer.
+                        tint = if (filled == 0) MaDimmed else null,
                         ) {
                         scope.launch { prefs.dictate.maClipCaptured.set("") }
                     }
@@ -1077,15 +1072,6 @@ private fun ThemedTextKey(
     }
 }
 
-/**
- * The recording red, the same value the lamp, the level meter and the history's destructive actions
- * already use. Declared here rather than imported from LegacyDictateLayout because that file is
- * being deleted and a colour is cheaper to repeat than to route around.
- *
- * Colour is state in this app and never decoration. This one says the microphone is open, and it
- * neither pulses nor breathes while it says it.
- */
-private val MaRecordRed = Color(0xFF9B3B33)
 
 /**
  * The pause between the steps of a clipboard replace, matching the copy row's own.

@@ -87,8 +87,6 @@ fun MaBucketStrip(modifier: Modifier = Modifier) {
     // keyboard for as long as the buckets stay empty, which is most of the time.
     if (filled.isEmpty()) return
 
-    val full = MaClipCapture.isFull(slots, visible)
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -139,7 +137,13 @@ fun MaBucketStrip(modifier: Modifier = Modifier) {
                     text = slot.toString(),
                     // The number carries the whole link to the key below, so it is the one thing
                     // here that must never be mistaken for part of the text.
-                    color = if (full) MaStripFull else MaStripNumber,
+                    //
+                    // Always sand, never red. Red used to mean "every bucket is full", and full is
+                    // not a fault — it is the normal end of filling them. Red on a keyboard reads as
+                    // something being wrong, so it sent him looking for a problem that did not
+                    // exist, every time he used the feature as intended. Empty the buckets with the
+                    // bin key and they fill again; the strip does not need to shout about it.
+                    color = MaStripNumber,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
                 )
@@ -162,9 +166,6 @@ fun MaBucketStrip(modifier: Modifier = Modifier) {
 
 /** The sand the app uses for a label that names something. */
 private val MaStripNumber = Color(0xFFE8B15C)
-
-/** The recording red, here meaning every bucket is full and the next copy has nowhere to go. */
-private val MaStripFull = Color(0xFF9B3B33)
 
 private val MaStripText = Color(0xFFECEAE3)
 private val MaStripDivider = Color(0x33FFFFFF)

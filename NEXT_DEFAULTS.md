@@ -1978,11 +1978,19 @@ is a programmer's spelling that leaked into the tree.
 Verified against both dumps before building: Gemini now picks the button rather than the wrapper,
 Claude is unchanged.
 
-## Asked but not built: the bucket fill/empty cycle
+## The bucket red, removed (build 144)
 
-He described "fill, then empty, then again fill" and it can be read two ways — a press that empties
-the bucket it just filled, or an auto-bucket that reuses a bucket once it has been pasted out. Wrong
-guess here loses copied text, so **ask which before building**.
+Asking was right: he wanted **no behaviour change at all**. Buckets fill 1, 2, 3 up to the last
+visible one and then stop accepting, exactly as before. The bin key empties them and they fill again
+from the first.
 
-The colour note is unambiguous and still to do: **buckets are never red — highlighted or dark grey
-only.**
+**The red was the whole complaint.** Full is not a fault — it is the ordinary end of filling them —
+and red on a keyboard reads as something being wrong, so every time he used the feature as intended
+it sent him looking for a problem that did not exist.
+
+Three places drew it, all now gone: the number in `MaBucketStrip`, the C-key labels, and the bin key
+that turned red "so the row shows both the problem and its answer". `bucketsFull` and `MaRecordRed`
+were left with no readers and were removed with them. `MaClipCapture.isFull` still governs whether a
+copy is accepted — the state is unchanged, only its colour.
+
+**The rule worth keeping: red is for a fault, and a full container is not one.**
