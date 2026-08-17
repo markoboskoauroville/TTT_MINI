@@ -127,6 +127,9 @@ fun TextKeyboardLayout(
     val glideTrailStyle = rememberSnyggThemeQuery(FlorisImeUi.GlideTrail.elementName)
     val glideTrailColor = glideTrailStyle.foreground(default = Color.Green)
 
+    // Needed for the cursor pad, which sends arrow keys straight down the same pipe every key uses,
+    // so the caret moves through the editor's own handling rather than by a second mechanism.
+    val maKeyboardManager by context.keyboardManager()
     val controller = remember { TextKeyboardLayoutController(context) }.also {
         it.keyboard = keyboard
         if (keyboard.mode == KeyboardMode.CHARACTERS) {
@@ -313,6 +316,17 @@ fun TextKeyboardLayout(
         }
 
         popupUiController.RenderPopups()
+
+        // The cursor pad, over everything, when the spacebar has been held.
+        //
+        // Last in the Box so it is drawn above the keys and takes their touches: while it is up
+        // nothing underneath can be pressed, which is what makes it a mode rather than a hint. It
+        // fills only the keyboard, so the text stays visible above and he can watch the caret move.
+        if (MaCursorPad.active) {
+            MaCursorPad.Overlay { code ->
+                maKeyboardManager.inputEventDispatcher.sendDownUp(TextKeyData(code = code))
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -626,14 +640,18 @@ private class TextKeyboardLayoutController(
                     pointer.hasTriggeredLongPress = true
                     when (key.computedData.code) {
                         KeyCode.SPACE, KeyCode.CJK_SPACE -> {
-                            when (prefs.gestures.spaceBarLongPress.get()) {
-                                SwipeAction.NO_ACTION,
-                                SwipeAction.INSERT_SPACE -> {
-                                }
-                                else -> {
-                                    keyboardManager.executeSwipeAction(prefs.gestures.spaceBarLongPress.get())
-                                }
-                            }
+                            // The cursor pad, in place of the language picker.
+                            //
+                            // Picking a language is rare and deliberate, and has two other routes
+                            // already — the badge and a long press on volume down. Moving the caret
+                            // through dictated text is constant, and doing it by tapping at the text
+                            // is the least accurate gesture on a phone, because the finger covers
+                            // exactly the character being aimed at.
+                            //
+                            // The setting is ignored rather than consulted: this is what the key
+                            // does now. Anything the old value would have chosen is still reachable
+                            // somewhere else, so there is nothing to lose by not asking.
+                            MaCursorPad.open()
                             true
                         }
                         KeyCode.SHIFT -> {

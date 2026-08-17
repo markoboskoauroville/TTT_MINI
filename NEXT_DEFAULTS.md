@@ -2111,3 +2111,40 @@ corner it was set in. That reversibility is what the earlier removal was really 
 and it is cheaper than removing the option.
 
 Filled when pinned, outlined when not, as everywhere else in this app.
+
+---
+
+# 62. The cursor trackpad, and the road to flicking
+
+Hold the spacebar and the keyboard becomes a pad: drag anywhere to move the caret. Lift to leave.
+
+**It replaces the language picker on that long press.** Choosing a language is rare and deliberate
+and has two other routes — the badge and a long press on volume down. Moving a caret through
+dictated text is constant, and doing it by tapping at the text is the least accurate gesture on a
+phone, because **the finger covers exactly the character being aimed at**.
+
+`gestures__space_bar_long_press` is now ignored rather than read. Everything its old values could
+choose is reachable elsewhere, so there was nothing to lose by not asking.
+
+**Shape.** The pad fills the keyboard and is drawn last in the `Box`, so it takes the touches and
+nothing underneath can be pressed — that is what makes it a mode rather than a hint. Only the
+keyboard, so the text stays visible above and he can watch the caret move.
+
+Horizontal drag steps by character (28px), vertical by line (56px). **Distance accumulates** and is
+spent in whole steps: a threshold that reset each event would ignore a slow, careful finger, which is
+exactly the finger this is for. Arrows go through `inputEventDispatcher`, the same pipe every key
+uses, so the editor handles them by its own rules.
+
+Lifting closes it. No confirm, no cancel — the caret moved with the drag, so what he sees on lifting
+is what he gets, and a mode needing dismissal is a mode left open by accident.
+
+## Next: flicking
+
+He described the direction this opens. Instead of holding a key and waiting for a popup, **swipe
+towards the second symbol printed on it** and get that symbol. Same information already on every key
+face (§41 put the comma there, §48 pinned it), no wait, no popup.
+
+The parts are in place: `TextKeyboardLayoutController` already tracks pointer movement per key for
+the glide typing and delete-swipe paths, and every key already knows its hint. What it needs is a
+direction test on release and a decision about how far a flick must travel before it stops being a
+tap. **Build it after living with the pad**, since both change what a finger on a key means.
