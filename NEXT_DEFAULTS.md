@@ -2464,3 +2464,35 @@ ignore the line and cannot ignore the guard.**
 
 `NAME` is still "Better flow", so the spinning dust reads the same. Worth renaming when he says what
 he wants it called.
+
+---
+
+# 73. Settings back up beside the keys
+
+**`backup` at the top of settings**, next to `log` and `access`. One press writes every preference to
+`Documents/TTTmini/settings.jetpref` — the same folder as the key backup.
+
+**Why not the existing backup screen.** That one makes a zip through a file picker: choose a place,
+name it, find it again later. Right for an occasional archive, wrong for somebody who reinstalls
+several times a day. **A backup whose location has to be remembered is not there when the phone is
+wiped.** This writes to the one place the app already knows how to find, under a fixed name, so a
+fresh install can look for it without being told where.
+
+**No picker, no confirmation.** Pressing twice is harmless and there is nothing to name.
+
+**The same folder as the keys, deliberately** — one grant of all-files access (§43) covers both, and
+a restore that means finding two files in two places is a restore that gets half done.
+
+**Separate files, also deliberately.** Keys are secrets that outlive any version of this app;
+settings are shaped by it and may not survive a large enough change. Losing one must never cost the
+other.
+
+**Setup offers it**, above the key restore, because redoing settings by hand costs him more. Offered
+rather than applied: it overwrites what is currently set, which is right on a fresh install and a
+real loss on a configured one, so the choice stays his.
+
+`ImportStrategy.Merge`, not `Erase` — a setting the backup predates keeps whatever this version
+decided for it, instead of being blanked because an older file had never heard of it.
+
+Uses `FlorisPreferenceStore.export`/`import`, the same calls the backup screen makes, so the
+datastore's own format and version handling are not reimplemented here to drift.

@@ -58,6 +58,26 @@ object MaVault {
     /** Human-readable location, shown in settings so the file can be found by hand. */
     const val DISPLAY_PATH = "Documents/$DIR_NAME/$KEYS_FILE"
 
+    /**
+     * Every setting, beside the keys, in the same folder and on the same terms.
+     *
+     * The same folder on purpose. He reinstalls constantly, and a restore that means finding two
+     * files in two places is a restore that gets half done. One folder, one grant of storage access
+     * (§43), and both halves come back together.
+     *
+     * A separate file rather than one bundle, because the two have different lifetimes: keys are
+     * secrets that outlive any version of this app, settings are shaped by it and may not survive a
+     * large enough change. Losing one should never cost the other.
+     */
+    const val SETTINGS_FILE = "settings.jetpref"
+
+    const val SETTINGS_DISPLAY_PATH = "Documents/$DIR_NAME/$SETTINGS_FILE"
+
+    fun settingsFile(): File = File(dir(), SETTINGS_FILE)
+
+    /** Whether a settings backup is sitting there to be restored. */
+    fun settingsExist(): Boolean = runCatching { settingsFile().length() > 0L }.getOrDefault(false)
+
     private fun documentsDir(): File =
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
 

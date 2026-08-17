@@ -59,6 +59,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.dictate.MaKeyImport
+import dev.patrickgold.florisboard.dictate.MaSettingsVault
 import dev.patrickgold.florisboard.dictate.MaVault
 import dev.patrickgold.florisboard.dictate.provider.MaKeys
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -517,6 +518,8 @@ private fun FlorisStepLayoutScope.ProviderSetupStep(
     hasAllFiles: Boolean,
 ) {
     val context = LocalContext.current
+    // Restoring settings is a suspending read, so this step needs its own scope.
+    val scope = rememberCoroutineScope()
     var note by remember { mutableStateOf("") }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -538,6 +541,22 @@ private fun FlorisStepLayoutScope.ProviderSetupStep(
     // remembering where the file was put — the location is known. It only appears when all-files
     // access has actually been granted and a backup is actually there, so it is never a button
     // that cannot work.
+    // Settings first, because it is the one that costs him most to redo by hand.
+    //
+    // Offered rather than applied. It overwrites what is currently set, which is exactly right on a
+    // fresh install and a real loss on a configured one — so the choice stays his, the same way the
+    // key restore works.
+    if (hasAllFiles && MaVault.settingsExist()) {
+        StepButton(label = "Restore all settings") {
+            scope.launch {
+                note = if (MaSettingsVault.restore()) {
+                    "Settings restored. Your rows, keys order and preferences are back."
+                } else {
+                    "Could not read " + MaVault.SETTINGS_DISPLAY_PATH
+                }
+            }
+        }
+    }
     if (hasAllFiles && MaVault.exists()) {
         StepButton(label = "Restore keys from backup") {
             val text = MaVault.read()

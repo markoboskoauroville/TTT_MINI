@@ -19,6 +19,11 @@ package dev.patrickgold.florisboard.app.settings
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
+import androidx.compose.runtime.rememberCoroutineScope
+import dev.patrickgold.florisboard.dictate.MaSettingsVault
+import dev.patrickgold.florisboard.dictate.MaVault
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -93,6 +98,7 @@ fun HomeScreen() = FlorisScreen {
 
     val navController = LocalNavController.current
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     actions {
         FlorisIconButton(
@@ -163,6 +169,32 @@ fun HomeScreen() = FlorisScreen {
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .clickable { navController.navigate(Routes.Settings.MaLog) }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+        )
+        // Backup, beside the log and the access link, because this row is where the things that are
+        // about the install itself have collected — and this is the most "about the install" of all.
+        //
+        // No confirmation and no file picker: it writes to the one known place, so pressing it twice
+        // is harmless and there is nothing to name or find later.
+        Text(
+            text = "backup",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clickable {
+                    scope.launch {
+                        val ok = MaSettingsVault.backup()
+                        Toast.makeText(
+                            context,
+                            if (ok) {
+                                "Settings saved to " + MaVault.SETTINGS_DISPLAY_PATH
+                            } else {
+                                "Could not write there \u2014 grant all-files access"
+                            },
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         )
         Text(
