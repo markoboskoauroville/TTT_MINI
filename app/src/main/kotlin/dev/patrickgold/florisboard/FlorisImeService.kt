@@ -47,6 +47,7 @@ import kotlinx.coroutines.delay
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaLog
+import dev.patrickgold.florisboard.ime.text.keyboard.MaCursorPad
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
@@ -425,6 +426,12 @@ class FlorisImeService : LifecycleInputMethodService() {
         super.onStartInputView(info, restarting)
         if (info == null) return
         val editorInfo = FlorisEditorInfo.wrap(info)
+        // The cursor pad never survives a new field.
+        //
+        // It is a mode drawn over the keyboard, and it trapped him once already by having only one
+        // way out. A second, unconditional one: opening any field closes it. So even if every
+        // gesture failed, switching app or tapping another box returns a working keyboard.
+        MaCursorPad.close()
         activeState.batchEdit {
             // A new editor field invalidates any in-progress emoji search (issue #110); drop it so we
             // don't reappear on an unrelated field. imeUiMode is reset to TEXT just below anyway.

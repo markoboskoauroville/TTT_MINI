@@ -68,6 +68,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.PushPin
+import dev.patrickgold.florisboard.ime.text.keyboard.MaCursorPad
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.filled.SpaceBar
 import androidx.compose.material.icons.filled.Stop
@@ -388,6 +389,16 @@ fun LegacyDictateLayout(
                 // typing keyboard, where each of its keys means something.
             }
         }
+
+        // The cursor pad, over this view too, drawn last so it takes the touches.
+        //
+        // It must be drawn wherever it can be opened. A long press that raises a pad the screen
+        // never renders is the trap of build 150 again, in a place with even fewer ways out.
+        if (MaCursorPad.active) {
+            MaCursorPad.Overlay { code ->
+                keyboardManager.inputEventDispatcher.sendDownUp(TextKeyData(code = code))
+            }
+        }
     }
 }
 
@@ -673,6 +684,13 @@ internal fun LegacyActionKey(
         LegacyEditAction.SPACE -> ThemedKey(
             code = KeyCode.SPACE,
             modifier = modifier,
+            // The cursor pad here too, which is where he most wants it.
+            //
+            // This view has no letter keys, so moving through a long transcription meant tapping at
+            // the text — the gesture the pad exists to replace, on the screen where the text is
+            // longest. The same hold does the same thing on both keyboards, which is the only way a
+            // gesture becomes something the hand does without deciding to.
+            onLongClick = { MaCursorPad.open() },
             onClick = { keyboardManager.tapKey(KeyCode.SPACE) },
         ) { fg ->
             Text(

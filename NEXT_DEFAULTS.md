@@ -2181,3 +2181,51 @@ as a substitution rather than as a list of unrelated keys. Reset clears all over
 
 The view he screenshotted is the intended default: `ENG ab AB Ab AbAb` / `db mic backspace` /
 `pin keyboard space enter`. Overrides sit on top; reset returns to exactly this.
+
+---
+
+# 64. The cursor pad trapped him. Three ways out now, and it works in both views.
+
+**Build 150 shipped a mode with no exit.** The pad closed only on the *end of a drag*. A finger that
+pressed and lifted without moving did nothing, so the pad stayed over the keyboard and the app was
+unusable until it was force stopped. He tapped it repeatedly — the one thing anybody tries — and
+nothing happened.
+
+**The lesson, and it is the important part: a mode with one way in needs a way out that works when
+the first thing tried is doing nothing.** A gesture handler that only reports movement cannot be the
+only exit, because the natural response to being stuck is to stop moving and tap.
+
+Three exits now:
+
+1. **Tap anywhere** — `detectTapGestures`, declared before the drag handler so a tap is heard even
+   when the drag detector sees nothing worth reporting. The label says so: *tap to close*.
+2. **Lift after a drag** — as before.
+3. **Any new field** — `MaCursorPad.close()` in `onStartInputView`, unconditional. Even if every
+   gesture failed, switching app or tapping another box returns a working keyboard.
+
+**Vertical**: `STEP_Y` was 56px, half a key, so a natural upward drag ended before the first step was
+spent. Lowered to 34. The arrow codes were fine — `KeyboardManager` sends `KEYCODE_DPAD_UP/DOWN` and
+they are repeatable — so this was distance, not dispatch.
+
+**It works in the transcription view now.** That view has no letter keys, so moving through a long
+transcription meant tapping at the text, which is exactly what the pad replaces, on the screen where
+the text is longest. Same hold, same pad, both keyboards.
+
+**Rule: draw the pad wherever it can be opened.** A long press that raises a pad the screen never
+renders is this same trap in a place with fewer ways out.
+
+## Asked for and not built: SwiftKey-style prediction
+
+Two distinct things, both real, neither small:
+
+**Middle-weighted suggestions.** The likeliest word in the centre, larger, with weaker candidates
+smaller on each side. This is presentation over the existing ranking and is the cheaper half —
+`CandidatesRow` already receives an ordered list; it would draw index 0 centre-large rather than
+left-first.
+
+**Learning whole strings — emails, names, addresses.** Type `m` and get the whole address. This is
+not the n-gram: it is a store of complete tokens seen often, keyed by prefix, ranked by frequency and
+recency. §55's history backfill is the corpus for it, and every email he has ever dictated is already
+in `DictateHistory`.
+
+**Do not install SwiftKey to copy it.** The behaviour is describable without it, which is what he did.

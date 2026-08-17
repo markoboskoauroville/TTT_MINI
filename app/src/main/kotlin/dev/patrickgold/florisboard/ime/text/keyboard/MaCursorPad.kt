@@ -12,6 +12,7 @@ package dev.patrickgold.florisboard.ime.text.keyboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -86,7 +87,9 @@ object MaCursorPad {
      * rather than skittish, and an overshoot costs a second drag in the other direction.
      */
     private const val STEP_X = 28f
-    private const val STEP_Y = 56f
+    // Lowered from 56. A line move has to be reachable inside the height of the pad, and half a key
+    // was far enough that a natural upward drag ended before the first step was ever spent.
+    private const val STEP_Y = 34f
 
     @Composable
     fun Overlay(
@@ -101,6 +104,19 @@ object MaCursorPad {
             modifier = modifier
                 .fillMaxSize()
                 .background(Color(0xF20E0E10))
+                // A tap closes it. This is the way out, and it was missing.
+                //
+                // The first version closed only on the END of a DRAG, so a finger that pressed and
+                // lifted without moving did nothing at all and the pad stayed up over the keyboard
+                // with no exit — the app unusable until it was force stopped. A mode with one way
+                // in must have a way out that works when the first thing tried is doing nothing.
+                //
+                // Declared before the drag handler so it is the outer of the two: a tap is the
+                // absence of a drag, and it must be heard even when the drag detector sees nothing
+                // worth reporting.
+                .pointerInput(Unit) {
+                    detectTapGestures { close() }
+                }
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragEnd = { close() },
@@ -137,7 +153,7 @@ object MaCursorPad {
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    text = "Drag finger to move cursor",
+                    text = "Drag to move cursor  ·  tap to close",
                     color = Color(0xFFECEAE3),
                     fontSize = 19.sp,
                 )
