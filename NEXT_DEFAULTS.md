@@ -2347,3 +2347,44 @@ means auditing every index that reaches back into the original.**
 **Still to do: the middle one drawn larger.** Sizing lives in the Snygg stylesheet for
 `SmartbarCandidateWord`, so it needs a style variant rather than a font size hardcoded here — which
 would ignore his theme.
+
+---
+
+# 69. Step one of the modular rebuild: keys become modules
+
+**The philosophy, in his words: Lego, not a moulded shell.** The same blocks make a castle or an
+aeroplane because a block does not know what it is part of. Every key in this app was written inside
+the row it belonged to, so a key on a different surface meant building it twice.
+
+**`MaKeyModules.kt` holds the first three:** `MaPinKey`, `MaCaseKey`, `MaNextFieldKey`. Each takes
+what it needs as arguments and nothing else, and can be drawn by the feature row, the transcription
+view, a future row, or a test. `MaFeatureRow` now names the key and says nothing about what the key
+is — 1242 lines to 1180.
+
+## The contract for every key still to move
+
+A module may take a `Context`, an `EditorInstance`, a `KeyboardManager` or a preference — things that
+exist everywhere. **It may not take the feature row's own state.** Where a key seems to need that,
+the state belongs somewhere shared, and moving it there is part of the job rather than a reason to
+leave the key behind.
+
+`MaNextFieldKey` is the worked example: reading the keyboard's shift state is the *row's* business,
+because the row sits under a keyboard. The key only needs to know which way to walk, so it is told —
+and the same module works on a surface that has no shift at all.
+
+## What had to open up, and it was small
+
+`ThemedTextKey` was private and is now `internal`; `maOpenAccessibilitySettings` likewise.
+`ThemedIconKey` was already internal, which is why the icon keys were the easy half. **A key that can
+only be drawn inside one file is a key that can only live in one row** — that visibility was the
+whole cage.
+
+## Order for the rest
+
+Move the keys that depend on least, one or two per build, each behaviour-neutral. The hard ones —
+the buckets, the magic finger row, the mic — depend on row state and should come last, after the
+easy moves have shown where shared state actually needs to live. **Do not rewrite the row.** He uses
+it every day, and the row keeps working throughout by construction.
+
+Once enough keys are modules, §63 becomes small: the transcription view is just another surface that
+names keys.

@@ -45,9 +45,6 @@ import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.KeyboardTab
-import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Dashboard
@@ -95,7 +92,6 @@ import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.keyboardManager
-import dev.patrickgold.florisboard.dictate.MaCaseCycle
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import kotlinx.coroutines.launch
@@ -641,24 +637,9 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     }
                 }
 
-                MaFeatureKey.PIN -> {
-                    // Filled when pinned, outlined when not — the same pair the clipboard panel
-                    // uses, so a pin means one thing everywhere in this app.
-                    //
-                    // Lit in sand while it is holding, like the row's other sticky key. Both report
-                    // a state that outlasts the press, and a key that changes what happens later
-                    // has to say so on its face or it is a switch with no indicator.
-                    val pinned by prefs.dictate.maKeyboardPinned.collectAsState()
-                    ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = if (pinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
-                        contentDescription = if (pinned) "Unpin the keyboard" else "Pin the keyboard up",
-                        modifier = keyMod,
-                        tint = if (pinned) MaSand else null,
-                    ) {
-                        scope.launch { prefs.dictate.maKeyboardPinned.set(!pinned) }
-                    }
-                }
+                // Drawn by its module. The row now says which key goes here and nothing about
+                // what the key is — which is the whole point of the move.
+                MaFeatureKey.PIN -> MaPinKey(modifier = keyMod, litColor = MaSand)
 
                 MaFeatureKey.AUTO_BUCKET -> {
                     // The face carries the count, because the count is the only thing about this
@@ -715,76 +696,26 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     }
                 }
 
-                MaFeatureKey.CHANGE_CASE -> {
-                    // Aa. The selection if there is one, otherwise the whole field: the same rule
-                    // Ctrl+P uses, and for the same reason — correct what I marked, or all of it.
-                    ThemedTextKey(
-                        label = "Aa",
-                        modifier = keyMod,
-                        tint = null,
-                    ) {
-                        val content = editorInstance.activeContent
-                        val selected = content.selectedText
-                        if (selected.isNotEmpty()) {
-                            MaCaseCycle.next(selected)?.let { editorInstance.commitText(it) }
-                        } else {
-                            val whole = buildString {
-                                append(content.textBeforeSelection)
-                                append(content.textAfterSelection)
-                            }
-                            val next = MaCaseCycle.next(whole)
-                            if (next != null) {
-                                // Select everything, then replace it. Selecting first is what makes
-                                // this one undo step rather than a delete and a type, and it is also
-                                // how the field ends up with the cursor somewhere sensible.
-                                editorInstance.setSelection(0, whole.length)
-                                editorInstance.commitText(next)
-                            }
-                        }
-                    }
-                }
+                MaFeatureKey.CHANGE_CASE -> MaCaseKey(modifier = keyMod, context = context)
 
-                MaFeatureKey.NEXT_FIELD -> {
-                    // The tab arrow: an arrow meeting a bar, which is the symbol printed on the key
-                    // this replaces. KeyboardTab is the one Material glyph that draws it, and it is
-                    // already used elsewhere in this build, so it is known to resolve.
-                    ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = Icons.Default.KeyboardTab,
-                        contentDescription = "Next field",
-                        modifier = keyMod,
-                        tint = null,
-                    ) {
-                        if (!DictateAccessibilityService.isRunning) {
-                            // Same reasoning as the key above: this reads the screen, the service is
-                            // off until somebody turns it on by hand, and opening that screen is
-                            // more use than a message saying nothing happened.
-                            maOpenAccessibilitySettings(context)
-                        } else {
-                            // Shift means backwards, exactly as it does on a desktop. Either shift
-                            // counts: the one on the letters, or the one on this row when the keys
-                            // are folded away.
-                            val shift = keyboardManager.activeState.inputShiftState
-                            val backwards = shift != InputShiftState.UNSHIFTED
-                            val moved = DictateAccessibilityService.focusNextField(backwards)
-                            // A one-press shift is spent here, the way it is spent by a letter.
-                            // Caps lock is not, because somebody who locked it is walking a form
-                            // backwards and means to keep going.
-                            if (shift == InputShiftState.SHIFTED_MANUAL) {
-                                keyboardManager.activeState.inputShiftState = InputShiftState.UNSHIFTED
-                            }
-                            if (!moved) {
-                                // Nothing took focus: one field on screen, or none. Worth saying,
-                                // because a key that silently does nothing reads as broken.
-                                Toast.makeText(
-                                    context,
-                                    "No other field on this screen",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                            }
+                // Shift stays here, at the call site, not inside the key.
+                //
+                // Reading the keyboard's shift state is this row's business — it is the row that
+                // sits under a keyboard. The key itself only needs to know which way to walk, so it
+                // is told, and the same module works on a surface that has no shift at all.
+                MaFeatureKey.NEXT_FIELD -> MaNextFieldKey(
+                    modifier = keyMod,
+                    context = context,
+                    backwards = {
+                        val shift = keyboardManager.activeState.inputShiftState
+                        val backwards = shift != InputShiftState.UNSHIFTED
+                        if (shift == InputShiftState.SHIFTED_MANUAL) {
+                            keyboardManager.activeState.inputShiftState = InputShiftState.UNSHIFTED
                         }
-                    }
-                }
+                        backwards
+                    },
+                )
+
                 MaFeatureKey.APP_SWITCH -> {
                     // Alt+Tab. Dim when nothing has been seen to switch to yet, which is the state
                     // right after the phone starts or the accessibility service is switched off —
@@ -1072,9 +1003,16 @@ private fun MaScrollStepper(
     }
 }
 
-/** A round key carrying a numeral, styled exactly as every other key in the row. */
+/**
+ * A round key carrying a numeral, styled exactly as every other key in the row.
+ *
+ * `internal` rather than private because keys are becoming modules: a key that can only be drawn
+ * inside this file is a key that can only live in this row, which is the thing being undone.
+ * `ThemedIconKey` in LegacyDictateLayout has been internal all along, which is why the icon keys
+ * were the easy half to move.
+ */
 @Composable
-private fun ThemedTextKey(
+internal fun ThemedTextKey(
     label: String,
     modifier: Modifier,
     tint: Color?,
@@ -1122,7 +1060,7 @@ private val MaDimmed = Color(0xFF6B6B6B)
  * message: the keys that need the service are useless until this is done, and nothing else in the
  * app says so at the moment it matters.
  */
-private fun maOpenAccessibilitySettings(context: android.content.Context) {
+internal fun maOpenAccessibilitySettings(context: android.content.Context) {
     runCatching {
         context.startActivity(
             android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
