@@ -2388,3 +2388,22 @@ it every day, and the row keeps working throughout by construction.
 
 Once enough keys are modules, §63 becomes small: the transcription view is just another surface that
 names keys.
+
+---
+
+# 70. The likeliest word is now drawn larger
+
+Finishes what §68 left half done. The centre word — the best guess — is drawn at `fontSizeScale =
+1.2f`, its neighbours at the theme's own size.
+
+**A scale, not a size.** `SnyggText.fontSizeScale` multiplies whatever the stylesheet decided, so a
+larger or smaller keyboard font stays larger or smaller and the emphasis stays a fifth bigger than
+its neighbours either way. A hardcoded size would have looked right on his theme and wrong on every
+other — which is why §68 declined to fake it and left a note instead.
+
+**Modest on purpose.** It has to read as "this is the one" at a glance without making the row jump
+about as the ranking changes between keystrokes.
+
+Applied to the primary word only, not the secondary line. And it follows the same rule the ordering
+does: with three candidates the middle is emphasised, with any other count the first is, because
+with two there is no middle and with more the centre is not one obvious place.

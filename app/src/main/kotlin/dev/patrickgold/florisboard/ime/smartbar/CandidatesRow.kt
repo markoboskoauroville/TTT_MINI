@@ -124,10 +124,6 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                 // for three would make it arbitrary for the rest.
                 if (ordered.size == 3) listOf(ordered[1], ordered[0], ordered[2]) else ordered
             }
-            // NOTE: the best guess is centred but not yet drawn larger. Sizing lives in the Snygg
-            // stylesheet for SmartbarCandidateWord, so making the middle bigger means a style
-            // variant rather than a font size passed down here — worth doing, and not worth faking
-            // with a hardcoded size that ignores his theme.
             for ((n, candidate) in list.withIndex()) {
                 if (n > 0) {
                     SnyggSpacer(
@@ -153,6 +149,9 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                     modifier = candidateModifier,
                     candidate = candidate,
                     displayMode = displayMode,
+                    // With three, the middle one is the best guess (§68). With any other count the
+                    // list is in plain order, so the first is.
+                    emphasised = n == (if (list.size == 3) 1 else 0),
                     onClick = {
                         keyboardManager.commitCandidate(tapped)
                     },
@@ -200,6 +199,8 @@ private fun CandidateItem(
     candidate: SuggestionCandidate,
     displayMode: CandidatesDisplayMode,
     modifier: Modifier = Modifier,
+    /** Drawn larger. True for the likeliest word, which §68 moved to the middle. */
+    emphasised: Boolean = false,
     onClick: () -> Unit = { },
     onLongPress: () -> Boolean = { false },
     longPressDelay: Long,
@@ -266,6 +267,16 @@ private fun CandidateItem(
                 // Gboard-style: bold the suggestion that will be auto-applied (autocorrect), so it's clear
                 // what will replace the typed word; other suggestions stay normal weight (issue #150).
                 fontWeight = if (autoCommit) FontWeight.Bold else null,
+                // The likeliest word, larger than its neighbours.
+                //
+                // A scale rather than a size: it multiplies whatever the theme decided, so a bigger
+                // or smaller keyboard font stays bigger or smaller and this stays a fifth larger
+                // than its neighbours either way. A hardcoded size here would look right on his
+                // theme and wrong on every other.
+                //
+                // Modest on purpose. It has to be readable as "this is the one" at a glance without
+                // making the row jump about as the ranking changes between keystrokes.
+                fontSizeScale = if (emphasised) 1.2f else null,
                 text = candidate.text.toString(),
             )
             if (candidate.secondaryText != null) {
