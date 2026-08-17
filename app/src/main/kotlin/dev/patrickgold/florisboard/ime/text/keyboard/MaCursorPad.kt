@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.patrickgold.florisboard.dictate.MaLog
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 
 /**
@@ -91,6 +92,13 @@ object MaCursorPad {
     fun open() {
         selecting = false
         active = true
+        // Logged so "it did not react" can be told from "it opened and I could not see it".
+        //
+        // Every spacebar in the app routes here — the typing keyboard, the numeric layouts, the
+        // transcription view and the feature row all reach this one function — so a hold that
+        // writes nothing here never called it, and a hold that writes a line and shows nothing is a
+        // drawing problem instead. Two very different faults that look identical from the outside.
+        MaLog.add("pad", "opened")
     }
 
     fun close() {

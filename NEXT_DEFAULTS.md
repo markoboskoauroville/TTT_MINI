@@ -2288,3 +2288,27 @@ Two changes:
 
 `LegacyDictateLayout` has no parent interop filter — its gestures are per-key modifiers — so the pad
 already worked there.
+
+---
+
+# 67. Every spacebar already opens the pad — and now says so in the log
+
+He reported the hold working only on the letters keyboard. Traced rather than rebuilt, and **all four
+routes were already wired**:
+
+- **Typing and numeric/phone keyboards** — one `onLongPress` branch in `TextKeyboardLayout` covers
+  every mode it draws, and all four numeric/phone layouts do carry a space key (verified in the
+  layout JSON, `western_arabic.json` and `telpad.json`).
+- **Transcription view** — `LegacyEditAction.SPACE` got `onLongClick` in build 152, and the overlay
+  is drawn in that view's outer `Box`.
+- **Feature row** — its space key *is* `LegacyEditAction.SPACE`, rendered by `LegacyActionKey`, so it
+  inherited the same long press.
+
+**What was almost certainly wrong was build 154's fault, not the wiring.** Until then the parent
+interop filter ate every touch, so the pad opened and could not be used or dismissed — which reads
+from the outside as "nothing happened". He was testing 153 or earlier.
+
+**`MaCursorPad.open()` now writes `pad opened` to the log.** Every spacebar in the app routes through
+that one function, so a hold that writes nothing never called it, and a hold that writes a line but
+shows nothing is a drawing fault instead. Two very different problems that look identical from the
+outside — and this is exactly the class of question the log was built for (§49).
