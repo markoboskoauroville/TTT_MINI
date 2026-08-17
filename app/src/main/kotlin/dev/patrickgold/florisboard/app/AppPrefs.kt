@@ -1092,6 +1092,24 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * worth backfilling, and running the pass twice would double every count and tilt the
          * ranking towards whatever happened to be in history.
          */
+        /**
+         * His own wording for Ctrl+F, or empty to use the one that ships.
+         *
+         * Empty rather than a copy of the built-in text, so the default can be improved later
+         * without silently overwriting what he wrote — and so "reset" means clearing a field rather
+         * than remembering what the original said.
+         */
+        val maFlowPrompt = string(
+            key = "dictate__ma_flow_prompt",
+            default = "",
+        )
+
+        /** The same, for Ctrl+P. */
+        val maProofreadPrompt = string(
+            key = "dictate__ma_proofread_prompt",
+            default = "",
+        )
+
         val maNgramBackfilled = boolean(
             key = "dictate__ma_ngram_backfilled",
             default = false,

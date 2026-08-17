@@ -10,67 +10,67 @@
 
 package dev.patrickgold.florisboard.dictate
 
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.data.prompts.PromptModel
 
 /**
- * Ctrl+F: make it flow, without making it somebody else's.
+ * Ctrl+F: rewrite it as him speaking.
  *
  * ### The other half of Ctrl+P
  *
- * [MaProofread] is forbidden from touching a single word he chose — it fixes what is *wrong* and
- * nothing more. This one is allowed to rewrite, and that difference is the entire reason both
- * exist rather than one key with a compromise between them. When he wants the commas fixed he
- * wants only the commas fixed; when he wants the paragraph to read well he is asking for the words
- * to move.
+ * [MaProofread] may not touch a word he chose — it fixes what is wrong and stops. This one rewrites,
+ * and that difference is why there are two keys rather than one compromise. When he wants the commas
+ * fixed he wants only the commas fixed; when he presses this he is asking for the words to move.
  *
- * ### What speech leaves behind
+ * ### The instruction is his, word for word
  *
- * Dictation repeats. The same thought arrives three times in three shapes, because that is how
- * speaking works — the mouth finds the sentence while it is saying it, and the false starts stay in
- * the transcript. It also strands clauses, loses the thread mid-sentence and picks it up again a
- * line later. None of that is a mistake in the thinking, so a proofreader will not touch it and the
- * result reads as rambling written by someone careless, which is the opposite of true.
+ * It was written by Marko and is shipped exactly as he gave it, down to the sentence order. That is
+ * not deference for its own sake: the output of this key goes out **as his own words, under his own
+ * name**, so a prompt smoothed into something more standard-sounding would produce messages that
+ * read like anybody. The point of the key is the opposite.
  *
- * So the instruction is aimed squarely at redundancy and order: say each thing once, put the things
- * in the sequence that makes them follow.
+ * If it needs changing, change it to what he says next — do not improve it.
  *
- * ### The register, in his words
+ * ### What still guards it
  *
- * Half friendly, half professional. Not the flattened corporate voice a model reaches for when told
- * to "improve" something — that voice would strip out exactly what makes a message from him
- * recognisable as from him. The instruction names the trap directly, because a model told only to
- * make text professional will produce something nobody would ever say aloud.
- *
- * ### The line it must not cross
- *
- * It may cut, join and reorder. It may not add. A model given permission to rewrite will invent a
- * politeness he did not offer, a commitment he did not make, or a fact he did not state, and a
- * message that goes out carrying an invented promise is worse than one that rambles.
+ * The instruction does not say "return only the text", and it is left that way on purpose. §51
+ * catches the failure it would have prevented: a reply far longer than its input is refused and
+ * shown rather than typed into his message. A guard on the output beats a line in the prompt,
+ * because a model can ignore the line and cannot ignore the guard.
  */
 object MaFlow {
 
     /** Shown beside the spinning dust while it runs, so the two keys are told apart mid-flight. */
     const val NAME = "Better flow"
 
+    /**
+     * His prompt, word for word.
+     *
+     * Written by Marko and shipped exactly as given. It is a voice, and a voice is not something to
+     * paraphrase into something more standard-sounding — the whole purpose of the key is that the
+     * result is his to send as his own.
+     *
+     * It ends on "Text to rewrite:" because the rewording path appends the input after a blank
+     * line, so the last line of the instruction is what introduces it.
+     */
     const val INSTRUCTION =
-        "Rewrite the text below so it flows well, keeping the author's own voice.\n\n" +
-            "Do this:\n" +
-            "- Remove redundancy. Dictated speech says the same thing two or three times in " +
-            "different words; keep the best one and cut the rest.\n" +
-            "- Fix the order so the ideas follow each other, joining or splitting sentences where " +
-            "that helps.\n" +
-            "- Remove false starts, filler and stranded half-sentences left over from speaking.\n" +
-            "- Fix spelling, punctuation and grammar along the way.\n\n" +
-            "Keep this:\n" +
-            "- The author's voice and register: warm and direct, half friendly and half " +
-            "professional. Do NOT make it sound corporate, formal or generic.\n" +
-            "- The original language. Never translate.\n" +
-            "- Every fact, name, number, question and commitment exactly as given.\n" +
-            "- Roughly the original length or shorter. Never pad.\n\n" +
-            "Never add information, opinions, greetings, sign-offs, politeness or promises that " +
-            "are not already there.\n\n" +
-            "Return only the rewritten text. No preamble, no quotation marks around it, no " +
-            "commentary."
+        "Rewrite the text below as me speaking. I will send it myself, as my own words, so never " +
+            "write anything I would not say.\n\n" +
+            "Warm and direct. Short sentences. No bullet points, no dashes, no headings, no bold. " +
+            "It should read like a person talking, not a document. Say the thing, then say why, " +
+            "then stop.\n\n" +
+            "Give the reason behind an instruction, not just the instruction. People make better " +
+            "decisions when they know what something is for. When something is their decision, " +
+            "hand it to them properly and mean it. When it is mine, say so.\n\n" +
+            "Own mistakes plainly and early, in one sentence, without apologising twice. If " +
+            "someone caught the mistake, say they caught it.\n\n" +
+            "Never thank people for something they have not done yet. Never write a farewell that " +
+            "assumes I am in the room with them. If the message needs an ending, make it useful, " +
+            "like where I can be reached, not ceremonial.\n\n" +
+            "Warm does not mean soft. If something will not work, say it will not work, then offer " +
+            "the version that will.\n\n" +
+            "Keep it as short as it can be while still carrying the reason.\n\n" +
+            "Text to rewrite:"
 
     /**
      * The prompt as the rewording path expects it.
@@ -84,11 +84,21 @@ object MaFlow {
      * being able to hand it one paragraph rather than the whole message is the difference between a
      * tool and a gamble.
      */
+    /** What he has written in settings, or empty. */
+    fun custom(): String {
+        val prefs by FlorisPreferenceStore
+        return prefs.dictate.maFlowPrompt.get()
+    }
+
     fun prompt(): PromptModel = PromptModel(
         id = PromptModel.ID_INSTANT_PROMPT,
         pos = 0,
         name = NAME,
-        prompt = INSTRUCTION,
+        // His wording if he has written one, the shipped instruction otherwise.
+        //
+        // Read at press time rather than captured once, so editing the text in settings changes the
+        // very next press with nothing to restart.
+        prompt = custom().ifBlank { INSTRUCTION },
         requiresSelection = true,
         autoApply = false,
     )

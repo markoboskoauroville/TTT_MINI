@@ -10,6 +10,7 @@
 
 package dev.patrickgold.florisboard.dictate
 
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.data.prompts.PromptModel
 
 /**
@@ -79,11 +80,21 @@ object MaProofread {
      * otherwise select the whole field and work on that. Both are exactly right here — correct what
      * I marked, or correct all of it — and neither needed new code.
      */
+    /** What he has written in settings, or empty. */
+    fun custom(): String {
+        val prefs by FlorisPreferenceStore
+        return prefs.dictate.maProofreadPrompt.get()
+    }
+
     fun prompt(): PromptModel = PromptModel(
         id = PromptModel.ID_INSTANT_PROMPT,
         pos = 0,
         name = NAME,
-        prompt = INSTRUCTION,
+        // His wording if he has written one, the shipped instruction otherwise.
+        //
+        // Read at press time rather than captured once, so editing the text in settings changes the
+        // very next press with nothing to restart.
+        prompt = custom().ifBlank { INSTRUCTION },
         requiresSelection = true,
         autoApply = false,
     )

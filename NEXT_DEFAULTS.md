@@ -2431,3 +2431,36 @@ the microphone, and a quieter recording of the wrong sound is no improvement on 
 Requested before the microphone opens; released in `cleanupAudioRouting`, which **all six** exit
 paths already call — sent, cancelled, failed or torn down — so the music always comes back. Both ends
 are logged, so "the music never resumed" can be checked rather than guessed.
+
+---
+
+# 72. Ctrl+P and Ctrl+F carry his own wording
+
+**The answer to "is there a place to write my own prompt" was no.** Both keys used a throwaway
+`PromptModel` built from a constant, deliberately kept out of the prompt library so a renamed or
+deleted library row could not leave a shortcut doing nothing (§30). That protected the shortcut and
+locked the wording with it.
+
+Now: **Keyboard shortcuts → Your own wording**, one box per key.
+
+- **Empty means use the shipped instruction.** The default is `""`, not a copy of the text — so the
+  built-in can be improved later without overwriting what he wrote, and "reset" is clearing a field
+  rather than remembering what the original said.
+- The shipped text shows as a **placeholder**, not as content. Filling the box would make every
+  default look like something he had written.
+- **Saved as he types, read fresh on every press.** No Save button, because there is nothing to get
+  wrong: a half-finished sentence affects only the next press and is fixed by finishing it.
+
+## Ctrl+F now carries the prompt he wrote
+
+Shipped **word for word**, down to the sentence order, and the class comment says not to improve it.
+The output goes out as his own words under his own name, so a prompt smoothed into something more
+standard-sounding would produce messages that read like anybody.
+
+**It does not say "return only the text", and that is left alone on purpose.** §51's length guard
+catches the failure that line would have prevented — a reply far longer than its input is refused and
+shown rather than typed. **A guard on the output beats a line in the prompt, because a model can
+ignore the line and cannot ignore the guard.**
+
+`NAME` is still "Better flow", so the spinning dust reads the same. Worth renaming when he says what
+he wants it called.

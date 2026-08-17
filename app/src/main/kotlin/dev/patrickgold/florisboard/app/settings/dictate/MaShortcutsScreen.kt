@@ -24,7 +24,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.MaFlow
+import dev.patrickgold.florisboard.dictate.MaProofread
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.jetpref.datastore.model.PreferenceData
+import dev.patrickgold.jetpref.datastore.model.collectAsState
+import kotlinx.coroutines.launch
 
 /**
  * Every Ctrl shortcut the keyboard understands, written down.
@@ -51,6 +62,7 @@ fun MaShortcutsScreen() = FlorisScreen {
     title = "Keyboard shortcuts"
 
     content {
+        val prefs by FlorisPreferenceStore
         Text(
             text = "Tap Ctrl on the bottom row, then a letter. Ctrl turns itself off after one " +
                 "letter — hold it instead to lock it on for several.",
@@ -95,6 +107,19 @@ fun MaShortcutsScreen() = FlorisScreen {
 
         Spacer(Modifier.height(16.dp))
 
+        Section("Your own wording")
+        Text(
+            text = "Both keys ship with an instruction written for them. Leave a box empty to use " +
+                "it, or write your own and it takes effect on the very next press.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+        PromptBox("Ctrl + P", prefs.dictate.maProofreadPrompt, MaProofread.INSTRUCTION)
+        PromptBox("Ctrl + F", prefs.dictate.maFlowPrompt, MaFlow.INSTRUCTION)
+
+        Spacer(Modifier.height(16.dp))
+
         Section("Proofreading and flow need a key")
         Text(
             text = "Ctrl + P and Ctrl + F send your text to the rewording model set in API keys, so they need a " +
@@ -109,6 +134,49 @@ fun MaShortcutsScreen() = FlorisScreen {
         )
 
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/**
+ * A box holding one key's instruction.
+ *
+ * Shows the shipped text as a placeholder rather than filling the box with it. Filling it would make
+ * every default look like something he had written, and clearing it would then mean deleting text
+ * with no way back — whereas an empty box plainly means "use the one that ships".
+ *
+ * Saved as he types. There is no Save button because there is nothing to get wrong: the prompt is
+ * read fresh on every press, so a half-finished sentence affects only the next press and is fixed by
+ * finishing it.
+ */
+@Composable
+private fun PromptBox(
+    label: String,
+    pref: PreferenceData<String>,
+    shipped: String,
+) {
+    val scope = rememberCoroutineScope()
+    val value by pref.collectAsState()
+    OutlinedTextField(
+        value = value,
+        onValueChange = { next -> scope.launch { pref.set(next) } },
+        label = { Text(label) },
+        placeholder = {
+            Text(
+                text = shipped.take(90) + "\u2026",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        },
+        minLines = 3,
+        maxLines = 10,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+    )
+    if (value.isNotBlank()) {
+        TextButton(
+            onClick = { scope.launch { pref.set("") } },
+            modifier = Modifier.padding(start = 12.dp),
+        ) { Text("Use the one that ships") }
     }
 }
 
