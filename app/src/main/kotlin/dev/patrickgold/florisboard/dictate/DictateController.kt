@@ -15,6 +15,9 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ContentValues
 import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Environment
@@ -379,6 +382,10 @@ object DictateController {
     // mid-generation (issue #192). The post-transcription rewording chain instead runs inside
     // [transcribeJob]; [cancelRewording] cancels whichever is active.
     private var rewordJob: Job? = null
+
+    /** Held only while recording, so the music can be given back the moment it ends. */
+    private var audioManager: AudioManager? = null
+    private var focusRequest: AudioFocusRequest? = null
 
     private var btRouter: BluetoothMicRouter? = null
 
@@ -1030,6 +1037,8 @@ object DictateController {
                 // Correct any stale active language (e.g. leftover "detect" after auto-detect was
                 // disabled) before the realtime session / request reads it.
                 reconcileActiveLanguage()
+                // Ask everything else to stop before the microphone opens, not after.
+                requestExclusiveAudio(appContext)
                 val audioSource = setupBluetoothIfEnabled(appContext)
                 // Long-form segmented dictation (#170): transcribe cut segments in the background while
                 // recording continues. Off for realtime / live-prompt / overlay / multimodal (see the gate).
@@ -3564,6 +3573,50 @@ object DictateController {
     // in a browser, which is what was asked for and is also the honest default: this app records
     // through the microphone and has no business holding the phone's audio.
 
+    /**
+     * Asks everything else playing to stop, for the length of the recording.
+     *
+     * ### This was removed once, at his instruction, and is back at his instruction
+     *
+     * §29 took audio focus out entirely and said not to rebuild it. That was right for what existed:
+     * the old version also **listened** for focus loss and paused HIS recording whenever another app
+     * took focus back. With a reader playing in the background the two rules met each other — each
+     * program politely stopping for the other — which is why it behaved backwards.
+     *
+     * **The listening is what was wrong, not the asking.** This asks and does not listen. Nothing
+     * another app does can now interrupt a recording; the only thing that stops it is him.
+     *
+     * ### Exclusive rather than transient
+     *
+     * `AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE` tells other players to **pause** rather than duck, and
+     * not to resume until focus is abandoned. Ducking would leave his bhajan playing quietly into
+     * the microphone, which is the thing being avoided — a quieter recording of the wrong sound is
+     * not an improvement on a loud one.
+     *
+     * Released in [cleanupAudioRouting], which every path out of a recording already goes through,
+     * so the music comes back whether he sent it, cancelled it, or it failed.
+     */
+    private fun requestExclusiveAudio(context: Context) {
+        runCatching {
+            val am = (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager).also { audioManager = it }
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build(),
+                )
+                // A listener is required to build the request, and this one deliberately does
+                // nothing. Reacting to focus changes is exactly the behaviour that made the old
+                // version fight with his reader app.
+                .setOnAudioFocusChangeListener { }
+                .build()
+            focusRequest = request
+            am.requestAudioFocus(request)
+            MaLog.add("audio", "asked other apps to pause")
+        }
+    }
+
     private suspend fun setupBluetoothIfEnabled(context: Context): Int {
         // Non-Bluetooth path uses the user's chosen audio source (issue #62); Bluetooth SCO always needs
         // VOICE_COMMUNICATION. If BT is requested but can't be activated, fall back to the chosen source.
@@ -3578,6 +3631,13 @@ object DictateController {
     }
 
     private fun cleanupAudioRouting() {
+        // Give the music back. Every exit from a recording passes through here.
+        focusRequest?.let { request ->
+            runCatching { audioManager?.abandonAudioFocusRequest(request) }
+            MaLog.add("audio", "released, other apps may resume")
+        }
+        focusRequest = null
+        audioManager = null
         btRouter?.deactivate()
         btRouter = null
     }

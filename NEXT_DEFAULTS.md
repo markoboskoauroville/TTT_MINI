@@ -926,8 +926,9 @@ merely unwanted.
 toggle, the settings-search entry, the legacy migration and the legacy key. Six files. Nothing
 replaces it.
 
-**Do not rebuild this.** Marko's instruction is that anything playing keeps playing, the way it does
-in a browser, and that no code should exist which reacts to what another app is doing with audio.
+**SUPERSEDED at build 159 — see §71.** He asked for exclusive recording back. The part of this
+section that still stands is the second half: **nothing may react to what another app does with
+audio.** Asking others to pause is fine; listening for focus changes is what was broken.
 This app records through the microphone; it has no business holding the phone's audio session. A
 future "pause music while recording" request should be read as a request to change *his* mind, not
 as a gap to fill.
@@ -2407,3 +2408,26 @@ about as the ranking changes between keystrokes.
 Applied to the primary word only, not the secondary line. And it follows the same rule the ordering
 does: with three candidates the middle is emphasised, with any other count the first is, because
 with two there is no middle and with more the centre is not one obvious place.
+
+---
+
+# 71. Exclusive recording: ask, but never listen
+
+He asked for it back, and §29 anticipated exactly this: *"a future request should be read as a
+request to change his mind, not as a gap to fill."* It is that request.
+
+**What is different from the version §29 removed.** The old code also *listened* for focus loss and
+paused **his recording** whenever another app took focus. With a reader playing in the background the
+two rules met — each program politely stopping for the other — which is why it read as backwards.
+
+**The listening was wrong, not the asking.** The new one asks and does not listen. The required
+change listener is deliberately empty. **Nothing another app does can interrupt a recording; only he
+can stop it.** That is the rule to keep.
+
+**`AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE`**, not plain transient: other players *pause* rather than
+duck, and do not resume until focus is abandoned. Ducking would leave his bhajan playing quietly into
+the microphone, and a quieter recording of the wrong sound is no improvement on a loud one.
+
+Requested before the microphone opens; released in `cleanupAudioRouting`, which **all six** exit
+paths already call — sent, cancelled, failed or torn down — so the music always comes back. Both ends
+are logged, so "the music never resumed" can be checked rather than guessed.
