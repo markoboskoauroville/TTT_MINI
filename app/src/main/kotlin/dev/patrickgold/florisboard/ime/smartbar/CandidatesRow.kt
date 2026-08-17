@@ -111,7 +111,23 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
             val list = when (displayMode) {
                 CandidatesDisplayMode.CLASSIC -> candidates.subList(0, 3.coerceAtMost(candidates.size))
                 else -> candidates
+            }.let { ordered ->
+                // The likeliest word goes in the MIDDLE, not on the left.
+                //
+                // Reading order puts the best guess where the eye starts, which sounds right and is
+                // not: the thumb rests under the centre of the row, so the word most often wanted
+                // was the one furthest from the thumb, and every acceptance cost a reach. The
+                // middle is the cheapest place on a phone, so the likeliest word belongs there.
+                //
+                // Only for three. With two there is no middle to speak of, and with four or more the
+                // centre stops being a single obvious place — so the rule that would make it better
+                // for three would make it arbitrary for the rest.
+                if (ordered.size == 3) listOf(ordered[1], ordered[0], ordered[2]) else ordered
             }
+            // NOTE: the best guess is centred but not yet drawn larger. Sizing lives in the Snygg
+            // stylesheet for SmartbarCandidateWord, so making the middle bigger means a style
+            // variant rather than a font size passed down here — worth doing, and not worth faking
+            // with a hardcoded size that ignores his theme.
             for ((n, candidate) in list.withIndex()) {
                 if (n > 0) {
                     SnyggSpacer(
@@ -122,17 +138,26 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                             .align(Alignment.CenterVertically),
                     )
                 }
+                // The word under the finger, captured by value.
+                //
+                // This read `candidates[n]` — the ORIGINAL list at the DISPLAYED position. That was
+                // harmless while the two were the same list, and became a wrong-word bug the moment
+                // the middle-weighted order above made position 0 hold candidate 1. Tapping the
+                // left word would have committed the middle one.
+                //
+                // The loop variable is already the right object, and in Kotlin it is a fresh binding
+                // per iteration, so capturing it in the lambda is safe. The old comment saying
+                // otherwise was the reason the index was there at all.
+                val tapped = candidate
                 CandidateItem(
                     modifier = candidateModifier,
                     candidate = candidate,
                     displayMode = displayMode,
                     onClick = {
-                        // Can't use candidate directly
-                        keyboardManager.commitCandidate(candidates[n])
+                        keyboardManager.commitCandidate(tapped)
                     },
                     onLongPress = {
-                        // Can't use candidate directly
-                        val candidateItem = candidates[n]
+                        val candidateItem = tapped
                         when {
                             // Words only now. The clipboard branch went with the clipboard
                             // suggestion itself; long press teaches the personal dictionary

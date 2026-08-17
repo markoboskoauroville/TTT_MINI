@@ -306,6 +306,29 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         //
         // Not in a field that is not ordinary prose. An email address or a URL with a space dropped
         // into the middle of it is a broken value, and those fields never wanted the space anyway.
+        // MA TWIST: a picked suggestion replaces the WHOLE word the cursor is in.
+        //
+        // Tap into the middle of a word, then tap a suggestion, and every keyboard Marko has used
+        // inserts the suggestion at the cursor: half the old word, the whole new one, then the rest
+        // of the old word. Three fragments where he asked for one correction. It happens because
+        // with no composing region there is nothing marking which word was meant, so the commit
+        // falls back to "here", and "here" is wherever the finger last landed.
+        //
+        // The word is what was meant, whatever end of it the cursor sits at. So the word is selected
+        // first and the commit replaces a selection instead of inserting at a point.
+        //
+        // Only when the cursor is collapsed. A selection he made by hand is a deliberate statement
+        // about what to replace, and widening it to word boundaries would overrule him.
+        //
+        // Apostrophes and hyphens count as part of the word, so `don't` and `well-known` are
+        // replaced whole rather than losing their tail to the next commit.
+        if (!content.composing.isValid && content.selection.isCursorMode && content.selection.isValid) {
+            val head = content.textBeforeSelection.takeLastWhile { it.isLetterOrDigit() || it == '\'' || it == '-' }
+            val tail = content.textAfterSelection.takeWhile { it.isLetterOrDigit() || it == '\'' || it == '-' }
+            if (head.isNotEmpty() || tail.isNotEmpty()) {
+                setSelection(content.selection.start - head.length, content.selection.end + tail.length)
+            }
+        }
         val addSpace = activeState.keyVariation == KeyVariation.NORMAL
         val committed = if (addSpace) text + SPACE else text
         return if (content.composing.isValid) {

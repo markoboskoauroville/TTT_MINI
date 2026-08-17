@@ -2312,3 +2312,38 @@ from the outside as "nothing happened". He was testing 153 or earlier.
 that one function, so a hold that writes nothing never called it, and a hold that writes a line but
 shows nothing is a drawing fault instead. Two very different problems that look identical from the
 outside — and this is exactly the class of question the log was built for (§49).
+
+---
+
+# 68. A suggestion replaces the whole word, and the best guess sits in the middle
+
+## The fragment bug
+
+Tap into the middle of a word, tap a suggestion, and you got three fragments: half the old word, the
+whole new one, the rest of the old word. With no composing region there is nothing marking which word
+was meant, so `commitCompletion` fell back to inserting at the cursor — and the cursor is wherever
+the finger last landed.
+
+`EditorInstance.commitCompletion` now **selects the whole word around a collapsed cursor** before
+committing, so the commit replaces a selection instead of inserting at a point. Apostrophes and
+hyphens count as part of the word. **A selection he made by hand is left alone** — that is a
+deliberate statement about what to replace, and widening it would overrule him.
+
+## Middle-weighted candidates
+
+The likeliest word is now **centre**, not left. Reading order puts the best guess where the eye
+starts, which sounds right and is not: the thumb rests under the centre of the row, so the word most
+often wanted was the furthest from the thumb and every acceptance cost a reach.
+
+Only when there are exactly three. With two there is no middle; with four or more the centre stops
+being one obvious place.
+
+**This introduced a wrong-word bug that had to be fixed in the same pass.** The click handler read
+`candidates[n]` — the *original* list at the *displayed* position. Harmless while those were the same
+list, wrong the moment the reorder made position 0 hold candidate 1: tapping the left word would have
+committed the middle one. The loop variable is now captured by value. **A reorder of a displayed list
+means auditing every index that reaches back into the original.**
+
+**Still to do: the middle one drawn larger.** Sizing lives in the Snygg stylesheet for
+`SmartbarCandidateWord`, so it needs a style variant rather than a font size hardcoded here — which
+would ignore his theme.
