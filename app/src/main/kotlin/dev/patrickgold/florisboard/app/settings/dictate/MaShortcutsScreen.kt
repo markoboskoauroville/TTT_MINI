@@ -13,6 +13,14 @@ package dev.patrickgold.florisboard.app.settings.dictate
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.AlertDialog
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -24,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
@@ -74,8 +81,24 @@ fun MaShortcutsScreen() = FlorisScreen {
         Spacer(Modifier.height(8.dp))
 
         Section("Writing")
-        Shortcut("Ctrl + P", "Proofread", "Punctuation, spelling and grammar only. Your words and your style are left alone. Works on the selection, or on the whole field when nothing is selected.")
-        Shortcut("Ctrl + F", "Better flow", "Rewrites for flow: cuts the repetition dictation leaves behind and puts the ideas in an order that follows. Keeps your voice, your facts and your language. This one moves your words \u2014 Ctrl + P never does.")
+        // The two prompt keys, editable from the row that describes them.
+        //
+        // There used to be a second section further down holding the same two prompts in text
+        // boxes, which meant one key had its wording in two places on one screen. Tapping what you
+        // want to change is the shorter path, and it removes the question of which of the two is
+        // the real one.
+        PromptShortcut(
+            keys = "Ctrl + P",
+            name = "Proofread",
+            pref = prefs.dictate.maProofreadPrompt,
+            shipped = MaProofread.INSTRUCTION,
+        )
+        PromptShortcut(
+            keys = "Ctrl + F",
+            name = "Better flow",
+            pref = prefs.dictate.maFlowPrompt,
+            shipped = MaFlow.INSTRUCTION,
+        )
 
         Spacer(Modifier.height(16.dp))
 
@@ -107,19 +130,6 @@ fun MaShortcutsScreen() = FlorisScreen {
 
         Spacer(Modifier.height(16.dp))
 
-        Section("Your own wording")
-        Text(
-            text = "Both keys ship with an instruction written for them. Leave a box empty to use " +
-                "it, or write your own and it takes effect on the very next press.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-        )
-        PromptBox("Ctrl + P", prefs.dictate.maProofreadPrompt, MaProofread.INSTRUCTION)
-        PromptBox("Ctrl + F", prefs.dictate.maFlowPrompt, MaFlow.INSTRUCTION)
-
-        Spacer(Modifier.height(16.dp))
-
         Section("Proofreading and flow need a key")
         Text(
             text = "Ctrl + P and Ctrl + F send your text to the rewording model set in API keys, so they need a " +
@@ -138,45 +148,103 @@ fun MaShortcutsScreen() = FlorisScreen {
 }
 
 /**
- * A box holding one key's instruction.
+ * One shortcut whose instruction can be rewritten, shown as the thing it is.
  *
- * Shows the shipped text as a placeholder rather than filling the box with it. Filling it would make
- * every default look like something he had written, and clearing it would then mean deleting text
- * with no way back — whereas an empty box plainly means "use the one that ships".
+ * The name is blue and underlined because it opens something — the same signal the settings home
+ * uses for a link. A description that can be edited and gives no sign of it is a description
+ * somebody reads twice and never touches.
  *
- * Saved as he types. There is no Save button because there is nothing to get wrong: the prompt is
- * read fresh on every press, so a half-finished sentence affects only the next press and is fixed by
- * finishing it.
+ * What it shows underneath is **the prompt actually in use**: his if he has written one, the shipped
+ * one otherwise. Not a summary of it. A summary is a second thing to keep true, and it was already
+ * drifting from what the key really did.
  */
 @Composable
-private fun PromptBox(
-    label: String,
+private fun PromptShortcut(
+    keys: String,
+    name: String,
     pref: PreferenceData<String>,
     shipped: String,
 ) {
     val scope = rememberCoroutineScope()
-    val value by pref.collectAsState()
-    OutlinedTextField(
-        value = value,
-        onValueChange = { next -> scope.launch { pref.set(next) } },
-        label = { Text(label) },
-        placeholder = {
-            Text(
-                text = shipped.take(90) + "\u2026",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        },
-        minLines = 3,
-        maxLines = 10,
+    val stored by pref.collectAsState()
+    val inUse = stored.ifBlank { shipped }
+    var editing by remember { mutableStateOf(false) }
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-    )
-    if (value.isNotBlank()) {
-        TextButton(
-            onClick = { scope.launch { pref.set("") } },
-            modifier = Modifier.padding(start = 12.dp),
-        ) { Text("Use the one that ships") }
+            .clickable { editing = true }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Text(
+            text = keys,
+            style = MaterialTheme.typography.bodyMedium,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.width(132.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.Underline,
+            )
+            Text(
+                text = inUse,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (stored.isNotBlank()) {
+                Text(
+                    text = "your wording",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+
+    if (editing) {
+        // Edited in a dialog rather than in the row, because these are paragraphs. A box in a list
+        // is either too small to write in or too tall to scroll past.
+        var draft by remember { mutableStateOf(inUse) }
+        AlertDialog(
+            onDismissRequest = { editing = false },
+            title = { Text("$keys \u2014 $name") },
+            text = {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    minLines = 6,
+                    maxLines = 14,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    // Saving the shipped text unchanged stores nothing, so it keeps following the
+                    // default if that is ever improved. Only a real edit becomes his wording.
+                    scope.launch { pref.set(if (draft.trim() == shipped.trim()) "" else draft) }
+                    editing = false
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                Row {
+                    if (stored.isNotBlank()) {
+                        TextButton(onClick = {
+                            scope.launch { pref.set("") }
+                            editing = false
+                        }) { Text("Use default") }
+                    }
+                    TextButton(onClick = { editing = false }) { Text("Cancel") }
+                }
+            },
+        )
     }
 }
 

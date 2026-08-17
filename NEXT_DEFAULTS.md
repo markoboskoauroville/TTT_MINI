@@ -2496,3 +2496,34 @@ decided for it, instead of being blanked because an older file had never heard o
 
 Uses `FlorisPreferenceStore.export`/`import`, the same calls the backup screen makes, so the
 datastore's own format and version handling are not reimplemented here to drift.
+
+---
+
+# 74. One prompt, one place
+
+**Two places held the same two prompts on one screen** — the shortcut rows described them, and a
+section below let you edit them. One key, two locations, and the question of which was real.
+
+Now the row **is** the editor. The name is blue and underlined, the way a link is on the settings
+home, so it reads as something that opens. Tapping it opens a dialog with the prompt in it.
+
+**What the row shows is the prompt actually in use**, not a summary of it: his wording if he has
+written one, the shipped one otherwise, three lines and then an ellipsis. A summary is a second
+thing to keep true and was already drifting from what the key really did. `your wording` appears
+under it when it is his.
+
+**Saving the shipped text unchanged stores nothing.** Only a real edit becomes his, so a prompt left
+alone keeps following the default if that is improved later. `Use default` appears in the dialog only
+when there is something to clear.
+
+**A dialog rather than an inline box**, because these are paragraphs: a text box inside a list is
+either too small to write in or too tall to scroll past.
+
+## Ctrl+F's default is his current wording, exactly
+
+Shipped word for word. The earlier version ended on a line reading "Text to rewrite:" — **that line
+was mine, not his**, and it is gone with the rest of my edits to his words. The rewording path
+appends the text after a blank line, so nothing has to announce it.
+
+**If a model ever starts treating the trailing sentence as text to rewrite**, the fix is a separator
+in the *path*, not a line added to his prompt.

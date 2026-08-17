@@ -50,12 +50,13 @@ object MaFlow {
      * paraphrase into something more standard-sounding — the whole purpose of the key is that the
      * result is his to send as his own.
      *
-     * It ends on "Text to rewrite:" because the rewording path appends the input after a blank
-     * line, so the last line of the instruction is what introduces it.
+     * The rewording path appends the text to work on after a blank line, so nothing here has to
+     * announce it. An earlier version ended on "Text to rewrite:" and that line was mine, not his;
+     * it is gone with the rest of my edits to his words.
      */
     const val INSTRUCTION =
-        "Rewrite the text below as me speaking. I will send it myself, as my own words, so never " +
-            "write anything I would not say.\n\n" +
+        "Rewrite the text as me speaking. I will send it myself, as my own words, so never write " +
+            "anything I would not say.\n\n" +
             "Warm and direct. Short sentences. No bullet points, no dashes, no headings, no bold. " +
             "It should read like a person talking, not a document. Say the thing, then say why, " +
             "then stop.\n\n" +
@@ -69,21 +70,8 @@ object MaFlow {
             "like where I can be reached, not ceremonial.\n\n" +
             "Warm does not mean soft. If something will not work, say it will not work, then offer " +
             "the version that will.\n\n" +
-            "Keep it as short as it can be while still carrying the reason.\n\n" +
-            "Text to rewrite:"
+            "Keep it as short as it can be while still carrying the reason."
 
-    /**
-     * The prompt as the rewording path expects it.
-     *
-     * A throwaway [PromptModel] rather than a library row, for the same reason as the proofreader:
-     * this one is bound to a key, and a library entry could be renamed or deleted out from under a
-     * shortcut that would then do nothing.
-     *
-     * `requiresSelection` is true, which in `applyPrompt` means the selection if there is one and
-     * the whole field otherwise. That matters more here than for Ctrl+P — this key rewrites, so
-     * being able to hand it one paragraph rather than the whole message is the difference between a
-     * tool and a gamble.
-     */
     /** What he has written in settings, or empty. */
     fun custom(): String {
         val prefs by FlorisPreferenceStore
