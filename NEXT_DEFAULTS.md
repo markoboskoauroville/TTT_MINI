@@ -2148,3 +2148,36 @@ The parts are in place: `TextKeyboardLayoutController` already tracks pointer mo
 the glide typing and delete-swipe paths, and every key already knows its hint. What it needs is a
 direction test on release and a decision about how far a flick must travel before it stops being a
 tap. **Build it after living with the pad**, since both change what a finger on a key means.
+
+---
+
+# 63. Configurable transcription view — designed, NOT built
+
+**What he asked for:** every button on the transcription view except the pin can be swapped for any
+feature-row key. Settings shows two rows — the original and the replacement — with an edit picker and
+a reset.
+
+**Why it was not built in one pass, measured rather than guessed:** the feature-row key rendering is
+a single `when (button)` block of **556 lines** (`MaFeatureRow.kt` 427-983) closing over **18
+locals** — scope, context, prefs, editorInstance, keyboardManager, bucket slots, prompt state,
+language state and the rest. Nothing outside that composable can draw a feature key today.
+
+## Three builds, in this order
+
+**1. Extract the renderer.** One composable that draws any `MaFeatureKey`, given what it needs.
+Behaviour-neutral: the feature row must look and act exactly as before, which is also how it is
+verified. **This is the whole risk of the feature** — a rushed extraction does not fail red, it
+quietly drops a behaviour in one of thirty branches and neither of us notices for days. Do it alone,
+with nothing else in the build.
+
+**2. The override.** A preference mapping slot id → `MaFeatureKey` id, empty meaning default. Slot
+ids for the eleven swappable positions; **the pin has no slot and cannot be overridden**, since it is
+the only way back out of a pinned opening view (§61).
+
+**3. The settings screen.** Both rows visible at once, original above replacement, so a swap is read
+as a substitution rather than as a list of unrelated keys. Reset clears all overrides.
+
+## Shipped defaults, unchanged by this
+
+The view he screenshotted is the intended default: `ENG ab AB Ab AbAb` / `db mic backspace` /
+`pin keyboard space enter`. Overrides sit on top; reset returns to exactly this.
