@@ -432,6 +432,9 @@ class FlorisImeService : LifecycleInputMethodService() {
         // way out. A second, unconditional one: opening any field closes it. So even if every
         // gesture failed, switching app or tapping another box returns a working keyboard.
         MaCursorPad.close()
+        // And with it the selection mode it may have turned on, for the same reason: a flag left
+        // set would make arrows select on a field that never saw the pad.
+        activeState.isManualSelectionMode = false
         activeState.batchEdit {
             // A new editor field invalidates any in-progress emoji search (issue #110); drop it so we
             // don't reappear on an unrelated field. imeUiMode is reset to TEXT just below anyway.

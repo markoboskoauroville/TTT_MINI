@@ -323,7 +323,16 @@ fun TextKeyboardLayout(
         // nothing underneath can be pressed, which is what makes it a mode rather than a hint. It
         // fills only the keyboard, so the text stays visible above and he can watch the caret move.
         if (MaCursorPad.active) {
-            MaCursorPad.Overlay { code ->
+            MaCursorPad.Overlay(
+                // Selection is the editor's own manual-selection mode, not a second mechanism.
+                // KeyboardManager already extends the selection on an arrow whenever that flag is
+                // set, so turning it on here makes every arrow the pad sends select instead of
+                // move — with no special cases, and with the same behaviour as holding shift.
+                onSelectToggle = {
+                    MaCursorPad.toggleSelecting()
+                    maKeyboardManager.activeState.isManualSelectionMode = MaCursorPad.selecting
+                },
+            ) { code ->
                 maKeyboardManager.inputEventDispatcher.sendDownUp(TextKeyData(code = code))
             }
         }

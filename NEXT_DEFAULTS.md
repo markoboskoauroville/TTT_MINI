@@ -2229,3 +2229,36 @@ recency. §55's history backfill is the corpus for it, and every email he has ev
 in `DictateHistory`.
 
 **Do not install SwiftKey to copy it.** The behaviour is describable without it, which is what he did.
+
+---
+
+# 65. The trackpad: stays open, and can select and delete
+
+**It stays open now.** It used to close whenever the finger lifted, which meant one journey per hold
+— to move, then select, then delete, he had to raise it three times. **A trackpad that shuts every
+time the hand leaves it is not a trackpad, it is a long gesture.**
+
+That is safe in a way build 150 was not, because there is now a **visible** way out. The trap was
+never that it stayed open; it was that nothing on screen said how to leave.
+
+**Three corners, and the fourth deliberately empty:**
+
+- **Top right — keyboard icon**, closes. His choice over an X, and he was right: the icon already
+  means "back to the keys" everywhere else in this app.
+- **Bottom left — shift**, toggles selection. Lit in sand while it holds, because it changes what
+  the next drag does and nothing else would say so.
+- **Bottom right — backspace**, deletes.
+- **Top left — nothing.** It is where a thumb crosses the pad on its way anywhere, and a key there
+  would be pressed by accident more often than on purpose.
+
+Keys rather than gestures: the pad is already one gesture, and a second and third layered on the
+same finger would make every drag a guess about which was meant.
+
+**Selection reuses the editor's own manual-selection mode.** `KeyboardManager` already extends the
+selection on an arrow whenever `activeState.isManualSelectionMode` is set — so turning that on makes
+every arrow the pad sends select instead of move, with no special cases and identical behaviour to
+holding shift.
+
+**Both exits clear it.** Closing the pad and opening any new field both unset the flag. Left set, the
+next arrow from any key would extend a selection long after the pad was gone, with nothing on screen
+to explain it.

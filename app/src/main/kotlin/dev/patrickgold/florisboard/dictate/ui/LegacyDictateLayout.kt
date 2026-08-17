@@ -395,7 +395,16 @@ fun LegacyDictateLayout(
         // It must be drawn wherever it can be opened. A long press that raises a pad the screen
         // never renders is the trap of build 150 again, in a place with even fewer ways out.
         if (MaCursorPad.active) {
-            MaCursorPad.Overlay { code ->
+            MaCursorPad.Overlay(
+                // Selection is the editor's own manual-selection mode, not a second mechanism.
+                // KeyboardManager already extends the selection on an arrow whenever that flag is
+                // set, so turning it on here makes every arrow the pad sends select instead of
+                // move — with no special cases, and with the same behaviour as holding shift.
+                onSelectToggle = {
+                    MaCursorPad.toggleSelecting()
+                    keyboardManager.activeState.isManualSelectionMode = MaCursorPad.selecting
+                },
+            ) { code ->
                 keyboardManager.inputEventDispatcher.sendDownUp(TextKeyData(code = code))
             }
         }

@@ -11,6 +11,8 @@
 package dev.patrickgold.florisboard.ime.text.keyboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -19,8 +21,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Backspace
+import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -30,7 +36,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,12 +79,27 @@ object MaCursorPad {
     var active by mutableStateOf(false)
         private set
 
+    /**
+     * Whether a drag extends a selection instead of moving the caret.
+     *
+     * Cleared whenever the pad opens: selection is a thing he turns on for a job and it should not
+     * be waiting, armed, the next time he holds the spacebar for an unrelated reason.
+     */
+    var selecting by mutableStateOf(false)
+        private set
+
     fun open() {
+        selecting = false
         active = true
     }
 
     fun close() {
+        selecting = false
         active = false
+    }
+
+    fun toggleSelecting() {
+        selecting = !selecting
     }
 
     /**
@@ -94,6 +117,7 @@ object MaCursorPad {
     @Composable
     fun Overlay(
         modifier: Modifier = Modifier,
+        onSelectToggle: () -> Unit,
         onKey: (Int) -> Unit,
     ) {
         // Carried across pointer events rather than recomputed, so a slow drag accumulates instead
@@ -104,24 +128,17 @@ object MaCursorPad {
             modifier = modifier
                 .fillMaxSize()
                 .background(Color(0xF20E0E10))
-                // A tap closes it. This is the way out, and it was missing.
+                // The pad STAYS OPEN until the corner key closes it.
                 //
-                // The first version closed only on the END of a DRAG, so a finger that pressed and
-                // lifted without moving did nothing at all and the pad stayed up over the keyboard
-                // with no exit — the app unusable until it was force stopped. A mode with one way
-                // in must have a way out that works when the first thing tried is doing nothing.
+                // It used to close whenever the finger lifted, which meant one journey per hold: to
+                // move, then select, then delete, he had to raise it three times. A trackpad that
+                // shuts every time the hand leaves it is not a trackpad, it is a long gesture.
                 //
-                // Declared before the drag handler so it is the outer of the two: a tap is the
-                // absence of a drag, and it must be heard even when the drag detector sees nothing
-                // worth reporting.
+                // That is safe now in a way it was not in build 150, because there is a visible way
+                // out: the keyboard key in the corner. The trap was never that it stayed open, it
+                // was that nothing on screen said how to leave.
                 .pointerInput(Unit) {
-                    detectTapGestures { close() }
-                }
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragEnd = { close() },
-                        onDragCancel = { close() },
-                    ) { change, drag ->
+                    detectDragGestures { change, drag ->
                         change.consume()
                         accX += drag.x
                         accY += drag.y
@@ -153,11 +170,82 @@ object MaCursorPad {
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    text = "Drag to move cursor  ·  tap to close",
+                    text = if (selecting) "Drag to select" else "Drag to move cursor",
                     color = Color(0xFFECEAE3),
                     fontSize = 19.sp,
                 )
             }
+
+            // Three corners, and the fourth left empty on purpose.
+            //
+            // Top right closes, bottom left selects, bottom right deletes. Top left holds nothing:
+            // it is where a thumb crosses the pad on its way anywhere, and a key there would be
+            // pressed by accident more often than on purpose.
+            //
+            // Keys rather than gestures, because the pad is already one gesture. A second and third
+            // layered on the same finger would make every drag a guess about which was meant.
+            PadCorner(
+                modifier = Modifier.align(Alignment.TopEnd),
+                icon = Icons.Default.Keyboard,
+                description = "Close and go back to the keyboard",
+                lit = false,
+                // Closing clears selection mode as well as the pad. Leaving it set would send the
+                // next arrow from any key extending a selection instead of moving, long after the
+                // pad was gone and with nothing on screen to explain it.
+                onClick = {
+                    if (selecting) onSelectToggle()
+                    close()
+                },
+            )
+            PadCorner(
+                modifier = Modifier.align(Alignment.BottomStart),
+                icon = Icons.Default.KeyboardCapslock,
+                description = if (selecting) "Stop selecting" else "Select while dragging",
+                // Lit while it holds: it changes what the next drag does, and nothing else on
+                // screen would say so.
+                lit = selecting,
+                onClick = { onSelectToggle() },
+            )
+            PadCorner(
+                modifier = Modifier.align(Alignment.BottomEnd),
+                icon = Icons.AutoMirrored.Filled.Backspace,
+                description = "Delete",
+                lit = false,
+                onClick = { onKey(KeyCode.DELETE) },
+            )
+        }
+    }
+
+    /**
+     * One corner key: a large, plain target with no chrome.
+     *
+     * Sized well past a fingertip because it is pressed without looking — the eye is on the text
+     * while the caret moves, not on the pad. A small key here would mean glancing down, which is
+     * the cost this whole feature exists to remove.
+     */
+    @Composable
+    private fun PadCorner(
+        modifier: Modifier,
+        icon: ImageVector,
+        description: String,
+        lit: Boolean,
+        onClick: () -> Unit,
+    ) {
+        Box(
+            modifier = modifier
+                .padding(10.dp)
+                .size(74.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(if (lit) Color(0x33E8B15C) else Color(0x1FFFFFFF))
+                .clickable { onClick() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = description,
+                tint = if (lit) Color(0xFFE8B15C) else Color(0xFFECEAE3),
+                modifier = Modifier.size(30.dp),
+            )
         }
     }
 }
