@@ -137,6 +137,19 @@ object MaCursorPad {
                 // That is safe now in a way it was not in build 150, because there is a visible way
                 // out: the keyboard key in the corner. The trap was never that it stayed open, it
                 // was that nothing on screen said how to leave.
+                // Swallow every tap that is not on a corner key.
+                //
+                // Without this a tap on the middle of the pad reaches whatever is beneath it. The
+                // drag handler alone does not do it: a press with no movement is not a drag, so it
+                // was passed straight down to the keys, which is how he ended up typing through a
+                // window he could not see the letters of.
+                //
+                // No action on purpose. The middle of the pad is for dragging; a tap there should do
+                // nothing at all rather than close it, since the corner key is the way out and a pad
+                // that vanished on a stray tap would be the old problem inverted.
+                .pointerInput(Unit) {
+                    detectTapGestures { /* absorbed */ }
+                }
                 .pointerInput(Unit) {
                     detectDragGestures { change, drag ->
                         change.consume()

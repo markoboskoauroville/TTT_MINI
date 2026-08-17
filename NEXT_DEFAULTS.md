@@ -2262,3 +2262,29 @@ holding shift.
 **Both exits clear it.** Closing the pad and opening any new field both unset the flag. Left set, the
 next arrow from any key would extend a selection long after the pad was gone, with nothing on screen
 to explain it.
+
+---
+
+# 66. The pad was drawn on top but did not receive touches
+
+He pressed the close key and nothing happened, while his presses landed on the **keys hidden
+underneath** — typing blind through a window he could not shut.
+
+**Cause: `pointerInteropFilter` on the parent.** `TextKeyboardLayout` puts that filter on the
+`BoxWithConstraints` that contains both the keys and the pad. It forwarded every touch to the key
+controller and returned `true`, consuming it. A parent interop filter runs **before** its children,
+so the pad's corner buttons never saw a click at all.
+
+**Being drawn last is not the same as receiving touches.** Build 153 assumed z-order was enough. It
+governs painting; the interop filter governs delivery, and they are decided in opposite directions.
+
+Two changes:
+
+- The filter **returns false while `MaCursorPad.active`**, handing events to the children instead.
+- The pad **absorbs stray taps** with a `detectTapGestures` that does nothing. A press without
+  movement is not a drag, so without this it fell through to the keys. Deliberately no action: the
+  middle of the pad is for dragging, and a pad that vanished on a stray tap would be build 150's
+  problem inverted.
+
+`LegacyDictateLayout` has no parent interop filter — its gestures are per-key modifiers — so the pad
+already worked there.

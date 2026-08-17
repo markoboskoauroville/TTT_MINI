@@ -178,6 +178,20 @@ fun TextKeyboardLayout(
                 controller.size = coords.size.toSize()
             }
             .pointerInteropFilter { event ->
+                // While the pad is up, the keys get nothing.
+                //
+                // This filter sits on the parent of every key AND of the pad, and it forwarded
+                // every touch straight to the key controller and returned true. So the pad's corner
+                // buttons never received a click — the close key did nothing — while presses landed
+                // on the keys hidden underneath it. He was typing blind through a window he could
+                // not shut.
+                //
+                // Returning false here hands the event to the children instead, which is where the
+                // pad is. It is not enough for the pad to be drawn on top; the touches have to be
+                // let through to it.
+                if (MaCursorPad.active) {
+                    return@pointerInteropFilter false
+                }
                 when (event.actionMasked) {
                     MotionEvent.ACTION_DOWN,
                     MotionEvent.ACTION_POINTER_DOWN,
