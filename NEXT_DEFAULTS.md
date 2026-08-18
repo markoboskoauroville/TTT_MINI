@@ -2527,3 +2527,37 @@ appends the text after a blank line, so nothing has to announce it.
 
 **If a model ever starts treating the trailing sentence as text to rewrite**, the fix is a separator
 in the *path*, not a line added to his prompt.
+
+---
+
+# 75. The number row stands on its own
+
+Key 1 did nothing whenever the main keyboard was folded away. `MaExtraRow` was gated on
+`maZoneKeyboard` **as well as** its own switch, on the reasoning that folding the keys should take
+the number row with them.
+
+**That reasoning treated it as part of the keyboard, and it is not.** It is a row he switches on and
+off with key 1, exactly as key 3 does for the copy row — so tying it to the keys made a switch that
+silently does nothing in the state where it is wanted most. One borrowed condition removed; its own
+switch still decides.
+
+## Tested by the four (§ his Four Tests, 18.8.2026)
+
+**Test 1 — the mechanism alone.** The gating rule as a truth table, six cases: everything on, keys
+folded with the row on (the bug), row off with keys on, both off, and the overflow panel open over
+each. 6/6. **Row and keys resolve differently in 2 of the 6**, which is what proves they are now
+independent rather than one condition wearing two names.
+
+**Test the test.** Restored the old rule and re-ran: 1 failure, and the independence count dropped
+from 2 to 1. The test watches the thing it claims to.
+
+**Test 4 — the upgrade.** `dictate__ma_extra_row` keeps its key, its default and its meaning; no
+migration touches it. His stored choice survives. **One visible consequence, stated rather than
+discovered:** anybody upgrading with the row switched ON and the keys folded will now see the number
+row appear where it did not before. That is the fix working, not a regression.
+
+**Tests 2 and 3 were NOT run.** Both need the app on the phone: whether the row lays out correctly
+with no keyboard beneath it, and what the keyboard height becomes when the row is the only thing in
+zone two. Neither can be reached from here. **The height arithmetic is the one to watch** — the note
+in `TextInputLayout` says a previous attempt at row-by-row hiding left a band of nothing where the
+keys used to be.

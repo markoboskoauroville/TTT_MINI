@@ -127,13 +127,18 @@ fun TextInputLayout(
                 LegacyEditRow(keyboardManager = keyboardManager)
             }
         }
-        // The extra row sits directly above the keys, where a number row belongs, and renders
-        // nothing at all when switched off.
-        // Zone two, part one: the number row. Gated on the zone as well as on its own switch, so
-        // folding the keyboard away takes the number row with it without erasing the decision about
-        // whether it should be there when the keyboard comes back.
+        // The number row stands on its own, like the feature rows do.
+        //
+        // It used to be gated on `maZoneKeyboard` as well as its own switch, on the reasoning that
+        // folding the keys away should take the number row with them. That reasoning treated it as
+        // part of the keyboard, and it is not: it is a row he switches on and off with key 1,
+        // exactly as key 3 does for the copy row. Tying it to the keys meant key 1 did nothing at
+        // all whenever the keys were folded — a switch that silently does nothing in the state
+        // where it is most wanted.
+        //
+        // Its own switch still decides whether it is there. Only the borrowed condition is gone.
         val maZoneKeyboard by prefs.dictate.maZoneKeyboard.collectAsState()
-        if (!state.isActionsOverflowVisible && maZoneKeyboard) {
+        if (!state.isActionsOverflowVisible) {
             MaExtraRow()
         }
         if (state.isActionsOverflowVisible) {
