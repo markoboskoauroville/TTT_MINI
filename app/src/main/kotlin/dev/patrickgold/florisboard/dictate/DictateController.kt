@@ -1313,10 +1313,22 @@ object DictateController {
         // modern Android it does not freeze at all, it throws NetworkOnMainThreadException. The
         // wait is deliberate — the answer is needed before the request below is built — and it is
         // bounded by the probe's own 12 second timeout.
-        if (MaLanguage.mode() == MaLanguage.MODE_AUTO) {
+        // AUTO never runs on a replay.
+        //
+        // This is what froze his history. Re-transcribing an old recording goes through this same
+        // function, so the probe ran again and overwrote the language he had just chosen with the
+        // badge — every time. The switch looked broken because the app was arguing with him: he
+        // picked English, the probe said Croatian, and Croatian won.
+        //
+        // Re-transcribing exists BECAUSE the language was wrong. It is the one moment when his
+        // choice is better information than any detector, so on a replay the detector stays out of
+        // it entirely.
+        if (!isReplay && MaLanguage.mode() == MaLanguage.MODE_AUTO) {
             val detected = runBlocking(Dispatchers.IO) { probeLanguage(audioFile) }
             if (detected != null) {
-                MaLanguage.set(appContext, detected)
+                // Written synchronously. The async set lands after this function has already built
+                // and sent the request, which is how a correct detection produced a wrong language.
+                MaLanguage.setNow(detected)
                 MaLog.add("lang", "auto detected $detected")
             } else {
                 MaLog.add("lang", "auto probe gave nothing, keeping ${MaLanguage.active()}")

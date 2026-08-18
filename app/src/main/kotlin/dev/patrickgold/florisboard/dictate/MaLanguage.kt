@@ -23,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 /**
  * The language of this app, in one place.
@@ -104,6 +105,24 @@ object MaLanguage {
      * The keyboard's own language keeps its own two routes, which are the ones every Android
      * keyboard has: hold the spacebar, or change it in settings. Neither of them touches this.
      */
+    /**
+     * Sets the language and **does not return until it has been written**.
+     *
+     * This exists because [set] launches its write on the Main dispatcher, and the transcription
+     * path also runs on Main — so a `set` immediately followed by a read of [active] returned the
+     * OLD value, every time. The detector was working perfectly and its answer was being thrown
+     * away one line later: he spoke English, the probe said English, and the request went out in
+     * Croatian.
+     *
+     * Anything that decides a language and then acts on it in the same breath must use this.
+     */
+    fun setNow(code: String): String {
+        val target = if (code.substringBefore('-').lowercase() == EN) EN else HR
+        val prefs by FlorisPreferenceStore
+        runBlocking { prefs.dictate.activeInputLanguage.set(target) }
+        return target
+    }
+
     fun set(context: Context, code: String) {
         val target = if (code.substringBefore('-').lowercase() == EN) EN else HR
         val prefs by FlorisPreferenceStore
@@ -173,7 +192,12 @@ object MaLanguage {
             MODE_HR -> MODE_AUTO
             else -> MODE_EN
         }
-        scope.launch {
+        // Written synchronously, for the same reason the probe is.
+        //
+        // A tap on the badge that is followed immediately by a send — which is exactly how he uses
+        // it, switch then talk — must have landed before the send reads it. Launched on Main from
+        // Main, it would not have.
+        runBlocking {
             prefs.dictate.maLanguageMode.set(next)
             if (next != MODE_AUTO) prefs.dictate.activeInputLanguage.set(next)
         }

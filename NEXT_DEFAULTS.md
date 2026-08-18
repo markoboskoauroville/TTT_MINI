@@ -2848,3 +2848,49 @@ a recording resent from the list behaves identically and writes its result back 
 - **Offline retry with a manual resend in the status line** — the recording path gives up silently
   today; he wants a button when it does.
 - **English base dictionary**, the counterpart of §33's Croatian one.
+
+---
+
+# 80. Two bugs in AUTO, both mine, both about WHEN not WHAT
+
+He spoke English and got a Croatian transcription, and the language switch in history was frozen.
+**The detector was never the problem.**
+
+## The detection was right and was thrown away
+
+`MaLanguage.set` launches its write on the **Main** dispatcher, and `transcribe` also runs on Main —
+so `set` followed by a read of `active()` in the same function returned the **old** value, every
+time. The probe said English, the write was queued, the request was built from the stale value, and
+Croatian went out.
+
+`setNow` writes with `runBlocking` and returns only when it has landed. **Anything that decides a
+language and acts on it in the same breath must use it.** `cycleMode` writes the same way now, for
+the same reason: he taps the badge and speaks immediately, so the tap must land before the send
+reads it.
+
+## The frozen switch
+
+Re-transcribing goes through the same `transcribe`, so **the probe ran again and overwrote the
+language he had just chosen** — every attempt. The switch was not broken; the app was arguing with
+him and winning.
+
+`if (!isReplay && ...)`. **Re-transcribing exists BECAUSE the language was wrong**, which makes it
+the one moment when his choice is better information than any detector.
+
+## Tested by the four
+
+**Test 1 — 10 cases, 0 failures.** Both his reported cases, both replay directions, probe failure,
+and manual modes ignoring the probe.
+
+**Test the test — restoring the async write turns exactly 2 cases red**, and they are precisely the
+two he reported. The test watches the real fault rather than agreeing with the code.
+
+**Test 3 — 5 ugly cases, 0 failures:** empty probe answer, unknown language, junk stored language,
+junk mode, junk mode on replay. Everything lands on a usable language.
+
+**Test 4** — `dictate__ma_language_mode` defaults to `hr`, so an upgrade never switches AUTO on by
+itself, and no stored value changes meaning.
+
+**Not tested: the phone.** Whether `runBlocking` on Main is fast enough not to be felt on a
+preference write — it is a local datastore write, but it is a block on the UI thread and worth
+watching.
