@@ -2561,3 +2561,60 @@ with no keyboard beneath it, and what the keyboard height becomes when the row i
 zone two. Neither can be reached from here. **The height arithmetic is the one to watch** — the note
 in `TextInputLayout` says a previous attempt at row-by-row hiding left a band of nothing where the
 keys used to be.
+
+---
+
+# 76. Spoken formatting commands
+
+Say **"the word parenthesis"** and get "the (word)". **"hello dot"** gives "hello." Also
+`question mark`, `exclamation mark`, `uppercase`, and Croatian `zagrada`, `točka`, `upitnik`,
+`uskličnik`, `velika slova`.
+
+**Only as the last word, and it is removed** — the same rule as §26's voice commands, for the same
+reason: a rule that fired anywhere would eat the word "dot" out of a sentence about a dot, and
+dictated words that get eaten cannot be undone back to.
+
+**Stacking falls out of the rule**: "hello world uppercase dot" applies the stop, then uppercase,
+because after removing one the next is now last.
+
+`uppercase` takes the whole **preceding sentence**, not the last word — he said "everything, what I
+just said", which is more than one word. **Say if that is wrong**; the other reading is one line.
+
+Both languages recognised at once, since he switches mid-thought.
+
+## Tested by the four
+
+**Test 1 — 19 cases, 0 failures.** The cases it is for, the cases it must **refuse** ("the dot on the
+map", "put it in parenthesis for me", "uppercase letters are useful" — all untouched), both
+boundaries (empty, one word, command alone), transcriber punctuation, and the two-word commands.
+
+**It caught a real bug.** "hello world uppercase dot" lost its full stop: the stop was added, then
+consumed with the word it had attached to. Fixed by a rule rather than a patch — **transforming
+commands preserve trailing punctuation, ending commands define it** — because re-appending in both
+cases would give "Hello world..".
+
+**Test 3 — every ugly case survives.** Empty, whitespace only, one word, commands only, 5000 words
+(1.65 ms), malformed "....!!!", hostile "(((( parenthesis", stacking past the bound, mixed language,
+Croatian diacritics. Nothing throws. **Idempotent**: applying twice equals applying once, on all four
+sampled forms.
+
+**Known defect, found by test 3 and NOT fixed: newlines are flattened.** "first line\nsecond line
+uppercase" returns one line. It only bites when a command is used on multi-line text, and the fix is
+to operate on the last line rather than the whole string. Written here rather than rushed in.
+
+**Tests 2 and 4 not run.** Test 2 needs the phone. Test 4 has nothing to check: no stored data, no
+preference, no format — a fresh install and an upgrade behave identically.
+
+## Still queued from the same request, NOT built
+
+**The CC settings screen** — keys visible and testable, prompt groups for Ctrl+P and Ctrl+F, several
+named prompts each with a radio button, `new` to add one, **each shown as ONE collapsed line** that
+opens a full editor. His words: it must read like meditation, one line, no scrolling.
+
+**Better Ctrl+P and Ctrl+F prompts** — "professional proofreader", and reflow that does **not change
+meaning**, which is his repeated complaint.
+
+**Offline resilience** — retry, then a **resend** button in the status line when it gives up.
+
+**History resend and status** — every recording marked transcribed or not, colour coded (his
+suggestion: yellow done, blue not), with resend, so no dictation is ever lost.

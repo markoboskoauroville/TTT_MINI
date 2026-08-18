@@ -2325,9 +2325,14 @@ object DictateController {
         // as they would have been. So a misheard command costs nothing, which is the whole reason
         // the rule can be allowed to fire without asking first.
         var pendingPress: List<String>? = null
-        var body = text
+        // Spoken formatting first: "the word parenthesis" becomes "the (word)".
+        //
+        // Before the press-send check, because a command word is removed here and the check reads
+        // the last two words. Doing it the other way round would leave "dot" sitting between his
+        // sentence and the word "press", and neither rule would see what it was looking for.
+        var body = MaSpokenFormat.apply(text)
         if (prefs.dictate.maVoiceCommands.get() && DictateAccessibilityService.isRunning) {
-            val split = MaVoiceCommand.splitTrailing(text)
+            val split = MaVoiceCommand.splitTrailing(body)
             if (split != null) {
                 val targets = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
                     .ifEmpty { MaMagicTargets.defaults() }
