@@ -2815,3 +2815,36 @@ tee on the encoder, a cap that closes one file cleanly while the other keeps wri
 tidied on cancel, failure and process death. **It deserves its own build with the four tests, not the
 end of this one.** Today the probe sends the whole file, which is correct but slower on a long
 dictation.
+
+---
+
+# 79. History says what is finished, and can send again
+
+**A stripe down the left of every row.** Sand for transcribed, blue for not sent yet. The question he
+asks while scrolling is "is anything here unfinished", and a colour answers that without being read.
+
+**Deliberately not red.** A recording that has not been sent is **work outstanding, not a fault** —
+the same reasoning that took red off the buckets (§44). Red on a list he opens to find something
+makes every visit feel like an incident. The red text on failed rows is gone with it; the stripe
+carries the state now.
+
+**Resend, on the rows that need it.** A dictation that never transcribed is the one loss in this app
+that trying again later cannot undo: the words were spoken once. The audio is kept for exactly this,
+and until now the only way back to it was the keyboard's own history panel — which meant finding it
+with the keyboard up, rather than while reading the list.
+
+**Shown only on a failed entry.** On a successful one it would redo work already done and overwrite
+text he may have edited since.
+
+It calls `DictateController.retranscribeHistoryEntry`, the same function the keyboard panel uses, so
+a recording resent from the list behaves identically and writes its result back into the same row.
+
+## Still queued
+
+- **Bucket copy by occurrence** — `copy 1`, `copy 2` counted from the bottom, and a finger that
+  scrolls and re-searches when a target is not found (§37, §59).
+- **The CC settings screen** — key list, prompt groups per shortcut, several named prompts with radio
+  buttons, each one collapsed to a single line that opens an editor (§ his request, 18.8).
+- **Offline retry with a manual resend in the status line** — the recording path gives up silently
+  today; he wants a button when it does.
+- **English base dictionary**, the counterpart of §33's Croatian one.

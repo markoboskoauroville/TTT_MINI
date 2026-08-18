@@ -29,7 +29,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -245,6 +248,13 @@ fun DictateHistoryScreen() = FlorisScreen {
                                     Toast.makeText(context, R.string.dictate__history_copied, Toast.LENGTH_SHORT).show()
                                 },
                                 onDelete = { scope.launch { DictateHistoryStore.delete(context, entry) } },
+                                // The same call the keyboard's history panel makes, so a recording
+                                // resent from here behaves identically to one resent from there,
+                                // including writing the result back into this same row.
+                                onResend = {
+                                    DictateController.retranscribeHistoryEntry(context, entry)
+                                    Toast.makeText(context, "Sending again\u2026", Toast.LENGTH_SHORT).show()
+                                },
                             )
                             HorizontalDivider()
                         }
@@ -363,6 +373,17 @@ private fun OptionRow(
     }
 }
 
+/** Transcribed: the app's sand. Nothing is wrong with a finished dictation. */
+private val MaHistoryDone = Color(0xFFE8B15C)
+
+/**
+ * Not transcribed yet: blue.
+ *
+ * His choice, and the right one. A recording that has not been sent is work outstanding, not a
+ * fault, and red would make a list he opens to find something feel like an incident every time.
+ */
+private val MaHistoryPending = Color(0xFF5B8DEF)
+
 @Composable
 private fun HistoryRow(
     entry: DictateHistoryEntry,
@@ -370,20 +391,40 @@ private fun HistoryRow(
     onShare: () -> Unit,
     onCopy: () -> Unit,
     onDelete: () -> Unit,
+    onResend: () -> Unit,
 ) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onOpen() }
-            .padding(start = 16.dp, top = 10.dp, bottom = 10.dp),
+            .padding(start = 8.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // A colour stripe down the left edge, so the state of the whole list is one glance.
+        //
+        // Sand for transcribed, blue for still waiting. Deliberately NOT red: a recording that has
+        // not been sent yet is not a fault, it is work outstanding — the same reasoning that took
+        // the red off the buckets. Red on a list he opens to find something makes every visit feel
+        // like an incident.
+        //
+        // A stripe rather than a word, because the question he is asking while scrolling is "is
+        // anything here unfinished", and a colour answers that without being read.
+        Box(
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .width(4.dp)
+                .height(36.dp)
+                .background(
+                    if (entry.failed) MaHistoryPending else MaHistoryDone,
+                    RoundedCornerShape(2.dp),
+                ),
+        )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = entry.text,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (entry.failed) MaterialTheme.colorScheme.error else Color.Unspecified,
+                color = Color.Unspecified,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -410,6 +451,25 @@ private fun HistoryRow(
                     text = meta,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        // Resend, and only where there is something to resend.
+        //
+        // A dictation that never transcribed is the one kind of loss in this app that cannot be
+        // undone by trying again later — the words were spoken once. The audio is kept for exactly
+        // this, and until now the only way back to it was the keyboard's own history panel, which
+        // means finding it while the keyboard is up rather than while reading the list.
+        //
+        // Shown only for a failed entry. On a successful one it would be a button that redoes work
+        // already done and overwrites text he may have edited since.
+        if (entry.failed) {
+            IconButton(onClick = onResend, modifier = Modifier.size(44.dp)) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Send this recording again",
+                    modifier = Modifier.size(24.dp),
+                    tint = MaHistoryPending,
                 )
             }
         }
