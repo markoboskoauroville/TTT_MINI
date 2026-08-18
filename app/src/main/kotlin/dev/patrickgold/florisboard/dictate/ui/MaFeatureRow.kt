@@ -231,6 +231,7 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val magicRaw by prefs.dictate.maMagicTargets.collectAsState()
     // What the last scan found, held only while the picker is open.
     val activeLangCode by prefs.dictate.activeInputLanguage.collectAsState()
+    val langMode by prefs.dictate.maLanguageMode.collectAsState()
     val scrollPages by prefs.dictate.maScrollPages.collectAsState()
     var scrollMenu by remember { mutableStateOf(false) }
 
@@ -774,11 +775,11 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                     // from it would keep its old face after a tap until something else redrew the
                     // row — a toggle that appears not to have worked.
                     ThemedTextKey(
-                        label = if (activeLangCode == MaLanguage.EN) "ENG" else "HR",
+                        label = remember(activeLangCode, langMode) { MaLanguage.badge() },
                         modifier = keyMod,
                         tint = null,
                     ) {
-                        MaLanguage.toggle(context)
+                        MaLanguage.cycleMode(context)
                     }
                 }
 

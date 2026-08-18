@@ -812,11 +812,13 @@ private fun LegacyLanguageKey(modifier: Modifier) {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
     val activeCode by prefs.dictate.activeInputLanguage.collectAsState()
-    val badge = remember(activeCode) { MaLanguage.badge() }
+    // Keyed on the mode too, or the badge would keep saying HR after a tap moved it to AUTO.
+    val langMode by prefs.dictate.maLanguageMode.collectAsState()
+    val badge = remember(activeCode, langMode) { MaLanguage.badge() }
     ThemedKey(
         code = KeyCode.NOOP,
         modifier = modifier,
-        onClick = { MaLanguage.toggle(context) },
+        onClick = { MaLanguage.cycleMode(context) },
     ) { fg ->
         Text(badge, color = fg, fontWeight = FontWeight.SemiBold)
     }

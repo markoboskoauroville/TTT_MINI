@@ -75,6 +75,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -85,6 +86,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import dev.patrickgold.florisboard.dictate.provider.MaKeys
+import org.json.JSONObject
 import java.io.File
 import java.text.NumberFormat
 import java.util.concurrent.TimeUnit
@@ -113,6 +116,20 @@ import dev.patrickgold.florisboard.dictate.provider.MaKeys
  * Not yet ported from the legacy service (later refinement): usage tracking.
  */
 object DictateController {
+
+    /** Long enough for a slow network, short enough that a dead probe never delays a send. */
+    private const val PROBE_TIMEOUT_MS = 12_000
+
+    /**
+     * api.groq.com sits behind Cloudflare, which refuses a request with no browser-like User-Agent
+     * with 403 and an HTML body — indistinguishable from every key being dead. Do not remove.
+     */
+    private const val PROBE_USER_AGENT =
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
+            "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+
+    /** The fast Whisper. The probe wants an answer in a second, not the best transcription. */
+    private const val PROBE_MODEL = "whisper-large-v3-turbo"
 
     private const val LATENCY_LOG_TAG = "DictateLatency"
     private val latencyFlowIds = AtomicLong()
@@ -1280,6 +1297,32 @@ object DictateController {
         // History metadata (issue #140), resolved once so the success (capture) and EVERY failure path —
         // including the early returns below (no key / model not downloaded) — log the same info.
         val historyProviderName = account.displayName.ifBlank { preset.displayName }
+        // The language, settled here and once, before anything is sent.
+        //
+        // On AUTO the first 30 seconds go to Groq's Whisper, which answers in about a second and
+        // reports what it heard. That answer is clamped to his two languages by the only question
+        // worth asking — is this English — because Croatian is routinely heard as Slovenian,
+        // Serbian, Czech or Polish while English is almost never mistaken for anything.
+        //
+        // Everything downstream reads this one value: the request's language hint, the sync-or-async
+        // decision, and the history row. A probe that failed, timed out, or found no Groq key leaves
+        // the language exactly as it was set by hand, so AUTO can only ever improve on the manual
+        // setting and never break it.
+        //
+        // `transcribe` runs on the Main dispatcher, so the probe is pushed to IO and waited for:
+        // a network call left on Main would freeze the keyboard for its whole duration, and on a
+        // modern Android it does not freeze at all, it throws NetworkOnMainThreadException. The
+        // wait is deliberate — the answer is needed before the request below is built — and it is
+        // bounded by the probe's own 12 second timeout.
+        if (MaLanguage.mode() == MaLanguage.MODE_AUTO) {
+            val detected = runBlocking(Dispatchers.IO) { probeLanguage(audioFile) }
+            if (detected != null) {
+                MaLanguage.set(appContext, detected)
+                MaLog.add("lang", "auto detected $detected")
+            } else {
+                MaLog.add("lang", "auto probe gave nothing, keeping ${MaLanguage.active()}")
+            }
+        }
         // Always a real code: there is no detect case left, so history never records a blank language.
         val historyLanguage = MaLanguage.active()
         val historySource = if (outputTarget == OutputTarget.OVERLAY) DictateHistorySource.OVERLAY else source
@@ -3516,6 +3559,74 @@ object DictateController {
     }
 
     /** The active transcription provider's stored credentials (keyring). */
+    /**
+     * Asks Groq what language a recording is in. Null when it cannot say.
+     *
+     * ### Null is a real answer and the common failure
+     *
+     * No Groq key, no network, a timeout, a refused key, anything unexpected: all return null, and
+     * the caller keeps the language that was already set. **AUTO can therefore only improve on the
+     * manual setting, never break it** — which is what makes it safe to leave switched on.
+     *
+     * ### The key ring
+     *
+     * Walks the Groq account's keys in order and stops at the first that answers. A key out of
+     * credit or revoked costs one failed request and the next one is tried, the same way the
+     * transcription ring behaves. It never falls back to another provider: Groq is the only one
+     * fast enough for a probe that has to finish before the real request starts.
+     *
+     * ### The User-Agent is not decoration
+     *
+     * api.groq.com sits behind Cloudflare, which rejects a request with no browser-like User-Agent
+     * with 403 and an HTML body. It looks exactly like every key being dead. Do not remove it.
+     */
+    private fun probeLanguage(audio: File): String? = runCatching {
+        val accounts = prefs.dictate.providerAccounts.get()
+        val groq = accounts.accounts[MaRoles.LANGUAGE] ?: return null
+        val keys = MaKeys.split(groq.apiKey).filter { it.isNotBlank() }
+        if (keys.isEmpty()) return null
+        for (key in keys) {
+            val reported = probeOnce(audio, key) ?: continue
+            return MaLanguageProbe.clampToTwo(reported)
+        }
+        null
+    }.getOrNull()
+
+    /** One request against one key. Null on anything other than a clean answer. */
+    private fun probeOnce(audio: File, key: String): String? = runCatching {
+        val boundary = "----ttt" + System.currentTimeMillis()
+        val url = java.net.URL("https://api.groq.com/openai/v1/audio/transcriptions")
+        val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = PROBE_TIMEOUT_MS
+            readTimeout = PROBE_TIMEOUT_MS
+            setRequestProperty("Authorization", "Bearer $key")
+            setRequestProperty("User-Agent", PROBE_USER_AGENT)
+            setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+        }
+        conn.outputStream.use { out ->
+            fun field(name: String, value: String) {
+                out.write("--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray())
+            }
+            out.write(
+                ("--$boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"a.wav\"\r\n" +
+                    "Content-Type: application/octet-stream\r\n\r\n").toByteArray(),
+            )
+            audio.inputStream().use { it.copyTo(out) }
+            out.write("\r\n".toByteArray())
+            field("model", PROBE_MODEL)
+            field("response_format", "verbose_json")
+            out.write("--$boundary--\r\n".toByteArray())
+        }
+        if (conn.responseCode != 200) {
+            MaLog.add("lang", "probe key rejected, http ${conn.responseCode}")
+            return null
+        }
+        val body = conn.inputStream.bufferedReader().use { it.readText() }
+        JSONObject(body).optString("language").takeIf { it.isNotBlank() }
+    }.getOrNull()
+
     private fun transcriptionAccount(): ProviderAccount {
         val accounts = prefs.dictate.providerAccounts.get()
         // Resolved, not read. The stored id is a fallback for a setup with no AssemblyAI key; it is

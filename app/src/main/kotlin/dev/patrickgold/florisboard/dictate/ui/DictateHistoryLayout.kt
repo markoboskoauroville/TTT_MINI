@@ -148,9 +148,9 @@ fun DictateHistoryLayout(
             SnyggText(
                 elementName = FlorisImeUi.MediaEmojiSubheader.elementName,
                 modifier = Modifier
-                    .clickable { MaLanguage.toggle(context) }
+                    .clickable { MaLanguage.cycleMode(context) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
-                text = if (activeLangCode == MaLanguage.EN) "ENG" else "HR",
+                text = MaLanguage.badge(),
             )
             // Jump straight to the full history management screen in the settings app.
             SnyggIconButton(

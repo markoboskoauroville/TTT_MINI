@@ -221,12 +221,13 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
         // the volume key and the transcribe view's own row.
         val activeSubtype by subtypeManager.activeSubtypeFlow.collectAsState()
         val activeCode by prefs.dictate.activeInputLanguage.collectAsState()
-        val badge = remember(activeSubtype, activeCode) { MaLanguage.badge() }
+        val langMode by prefs.dictate.maLanguageMode.collectAsState()
+        val badge = remember(activeSubtype, activeCode, langMode) { MaLanguage.badge() }
         SnyggBox(
             elementName = FlorisImeUi.SmartbarCandidateWord.elementName,
             modifier = Modifier
                 .fillMaxHeight()
-                .clickable { MaLanguage.toggle(context) }
+                .clickable { MaLanguage.cycleMode(context) }
                 .padding(horizontal = 10.dp),
             contentAlignment = Alignment.Center,
         ) {

@@ -76,7 +76,20 @@ object MaLanguage {
      *
      * Display only. The stored codes stay `en` and `hr`, and nothing branches on this string.
      */
-    fun badge(): String = if (active() == EN) "ENG" else "HR"
+    /**
+     * What every badge in the app says: ENG, HR, or AUTO with the language it settled on.
+     *
+     * AUTO shows the resolved language beside it — "A·HR" — because a badge reading only AUTO would
+     * leave him unable to see what the next dictation is about to use, which is the one thing a
+     * badge exists to tell him. It also makes a wrong detection visible at a glance rather than
+     * arriving later as a bad transcription.
+     *
+     * No arguments, so the four places that draw a badge cannot end up saying different things.
+     */
+    fun badge(): String {
+        val lang = if (active() == EN) "ENG" else "HR"
+        return if (mode() == MODE_AUTO) "A\u00B7$lang" else lang
+    }
 
     /**
      * Sets the language **the microphone is told to expect**, and nothing else.
@@ -98,6 +111,43 @@ object MaLanguage {
     }
 
     /** Moves to the other one. */
+    const val MODE_EN = "en"
+    const val MODE_HR = "hr"
+    const val MODE_AUTO = "auto"
+
+    /**
+     * Which of the three the badge is set to: English, Croatian, or work it out.
+     *
+     * Separate from [active] on purpose. AUTO still has to resolve to a real language before a
+     * request is built, so [active] keeps meaning "the language being used right now" and this
+     * answers "how was that decided". Kept apart, a probe that fails leaves a usable language
+     * behind; merged, there would be a third value everything downstream had to know about.
+     */
+    fun mode(): String {
+        val prefs by FlorisPreferenceStore
+        return prefs.dictate.maLanguageMode.get()
+    }
+
+    /**
+     * Steps the badge: English, Croatian, Auto, and round.
+     *
+     * Auto comes last so the two he picks deliberately are one tap apart. Leaving Auto sets the
+     * language to whatever Auto last resolved, so the badge never lies about what the next dictation
+     * will use.
+     */
+    fun cycleMode(context: Context) {
+        val prefs by FlorisPreferenceStore
+        val next = when (mode()) {
+            MODE_EN -> MODE_HR
+            MODE_HR -> MODE_AUTO
+            else -> MODE_EN
+        }
+        scope.launch {
+            prefs.dictate.maLanguageMode.set(next)
+            if (next != MODE_AUTO) prefs.dictate.activeInputLanguage.set(next)
+        }
+    }
+
     fun toggle(context: Context) {
         set(context, if (active() == HR) EN else HR)
     }

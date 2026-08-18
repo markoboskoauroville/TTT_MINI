@@ -1117,6 +1117,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * default instead of invisible to anybody whose saved list predates it. Empty means all of
          * them work, which is also the right behaviour on a first run.
          */
+        /**
+         * Which language the badge is set to: "en", "hr", or "auto".
+         *
+         * Defaults to "hr" rather than "auto" so nothing changes for anybody upgrading: auto is a
+         * thing he turns on, and a probe that started running unasked would spend a key he may not
+         * have configured.
+         */
+        val maLanguageMode = string(
+            key = "dictate__ma_language_mode",
+            default = "hr",
+        )
+
         val maVoiceFormatOff = string(
             key = "dictate__ma_voice_format_off",
             default = "",

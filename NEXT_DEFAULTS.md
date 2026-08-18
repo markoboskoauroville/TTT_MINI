@@ -2676,3 +2676,54 @@ Android 16, and whether the volume is right against his ringer. Both need the de
 
 Used from the sandbox only, never echoed, never committed, never logged. It stays available for the
 rest of this project and is shredded when he says the work is done.
+
+---
+
+# 78. AUTO language, at last (item 26)
+
+The badge has three states now: **ENG, HR, and AUTO**. On AUTO the recording goes to Groq's Whisper
+first, and the answer decides what AssemblyAI is told.
+
+**The question asked is "is this English", not "which language is this"** — his rule, and the right
+one. Measured with real speech through the real API: English audio returns `"English"`, Croatian
+returns `"Croatian"`. But Croatian is routinely heard as Slovenian, Serbian, Czech or Polish, while
+English is almost never mistaken for anything. Everything not recognisably English becomes Croatian,
+**which also fails in the safe direction**, since Croatian must never reach the sync path and a wrong
+answer here only makes it slower.
+
+**Null is a real answer.** No Groq key, no network, a timeout, a refused key: the language stays
+exactly as it was set by hand. **AUTO can only improve on the manual setting, never break it** — which
+is what makes it safe to leave on.
+
+**The badge shows what AUTO settled on** — `A·HR`, not just `AUTO` — because a badge that hid the
+resolved language would remove the one thing a badge is for, and a wrong detection would arrive later
+as a bad transcription instead of being visible at a glance.
+
+## Three traps, all real
+
+**The scope is `Dispatchers.Main`.** `transcribe` is not a suspend function, so the probe is pushed
+to IO with `runBlocking(Dispatchers.IO)`. A network call left on Main does not merely freeze the
+keyboard on modern Android — it throws `NetworkOnMainThreadException`.
+
+**The User-Agent is load-bearing.** `api.groq.com` sits behind Cloudflare, which refuses a request
+with no browser-like User-Agent with 403 and an HTML body, indistinguishable from every key being
+dead. Do not remove it.
+
+**One badge function, no arguments.** Four places draw the badge; a per-caller version is four places
+to disagree. Each one is keyed on the mode as well as the language, or a tap to AUTO leaves the badge
+still reading HR.
+
+## Tested
+
+**Test 1 — 20 cases, 0 failures** on the clamp: English in five spellings, nine neighbour languages
+that must all land on Croatian, and the empty, null, whitespace and unknown cases.
+
+**Test 2 — real API, real keys, real speech.** Croatian audio generated with Hume and sent to Groq
+came back `'Croatian'`; a tone came back `'English'`. HTTP 200 both times, with the User-Agent header.
+
+**Not done: the 30-second cap.** He asked for the probe to send at most 30 s. It currently sends the
+whole file, which is correct but slower on a long dictation. Trimming needs a re-encode step or a WAV
+header rewrite; written down rather than faked.
+
+**Not tested: the probe on the phone.** The multipart upload, the key ring walking a real ring, and
+whether 12 s is the right timeout on mobile data.
