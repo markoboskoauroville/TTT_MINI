@@ -2762,3 +2762,56 @@ by something I do not control.
 `AudioConcat` was already imported and I added it again — the identical mistake that made build 166
 red with `MaKeys`, two builds earlier. **Grep for the import LINE, never for the symbol.** The check
 now runs after every import edit and reports duplicate lines directly.
+
+---
+
+# 79. Croatian text, English suggestions — a chain I built myself
+
+His screenshot: badge on HR, suggestions offering `credits`, `credited`, `creditors`. Two of my own
+changes made it, one build apart.
+
+**Build 111** cut `MaLanguage.set` from the keyboard subtype, at his request: typing and speaking are
+two acts, and a control for the microphone should not relay the keys. **Build 150** then took the
+language picker off the spacebar long press and gave that gesture to the cursor pad.
+
+Suggestions come from the **subtype**. So after 150 there was no route to the suggestion language at
+all — not the badge, not the spacebar, not settings. He typed Croatian and the keyboard answered in
+English, correctly, from the only language it had been left with.
+
+**The subtype follows the badge again.** What 111 was really protecting against was the keys being
+relaid unasked; that is a layout question, and the two subtypes here are qwertz and qwerty, which is
+the layout he wants for that language anyway. **If a control writes a language, it must write the one
+the suggestions read, or the two will drift and only a screenshot will find it.**
+
+## The bold was on the wrong word
+
+It followed `isEligibleForAutoCommit`, a property of the FIRST candidate — so when §68 moved the best
+guess to the centre, the bold stayed left and pointed at the wrong word. Emphasis is now one decision
+made by position, so the large word and the bold word cannot separate again.
+
+## The dizziness
+
+Long-pressing the spacebar clears the candidates, the strip fell back to something shorter or to
+nothing, and the text above jumped down and back. **Hidden now means empty but still there**: the
+strip keeps its height and draws nothing, so nothing above it moves.
+
+## Hiding the row
+
+Long press the language badge. He asked for an X at the end of the row and then talked himself out of
+it — an X costs a slot in a strip that is already narrow and only ever does one thing, while the
+badge is already there and already about that row. Short press still cycles ENG, HR, AUTO.
+
+Its own preference, not the existing suggestion setting: that one governs whether suggestions are
+COMPUTED. This is a curtain, and drawing it should not throw away the word model's work.
+
+## Asked for and NOT built: the split recording
+
+He wants the recorder writing **two files at once** — the first capped at 30 s for the Groq probe,
+the rest continuing in the second — so AUTO gets exactly the audio it needs without waiting for a
+long dictation to finish.
+
+That is the right design and it is a real change to `MaAudioRecorder`: a second `MediaRecorder` or a
+tee on the encoder, a cap that closes one file cleanly while the other keeps writing, and both paths
+tidied on cancel, failure and process death. **It deserves its own build with the four tests, not the
+end of this one.** Today the probe sends the whole file, which is correct but slower on a long
+dictation.

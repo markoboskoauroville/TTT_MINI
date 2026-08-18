@@ -266,7 +266,15 @@ private fun CandidateItem(
                 selector = selector,
                 // Gboard-style: bold the suggestion that will be auto-applied (autocorrect), so it's clear
                 // what will replace the typed word; other suggestions stay normal weight (issue #150).
-                fontWeight = if (autoCommit) FontWeight.Bold else null,
+                // Bold marks the likeliest word, which is the one in the MIDDLE.
+                //
+                // It used to follow isEligibleForAutoCommit, which is a property of the FIRST
+                // candidate — so after §68 moved the best guess to the centre, the bold stayed on
+                // the left and pointed at the wrong word. He spotted it from a screenshot.
+                //
+                // Emphasis is now one decision, made by position, so the large word and the bold
+                // word are the same word and cannot drift apart again.
+                fontWeight = if (emphasised) FontWeight.Bold else null,
                 // The likeliest word, larger than its neighbours.
                 //
                 // A scale rather than a size: it multiplies whatever the theme decided, so a bigger

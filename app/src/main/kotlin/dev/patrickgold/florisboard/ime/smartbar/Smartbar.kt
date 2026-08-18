@@ -22,7 +22,9 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -185,6 +187,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     // Candidates exist only while a word is being typed, which is exactly when they are wanted and
     // exactly when nobody is reading the legend. The moment he stops, the legend returns on its own.
     val maCandidates by nlpManager.activeCandidatesFlow.collectAsState()
+    val maSuggestionsShown by prefs.dictate.maSuggestionsShown.collectAsState()
     val subtypeManager by context.subtypeManager()
     val scope = rememberCoroutineScope()
 
@@ -215,6 +218,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
      * theme's suggestion size, weight and colour. A button here was taller than the strip and its
      * label ran past its own edge.
      */
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun LanguageToggle() {
         // Recomposes with the subtype so the badge follows a switch made anywhere else, including
@@ -227,7 +231,11 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
             elementName = FlorisImeUi.SmartbarCandidateWord.elementName,
             modifier = Modifier
                 .fillMaxHeight()
-                .clickable { MaLanguage.cycleMode(context) }
+                .combinedClickable(
+                    onClick = { MaLanguage.cycleMode(context) },
+                    // Hold to draw the suggestion row away, and hold again to bring it back.
+                    onLongClick = { MaLanguage.toggleSuggestions() },
+                )
                 .padding(horizontal = 10.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -267,7 +275,15 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                     // that legend is the only way to tell which bucket holds which text, and it
                     // steps aside the moment they are all empty. hasContent() asks exactly what the
                     // strip itself asks before drawing, so the two cannot disagree about the slot.
-                    if (maCandidates.isEmpty() && maBucketStripHasContent()) {
+                    // Drawn away, the strip keeps its HEIGHT and shows nothing.
+                    //
+                    // That is the whole point of doing it here rather than by not composing the
+                    // strip. He long-presses the spacebar to move the caret, the candidates clear,
+                    // and if the strip collapsed the text above jumped down and then back — which
+                    // is what made him dizzy. A strip that is empty but still there does not move
+                    // anything.
+                    if (!maSuggestionsShown) Unit
+                    else if (maCandidates.isEmpty() && maBucketStripHasContent()) {
                         MaBucketStrip()
                     } else {
                         CandidatesRow()
@@ -384,7 +400,15 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                     // that legend is the only way to tell which bucket holds which text, and it
                     // steps aside the moment they are all empty. hasContent() asks exactly what the
                     // strip itself asks before drawing, so the two cannot disagree about the slot.
-                    if (maCandidates.isEmpty() && maBucketStripHasContent()) {
+                    // Drawn away, the strip keeps its HEIGHT and shows nothing.
+                    //
+                    // That is the whole point of doing it here rather than by not composing the
+                    // strip. He long-presses the spacebar to move the caret, the candidates clear,
+                    // and if the strip collapsed the text above jumped down and then back — which
+                    // is what made him dizzy. A strip that is empty but still there does not move
+                    // anything.
+                    if (!maSuggestionsShown) Unit
+                    else if (maCandidates.isEmpty() && maBucketStripHasContent()) {
                         MaBucketStrip()
                     } else {
                         CandidatesRow()

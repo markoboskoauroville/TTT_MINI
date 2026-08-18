@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.dictate
 
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.subtypeManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -103,11 +104,26 @@ object MaLanguage {
      * The keyboard's own language keeps its own two routes, which are the ones every Android
      * keyboard has: hold the spacebar, or change it in settings. Neither of them touches this.
      */
-    @Suppress("UNUSED_PARAMETER")
     fun set(context: Context, code: String) {
         val target = if (code.substringBefore('-').lowercase() == EN) EN else HR
         val prefs by FlorisPreferenceStore
         scope.launch { prefs.dictate.activeInputLanguage.set(target) }
+        // The keyboard's own language follows again, and it has to.
+        //
+        // Build 111 cut this link at his request: typing and speaking are two acts, and a control
+        // meant for the microphone should not relay the keys under his thumb. The reasoning held,
+        // but it left the suggestion language with no route at all once build 150 took the language
+        // picker off the spacebar long press — so he typed Croatian and was offered "credits",
+        // "credited", "creditors", with nothing anywhere to change it.
+        //
+        // Suggestions come from the subtype, so the subtype must move with the badge. What build
+        // 111 was really protecting against was the keys being relaid without asking; that is a
+        // layout question, and the two subtypes here are qwertz and qwerty, which is the layout he
+        // wants for that language anyway.
+        val subtypeManager by context.subtypeManager()
+        subtypeManager.subtypes
+            .firstOrNull { it.primaryLocale.language.lowercase() == target }
+            ?.let { subtypeManager.switchToSubtypeById(it.id) }
     }
 
     /** Moves to the other one. */
@@ -135,6 +151,21 @@ object MaLanguage {
      * language to whatever Auto last resolved, so the badge never lies about what the next dictation
      * will use.
      */
+    /**
+     * Long press on the badge: draw the suggestion row away, or bring it back.
+     *
+     * On the badge rather than an X at the end of the row, which is what he asked for first and then
+     * talked himself out of — an X sitting in the row costs a slot of a strip that is already narrow,
+     * and it only ever does one thing. The badge is already there, already about the row, and a hold
+     * is a gesture nobody performs by accident.
+     */
+    fun toggleSuggestions() {
+        val prefs by FlorisPreferenceStore
+        scope.launch {
+            prefs.dictate.maSuggestionsShown.set(!prefs.dictate.maSuggestionsShown.get())
+        }
+    }
+
     fun cycleMode(context: Context) {
         val prefs by FlorisPreferenceStore
         val next = when (mode()) {

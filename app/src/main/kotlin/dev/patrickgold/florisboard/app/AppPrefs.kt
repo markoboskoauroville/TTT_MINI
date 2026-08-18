@@ -1124,6 +1124,19 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * thing he turns on, and a probe that started running unasked would spend a key he may not
          * have configured.
          */
+        /**
+         * Whether the suggestion row is allowed on screen at all.
+         *
+         * Its own switch rather than the existing suggestion setting, because that one governs
+         * whether suggestions are COMPUTED. This is a curtain he draws over the row when it is in
+         * the way, and drawing it should not throw away the word model's work or need anything
+         * restarted to undo.
+         */
+        val maSuggestionsShown = boolean(
+            key = "dictate__ma_suggestions_shown",
+            default = true,
+        )
+
         val maLanguageMode = string(
             key = "dictate__ma_language_mode",
             default = "hr",
