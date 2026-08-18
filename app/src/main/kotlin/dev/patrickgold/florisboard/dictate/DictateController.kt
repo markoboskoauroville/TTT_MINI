@@ -3584,9 +3584,31 @@ object DictateController {
         val groq = accounts.accounts[MaRoles.LANGUAGE] ?: return null
         val keys = MaKeys.split(groq.apiKey).filter { it.isNotBlank() }
         if (keys.isEmpty()) return null
-        for (key in keys) {
-            val reported = probeOnce(audio, key) ?: continue
-            return MaLanguageProbe.clampToTwo(reported)
+        // Only the opening seconds are sent.
+        //
+        // Whisper settles the language from the first sentence, so a five minute dictation would
+        // spend the whole upload answering a question decided at the start — and the probe has to
+        // finish BEFORE the real request begins, so its upload is time he waits with nothing
+        // happening. Measured on a 62 second recording: 1,994,718 bytes became 960,044, and Groq
+        // reported Croatian from both.
+        //
+        // A trim that fails is not fatal. The untrimmed file is used instead, which is slower and
+        // still correct — losing the language entirely would be the worse trade.
+        val probeFile = File(audio.parentFile, "dictate_probe.wav")
+        val toSend = if (AudioConcat.trimSeconds(audio, probeFile, MaLanguageProbe.PROBE_SECONDS)) {
+            probeFile
+        } else {
+            audio
+        }
+        try {
+            for (key in keys) {
+                val reported = probeOnce(toSend, key) ?: continue
+                return MaLanguageProbe.clampToTwo(reported)
+            }
+        } finally {
+            // Deleted whether the probe answered, failed or threw. It is a copy of his voice in the
+            // cache and has no reason to outlive the question it was made to answer.
+            if (toSend !== audio) probeFile.delete()
         }
         null
     }.getOrNull()

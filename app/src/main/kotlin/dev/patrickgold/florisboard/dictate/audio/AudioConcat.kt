@@ -72,6 +72,55 @@ object AudioConcat {
         return output.exists() && output.length() > WAV_HEADER_SIZE
     }
 
+    /**
+     * Writes the first [seconds] of [input] to [output]. False when there is nothing usable to write.
+     *
+     * ### Why a byte copy and not a re-encode
+     *
+     * PCM WAV has no frames to align to and no codec state to carry, so the first N seconds are
+     * simply the first N seconds' worth of bytes with a corrected header. No ffmpeg, no decoder, no
+     * quality lost, and it costs a copy of a few hundred kilobytes.
+     *
+     * ### What it is for
+     *
+     * The language probe (§78) only needs enough audio to hear which language is being spoken, and
+     * Whisper decides that from the opening moments. Sending a five minute dictation to answer a
+     * question settled in the first sentence makes the probe slower than the transcription it exists
+     * to configure.
+     *
+     * **Shorter input is returned whole rather than refused.** A recording under the limit is
+     * already what was asked for, and copying it is simpler than making every caller check first.
+     */
+    fun trimSeconds(input: File, output: File, seconds: Int): Boolean {
+        if (seconds <= 0 || !input.exists()) return false
+        return try {
+            RandomAccessFile(input, "r").use { source ->
+                val parsed = parseWav(source) ?: return false
+                val bytesPerSecond = parsed.fmt.sampleRate.toLong() *
+                    parsed.fmt.channels.toLong() *
+                    (parsed.fmt.bitsPerSample.toLong() / 8L)
+                if (bytesPerSecond <= 0L) return false
+                // Whole samples only. A copy that stopped mid-sample would hand the decoder half a
+                // number and a click at the end, which is a poor last impression to give a language
+                // detector.
+                val frame = (parsed.fmt.channels * parsed.fmt.bitsPerSample / 8).coerceAtLeast(1)
+                var want = (bytesPerSecond * seconds).coerceAtMost(parsed.dataLength)
+                want -= want % frame
+                if (want <= 0L) return false
+                RandomAccessFile(output, "rw").use { out ->
+                    out.setLength(0L)
+                    out.write(wavHeader(parsed.fmt, want))
+                    source.seek(parsed.dataOffset)
+                    copy(source, out, want)
+                }
+            }
+            output.exists() && output.length() > WAV_HEADER_SIZE
+        } catch (_: Throwable) {
+            output.delete()
+            false
+        }
+    }
+
     private class ParsedWav(val fmt: WavFmt, val dataOffset: Long, val dataLength: Long)
 
     /** Parses a PCM WAV's `fmt `/`data` chunks, or returns null if [input] is not a usable WAV. */

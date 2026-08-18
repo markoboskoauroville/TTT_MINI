@@ -2721,9 +2721,44 @@ that must all land on Croatian, and the empty, null, whitespace and unknown case
 **Test 2 — real API, real keys, real speech.** Croatian audio generated with Hume and sent to Groq
 came back `'Croatian'`; a tone came back `'English'`. HTTP 200 both times, with the User-Agent header.
 
-**Not done: the 30-second cap.** He asked for the probe to send at most 30 s. It currently sends the
-whole file, which is correct but slower on a long dictation. Trimming needs a re-encode step or a WAV
-header rewrite; written down rather than faked.
+**The 30-second cap is done — see §79.**
 
 **Not tested: the probe on the phone.** The multipart upload, the key ring walking a real ring, and
 whether 12 s is the right timeout on mobile data.
+
+---
+
+# 79. The probe sends 30 seconds, not the whole recording
+
+`AudioConcat.trimSeconds` writes the first N seconds of a PCM WAV to a new file.
+
+**A byte copy, not a re-encode.** PCM has no frames to align to and no codec state to carry, so the
+first 30 seconds are simply the first 30 seconds' worth of bytes with a corrected header. No ffmpeg,
+no decoder, nothing lost. It reuses `parseWav` and `wavHeader`, already in that file and already
+proven by the segment merge.
+
+**Why it matters:** the probe must finish *before* the real request starts, so its upload is time he
+waits with nothing happening. Whisper settles the language from the opening sentence; a five minute
+dictation was spending the whole upload answering a question decided at the start.
+
+**A failed trim is not fatal** — the untrimmed file is sent instead, which is slower and still
+correct. The temp file is deleted in a `finally`, so a copy of his voice never outlives the question
+it was made to answer, whether the probe answered, failed or threw.
+
+## Tested
+
+**Test 1 — 7 arithmetic cases, 0 failures**: longer than the limit, exactly the limit, shorter (the
+whole file, not a refusal), one byte, odd length, zero data, zero seconds. Plus frame alignment
+checked across 1ch/2ch, 16/32-bit, 16/44.1/48 kHz — all aligned.
+
+**Test 2 — real file, real API, and an outside party agreeing.** A 62.3 s Croatian WAV trimmed to
+960,044 bytes; `ffprobe` reports **30.000000 s**, and Groq's own response reports
+`duration: 30.000001024`. **Both the full and the trimmed file returned `'Croatian'`** — half the
+upload, same answer. That external duration figure is the number worth having, because it is measured
+by something I do not control.
+
+## Trap repeated, and it is now twice
+
+`AudioConcat` was already imported and I added it again — the identical mistake that made build 166
+red with `MaKeys`, two builds earlier. **Grep for the import LINE, never for the symbol.** The check
+now runs after every import edit and reports duplicate lines directly.
