@@ -1110,6 +1110,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "",
         )
 
+        /**
+         * Spoken formatting marks he has switched OFF, comma separated.
+         *
+         * The ones OFF rather than the ones on, so a mark added in a later version is live by
+         * default instead of invisible to anybody whose saved list predates it. Empty means all of
+         * them work, which is also the right behaviour on a first run.
+         */
+        val maVoiceFormatOff = string(
+            key = "dictate__ma_voice_format_off",
+            default = "",
+        )
+
         val maNgramBackfilled = boolean(
             key = "dictate__ma_ngram_backfilled",
             default = false,

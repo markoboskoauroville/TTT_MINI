@@ -76,6 +76,7 @@ val MaSettingsEntry.icon: ImageVector
         // note about Reorder is the reason to reuse an icon proven to resolve.
         MaSettingsEntry.VOICE_COMMANDS -> Icons.Default.Mic
         MaSettingsEntry.SHORTCUTS -> Icons.Default.Keyboard
+        MaSettingsEntry.VOICE_FORMAT -> Icons.Default.Spellcheck
         MaSettingsEntry.KEYS -> Icons.Default.Key
         MaSettingsEntry.VOCABULARY -> Icons.Default.Spellcheck
         MaSettingsEntry.BUCKETS -> Icons.Default.ContentPasteGo
@@ -105,6 +106,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.MAGIC -> Routes.Settings.MaMagic
         MaSettingsEntry.VOICE_COMMANDS -> Routes.Settings.MaVoiceCommands
         MaSettingsEntry.SHORTCUTS -> Routes.Settings.MaShortcuts
+        MaSettingsEntry.VOICE_FORMAT -> Routes.Settings.MaVoiceFormat
         MaSettingsEntry.KEYS -> Routes.Settings.DictateKeys
         MaSettingsEntry.VOCABULARY -> Routes.Settings.MaVocabulary
         MaSettingsEntry.BUCKETS -> Routes.Settings.MaBuckets

@@ -2618,3 +2618,61 @@ meaning**, which is his repeated complaint.
 
 **History resend and status** — every recording marked transcribed or not, colour coded (his
 suggestion: yellow done, blue not), with resend, so no dictation is ever lost.
+
+---
+
+# 77. Voice formatting: the full set, with pronunciations he can hear
+
+**31 spoken marks**, grouped by what they do to the text: ending a sentence, wrapping the last word,
+following the last word, and the whole dictation. Settings → **Voice formatting**.
+
+**Every row can be switched off.** A command is a word taken out of his sentence, and the commoner
+the word the more often that is wrong — "at", "plus" and "minus" appear in ordinary speech
+constantly. Ticking is how he decides which trade is worth it, mark by mark.
+
+**Stored as the ones switched OFF**, not the ones on, so a mark added in a later version is live by
+default instead of invisible to anybody whose saved list predates it. Empty means everything works,
+which is also the right first run.
+
+## Underscore is the odd one, deliberately
+
+Every other command reaches back one word or one sentence. `underscore` takes **the whole
+dictation** and replaces every space, because it is for naming a file and a file name is the whole
+line or nothing.
+
+## The recordings
+
+His English carries an accent the transcriber sometimes mishears, and a misheard command is worse
+than a missing one — it types a stray word into the middle of a sentence. Reading "say: ampersand"
+does not say which sounds the recogniser wants. Each row has a speaker that plays the word in
+**Received Pronunciation**.
+
+Made with Hume TTS, converted to **Opus 24 kbit mono: 31 files, 76 KB total, ~2.5 KB each** — less
+than one photograph. Raw WAV was 121 KB *per file*; the conversion is what makes carrying all of
+them free.
+
+**The id is the filename and the command word**, one string tying row, audio and matcher, so they
+cannot drift apart. Verified: 31 catalogue entries, 31 files, none missing, none orphaned.
+
+## Tested
+
+**Test 1 — 18 cases, 0 failures** on the expanded set: every group, both languages, the refusals
+("the hash of the file", "meet me at the door", "underscore is a character" — all untouched), and
+stacking.
+
+**It caught two real bugs.** "my file name underscore dot" lost its full stop, and "the word
+parenthesis comma" lost its comma — the suffix rule only preserved `.!?` and underscore preserved
+nothing. **A comma placed by "comma" is as much his as a stop placed by "dot"**, so the rule now
+covers `.!?,;:` and underscore keeps it too.
+
+**Test 2 on the API — real key, real call, HTTP 200**, and the failure path was real as well: 15 of
+31 came back **429**, which turned out to be a per-minute limit rather than a quota, proved by a
+single call succeeding after a pause. Pacing at 12 s produced 31 of 31.
+
+**Not tested: playback on the phone.** Whether Opus in assets plays through `MediaPlayer` on his
+Android 16, and whether the volume is right against his ringer. Both need the device.
+
+## The key
+
+Used from the sandbox only, never echoed, never committed, never logged. It stays available for the
+rest of this project and is shredded when he says the work is done.

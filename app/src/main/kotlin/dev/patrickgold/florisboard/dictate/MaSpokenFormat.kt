@@ -10,6 +10,7 @@
 
 package dev.patrickgold.florisboard.dictate
 
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import java.util.Locale
 
 /**
@@ -53,6 +54,78 @@ object MaSpokenFormat {
     private val EXCLAMATION = setOf("exclamationmark", "uskličnik", "usklicnik")
 
     /**
+     * Underscore: every space in the whole dictation becomes an underscore.
+     *
+     * The odd one out, and deliberately so. Every other command reaches back one word or one
+     * sentence; this one takes the lot, because it is for naming a file and a file name is the whole
+     * line or nothing. Said at either end — he dictates it first when he knows in advance and last
+     * when he decides after.
+     */
+    private val UNDERSCORE = setOf("underscore", "underscores", "podvlaka", "donjacrta")
+
+    /**
+     * The rest of the marks, each wrapping the word before it or ending the sentence.
+     *
+     * The full stop family above ends a sentence; these SURROUND or ATTACH, which is a different
+     * shape and why they are a separate table rather than more entries in the same one.
+     */
+    private val WRAPPERS = mapOf(
+        "quote" to ("\"" to "\""),
+        "quotes" to ("\"" to "\""),
+        "navodnici" to ("\"" to "\""),
+        "singlequote" to ("'" to "'"),
+        "squarebracket" to ("[" to "]"),
+        "squarebrackets" to ("[" to "]"),
+        "uglatazagrada" to ("[" to "]"),
+        "curlybracket" to ("{" to "}"),
+        "curlybrackets" to ("{" to "}"),
+        "vitičastazagrada" to ("{" to "}"),
+        "anglebracket" to ("<" to ">"),
+        "anglebrackets" to ("<" to ">"),
+        "backtick" to ("`" to "`"),
+        "backticks" to ("`" to "`"),
+        "asterisks" to ("*" to "*"),
+        "star" to ("*" to "*"),
+    )
+
+    /** Marks that simply follow the text, with no space before them. */
+    private val TRAILERS = mapOf(
+        "comma" to ",",
+        "zarez" to ",",
+        "colon" to ":",
+        "dvotočka" to ":",
+        "dvotocka" to ":",
+        "semicolon" to ";",
+        "točkazarez" to ";",
+        "hash" to "#",
+        "hashtag" to "#",
+        "ljestve" to "#",
+        "at" to "@",
+        "atsign" to "@",
+        "manki" to "@",
+        "percent" to "%",
+        "posto" to "%",
+        "ampersand" to "&",
+        "plus" to "+",
+        "minus" to "-",
+        "dash" to "-",
+        "hyphen" to "-",
+        "crtica" to "-",
+        "slash" to "/",
+        "kosacrta" to "/",
+        "backslash" to "\\\\",
+        "pipe" to "|",
+        "equals" to "=",
+        "jednako" to "=",
+        "tilde" to "~",
+        "caret" to "^",
+        "dollar" to "$",
+        "euro" to "\u20AC",
+        "ellipsis" to "\u2026",
+        "dots" to "\u2026",
+    )
+
+    /**
      * Two-word commands, joined before matching.
      *
      * "question mark" is two words spoken and one command meant. They are folded into the single
@@ -72,13 +145,21 @@ object MaSpokenFormat {
      * Never throws and never returns null: text with no command in it comes back untouched, which is
      * the overwhelmingly common case and must cost nothing.
      */
+    /** Marks he has switched off, read fresh so a tick takes effect on the next dictation. */
+    private fun disabled(): Set<String> {
+        val prefs by FlorisPreferenceStore
+        return prefs.dictate.maVoiceFormatOff.get()
+            .split(',').map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    }
+
     fun apply(text: String): String {
+        val off = disabled()
         var out = text
         // Bounded rather than `while (true)`. Each pass must remove a word, so it cannot spin — but
         // a bound means a future command that forgets to consume its word degrades to doing nothing
         // instead of hanging the keyboard on a dictation.
         repeat(MAX_COMMANDS) {
-            val next = applyOnce(out) ?: return out
+            val next = applyOnce(out, off) ?: return out
             out = next
         }
         return out
@@ -86,7 +167,7 @@ object MaSpokenFormat {
 
     private const val MAX_COMMANDS = 8
 
-    private fun applyOnce(text: String): String? {
+    private fun applyOnce(text: String, off: Set<String>): String? {
         val trimmed = text.trimEnd()
         if (trimmed.isEmpty()) return null
         val words = trimmed.split(Regex("\\s+"))
@@ -101,6 +182,8 @@ object MaSpokenFormat {
         val pairHit = PAIRS[lastTwo]
         val command = pairHit ?: last
         val consumed = if (pairHit != null) 2 else 1
+        // A mark he has switched off is not a command at all, so the word stays in his sentence.
+        if (command in off) return null
         val head = words.dropLast(consumed)
         if (head.isEmpty()) return null
 
@@ -117,12 +200,23 @@ object MaSpokenFormat {
         // they do, and re-appending would give "Hello world..".
         val rawLast = words.last()
         val suffix = rawLast.dropWhile { it !in TRIM || it == ' ' }
-            .takeIf { it.isNotEmpty() && it.all { c -> c in ".!?" } }
+            // Any punctuation an earlier pass may have added, not only sentence enders. A comma
+            // placed by "comma" is exactly as much his as a full stop placed by "dot", and was
+            // being dropped by the next command in the stack.
+            .takeIf { it.isNotEmpty() && it.all { c -> c in ".!?,;:" } }
             .orEmpty()
 
         return when (command) {
-            in PARENTHESIS -> wrapLastWord(head) + suffix
+            in PARENTHESIS -> wrapLastWord(head, "(", ")") + suffix
             in UPPERCASE -> upperLastSentence(head) + suffix
+            // Underscore preserves the suffix too. It transforms rather than ends, so a stop
+            // already placed belongs to the text, not to the spaces being replaced.
+            in UNDERSCORE -> head.joinToString("_") + suffix
+            in WRAPPERS -> {
+                val pair = WRAPPERS.getValue(command)
+                wrapLastWord(head, pair.first, pair.second) + suffix
+            }
+            in TRAILERS -> head.joinToString(" ").trimEnd() + TRAILERS.getValue(command) + suffix
             in DOT -> endSentence(head, '.')
             in QUESTION -> endSentence(head, '?')
             in EXCLAMATION -> endSentence(head, '!')
@@ -131,12 +225,12 @@ object MaSpokenFormat {
     }
 
     /** "the word" -> "the (word)". Punctuation the word carried stays outside the bracket. */
-    private fun wrapLastWord(words: List<String>): String {
+    private fun wrapLastWord(words: List<String>, open: String, close: String): String {
         val target = words.last()
         val core = target.trim(*TRIM.toCharArray())
         if (core.isEmpty()) return words.joinToString(" ")
         val tail = target.substring(target.indexOf(core) + core.length)
-        return (words.dropLast(1) + "($core)$tail").joinToString(" ")
+        return (words.dropLast(1) + "$open$core$close$tail").joinToString(" ")
     }
 
     /**
