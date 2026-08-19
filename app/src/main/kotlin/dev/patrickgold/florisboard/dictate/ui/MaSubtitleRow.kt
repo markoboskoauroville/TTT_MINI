@@ -10,6 +10,7 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -80,7 +81,12 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
             // and matching on its letters lands on the first one, which is what made the highlight
             // jump to the top of the screen on every "the".
             if (page.range.first + i == index) {
-                withStyle(SpanStyle(color = MaSubtitleLit, fontWeight = FontWeight.Bold)) {
+                // Colour only, never weight.
+                //
+                // Bold changes the WIDTH of the word, so every word the highlight touched nudged
+                // the whole line sideways — the text appeared to breathe as it was read. A colour
+                // change moves nothing.
+                withStyle(SpanStyle(color = MaSubtitleLit)) {
                     append(w)
                 }
             } else {
@@ -92,6 +98,12 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
+            // Tap to skip the rest of this sentence.
+            //
+            // The commonest thing he wants while listening is "not this bit". Reaching for the
+            // speaker key pauses; reaching here moves on. It is the same gesture a person makes at
+            // a paragraph they have already understood.
+            .clickable { MaReader.skipSentence() }
             .padding(horizontal = 10.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(MaSubtitleBackground)

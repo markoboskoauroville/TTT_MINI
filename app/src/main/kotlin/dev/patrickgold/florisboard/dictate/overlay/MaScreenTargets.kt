@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import android.accessibilityservice.AccessibilityService
 import android.graphics.Rect
 import android.os.Bundle
+import dev.patrickgold.florisboard.dictate.MaLog
 import dev.patrickgold.florisboard.dictate.MaScreenText
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
@@ -791,14 +792,22 @@ object MaScreenTargets {
      */
     fun readableText(service: AccessibilityService): String {
         val lines = mutableListOf<MaScreenText.Line>()
+        var windowCount = 0
         for (root in appWindowRoots(service)) {
+            windowCount++
             try {
                 collectText(root, lines, 0)
             } finally {
                 runCatching { root.recycle() }
             }
         }
-        return MaScreenText.assemble(lines).take(MaScreenText.MAX_CHARS)
+        val text = MaScreenText.assemble(lines).take(MaScreenText.MAX_CHARS)
+        // What was found, and from how many windows, because "the reader does nothing in this app"
+        // has three different causes that look identical: no window reachable, a window with no
+        // text worth reading, or text found and the voice failing afterwards. One line separates
+        // them and saves another round of guessing across a chat window.
+        MaLog.add("read", "screen: $windowCount windows, ${lines.size} lines, ${text.length} chars")
+        return text
     }
 
     private fun collectText(node: AccessibilityNodeInfo, out: MutableList<MaScreenText.Line>, depth: Int) {

@@ -267,6 +267,40 @@ object MaReader {
         }
     }
 
+    /**
+     * Jumps the playhead past the end of the sentence being spoken.
+     *
+     * ### Seeking, not re-synthesising
+     *
+     * The audio for the whole passage is one file with word timings, so skipping is a seek — free,
+     * instant, and it costs nothing at Speechify. Re-asking for audio from a later point would be
+     * a second charge for words already bought.
+     *
+     * ### The sentence is derived, as everywhere else
+     *
+     * Speechify returns a passage as one flat word list whatever its mark types claim (§84), so the
+     * end of a sentence is the next word ending in `.`, `!` or `?`. Finding it here rather than
+     * asking the subtitle keeps the two from disagreeing about where a sentence stops.
+     *
+     * At the last sentence there is nothing to skip to, so it stops — which is what "skip the rest"
+     * means when the rest is all of it.
+     */
+    fun skipSentence() {
+        val words = MaSpeechify.lastWords
+        val here = currentIndex
+        if (here < 0 || here >= words.size) return
+        fun ends(w: String) = w.lastOrNull() in setOf('.', '!', '?')
+        var end = here
+        while (end < words.lastIndex && !ends(words[end].text)) end++
+        val next = words.getOrNull(end + 1)
+        if (next == null) {
+            MaLog.add("read", "skip: already in the last sentence")
+            return
+        }
+        runCatching { player?.seekTo(next.startMs) }
+        MaLog.add("read", "skipped to word ${end + 1}")
+    }
+
     /** Unconditional. Used when he leaves, and by a press during loading. */
     fun stop() {
         stopPlayer()

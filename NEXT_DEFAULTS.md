@@ -3601,3 +3601,49 @@ the app, and giving one colour two jobs fails the first time a lit key and a cop
 
 **Lifted still wins over the accent** while dragging, because the feedback under the finger matters
 more than the identity of the list.
+
+---
+
+# 96. Tap the subtitle to skip, and hear a voice before choosing it
+
+## The highlight stopped moving the text
+
+**Colour only, never weight.** Bold changes the *width* of a word, so every word the highlight
+touched nudged the whole line sideways — the text appeared to breathe as it was read. A colour
+change moves nothing.
+
+## Tap the subtitle to skip the sentence
+
+The commonest thing he wants while listening is *not this bit*. The speaker key pauses; the subtitle
+now skips.
+
+**A seek, not a re-synthesis.** The passage is one file with word timings, so skipping is free and
+instant. Asking Speechify for audio from a later point would be a second charge for words already
+bought.
+
+The end of a sentence is found in `MaReader` from the same flat word list the subtitle uses, so the
+two cannot disagree about where a sentence stops. At the last sentence it does nothing, which is what
+"skip the rest" means when the rest is all of it.
+
+## Reader settings
+
+**Speed moved to the top**, above the display choice — it is the thing he changes most and it was
+below two lists.
+
+**Tapping a voice speaks it: "Hi, I am Lesya."** The voice says its own name, which gives accent,
+pace and warmth in four words and ties the sound to the row he is looking at. On IO, because a
+synthesis on Main would freeze the settings screen.
+
+**A tick to switch previews off.** On by default, since hearing a voice is the whole basis for
+choosing one — but a sample is a synthesis and costs characters, and once chosen he should not pay to
+reorder a list.
+
+## Gemini: instrumented rather than guessed
+
+The reader works in Claude and not in Gemini, and his dump does not show why — the message text is
+present, not clickable, and long enough to pass every filter.
+
+**"The reader does nothing here" has three causes that look identical:** no window reachable, a window
+with no text worth reading, or text found and the voice failing after. `readableText` now logs
+**windows, lines and characters**, so one paste of the log separates them instead of another round of
+guessing.

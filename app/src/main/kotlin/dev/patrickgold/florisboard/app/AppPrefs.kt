@@ -1190,6 +1190,19 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "subtitle",
         )
 
+        /**
+         * Whether tapping a voice speaks a sample.
+         *
+         * On by default, because a name and a nationality do not tell him what a voice sounds like
+         * and hearing it is the entire basis for choosing. Switchable because a sample is a
+         * synthesis: it costs characters, and once he has chosen he does not want to pay to change
+         * his mind about the order of a list.
+         */
+        val maReaderPreviewVoices = boolean(
+            key = "dictate__ma_reader_preview_voices",
+            default = true,
+        )
+
         val maReaderSpeed = int(
             key = "dictate__ma_reader_speed_tenths",
             default = 10,

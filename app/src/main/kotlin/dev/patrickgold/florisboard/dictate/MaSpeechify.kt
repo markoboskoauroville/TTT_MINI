@@ -152,6 +152,20 @@ object MaSpeechify {
         Voice("hugh", "Hugh", "British male", "simba-english"),
     )
 
+    /**
+     * Speaks a one-line sample in a voice, so he can hear it before choosing.
+     *
+     * The voice says its OWN name. "Hi, I am Lesya" tells him the accent, the pace and the warmth
+     * in four words, and ties the sound to the row he is looking at — which a neutral sentence
+     * would not.
+     *
+     * Written to its own cache file so a preview never overwrites audio the reader is playing.
+     */
+    fun previewFile(context: android.content.Context, voice: Voice): File? {
+        val dest = File(context.cacheDir, "ma_voice_preview.mp3")
+        return synthesize("Hi, I am ${voice.label}.", voice, dest)
+    }
+
     fun voicesFor(language: String): List<Voice> =
         if (language == MaLanguage.EN) ENGLISH_VOICES else CROATIAN_VOICES
 
