@@ -148,6 +148,14 @@ private fun paginate(words: List<String>, perPage: Int): List<Page> {
  */
 private const val PAGE_CHARS = 105
 
+/**
+ * Matching the composer he reads beside, so the two read as one interface.
+ *
+ * Fixed rather than wrapping to fit: a box that grew with the text would change the keyboard's
+ * height between one page and the next, with his thumb already moving towards a key.
+ */
+private val SUBTITLE_HEIGHT = 96.dp
+
 private val MaSubtitleLit = Color(0xFFE8B15C)
 private val MaSubtitleDim = Color(0xFF8A8A8A)
 
