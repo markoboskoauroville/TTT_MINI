@@ -472,7 +472,11 @@ object ProviderRegistry {
      * A stored Gemini key is not erased by this; it stops being shown and stops being importable.
      */
     val presets: List<ProviderPreset> = listOf(
-        ASSEMBLYAI, ANTHROPIC, GROQ, SPEECHIFY, LOCAL,
+        // GROQ is gone from the offered list. Its only job was language detection and that feature
+        // is removed — an account nobody can use is a row in the keys screen that only invites the
+        // question of what it is for. The preset itself stays so an existing stored Groq account
+        // still parses instead of becoming an unknown provider.
+        ASSEMBLYAI, ANTHROPIC, SPEECHIFY, LOCAL,
     )
 
     fun byId(id: String): ProviderPreset? = presets.firstOrNull { it.id == id }

@@ -153,7 +153,26 @@ import dev.patrickgold.florisboard.R
  * on the three keys that are switches so their positions are readable without pressing them.
  */
 @Composable
-fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
+fun MaFeatureRow(
+    modifier: Modifier = Modifier,
+    rowHeight: Dp,
+    /**
+     * Adds the copy row, and only the transcription view asks for it.
+     *
+     * That view has no letter keys and the clipboard is most of what it is for, so the row belongs
+     * there and nowhere else. The typing keyboard already has three feature rows and does not need
+     * a fourth it did not ask for.
+     */
+    includeCopyRow: Boolean = false,
+    /**
+     * Draw ONLY the copy row, for the transcription view.
+     *
+     * That view wants the clipboard row and not the three feature rows, which belong to the typing
+     * keyboard. Same composable either way, so a key behaves identically in both places — the caller
+     * chooses which rows, not which implementation.
+     */
+    copyRowOnly: Boolean = false,
+) {
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
     val prefs by FlorisPreferenceStore
@@ -224,7 +243,20 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
     val storedRows = remember(rowsRaw) {
         if (rowsRaw.isBlank()) MaRows.defaultRows() else MaRows.parse(rowsRaw)
     }
-    val rows = MaRows.visibleRows(storedRows)
+    val copyRowRaw by prefs.dictate.maCopyRow.collectAsState()
+    val copyRow = remember(copyRowRaw) { MaRows.parseCopyRow(copyRowRaw) }
+    // Appended last, so it sits nearest the keys in the transcription view where the hand is.
+    // visibleRows yields List<List<Button>>, so the copy row contributes its BUTTONS — appending
+    // its entries would have been a type error hiding behind a plausible name.
+    val copyButtons = if (copyRow.enabled) copyRow.visibleButtons else emptyList()
+    // visibleRows yields List<List<Button>>, so the copy row contributes its BUTTONS — appending
+    // its entries would have been a type error hiding behind a plausible name.
+    val rows = when {
+        copyRowOnly -> if (copyButtons.isEmpty()) emptyList() else listOf(copyButtons)
+        includeCopyRow && copyButtons.isNotEmpty() ->
+            MaRows.visibleRows(storedRows) + listOf(copyButtons)
+        else -> MaRows.visibleRows(storedRows)
+    }
     // The buckets this user actually has, and whether they are all holding something. Derived from
     // the same rows the keyboard is drawing, so the answer here and the answer the capture uses
     // cannot disagree about how many buckets exist.

@@ -3368,3 +3368,42 @@ the result afterwards showed it.
 He must press **Reset all three rows** in Feature row settings, or install fresh. A stored
 arrangement always wins over a changed default — that is the whole point of storing it, and it means
 a default change never reaches an existing install by itself.
+
+---
+
+# 92. Groq removed, restore added, and the copy row gets its own screen
+
+## Groq and auto-detection are gone
+
+**Detection was never reliable enough to be trusted with a whole dictation**, and a wrong language
+does not fail visibly — it returns fluent nonsense in the other language, which is worse than an
+error. Manual is one tap and right every time.
+
+Removed: `MaLanguageProbe` (file deleted), `probeLanguage`, `probeOnce`, the three probe constants,
+the probe call in the send path, and `MODE_AUTO` from the badge cycle. The badge is ENG/HR again.
+
+**Two things kept on purpose.** The `GROQ` preset stays in `ProviderRegistry`, just out of the
+offered list, so an existing stored Groq account still parses instead of becoming an unknown
+provider. And `MODE_AUTO` survives as a constant so a stored `"auto"` from an older install is
+recognised rather than treated as junk.
+
+## Restore, beside backup
+
+It shipped with only the writing half — **the half that feels finished and never gets used**. Restore
+asks first, because it replaces every current setting: right on a fresh install, a real loss on a
+configured one, and a mis-tap away from backup.
+
+## The copy row is its own thing
+
+Same `MaRows.Row`, same catalogue, same entries — **a key added anywhere in the app appears in this
+editor with nothing to remember**. What differs is where it lives: `dictate__ma_copy_row`, and it is
+drawn **only in the transcription view**, which has no letter keys and where the clipboard is most of
+the job.
+
+Its own preference rather than a fourth slot in `maRows`, because `parse` pads and truncates to
+exactly `ROW_COUNT` — a fourth row there is silently dropped and the source looks right while the
+keyboard never shows it.
+
+`MaFeatureRow` gained `copyRowOnly`, so the transcription view draws that row and not the three that
+belong to the typing keyboard. **Same composable either way**, so a key behaves identically in both
+places; the caller chooses which rows, not which implementation.

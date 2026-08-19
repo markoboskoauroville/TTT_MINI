@@ -384,9 +384,13 @@ fun LegacyDictateLayout(
                 // that opens the view he is already in, and a zone key that folds a keyboard which
                 // is not on screen. Three keys that either repeated something or did nothing.
                 //
-                // The rows above belong to this view and are enough: record, space, backspace,
-                // enter, the language badge and the case keys. The feature row belongs to the
-                // typing keyboard, where each of its keys means something.
+                // The COPY ROW, and only the copy row.
+                //
+                // The three feature rows still belong to the typing keyboard. This one belongs
+                // here: the view has no letter keys, and select-all, paste, cut and the two
+                // histories are most of what this screen is for. Same composable as the feature
+                // row, so a key behaves identically in both places.
+                MaFeatureRow(rowHeight = SideRowHeight, copyRowOnly = true)
             }
         }
 

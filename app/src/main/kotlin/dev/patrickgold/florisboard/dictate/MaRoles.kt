@@ -56,7 +56,8 @@ object MaRoles {
      * Named here before the feature that uses it exists, so that Groq has a role of its own and is
      * never offered the transcription job it is not meant to hold. See §28.
      */
-    const val LANGUAGE = "groq"
+    /** Removed with the language probe. Nothing holds this role now. */
+    const val LANGUAGE = ""
 
     private fun hasKey(accounts: ProviderAccounts, id: String): Boolean =
         accounts.accounts[id]?.apiKey.orEmpty().isNotBlank()

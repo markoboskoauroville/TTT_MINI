@@ -79,6 +79,7 @@ val MaSettingsEntry.icon: ImageVector
         MaSettingsEntry.SHORTCUTS -> Icons.Default.Keyboard
         MaSettingsEntry.VOICE_FORMAT -> Icons.Default.Spellcheck
         MaSettingsEntry.READER -> Icons.AutoMirrored.Filled.VolumeUp
+        MaSettingsEntry.COPY_ROW -> Icons.Default.ContentPasteGo
         MaSettingsEntry.KEYS -> Icons.Default.Key
         MaSettingsEntry.VOCABULARY -> Icons.Default.Spellcheck
         MaSettingsEntry.BUCKETS -> Icons.Default.ContentPasteGo
@@ -110,6 +111,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.SHORTCUTS -> Routes.Settings.MaShortcuts
         MaSettingsEntry.VOICE_FORMAT -> Routes.Settings.MaVoiceFormat
         MaSettingsEntry.READER -> Routes.Settings.MaReader
+        MaSettingsEntry.COPY_ROW -> Routes.Settings.MaCopyRow
         MaSettingsEntry.KEYS -> Routes.Settings.DictateKeys
         MaSettingsEntry.VOCABULARY -> Routes.Settings.MaVocabulary
         MaSettingsEntry.BUCKETS -> Routes.Settings.MaBuckets

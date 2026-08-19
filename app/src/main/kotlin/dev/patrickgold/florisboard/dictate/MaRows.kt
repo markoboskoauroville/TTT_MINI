@@ -54,6 +54,36 @@ object MaRows {
     /** Three rows, always. They are presets to switch between, not a list to grow. */
     const val ROW_COUNT = 3
 
+    /**
+     * The copy row: a fourth row that belongs to the transcription view alone.
+     *
+     * It is the same machinery as the feature rows — same entries, same catalogue, same editor —
+     * and stored separately because it is not one of the three presets. **It appears only in the
+     * transcription view**, where there are no letter keys and the clipboard is the whole job, and
+     * never on the typing keyboard where the feature rows already live.
+     *
+     * Its own preference rather than a fourth slot in `maRows`, because `parse` pads and truncates
+     * to exactly ROW_COUNT — a fourth row there is silently dropped, and the source would look
+     * right while the keyboard never showed it.
+     */
+    fun defaultCopyRow(): Row = Row(
+        listOf(
+            MaFeatureKey.SELECT_ALL,
+            MaFeatureKey.PASTE,
+            MaFeatureKey.CUT,
+            MaFeatureKey.CLIP_HISTORY,
+            MaFeatureKey.HISTORY,
+            MaFeatureKey.ALL_PASTE,
+            MaFeatureKey.ALL_CLEAR,
+        ).map { Entry(Button.Builtin(it)) },
+        enabled = true,
+    )
+
+    fun parseCopyRow(raw: String): Row =
+        if (raw.isBlank()) defaultCopyRow() else parse(raw).firstOrNull() ?: defaultCopyRow()
+
+    fun serializeCopyRow(row: Row): String = serialize(listOf(row))
+
     /** C1 to C10: the last ten things copied, newest first. */
     const val CLIP_SLOTS = 10
 

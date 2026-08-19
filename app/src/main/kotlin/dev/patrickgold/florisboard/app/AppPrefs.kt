@@ -1161,6 +1161,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * thing on screen — the spacebar version borrows a key that only exists while the letters
          * are shown, and vanishes with them.
          */
+        /**
+         * The copy row, stored apart from the three feature rows.
+         *
+         * Separate because `MaRows.parse` pads and truncates to exactly three — a fourth row in
+         * that preference is silently dropped, and the source would look right while the keyboard
+         * never showed it. Empty means the shipped default.
+         */
+        val maCopyRow = string(
+            key = "dictate__ma_copy_row",
+            default = "",
+        )
+
         val maReaderDisplay = string(
             key = "dictate__ma_reader_display",
             default = "subtitle",

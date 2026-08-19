@@ -88,16 +88,7 @@ object MaLanguage {
      *
      * No arguments, so the four places that draw a badge cannot end up saying different things.
      */
-    fun badge(): String {
-        // AUTO says AUTO. Nothing else.
-        //
-        // It used to read "A·HR", meaning auto mode currently resolved to Croatian, and that is
-        // one piece of information too many on a key the size of a thumbnail: he read it as a
-        // state he did not recognise rather than as two facts. On AUTO the language is not his
-        // decision any more, so showing it invites him to check a thing he cannot change.
-        if (mode() == MODE_AUTO) return "AUTO"
-        return if (active() == EN) "ENG" else "HR"
-    }
+    fun badge(): String = if (active() == EN) "ENG" else "HR"
 
     /**
      * Sets the language **the microphone is told to expect**, and nothing else.
@@ -154,6 +145,12 @@ object MaLanguage {
     /** Moves to the other one. */
     const val MODE_EN = "en"
     const val MODE_HR = "hr"
+    /**
+     * Removed. The badge has two states and the language is his decision.
+     *
+     * Kept as a constant only so a stored "auto" from an older install can be recognised and
+     * treated as Croatian rather than as an unknown value. Nothing sets it any more.
+     */
     const val MODE_AUTO = "auto"
 
     /**
@@ -193,11 +190,10 @@ object MaLanguage {
 
     fun cycleMode(context: Context) {
         val prefs by FlorisPreferenceStore
-        val next = when (mode()) {
-            MODE_EN -> MODE_HR
-            MODE_HR -> MODE_AUTO
-            else -> MODE_EN
-        }
+        // Two states. AUTO is gone entirely: detection was never reliable enough to be trusted
+        // with a whole dictation, and a wrong language returns confident nonsense rather than an
+        // error he can see. Manual is slower and always right.
+        val next = if (mode() == MODE_EN) MODE_HR else MODE_EN
         // Written synchronously, for the same reason the probe is.
         //
         // A tap on the badge that is followed immediately by a send — which is exactly how he uses
@@ -205,7 +201,8 @@ object MaLanguage {
         // Main, it would not have.
         runBlocking {
             prefs.dictate.maLanguageMode.set(next)
-            if (next != MODE_AUTO) prefs.dictate.activeInputLanguage.set(next)
+            // Always written now: with no auto mode, the mode IS the language.
+            prefs.dictate.activeInputLanguage.set(next)
         }
     }
 

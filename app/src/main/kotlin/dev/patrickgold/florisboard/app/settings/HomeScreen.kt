@@ -20,6 +20,8 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberCoroutineScope
 import dev.patrickgold.florisboard.dictate.MaSettingsVault
 import dev.patrickgold.florisboard.dictate.MaVault
@@ -99,6 +101,7 @@ fun HomeScreen() = FlorisScreen {
     val navController = LocalNavController.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var showRestore by remember { mutableStateOf(false) }
 
     actions {
         FlorisIconButton(
@@ -163,6 +166,38 @@ fun HomeScreen() = FlorisScreen {
         // wrong. It sits in the header rather than in the settings list on purpose: the list is
         // ordered by a stored preference, and an entry added to the defaults would appear at the
         // bottom for anybody who has ever rearranged it — which is him, on every install.
+        if (showRestore) {
+            AlertDialog(
+                onDismissRequest = { showRestore = false },
+                title = { Text("Restore settings") },
+                text = {
+                    Text(
+                        "This replaces every current setting with the last backup from " +
+                            MaVault.SETTINGS_DISPLAY_PATH + ".",
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showRestore = false
+                        scope.launch {
+                            val ok = MaSettingsVault.restore()
+                            Toast.makeText(
+                                context,
+                                if (ok) {
+                                    "Settings restored"
+                                } else {
+                                    "No backup found at " + MaVault.SETTINGS_DISPLAY_PATH
+                                },
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }
+                    }) { Text("Restore") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showRestore = false }) { Text("Cancel") }
+                },
+            )
+        }
         Text(
             text = "log",
             style = MaterialTheme.typography.labelMedium,
@@ -195,6 +230,23 @@ fun HomeScreen() = FlorisScreen {
                         ).show()
                     }
                 }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+        )
+        // Restore, beside backup, because a backup you cannot get back is not a backup.
+        //
+        // It shipped with only the writing half — which is the half that feels finished and is the
+        // half that never gets used. He reinstalls several times a day; the reading half is the one
+        // that earns its place.
+        //
+        // Asks first. It overwrites every current setting, which is exactly right on a fresh
+        // install and a real loss on a configured one, so the choice stays a deliberate press
+        // rather than a mis-tap next to backup.
+        Text(
+            text = "restore",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clickable { showRestore = true }
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         )
         Text(
