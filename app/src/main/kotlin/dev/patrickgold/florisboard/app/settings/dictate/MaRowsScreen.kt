@@ -388,7 +388,14 @@ private fun MaRows.Button.title(macroSlots: List<MaMacroSlots.Slot>): String = w
  * on a row inside a list that also drags is the gesture collision this screen cannot afford.
  */
 @Composable
-private fun MaRowKeyItem(
+/**
+ * `internal` so the copy row editor can draw the same rows.
+ *
+ * The two screens must look and behave identically — icon, tick, position, drag handle — and the
+ * only way to guarantee that is for them to be the same function. A private one meant a second
+ * implementation, which is a second place for them to drift apart.
+ */
+internal fun MaRowKeyItem(
     position: Int,
     entry: MaRows.Entry,
     macroSlots: List<MaMacroSlots.Slot>,
@@ -534,9 +541,9 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 )
             // Green, the colour these three wear on the keyboard when their zone is showing. Colour
             // means state everywhere in this app, so it appears here only for the keys that carry it.
-            MaFeatureKey.ZONE_1 -> MaZoneGlyph(1, Color(0xFF6FA85A), size = 24.dp)
-            MaFeatureKey.ZONE_2 -> MaZoneGlyph(2, Color(0xFF6FA85A), size = 24.dp)
-            MaFeatureKey.ZONE_3 -> MaZoneGlyph(3, Color(0xFF6FA85A), size = 24.dp)
+            MaFeatureKey.ZONE_1 -> MaZoneGlyph("n", Color(0xFF6FA85A), size = 24.dp)
+            MaFeatureKey.ZONE_2 -> MaZoneGlyph("k", Color(0xFF6FA85A), size = 24.dp)
+            MaFeatureKey.ZONE_3 -> MaZoneGlyph("c", Color(0xFF6FA85A), size = 24.dp)
         }
     }
 }
@@ -560,7 +567,7 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
  * cycles; now it is ten taps and a button.
  */
 @Composable
-private fun MaKeyPicker(
+internal fun MaKeyPicker(
     macroSlots: List<MaMacroSlots.Slot>,
     onAdd: (List<MaRows.Button>) -> Unit,
     onDismiss: () -> Unit,

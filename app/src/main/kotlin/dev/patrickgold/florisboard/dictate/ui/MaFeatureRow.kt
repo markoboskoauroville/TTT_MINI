@@ -157,14 +157,6 @@ fun MaFeatureRow(
     modifier: Modifier = Modifier,
     rowHeight: Dp,
     /**
-     * Adds the copy row, and only the transcription view asks for it.
-     *
-     * That view has no letter keys and the clipboard is most of what it is for, so the row belongs
-     * there and nowhere else. The typing keyboard already has three feature rows and does not need
-     * a fourth it did not ask for.
-     */
-    includeCopyRow: Boolean = false,
-    /**
      * Draw ONLY the copy row, for the transcription view.
      *
      * That view wants the clipboard row and not the three feature rows, which belong to the typing
@@ -251,10 +243,17 @@ fun MaFeatureRow(
     val copyButtons = if (copyRow.enabled) copyRow.visibleButtons else emptyList()
     // visibleRows yields List<List<Button>>, so the copy row contributes its BUTTONS — appending
     // its entries would have been a type error hiding behind a plausible name.
+    // Where the copy row is allowed to appear, asked of the surface drawing it.
+    //
+    // Two switches rather than one, because the two surfaces are genuinely different rooms: the
+    // transcription view has no letters and the clipboard is its whole job, while the typing
+    // keyboard already carries three feature rows. He may want it in one, the other, or both.
+    val onKeyboard by prefs.dictate.maCopyRowOnKeyboard.collectAsState()
+    val onTranscribe by prefs.dictate.maCopyRowOnTranscribe.collectAsState()
+    val wanted = if (copyRowOnly) onTranscribe else onKeyboard
     val rows = when {
-        copyRowOnly -> if (copyButtons.isEmpty()) emptyList() else listOf(copyButtons)
-        includeCopyRow && copyButtons.isNotEmpty() ->
-            MaRows.visibleRows(storedRows) + listOf(copyButtons)
+        copyRowOnly -> if (wanted && copyButtons.isNotEmpty()) listOf(copyButtons) else emptyList()
+        wanted && copyButtons.isNotEmpty() -> MaRows.visibleRows(storedRows) + listOf(copyButtons)
         else -> MaRows.visibleRows(storedRows)
     }
     // The buckets this user actually has, and whether they are all holding something. Derived from
@@ -954,7 +953,7 @@ fun MaFeatureRow(
                         modifier = keyMod,
                         onClick = { scope.launch { prefs.dictate.maExtraRow.set(!zone1) } },
                     ) { fg ->
-                        MaZoneGlyph(1, if (zone1) onGreen else fg)
+                        MaZoneGlyph("n", if (zone1) onGreen else fg)
                     }
                 }
 
@@ -966,7 +965,7 @@ fun MaFeatureRow(
                         modifier = keyMod,
                         onClick = { scope.launch { prefs.dictate.maZoneKeyboard.set(!zone2) } },
                     ) { fg ->
-                        MaZoneGlyph(2, if (zone2) onGreen else fg)
+                        MaZoneGlyph("k", if (zone2) onGreen else fg)
                     }
                 }
 
@@ -977,7 +976,7 @@ fun MaFeatureRow(
                         modifier = keyMod,
                         onClick = { scope.launch { prefs.dictate.maEditRow.set(!zone3) } },
                     ) { fg ->
-                        MaZoneGlyph(3, if (zone3) onGreen else fg)
+                        MaZoneGlyph("c", if (zone3) onGreen else fg)
                     }
                 }
 

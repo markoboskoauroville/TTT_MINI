@@ -3479,3 +3479,36 @@ sentences were not what I was thinking about.
 
 Four cases now, including two that decline, and the invariant stated: **a dictation with no command
 is returned unchanged, never replaced.**
+
+---
+
+# 94. n, k, c — and the copy row editor is the feature row editor
+
+## The zone keys say what they toggle
+
+`1 2 3` became **`n` `k` `c`**: number row, keyboard, copy row. A digit only said which position a
+key held in a list nobody can see. **He reads a picture faster than a word and a word faster than a
+code, and 1, 2, 3 was a code.**
+
+Lowercase, because the letter sits inside a keyboard outline only two thirds of the glyph tall and a
+capital reaches its walls. The settings labels changed with the glyphs, so the list and the key agree.
+
+**Six call sites**, and three of them were in the settings preview — a signature change that compiled
+in one file and broke another is exactly the shape of the last three red builds.
+
+## Standing rule: a button in settings carries its icon
+
+**Written into HANDOFF.** Whenever a setting lists keys or buttons, each row shows its own glyph
+beside the name. He recognises the image before he reads the word, and a list of names alone makes
+him translate twice.
+
+## The copy row editor reuses the feature row's
+
+`MaRowKeyItem`, `MaKeyPicker` and `MaReorderableColumn` are shared rather than reimplemented, so the
+copy row has **drag handles, icons, position numbers and ticks** — identical to the feature row,
+because it is literally the same code. `MaRowKeyItem` and `MaKeyPicker` went from private to
+internal; that visibility was the only thing standing in the way.
+
+**Two independent surface ticks** replace the single "show" switch: *on the typing keyboard* and *in
+the transcription view*. It is one row drawn in two places, not two rows to keep in step, so both,
+one or neither are all sensible answers.

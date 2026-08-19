@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2026 Marko Bosko, Mantra Productions
  *
@@ -22,12 +23,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.MaMacroSlots
 import dev.patrickgold.florisboard.dictate.MaRows
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -70,87 +74,120 @@ fun MaCopyRowScreen() = FlorisScreen {
         val prefs by FlorisPreferenceStore
         val scope = rememberCoroutineScope()
         val raw by prefs.dictate.maCopyRow.collectAsState()
-        val row = remember(raw) { MaRows.parseCopyRow(raw) }
+        var row by remember(raw) { mutableStateOf(MaRows.parseCopyRow(raw)) }
+        var picking by remember { mutableStateOf(false) }
+        val macroSlots = remember { emptyList<MaMacroSlots.Slot>() }
 
-        fun save(next: MaRows.Row) {
+        fun commit(next: MaRows.Row) {
+            row = next
             scope.launch { prefs.dictate.maCopyRow.set(MaRows.serializeCopyRow(next)) }
         }
 
         Text(
-            text = "One row of keys, shown only in the transcription view \u2014 the screen with no " +
-                "letters, where the clipboard is most of the work. The three feature rows belong " +
-                "to the typing keyboard and are edited under Feature row.",
+            text = "One row of clipboard keys. Tick where it should appear \u2014 it can be on both.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(
-                checked = row.enabled,
-                onCheckedChange = { on -> save(row.copy(enabled = on)) },
-            )
-            Column(modifier = Modifier.padding(start = 8.dp)) {
-                Text("Show the copy row", style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = "Off leaves no gap \u2014 the rows below move up",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        // Where it appears, as two independent switches rather than one either/or.
+        //
+        // It is the same row drawn in two places, not two rows to keep in step — so both, one or
+        // neither are all sensible answers and none of them needs a second copy of anything.
+        val onKeyboard by prefs.dictate.maCopyRowOnKeyboard.collectAsState()
+        val onDictate by prefs.dictate.maCopyRowOnDictate.collectAsState()
+        SurfaceTick("On the typing keyboard", onKeyboard) {
+            scope.launch { prefs.dictate.maCopyRowOnKeyboard.set(it) }
+        }
+        SurfaceTick("In the transcription view", onDictate) {
+            scope.launch { prefs.dictate.maCopyRowOnDictate.set(it) }
         }
 
+        Spacer(Modifier.height(12.dp))
+
         Text(
-            text = "Untick a key to take it off the row.",
+            text = "Hold a key and drag to move it. Untick to take it off the row.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
 
-        // Every key in the app, ticked when it is on this row.
+        // The very same list the feature row editor draws — icon, tick, position, drag handle.
         //
-        // Driven from the catalogue rather than from a list kept here, so a key added anywhere in
-        // the app turns up in this screen with nothing to remember.
-        val onRow = row.entries.map { it.button }.toSet()
-        for (button in MaRows.catalogue()) {
-            val present = button in onRow
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(
-                    checked = present,
-                    onCheckedChange = { on ->
-                        val next = if (on) {
-                            row.copy(entries = row.entries + MaRows.Entry(button))
-                        } else {
-                            row.copy(entries = row.entries.filterNot { it.button == button })
-                        }
-                        save(next)
-                    },
-                )
-                Text(
-                    text = copyRowLabel(button),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
+        // Reused rather than rebuilt, because two implementations of one list is two places for
+        // them to drift apart, and he should not have to learn a second way to arrange keys.
+        MaReorderableColumn(
+            items = row.entries,
+            rowHeight = ROW_HEIGHT,
+            onMove = { from, to ->
+                val entries = row.entries.toMutableList()
+                entries.add(to, entries.removeAt(from))
+                row = row.copy(entries = entries)
+            },
+            onSettled = { commit(row) },
+        ) { index, entry, lifted ->
+            MaRowKeyItem(
+                position = index + 1,
+                entry = entry,
+                macroSlots = macroSlots,
+                lifted = lifted,
+                onToggle = {
+                    commit(
+                        row.copy(
+                            entries = row.entries.mapIndexed { j, e ->
+                                if (j == index) e.copy(enabled = !e.enabled) else e
+                            },
+                        ),
+                    )
+                },
+                onEditMacro = {},
+                onRemove = {
+                    commit(row.copy(entries = row.entries.filterIndexed { j, _ -> j != index }))
+                },
+            )
         }
 
-        Spacer(Modifier.height(8.dp))
+        TextButton(
+            onClick = { picking = true },
+            modifier = Modifier.padding(horizontal = 12.dp),
+        ) { Text("Add a key to the copy row") }
 
         TextButton(
-            onClick = { save(MaRows.defaultCopyRow()) },
-            modifier = Modifier.padding(horizontal = 8.dp),
+            onClick = { commit(MaRows.defaultCopyRow()) },
+            modifier = Modifier.padding(horizontal = 12.dp),
         ) { Text("Reset to the default row") }
 
         Spacer(Modifier.height(24.dp))
+
+        if (picking) {
+            MaKeyPicker(
+                macroSlots = macroSlots,
+                onDismiss = { picking = false },
+                // The picker adds several at once, in the order they were ticked, so a row can be
+                // assembled left to right in one visit.
+                onAdd = { buttons ->
+                    picking = false
+                    commit(row.copy(entries = row.entries + buttons.map { MaRows.Entry(it) }))
+                },
+            )
+        }
+    }
+}
+
+/** One "where does it appear" tick. Two of them, and they are independent. */
+@Composable
+private fun SurfaceTick(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = onChange)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(start = 8.dp),
+        )
     }
 }

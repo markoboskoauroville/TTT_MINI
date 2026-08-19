@@ -229,9 +229,9 @@ enum class MaFeatureKey(val id: String, val label: String) {
      */
     SPACER("spacer", "Spacer, empty room on the row"),
 
-    ZONE_1("zone1", "1, the number row"),
-    ZONE_2("zone2", "2, the keys"),
-    ZONE_3("zone3", "3, the copy row"),
+    ZONE_1("zone1", "n, the number row"),
+    ZONE_2("zone2", "k, the keys"),
+    ZONE_3("zone3", "c, the copy row"),
     ENTER("enter", "Enter");
 
     companion object {

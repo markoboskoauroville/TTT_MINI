@@ -52,7 +52,18 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun MaZoneGlyph(
-    number: Int,
+    /**
+     * The letter inside the keyboard outline: `n`, `k` or `c`.
+     *
+     * Letters rather than 1, 2, 3. A digit says only which position a key holds in a list nobody
+     * can see; `n` for the number row, `k` for the keyboard and `c` for the copy row say what the
+     * key actually toggles. He reads a picture faster than a word and a word faster than a code,
+     * and 1, 2, 3 was a code.
+     *
+     * Lowercase on purpose: it sits inside the outline without touching it, where a capital reaches
+     * the walls of a body only two thirds of the glyph tall.
+     */
+    letter: String,
     tint: Color,
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 24.dp,
@@ -91,7 +102,7 @@ fun MaZoneGlyph(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = number.toString(),
+            text = letter,
             color = tint,
             // Sized against the glyph rather than fixed, so the number keeps its proportions when
             // the same glyph is drawn small on the row and larger in the editor.

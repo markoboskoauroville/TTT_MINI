@@ -1168,6 +1168,30 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * that preference is silently dropped, and the source would look right while the keyboard
          * never showed it. Empty means the shipped default.
          */
+        /** Whether the copy row appears on the typing keyboard. */
+        val maCopyRowOnKeyboard = boolean(
+            key = "dictate__ma_copy_row_on_keyboard",
+            default = false,
+        )
+
+        /** Whether the copy row appears in the transcription view. */
+        val maCopyRowOnTranscribe = boolean(
+            key = "dictate__ma_copy_row_on_transcribe",
+            default = true,
+        )
+
+        /** Whether the copy row appears on the typing keyboard. */
+        val maCopyRowOnKeyboard = boolean(
+            key = "dictate__ma_copy_row_on_keyboard",
+            default = false,
+        )
+
+        /** Whether the copy row appears in the transcription view. */
+        val maCopyRowOnDictate = boolean(
+            key = "dictate__ma_copy_row_on_dictate",
+            default = true,
+        )
+
         val maCopyRow = string(
             key = "dictate__ma_copy_row",
             default = "",
