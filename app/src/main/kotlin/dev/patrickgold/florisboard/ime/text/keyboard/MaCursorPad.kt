@@ -104,7 +104,19 @@ object MaCursorPad {
     fun close() {
         selecting = false
         active = false
+        // Suggestions were suppressed for the whole time the pad was up, so they have to be asked
+        // for again. Without this the row stays empty after closing until the next keystroke
+        // happens to refresh it — which looks like the pad broke the suggestions on its way out.
+        onClosed?.invoke()
     }
+
+    /**
+     * Called after the pad closes, so whoever suppressed things while it was up can restore them.
+     *
+     * A callback rather than this object reaching for the keyboard manager: the pad is drawn by two
+     * different layouts and knows nothing about either, and it should stay that way.
+     */
+    var onClosed: (() -> Unit)? = null
 
     fun toggleSelecting() {
         selecting = !selecting

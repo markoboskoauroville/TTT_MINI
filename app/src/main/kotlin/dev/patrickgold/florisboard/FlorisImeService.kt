@@ -312,8 +312,21 @@ class FlorisImeService : LifecycleInputMethodService() {
         setTheme(R.style.FlorisImeTheme)
     }
 
+    /**
+     * Suggestions come back the moment the trackpad closes.
+     *
+     * Registered once here rather than at each of the two places the pad is drawn, so the two
+     * cannot end up restoring different things.
+     */
+    private fun maWireCursorPad() {
+        MaCursorPad.onClosed = {
+            runCatching { keyboardManager.resetSuggestions(editorInstance.activeContent) }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
+        maWireCursorPad()
         FlorisImeServiceReference = WeakReference(this)
         systemLocalesFlow.value = resources.configuration.locales
 

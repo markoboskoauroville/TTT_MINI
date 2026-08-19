@@ -57,6 +57,7 @@ import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
+import dev.patrickgold.florisboard.ime.text.keyboard.MaCursorPad
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardCache
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
@@ -271,6 +272,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     fun resetSuggestions(content: EditorContent) {
+        // Nothing while the trackpad is up, and this is not a nicety.
+        //
+        // Working out suggestions marks a COMPOSING REGION around the word at the cursor, and
+        // marking one collapses whatever is selected. So every arrow the trackpad sent while
+        // selecting immediately threw the selection away: he would select a few words, the
+        // suggestion row would refresh, and the selection was gone. It read as chaos and it was one
+        // line of cause.
+        //
+        // Cleared rather than merely skipped, so a row of stale words is not left hanging over a
+        // pad it no longer describes.
+        if (MaCursorPad.active) {
+            nlpManager.clearSuggestions()
+            return
+        }
         if (!(activeState.isComposingEnabled || nlpManager.isSuggestionOn())) {
             nlpManager.clearSuggestions()
             return

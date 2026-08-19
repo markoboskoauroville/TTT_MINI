@@ -3244,3 +3244,44 @@ decision, so showing it invites him to check something he cannot change.
 `MaLanguage.active()` — which the probe now writes **synchronously** before the request is built
 (§80). So detection genuinely drives the routing: English takes sync, Croatian takes the slow
 accurate model, and neither is a coincidence of timing.
+
+---
+
+# 88. Suggestions were eating the trackpad's selection
+
+He reported selecting a few words on the trackpad and watching the selection vanish, over and over.
+It read as chaos and it was one line of cause.
+
+**Computing suggestions marks a composing region around the word at the cursor, and marking one
+collapses whatever is selected.** So every arrow the pad sent triggered a refresh, and the refresh
+threw the selection away.
+
+Three parts to the fix, and all three are needed:
+
+- **`resetSuggestions` returns early while the pad is open**, and *clears* rather than merely
+  skipping, so no stale row is left hanging over a pad it no longer describes.
+- **The Smartbar treats the candidate list as empty while the pad is open.** Suppressing new
+  suggestions does not remove the last set from the flow — without this the row would still show
+  words describing a cursor that has since moved.
+- **Closing the pad asks for suggestions again**, through `MaCursorPad.onClosed`. Otherwise the row
+  stays empty until the next keystroke, which looks like the pad broke suggestions on its way out.
+  Registered once in the service, not at the two places the pad is drawn, so the two cannot restore
+  different things. A callback rather than the pad reaching for the keyboard manager — it is drawn
+  by two layouts and knows about neither.
+
+## Tested
+
+**4 cases, 0 failures**, and the invariant that matters: **a selection made on the trackpad is never
+destroyed**, across 200 runs.
+
+**The first version of the test failed, and the test was wrong, not the code.** It asserted that a
+selection survives with the pad closed during ordinary typing — but there is no selection then, and
+a composing region collapsing nothing is correct. Fixing the model rather than the code is the
+whole point of testing the test.
+
+## Still open: making them work together
+
+He asked for suppression as a first step and coexistence as the better answer. Coexistence needs
+suggestions computed **without** marking a composing region — the region exists so that a picked
+suggestion knows what to replace, and §68 already replaces the whole word around the cursor without
+needing one. **That is the thread to pull** if the row is ever wanted during selection.

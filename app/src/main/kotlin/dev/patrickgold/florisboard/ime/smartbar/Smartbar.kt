@@ -73,6 +73,7 @@ import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionButton
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsRow
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.ime.text.keyboard.MaCursorPad
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.florisboard.dictate.MaLanguage
@@ -186,7 +187,16 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     //
     // Candidates exist only while a word is being typed, which is exactly when they are wanted and
     // exactly when nobody is reading the legend. The moment he stops, the legend returns on its own.
-    val maCandidates by nlpManager.activeCandidatesFlow.collectAsState()
+    // Empty while the trackpad is up, whatever the flow last held.
+    //
+    // The suppression in resetSuggestions stops NEW ones being computed, but the last set stays in
+    // the flow — so without this the row would still be showing the words from just before the pad
+    // opened, describing a cursor that has since moved somewhere else entirely.
+    val maCandidates = if (MaCursorPad.active) {
+        emptyList()
+    } else {
+        nlpManager.activeCandidatesFlow.collectAsState().value
+    }
     val maSuggestionsShown by prefs.dictate.maSuggestionsShown.collectAsState()
     val subtypeManager by context.subtypeManager()
     val scope = rememberCoroutineScope()
