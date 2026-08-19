@@ -47,20 +47,19 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun MaZoneGlyph(
-    /**
-     * The letter: `n`, `k` or `c` — number row, keyboard, copy row.
-     *
-     * The keyboard outline and its little spacebar line are gone. At the size a key actually is,
-     * that outline left room for a letter too small to read at a glance, which defeated the whole
-     * reason for using letters instead of digits. **The key's own border carries the "this is on"
-     * state now**, so the glyph has the whole face to itself and the letter can be as big as it
-     * needs to be.
-     */
     letter: String,
     tint: Color,
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 24.dp,
 ) {
+    // Just the letter, as large as the key will hold.
+    //
+    // The keyboard outline and its spacebar line are gone. They drew a picture of a keyboard on
+    // three keys that toggle three different things, so the picture said the same word every time
+    // and the only distinguishing mark — the letter — was squeezed into the space left over.
+    //
+    // Inverted now: the letter is the whole glyph, and whether the key is ON is said by an outline
+    // around the KEY itself. One thing per surface, and the thing that varies gets the room.
     Box(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center,
@@ -68,10 +67,13 @@ fun MaZoneGlyph(
         Text(
             text = letter,
             color = tint,
-            // Nearly the whole glyph. Sized against it rather than fixed, so the same letter keeps
-            // its proportions drawn small on the row and larger in the editor.
+            // Nearly the full height of the box. Sized against the glyph rather than fixed, so it
+            // keeps its proportions drawn small on the row and larger in the editor.
             fontSize = (size.value * 0.86f).sp,
             fontWeight = FontWeight.SemiBold,
+            // Lowercase letters sit on a baseline with descender space beneath that nothing here
+            // uses, so without this nudge the letter reads as hanging above centre.
+            modifier = Modifier.offset(y = size * 0.04f),
         )
     }
 }

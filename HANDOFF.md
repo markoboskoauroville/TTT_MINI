@@ -161,3 +161,12 @@ before being wired in, and none of them needed a build to find their bugs.
 
 He dictates, so messages arrive garbled. Read through it, and ask when a word could mean two things —
 Groq and Grok cost a whole exchange before that was written down.
+
+## Settings rules
+
+- **A button in a settings list carries its icon.** Whenever a screen lists keys or buttons, every
+  row shows the same glyph the keyboard shows, beside the name. He recognises the image before he
+  reads the word, and a list of bare names makes him translate twice. `MaRowKeyItem` is the shape to
+  copy, and reusing it is better than matching it.
+- **An important key says it is on with an outline around the KEY**, not by tinting something inside
+  it. A ring reads from across the room and leaves the whole face free for one large glyph.

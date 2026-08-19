@@ -3569,3 +3569,35 @@ which row it belongs to.
 **Deliberately not the sand** used on the keyboard. That colour means "this key is holding
 something" throughout the app; reusing it for "this is the copy row" would give one colour two jobs,
 and the first screen showing both would say the same thing twice and mean different things.
+
+---
+
+# 95. The letter is the glyph, and the ring is the state
+
+The zone keys drew a small keyboard outline with a spacebar line and a digit tucked inside. **Three
+keys that toggle three different things all drew the same picture**, and the only mark that
+distinguished them — the letter — got the space left over.
+
+Inverted. **The letter is now the whole glyph**, at 0.86 of the key face, and whether the key is ON
+is said by a **green ring around the key itself**. One thing per surface, and the thing that varies
+gets the room.
+
+The keyboard outline, the spacebar line and seven drawing imports are gone with it.
+
+**Written into HANDOFF as a rule**, because it generalises: an important key says it is on with an
+outline around the key, not by tinting something inside it. A ring reads from across the room.
+
+## Also into HANDOFF: icons in settings lists
+
+Whenever a screen lists keys or buttons, every row carries the same glyph the keyboard shows. He
+recognises the image before he reads the word. `MaRowKeyItem` is the shape to copy — and reusing it
+beats matching it, which is why the copy row editor shares it outright.
+
+## The copy row gets its own colour
+
+A dark amber behind its rows, so a glance says which list is being edited. **Deliberately not the
+sand** used for a lit key: that colour already means "this key is holding something" everywhere in
+the app, and giving one colour two jobs fails the first time a lit key and a copy row share a screen.
+
+**Lifted still wins over the accent** while dragging, because the feedback under the finger matters
+more than the identity of the list.
