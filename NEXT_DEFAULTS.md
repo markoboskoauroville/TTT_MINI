@@ -3194,3 +3194,53 @@ of letters rather than of words. Whole words only, computed once per passage.
 changed exactly as many times as there are pages, so it never flickers back.
 
 Every page fits, and every word belongs to exactly one page — both checked across the passage.
+
+---
+
+# 87. Detect the language from the TRANSCRIPT, not from the sound
+
+Auto-detection was unreliable and he was right that it should not be. **The mistake was asking the
+wrong question.**
+
+Whisper's `language` field is an acoustic guess made from the opening seconds, before it has heard
+much, and Croatian is a small language sitting beside four larger ones it is routinely confused
+with. Meanwhile the same response carries **the transcript** — and text is decisive in a way sound is
+not. No English sentence contains `č`. No Croatian sentence is built out of "the" and "of".
+
+**Asking for a language and discarding what was actually heard was the whole error.**
+
+## Three independent signals
+
+- **Diacritics, counted triple.** One `ž` is nearly proof by itself.
+- **Function words.** The commonest words in either language, so present in almost any sentence.
+- **Endings** — and this is the one that matters most. Croatian inflects and English does not, so
+  `-ati -iti -ost -ući -ima -oga` need **no vocabulary at all**. A sentence about camera rigs or tax
+  forms, full of words no list will ever hold, still scores correctly.
+
+The acoustic label is kept only as a fallback for a transcript too short to score — "Okay", "Hvala"
+— where nothing could do better.
+
+## Tested
+
+**16 cases, 0 failures**: both languages, Croatian without diacritics, badly transcribed Croatian,
+one-word utterances, mixed sentences, and empty input.
+
+**The endings rule was added because a real case failed without it** — *"Trebam napraviti novi
+projekt i poslati ga danas"* has no diacritics and no listed function words, and scored nothing.
+
+**Checked against the real Groq transcript** of real Croatian speech, mistakes and all — `"Dobar dan,
+ja som Baba i ovo je snimka Rahavatskom jeziku"` — and it lands on Croatian despite Whisper having
+mangled three words.
+
+## The badge says AUTO
+
+It read `A·HR`, meaning auto mode had resolved to Croatian. **One fact too many on a key the size of
+a thumbnail**, and he read it as a state he did not recognise. On AUTO the language is no longer his
+decision, so showing it invites him to check something he cannot change.
+
+## Right language, right route
+
+`SYNC_SAFE_LANGUAGES` still gates the fast path and still contains only English, and it reads
+`MaLanguage.active()` — which the probe now writes **synchronously** before the request is built
+(§80). So detection genuinely drives the routing: English takes sync, Croatian takes the slow
+accurate model, and neither is a coincidence of timing.

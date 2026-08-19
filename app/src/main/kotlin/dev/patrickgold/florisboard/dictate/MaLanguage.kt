@@ -89,8 +89,14 @@ object MaLanguage {
      * No arguments, so the four places that draw a badge cannot end up saying different things.
      */
     fun badge(): String {
-        val lang = if (active() == EN) "ENG" else "HR"
-        return if (mode() == MODE_AUTO) "A\u00B7$lang" else lang
+        // AUTO says AUTO. Nothing else.
+        //
+        // It used to read "A·HR", meaning auto mode currently resolved to Croatian, and that is
+        // one piece of information too many on a key the size of a thumbnail: he read it as a
+        // state he did not recognise rather than as two facts. On AUTO the language is not his
+        // decision any more, so showing it invites him to check a thing he cannot change.
+        if (mode() == MODE_AUTO) return "AUTO"
+        return if (active() == EN) "ENG" else "HR"
     }
 
     /**

@@ -3614,8 +3614,16 @@ object DictateController {
         }
         try {
             for (key in keys) {
-                val reported = probeOnce(toSend, key) ?: continue
-                return MaLanguageProbe.clampToTwo(reported)
+                val answer = probeOnce(toSend, key) ?: continue
+                // The TRANSCRIPT decides; the acoustic label is only the fallback.
+                //
+                // Whisper's language field is a guess made from the opening seconds, and Croatian
+                // sits beside four larger languages it is routinely confused with. The text it
+                // returned in the same response is far better evidence and costs nothing extra —
+                // asking for a language and discarding what was actually heard was the mistake.
+                val verdict = MaLanguageProbe.decide(answer.first, answer.second)
+                MaLog.add("lang", "heard '${answer.first}', text decided $verdict")
+                return verdict
             }
         } finally {
             // Deleted whether the probe answered, failed or threw. It is a copy of his voice in the
