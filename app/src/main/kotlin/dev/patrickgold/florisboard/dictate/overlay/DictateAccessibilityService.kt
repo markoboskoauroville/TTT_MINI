@@ -828,6 +828,17 @@ class DictateAccessibilityService : AccessibilityService() {
             return MaScreenTargets.pressFirstMatch(ims, targets)
         }
 
+        /**
+         * The screen's readable text, or empty when the service is not running.
+         *
+         * Wrapped here rather than exposing `instance`, so the service stays the only thing that
+         * knows whether it is alive and callers cannot hold a reference to a dead one.
+         */
+        fun readableScreenText(): String {
+            val ims = instance ?: return ""
+            return MaScreenTargets.readableText(ims)
+        }
+
         /** Presses the match [rank] places up from the bottom-most. Null when there is no such match. */
         fun pressScreenTargetAt(targets: List<String>, rank: Int): String? {
             val ims = instance ?: return null

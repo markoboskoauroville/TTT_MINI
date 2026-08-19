@@ -137,6 +137,26 @@ object ProviderRegistry {
         ),
     )
 
+    /**
+     * Speechify — the reading voices.
+     *
+     * Registered for the same reason Groq was (§31): `MaKeys` has known the `sk_` shape all along,
+     * but `MaKeyImport` looks the provider up here first and skips anything it cannot find, so his
+     * keys were recognised and then dropped on the floor.
+     *
+     * `CHAT_ONLY` is a lie of convenience — it speaks rather than chats — but the capability flags
+     * decide which role chips a provider may hold, and speaking is not one of the roles. What
+     * actually matters is that it is in `presets` at all.
+     */
+    val SPEECHIFY = ProviderPreset(
+        id = "speechify",
+        displayName = "Speechify",
+        baseUrl = "https://api.sws.speechify.com/",
+        capabilities = CHAT_ONLY,
+        supportsDynamicModels = false,
+        apiKeyUrl = "https://console.sws.speechify.com/api-keys",
+    )
+
     val OPENROUTER = ProviderPreset(
         id = "openrouter",
         displayName = "OpenRouter",
@@ -452,7 +472,7 @@ object ProviderRegistry {
      * A stored Gemini key is not erased by this; it stops being shown and stops being importable.
      */
     val presets: List<ProviderPreset> = listOf(
-        ASSEMBLYAI, ANTHROPIC, GROQ, LOCAL,
+        ASSEMBLYAI, ANTHROPIC, GROQ, SPEECHIFY, LOCAL,
     )
 
     fun byId(id: String): ProviderPreset? = presets.firstOrNull { it.id == id }

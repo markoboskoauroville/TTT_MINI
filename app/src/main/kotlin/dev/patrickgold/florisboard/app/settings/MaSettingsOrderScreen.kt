@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dashboard
@@ -77,6 +78,7 @@ val MaSettingsEntry.icon: ImageVector
         MaSettingsEntry.VOICE_COMMANDS -> Icons.Default.Mic
         MaSettingsEntry.SHORTCUTS -> Icons.Default.Keyboard
         MaSettingsEntry.VOICE_FORMAT -> Icons.Default.Spellcheck
+        MaSettingsEntry.READER -> Icons.AutoMirrored.Filled.VolumeUp
         MaSettingsEntry.KEYS -> Icons.Default.Key
         MaSettingsEntry.VOCABULARY -> Icons.Default.Spellcheck
         MaSettingsEntry.BUCKETS -> Icons.Default.ContentPasteGo
@@ -107,6 +109,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.VOICE_COMMANDS -> Routes.Settings.MaVoiceCommands
         MaSettingsEntry.SHORTCUTS -> Routes.Settings.MaShortcuts
         MaSettingsEntry.VOICE_FORMAT -> Routes.Settings.MaVoiceFormat
+        MaSettingsEntry.READER -> Routes.Settings.MaReader
         MaSettingsEntry.KEYS -> Routes.Settings.DictateKeys
         MaSettingsEntry.VOCABULARY -> Routes.Settings.MaVocabulary
         MaSettingsEntry.BUCKETS -> Routes.Settings.MaBuckets

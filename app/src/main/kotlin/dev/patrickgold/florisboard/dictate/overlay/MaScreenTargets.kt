@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import android.accessibilityservice.AccessibilityService
 import android.graphics.Rect
+import dev.patrickgold.florisboard.dictate.MaScreenText
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import kotlinx.coroutines.delay
@@ -724,6 +725,42 @@ object MaScreenTargets {
                 // A single word matches whole, so "send" does not fire on "resend" or "sendbird".
                 label.split(' ', '/', ':', '.', '-', ',').any { it == target }
             }
+        }
+    }
+
+    /**
+     * Everything on screen worth reading aloud, in reading order.
+     *
+     * Walks the same windows the finger uses, keeps what [MaScreenText.isWorthReading] allows, and
+     * hands the rest to [MaScreenText.assemble] to be ordered and joined.
+     *
+     * Only what is materialised, which is the viewport and roughly a screen either side — Android
+     * destroys rows far from view, so they do not exist to be read (§59). That is the whole reason
+     * this reads the visible screen rather than promising a document.
+     */
+    fun readableText(service: AccessibilityService): String {
+        val lines = mutableListOf<MaScreenText.Line>()
+        for (root in appWindowRoots(service)) {
+            try {
+                collectText(root, lines, 0)
+            } finally {
+                runCatching { root.recycle() }
+            }
+        }
+        return MaScreenText.assemble(lines).take(MaScreenText.MAX_CHARS)
+    }
+
+    private fun collectText(node: AccessibilityNodeInfo, out: MutableList<MaScreenText.Line>, depth: Int) {
+        if (depth > 30 || out.size > 400) return
+        val text = node.text?.toString()
+        if (MaScreenText.isWorthReading(text, node.isClickable)) {
+            val r = Rect().also { node.getBoundsInScreen(it) }
+            out.add(MaScreenText.Line(text!!.trim(), r.top, r.left))
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectText(child, out, depth + 1)
+            runCatching { child.recycle() }
         }
     }
 

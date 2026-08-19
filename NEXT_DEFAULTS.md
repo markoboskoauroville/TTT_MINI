@@ -2894,3 +2894,57 @@ itself, and no stored value changes meaning.
 **Not tested: the phone.** Whether `runBlocking` on Main is fast enough not to be felt on a
 preference write — it is a local datastore write, but it is a block on the UI thread and worth
 watching.
+
+---
+
+# 81. The screen reader, with Speechify voices
+
+A speaker key in the feature row. **Short press reads what is on screen; press again to pause, again
+to continue. Long press opens the reader settings.** The face shows what the NEXT press will do —
+speaker, pause bars, play triangle — because a key that describes its own state leaves him working
+out what pressing it would achieve.
+
+## Ukrainian stands where Croatian would
+
+**Speechify has no Croatian voice.** Verified across the whole catalogue: 985 voices, every page
+walked, no `hr-HR` on any model. The only Slavic locales that exist are Russian (50 voices), Polish
+(2) and Ukrainian (2).
+
+He compared five renderings of the same Croatian sentence and chose **Lesya (Ukrainian)** first,
+**Beatrice (British, multilingual)** second. Slavic phonetics turn `č ć ž š đ` and the `-lj- -nj-`
+clusters into sounds rather than spellings.
+
+**The model follows the voice, never a global default.** `lesya` exists only on `simba-multilingual`
+and `simba-3.0`; `simba-english` would fail for her, and `simba-3.2` answers HTTP 400 for anything
+outside the eight curated `_32` ids.
+
+**The language pill picks the voice.** The same badge that sets the dictation language chooses who
+reads, so there is nothing extra to keep in step.
+
+## The hard part was refusing, not reading
+
+A screen is mostly chrome. Two rules do nearly all the work:
+
+- **Anything clickable is never read.** Nobody writes a paragraph inside a button, so this separates
+  "Copy message" and "More options" from prose without a list to maintain — and those two were the
+  exact cases the length rule could not catch.
+- **Under 12 characters is a label.** "Send", "New chat", "Opus 5", every timestamp.
+
+Then: nothing without a letter in it, a short chrome list for the long boilerplate, and duplicates
+dropped — a string usually appears twice, on the container and on the text node inside it, and
+hearing every sentence twice is the fastest way to ruin a reader.
+
+**Reading order comes from the screen, not the tree.** Sorted by top edge then left, because the tree
+is a layout hierarchy and gets it wrong exactly when there are columns.
+
+## Tested
+
+**Test 1 — 22 cases, 0 failures**, using real strings from his own dumps. Both refusal cases that
+failed the first attempt drove the clickability rule. Reading order and de-duplication verified.
+
+**Not tested: a real synthesis from the app.** The key ring, the mp3 playback, and whether the
+reading is pleasant. All need the phone and his Speechify keys imported.
+
+**He must import the keys first** — Speechify is registered now (it was recognised by `MaKeys` all
+along but missing from `ProviderRegistry`, exactly the gap Groq had in §31), so the keys screen will
+accept them.

@@ -150,6 +150,15 @@ enum class MaFeatureKey(val id: String, val label: String) {
     PIN("pin", "Pin, keep the keyboard up"),
 
     /**
+     * The reader: speak what is on screen, pause, resume.
+     *
+     * Short press cycles; a long press opens the reader settings, where the voice is chosen. The
+     * settings live behind a long press rather than a key of their own because the voice is picked
+     * once and the reading happens constantly.
+     */
+    READER("reader", "Reader, speak the screen"),
+
+    /**
      * The dictation history: everything transcribed, ready to put back into a field.
      *
      * A key rather than a menu because it is the recovery route. A dictation that went into the
@@ -273,6 +282,7 @@ object MaFeatureOrder {
         MaFeatureKey.SHIFT,
         MaFeatureKey.CHANGE_CASE,
         MaFeatureKey.PIN,
+        MaFeatureKey.READER,
         MaFeatureKey.SPACER,
     )
 

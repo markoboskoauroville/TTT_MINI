@@ -1142,6 +1142,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "hr",
         )
 
+        /** The voice that reads Croatian. Empty means the shipped default, Lesya. */
+        val maReaderVoiceHr = string(
+            key = "dictate__ma_reader_voice_hr",
+            default = "lesya",
+        )
+
+        /** The voice that reads English. */
+        val maReaderVoiceEn = string(
+            key = "dictate__ma_reader_voice_en",
+            default = "beatrice_32",
+        )
+
         val maVoiceFormatOff = string(
             key = "dictate__ma_voice_format_off",
             default = "",

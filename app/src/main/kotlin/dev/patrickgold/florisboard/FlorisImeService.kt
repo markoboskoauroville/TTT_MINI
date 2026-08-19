@@ -47,6 +47,7 @@ import kotlinx.coroutines.delay
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaLog
+import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.ime.text.keyboard.MaCursorPad
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
@@ -432,6 +433,9 @@ class FlorisImeService : LifecycleInputMethodService() {
         // way out. A second, unconditional one: opening any field closes it. So even if every
         // gesture failed, switching app or tapping another box returns a working keyboard.
         MaCursorPad.close()
+        // The reader stops at the door. A voice still describing a screen he has left is the same
+        // mistake as a mode with no way out, and this is the same unconditional cure.
+        MaReader.stop()
         // And with it the selection mode it may have turned on, for the same reason: a flag left
         // set would make arrows select on a field that never saw the pad.
         activeState.isManualSelectionMode = false
