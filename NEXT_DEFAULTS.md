@@ -3305,3 +3305,27 @@ different `head`s in one function is a bug waiting to be written.
 
 **8 cases, 0 failures**, including three-line and four-line input with every command family, and the
 check that matters: **the newline count is identical before and after, in every case.**
+
+---
+
+# 90. Two more keys become modules
+
+`MaSubtitleToggleKey` and `MaReaderKey` join the pin, the case cycle and the next-field key in
+`MaKeyModules.kt`. **Five of about twenty.** The row is 1237 lines down to 1199, and four imports it
+no longer needs went with them.
+
+Both obey the contract from §69. The subtitle toggle takes only a colour and reads its own
+preference — the simplest kind of module, droppable anywhere without the surface knowing what a
+subtitle is. The reader key takes a context, a way to open its settings and a way to say something;
+`MaReader` holds the state, so **the same key drawn on two surfaces shows the same thing without
+either surface tracking it.**
+
+## The mistake worth recording
+
+The first attempt sliced from `SUBTITLE` to `PIN` and replaced **nothing**, because `SUBTITLE` sits
+*after* `PIN` in that file — the slice was empty and the write was a no-op.
+
+**The balance check passed and the line count was identical, and both were true.** A structural check
+cannot tell "nothing changed" from "changed correctly"; it took reading the file for the branches to
+see it. Same lesson as §87's type mismatch, from the other direction: **after a scripted edit, verify
+the thing the edit was supposed to produce, not the shape of the file.**

@@ -13,6 +13,9 @@ package dev.patrickgold.florisboard.dictate.ui
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.KeyboardTab
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.PushPin
@@ -23,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaCaseCycle
+import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
@@ -114,6 +118,72 @@ fun MaCaseKey(
                 editorInstance.commitText(next)
             }
         }
+    }
+}
+
+/**
+ * S: show or hide the subtitle row.
+ *
+ * Reads and writes its own preference and takes nothing else, which makes it the simplest kind of
+ * module — droppable anywhere without the surface knowing what a subtitle is.
+ */
+@Composable
+fun MaSubtitleToggleKey(
+    modifier: Modifier,
+    litColor: Color,
+) {
+    val prefs by FlorisPreferenceStore
+    val scope = rememberCoroutineScope()
+    val display by prefs.dictate.maReaderDisplay.collectAsState()
+    val on = display == "subtitle"
+    ThemedTextKey(
+        label = "S",
+        modifier = modifier,
+        // Lit when on, because the row it controls is blank between sentences — without this a
+        // press would look like it had done nothing at all.
+        tint = if (on) litColor else null,
+    ) {
+        scope.launch { prefs.dictate.maReaderDisplay.set(if (on) "off" else "subtitle") }
+    }
+}
+
+/**
+ * The reader: speak the screen, pause, resume. Long press opens its settings.
+ *
+ * Takes a context and a way to say something, and nothing else. [MaReader] holds the state, so the
+ * same key drawn on two surfaces shows the same thing without either surface tracking it.
+ */
+@Composable
+fun MaReaderKey(
+    modifier: Modifier,
+    context: Context,
+    litColor: Color,
+    onOpenSettings: () -> Unit,
+    onMessage: (String) -> Unit,
+) {
+    val state = MaReader.state
+    ThemedIconKey(
+        code = KeyCode.NOOP,
+        // The face shows what the NEXT press does, not what is happening now. A key that describes
+        // its own state leaves him working out what pressing it would achieve.
+        icon = when (state) {
+            MaReader.State.SPEAKING -> Icons.Default.Pause
+            MaReader.State.PAUSED -> Icons.Default.PlayArrow
+            else -> Icons.AutoMirrored.Filled.VolumeUp
+        },
+        contentDescription = when (state) {
+            MaReader.State.SPEAKING -> "Pause reading"
+            MaReader.State.PAUSED -> "Continue reading"
+            MaReader.State.LOADING -> "Stop"
+            else -> "Read this screen"
+        },
+        modifier = modifier,
+        // Lit whenever it is doing something, so a synthesis that takes a moment does not look
+        // like a press that missed.
+        tint = if (state == MaReader.State.IDLE) null else litColor,
+        onLongClick = onOpenSettings,
+    ) {
+        MaReader.toggle(context, onMessage)
     }
 }
 

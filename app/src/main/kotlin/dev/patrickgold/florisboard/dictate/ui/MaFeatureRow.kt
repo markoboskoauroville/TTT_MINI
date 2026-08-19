@@ -45,9 +45,6 @@ import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Dashboard
@@ -89,7 +86,6 @@ import dev.patrickgold.florisboard.dictate.MaFeatureOrder
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import androidx.compose.runtime.LaunchedEffect
 import dev.patrickgold.florisboard.ime.ImeUiMode
-import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.MaClipCapture
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaSettingsResume
@@ -646,57 +642,19 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 // what the key is — which is the whole point of the move.
                 MaFeatureKey.PIN -> MaPinKey(modifier = keyMod, litColor = MaSand)
 
-                MaFeatureKey.SUBTITLE -> {
-                    // Lit when the row is on, because the key changes something that may be showing
-                    // nothing at that moment — between sentences the row is blank, and without the
-                    // lit state a press would look like it had done nothing at all.
-                    val display by prefs.dictate.maReaderDisplay.collectAsState()
-                    val on = display == "subtitle"
-                    ThemedTextKey(
-                        label = "S",
-                        modifier = keyMod,
-                        tint = if (on) MaSand else null,
-                    ) {
-                        scope.launch {
-                            prefs.dictate.maReaderDisplay.set(if (on) "off" else "subtitle")
-                        }
-                    }
-                }
+                // Both drawn by their modules. The row names the key and says nothing about what
+                // the key is, which is the whole point of moving them out.
+                MaFeatureKey.SUBTITLE -> MaSubtitleToggleKey(modifier = keyMod, litColor = MaSand)
 
-                MaFeatureKey.READER -> {
-                    // The face shows what the NEXT press does, not what is happening now.
-                    //
-                    // Speaker when idle, pause bars while it is talking, a play triangle when
-                    // paused. A key that described its own state would leave him working out what
-                    // pressing it would achieve, which is one thought too many for a key pressed
-                    // mid-sentence.
-                    val readerState = MaReader.state
-                    ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = when (readerState) {
-                            MaReader.State.SPEAKING -> Icons.Default.Pause
-                            MaReader.State.PAUSED -> Icons.Default.PlayArrow
-                            else -> Icons.AutoMirrored.Filled.VolumeUp
-                        },
-                        contentDescription = when (readerState) {
-                            MaReader.State.SPEAKING -> "Pause reading"
-                            MaReader.State.PAUSED -> "Continue reading"
-                            MaReader.State.LOADING -> "Stop"
-                            else -> "Read this screen"
-                        },
-                        modifier = keyMod,
-                        // Lit while it is doing something, so a synthesis that takes a moment does
-                        // not look like a press that missed.
-                        tint = if (readerState == MaReader.State.IDLE) null else MaSand,
-                        onLongClick = {
-                            FlorisImeService.launchSettings("settings/dictate/reader")
-                        },
-                    ) {
-                        MaReader.toggle(context) { message ->
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
+                MaFeatureKey.READER -> MaReaderKey(
+                    modifier = keyMod,
+                    context = context,
+                    litColor = MaSand,
+                    onOpenSettings = { FlorisImeService.launchSettings("settings/dictate/reader") },
+                    onMessage = { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    },
+                )
 
                 MaFeatureKey.AUTO_BUCKET -> {
                     // The face carries the count, because the count is the only thing about this
