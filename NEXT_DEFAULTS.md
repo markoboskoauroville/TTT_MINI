@@ -3688,3 +3688,54 @@ than pushed onto it.
 instance you can have several of — three export presets, four keyboard maps. Here that would mean
 several named feature-row layouts or prompt sets, not just one of each. **Profiles do it for the whole
 app at once; per-category instances would do it properly.**
+
+---
+
+# 96. The Avid settings architecture: what exists, what is missing, and the order to build it
+
+He specified the model precisely: **profiles → categories → instances**, with radio-button
+activation, twist-down folders, duplication, master-detail routing and a search filter. It is the
+right model for someone with twenty-seven years of Avid muscle memory, and it should be built.
+
+**It must not be built in one pass.** It touches all nineteen settings screens and he uses this
+keyboard every hour of every day.
+
+## Layer 1 — the profile. ALREADY BUILT.
+
+`MaSettingsVault` + `MaProfilesScreen` have named profiles, `RadioButton` activation, **duplicate**,
+delete, and a folder that is the truth rather than a cached list. `switchProfile` and
+`exportProfile` are covered by activation and the shared Documents folder.
+
+**Do not rebuild this.** Read it first.
+
+## Layer 2 — instances within a category. NOT BUILT, and it is the whole idea.
+
+Today each screen holds **one** configuration. Avid's power is that a category holds *several named
+instances* and one carries the checkmark: three keyboard maps, four export presets, and you switch
+by clicking.
+
+**Where this is worth having, in order of value:**
+
+1. **Prompts** — Ctrl+P and Ctrl+F already hold one custom wording each. Several named prompts with
+   a checkmark is exactly his earlier request (§ the CC screen), and this is the same feature.
+2. **Rows** — the three feature rows plus the copy row are already presets; naming them and adding
+   duplicate makes them instances.
+3. **Voices** — already a radio list. It is an instance list without the vocabulary.
+
+**Everything else holds one thing and should stay holding one thing.** A category with one possible
+instance is a folder with one file in it, and Avid users know that is noise.
+
+## Layer 3 — the tree, twist-downs, master-detail, search. LAST.
+
+The settings home is a flat draggable list he arranged himself. Turning it into a tree is the most
+visible change and the least valuable one: **nineteen categories that mostly hold a single instance
+would make every setting two taps further away than it is now.**
+
+Build layer 2 first. If enough categories end up holding several instances, the tree earns itself. If
+they do not, the tree was never the feature — the instances were.
+
+## The generic mechanism to write once
+
+`name`, `isActive`, `isDefault`, `configurationData`, and `duplicate()`. One storage shape reused by
+prompts, rows and voices rather than three implementations — the same argument that made the copy row
+share the feature row's editor rather than copy it.
