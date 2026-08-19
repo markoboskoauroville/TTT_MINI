@@ -249,7 +249,7 @@ fun MaFeatureRow(
     // transcription view has no letters and the clipboard is its whole job, while the typing
     // keyboard already carries three feature rows. He may want it in one, the other, or both.
     val onKeyboard by prefs.dictate.maCopyRowOnKeyboard.collectAsState()
-    val onTranscribe by prefs.dictate.maCopyRowOnTranscribe.collectAsState()
+    val onTranscribe by prefs.dictate.maCopyRowOnDictate.collectAsState()
     val wanted = if (copyRowOnly) onTranscribe else onKeyboard
     val rows = when {
         copyRowOnly -> if (wanted && copyButtons.isNotEmpty()) listOf(copyButtons) else emptyList()
