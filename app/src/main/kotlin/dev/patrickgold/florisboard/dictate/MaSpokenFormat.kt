@@ -168,7 +168,19 @@ object MaSpokenFormat {
     private const val MAX_COMMANDS = 8
 
     private fun applyOnce(text: String, off: Set<String>): String? {
-        val trimmed = text.trimEnd()
+        // Work on the LAST LINE only, and put the rest back untouched.
+        //
+        // Splitting the whole text on whitespace and rejoining it with spaces flattened every
+        // newline in the dictation — so a command used on more than one line silently destroyed
+        // the line breaks, which is worse than the command not working at all.
+        //
+        // The last line is also the only line a command can be on, since a command counts only as
+        // the final word. So this is not a compromise: it is the correct scope, arrived at late.
+        val cut = text.trimEnd().lastIndexOf('\n')
+        val head = if (cut >= 0) text.substring(0, cut + 1) else ""
+        val tail = if (cut >= 0) text.substring(cut + 1) else text
+
+        val trimmed = tail.trimEnd()
         if (trimmed.isEmpty()) return null
         val words = trimmed.split(Regex("\\s+"))
         if (words.size < 2) return null
@@ -184,8 +196,10 @@ object MaSpokenFormat {
         val consumed = if (pairHit != null) 2 else 1
         // A mark he has switched off is not a command at all, so the word stays in his sentence.
         if (command in off) return null
-        val head = words.dropLast(consumed)
-        if (head.isEmpty()) return null
+        // The words the command acts on: the last line minus the command itself. Named `body` so it
+        // cannot be confused with `head`, which is the earlier lines this must not touch.
+        val body = words.dropLast(consumed)
+        if (body.isEmpty()) return null
 
         // Punctuation stuck to the command word, which may be a full stop THIS class put there on an
         // earlier pass.
@@ -206,20 +220,21 @@ object MaSpokenFormat {
             .takeIf { it.isNotEmpty() && it.all { c -> c in ".!?,;:" } }
             .orEmpty()
 
-        return when (command) {
-            in PARENTHESIS -> wrapLastWord(head, "(", ")") + suffix
-            in UPPERCASE -> upperLastSentence(head) + suffix
+        // `head` is the untouched earlier lines; `body` is what the command rewrites.
+        return head + when (command) {
+            in PARENTHESIS -> wrapLastWord(body, "(", ")") + suffix
+            in UPPERCASE -> upperLastSentence(body) + suffix
             // Underscore preserves the suffix too. It transforms rather than ends, so a stop
             // already placed belongs to the text, not to the spaces being replaced.
-            in UNDERSCORE -> head.joinToString("_") + suffix
+            in UNDERSCORE -> body.joinToString("_") + suffix
             in WRAPPERS -> {
                 val pair = WRAPPERS.getValue(command)
-                wrapLastWord(head, pair.first, pair.second) + suffix
+                wrapLastWord(body, pair.first, pair.second) + suffix
             }
-            in TRAILERS -> head.joinToString(" ").trimEnd() + TRAILERS.getValue(command) + suffix
-            in DOT -> endSentence(head, '.')
-            in QUESTION -> endSentence(head, '?')
-            in EXCLAMATION -> endSentence(head, '!')
+            in TRAILERS -> body.joinToString(" ").trimEnd() + TRAILERS.getValue(command) + suffix
+            in DOT -> endSentence(body, '.')
+            in QUESTION -> endSentence(body, '?')
+            in EXCLAMATION -> endSentence(body, '!')
             else -> null
         }
     }

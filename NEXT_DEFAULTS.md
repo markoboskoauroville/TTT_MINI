@@ -3285,3 +3285,23 @@ He asked for suppression as a first step and coexistence as the better answer. C
 suggestions computed **without** marking a composing region — the region exists so that a picked
 suggestion knows what to replace, and §68 already replaces the whole word around the cursor without
 needing one. **That is the thread to pull** if the row is ever wanted during selection.
+
+---
+
+# 89. Voice formatting stops flattening newlines
+
+The defect found by §76's own test and written down rather than fixed. **Splitting the whole text on
+whitespace and rejoining with spaces destroyed every line break**, so a spoken command used on
+multi-line text silently collapsed it — worse than the command not working at all.
+
+`applyOnce` now works on the **last line only** and puts the earlier lines back untouched.
+
+**Not a compromise, the correct scope.** A command counts only as the final word, so the last line is
+the only line a command can be on. The whole-text version was never right; it merely looked right
+until the text had two lines.
+
+The inner word list is renamed `body`, because `head` now means the untouched earlier lines and two
+different `head`s in one function is a bug waiting to be written.
+
+**8 cases, 0 failures**, including three-line and four-line input with every command family, and the
+check that matters: **the newline count is identical before and after, in every case.**
