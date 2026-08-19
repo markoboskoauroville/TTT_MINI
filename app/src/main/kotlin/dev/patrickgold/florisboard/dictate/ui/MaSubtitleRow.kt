@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,27 +56,30 @@ import dev.patrickgold.florisboard.dictate.MaSpeechify
  */
 @Composable
 fun MaSubtitleRow(modifier: Modifier = Modifier) {
-    val word = MaReader.currentWord
-    if (word.isEmpty()) return
-
-    val words = MaSpeechify.lastWords
-    val index = words.indexOfFirst { it.text == word }
+    val index = MaReader.currentIndex
     if (index < 0) return
-    val sentence = sentenceContaining(words.map { it.text }, index)
-    if (sentence.first.isEmpty()) return
+    val words = MaSpeechify.lastWords
+    if (index >= words.size) return
 
-    // One block of wrapped text, not a scrolling line.
+    // Pages of a size that FITS, not sentences.
     //
-    // The first version scrolled horizontally to keep the current word in view, and the effect was
-    // that every word shifted the whole line — the text appeared to vibrate, and the highlight ran
-    // off the edge on a long sentence. Wrapping instead means nothing moves except the colour.
+    // Sentences were the wrong unit. One long sentence overflows a three-line box, so the text
+    // jumped as the highlight moved through the part that could not be shown — and a very short
+    // sentence left the box nearly empty. Neither had anything to do with how much room there is.
     //
-    // Built as one AnnotatedString rather than a Row of Texts, because a Row cannot wrap: it would
-    // push the sentence sideways again, which is the same bug wearing different clothes.
+    // A page is a run of words that fits, and it changes only when the spoken word leaves it. So
+    // the text is still for the length of a whole page and then replaces itself once, which is the
+    // slideshow he asked for rather than a crawl.
+    val pages = remember(words) { paginate(words.map { it.text }, PAGE_CHARS) }
+    val page = remember(pages, index) { pages.firstOrNull { index in it.range } } ?: return
+
     val text = buildAnnotatedString {
-        sentence.first.forEachIndexed { i, w ->
+        page.words.forEachIndexed { i, w ->
             if (i > 0) append(" ")
-            if (i == sentence.second) {
+            // Compared by POSITION, never by text. The same word appears many times in a passage
+            // and matching on its letters lands on the first one, which is what made the highlight
+            // jump to the top of the screen on every "the".
+            if (page.range.first + i == index) {
                 withStyle(SpanStyle(color = MaSubtitleLit, fontWeight = FontWeight.Bold)) {
                     append(w)
                 }
@@ -91,9 +95,6 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
             .padding(horizontal = 10.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(MaSubtitleBackground)
-            // The height of the box he types into, so the two read as one interface. Fixed rather
-            // than wrapping to fit, or the keyboard would change height between a short sentence
-            // and a long one — with his thumb already moving towards a key.
             .height(SUBTITLE_HEIGHT)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.TopStart,
@@ -102,33 +103,50 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
             text = text,
             fontSize = 17.sp,
             lineHeight = 23.sp,
-            // Three lines hold a long sentence. Past that it is cut rather than scrolled, since a
-            // sentence long enough to overflow is one where the highlight matters least.
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-/** Matching the composer he reads beside, so the two read as one interface. */
-private val SUBTITLE_HEIGHT = 96.dp
+/** One screenful of subtitle: the words, and where they sit in the whole passage. */
+private data class Page(val words: List<String>, val range: IntRange)
 
 /**
- * The run of words around [index] that forms a sentence, and where [index] sits inside it.
+ * Splits a passage into pages that fit the box.
  *
- * Sentences are derived rather than given: Speechify returns a passage as one flat word list
- * whatever its mark types say, so a sentence is the run between one word ending in `.`, `!` or `?`
- * and the next.
+ * By characters rather than by words, because what fills three lines is a number of letters, not a
+ * number of words — "a" and "responsibility" occupy very different amounts of it.
+ *
+ * A word is never split across pages: a page takes whole words until the next one would not fit.
+ * Computed once per passage and remembered, so scrolling the highlight costs nothing.
  */
-private fun sentenceContaining(words: List<String>, index: Int): Pair<List<String>, Int> {
-    if (index !in words.indices) return emptyList<String>() to -1
-    fun ends(w: String) = w.lastOrNull() in setOf('.', '!', '?')
-    var start = index
-    while (start > 0 && !ends(words[start - 1])) start--
-    var end = index
-    while (end < words.lastIndex && !ends(words[end])) end++
-    return words.subList(start, end + 1) to (index - start)
+private fun paginate(words: List<String>, perPage: Int): List<Page> {
+    if (words.isEmpty()) return emptyList()
+    val pages = mutableListOf<Page>()
+    var start = 0
+    var length = 0
+    for (i in words.indices) {
+        val add = words[i].length + if (length == 0) 0 else 1
+        if (length + add > perPage && i > start) {
+            pages.add(Page(words.subList(start, i), start until i))
+            start = i
+            length = words[i].length
+        } else {
+            length += add
+        }
+    }
+    if (start < words.size) pages.add(Page(words.subList(start, words.size), start until words.size))
+    return pages
 }
+
+/**
+ * Roughly what three lines hold at 17sp on his phone.
+ *
+ * Deliberately a little under, so a page never overflows into the ellipsis — a page that is cut off
+ * is a page whose last words are never highlighted, which is worse than one that is not quite full.
+ */
+private const val PAGE_CHARS = 105
 
 private val MaSubtitleLit = Color(0xFFE8B15C)
 private val MaSubtitleDim = Color(0xFF8A8A8A)

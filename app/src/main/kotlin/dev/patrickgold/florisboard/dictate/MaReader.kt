@@ -88,6 +88,17 @@ object MaReader {
         private set
 
     /**
+     * WHICH word is being spoken, by position in the list. -1 when none.
+     *
+     * The index rather than the text, because the text is not an identity. A passage says "the"
+     * twenty times, and anything matching by text lands on the first of them — so the highlight
+     * jumped back to the top of the screen on every common word. That was the whole of the
+     * "highlight is off" problem, and no amount of tightening the timing would have touched it.
+     */
+    var currentIndex by mutableStateOf(-1)
+        private set
+
+    /**
      * How often the word is looked up.
      *
      * 60 ms is about four times faster than speech, so a short word is never skipped, and slow
@@ -185,7 +196,7 @@ object MaReader {
                     start()
                 }
                 state = State.SPEAKING
-                startTicker(speed)
+                startTicker()
             }.onFailure {
                 state = State.IDLE
                 onMessage("Could not play the audio")
@@ -227,23 +238,32 @@ object MaReader {
     /**
      * Follows the playhead and publishes the word being spoken.
      *
-     * The position is divided by the speed before the lookup, because the timings describe the
-     * audio at normal rate while `currentPosition` advances in real time. At 1.5x, two seconds of
-     * listening is three seconds of script — without this the karaoke would drift further behind
-     * the voice the longer he listened, which is worse than not having it.
+     * The speed is deliberately NOT applied here, and the parameter is gone so it cannot creep
+     * back. `MediaPlayer.currentPosition` reports a position in the media's own timeline, which
+     * already advances at the playback rate — the timings are in that same timeline, so the two
+     * line up with no arithmetic at all. Scaling made the highlight run ahead by exactly the speed
+     * factor.
      */
-    private fun startTicker(speed: Float) {
+    private fun startTicker() {
         ticker?.cancel()
         ticker = scope.launch {
             while (state == State.SPEAKING || state == State.PAUSED) {
                 if (state == State.SPEAKING) {
+                    // No speed scaling. `currentPosition` is a position in the MEDIA timeline, not
+                    // wall-clock time — at 1.5x it is already advancing at 1.5x — so multiplying by
+                    // the speed counted it twice and the highlight ran ahead by exactly that
+                    // factor. It was only right at 1.0, which is why it looked like drift rather
+                    // than a plain error.
                     val pos = runCatching { player?.currentPosition ?: 0 }.getOrDefault(0)
-                    val scriptPos = (pos * speed).toInt()
-                    currentWord = MaSpeechify.wordAt(MaSpeechify.lastWords, scriptPos).orEmpty()
+                    val words = MaSpeechify.lastWords
+                    val idx = words.indexOfFirst { pos >= it.startMs && pos < it.endMs }
+                    currentIndex = idx
+                    currentWord = if (idx >= 0) words[idx].text else ""
                 }
                 kotlinx.coroutines.delay(TICK_MS)
             }
             currentWord = ""
+            currentIndex = -1
         }
     }
 
@@ -263,6 +283,7 @@ object MaReader {
         ticker?.cancel()
         ticker = null
         currentWord = ""
+        currentIndex = -1
         runCatching { player?.stop() }
         runCatching { player?.release() }
         player = null

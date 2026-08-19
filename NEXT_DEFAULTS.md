@@ -3148,3 +3148,49 @@ would not look like a fast reader, it would look like one that skips a screen.
 `SCROLL_SETTLE_MS` (220 ms) is untouched and never fires for the reader: it only runs *between*
 pages of a multi-page scroll, and the reader asks for one page at a time. Verified rather than
 assumed — **total wait per page is 120 ms and nothing else.**
+
+---
+
+# 86. Two real highlight bugs, found by looking rather than tuning
+
+He said the highlight was "a little bit off" and asked for the algorithm to be checked rather than
+adjusted. He was right to: **neither fault was timing, and no amount of tuning would have reached
+either.**
+
+## Bug one: the highlight matched by TEXT
+
+`words.indexOfFirst { it.text == word }` — the subtitle looked up the current word **by its letters**.
+A passage says "the" many times, so it always landed on the **first** one.
+
+Measured on a 36-word passage: `"the"` appears at positions 0, 6, 11, 15, 18, 23, 26, 30 and 34, and
+the old code highlighted position **0 every single time**. That is the jumping he saw, and it had
+nothing to do with milliseconds.
+
+`MaReader` now publishes `currentIndex`, and the subtitle compares by **position**. The text is not
+an identity; the index is.
+
+## Bug two: the speed was counted twice
+
+`MediaPlayer.currentPosition` reports a position in the **media timeline**, which already advances at
+the playback rate. Multiplying it by the speed again made the highlight run ahead by exactly that
+factor.
+
+Measured against real timings: at 1.5×, the old arithmetic was wrong in **3 of 5 samples**; the new
+one in **0**. At 1.0× the two agree — which is why it read as vague drift rather than a plain error,
+and why it would have survived any amount of adjusting the tick rate.
+
+The `speed` parameter is **gone from `startTicker`** so it cannot creep back.
+
+## Pages that fit, instead of sentences
+
+Sentences were the wrong unit: a long one overflows a three-line box and the text jumped as the
+highlight moved through the part that could not be shown; a short one left the box nearly empty.
+Neither has anything to do with how much room there is.
+
+A page is now a run of words that **fits** — by characters, since what fills three lines is a number
+of letters rather than of words. Whole words only, computed once per passage.
+
+**The page changes only when the spoken word leaves it.** Verified: over the whole passage the page
+changed exactly as many times as there are pages, so it never flickers back.
+
+Every page fits, and every word belongs to exactly one page — both checked across the passage.
