@@ -3454,3 +3454,28 @@ keyboard never shows it.
 
 Same `Row`, same `Entry`, same catalogue, same keys. **A key added to the app appears in this editor
 with nobody remembering to add it.** Only the storage and the surface differ.
+
+---
+
+# 93. "null" instead of every dictation — the worst bug I have shipped
+
+Build 184 replaced **every dictation that did not end in a formatting command** with the word `null`.
+That is essentially all of them.
+
+`return head + when (command) { ... else -> null }`. **In Kotlin `String + null` does not produce
+null — it produces the four letters "null".** So `applyOnce` returned a non-null string, the caller
+read that as a successful transform, and the dictation was thrown away and replaced.
+
+The transform is computed into a value now, and the head is prepended **only when it is not null**.
+
+## Why nothing caught it
+
+The §89 test exercised the whole `apply` loop and every case in it **ended in a command**. Not one
+case asked what happens to an ordinary sentence, because the change was about newlines and ordinary
+sentences were not what I was thinking about.
+
+**The rule this earns: a transform that can decline must be tested on input it declines.** The
+"nothing happens" path is the commonest path in production and it was the only one with no test.
+
+Four cases now, including two that decline, and the invariant stated: **a dictation with no command
+is returned unchanged, never replaced.**

@@ -221,7 +221,16 @@ object MaSpokenFormat {
             .orEmpty()
 
         // `head` is the untouched earlier lines; `body` is what the command rewrites.
-        return head + when (command) {
+        // The transform first, and ONLY THEN the untouched earlier lines.
+        //
+        // This read `head + when (...)`, and the `when` ends in `else -> null` for a word that is
+        // not a command — which is every ordinary dictation. In Kotlin `String + null` does not
+        // produce null, it produces the four letters "null", so applyOnce returned a non-null
+        // string, the caller treated it as a successful transform, and the whole dictation was
+        // replaced by the word null. Every dictation not ending in a command was destroyed.
+        //
+        // Computed separately so the null case stays null and can be returned as null.
+        val rewritten = when (command) {
             in PARENTHESIS -> wrapLastWord(body, "(", ")") + suffix
             in UPPERCASE -> upperLastSentence(body) + suffix
             // Underscore preserves the suffix too. It transforms rather than ends, so a stop
@@ -237,6 +246,7 @@ object MaSpokenFormat {
             in EXCLAMATION -> endSentence(body, '!')
             else -> null
         }
+        return if (rewritten == null) null else head + rewritten
     }
 
     /** "the word" -> "the (word)". Punctuation the word carried stays outside the bracket. */
