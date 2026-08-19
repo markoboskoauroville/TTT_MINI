@@ -3512,3 +3512,26 @@ internal; that visibility was the only thing standing in the way.
 **Two independent surface ticks** replace the single "show" switch: *on the typing keyboard* and *in
 the transcription view*. It is one row drawn in two places, not two rows to keep in step, so both,
 one or neither are all sensible answers.
+
+---
+
+# 95. The copy row gets its own colour, and the icon rule becomes standing
+
+**A dark amber behind the copy row's keys**, so a glance says which list is being edited. Not the
+sand used on the keyboard: **that colour already means "this key is holding something"**, and reusing
+it would give one colour two jobs — the first time a lit key and a copy row shared a screen they
+would look identical and mean different things.
+
+**Lifted still wins over the accent.** The key under the finger must read as lifted whatever list it
+is in; drag feedback matters more than the identity of the row.
+
+The accent is a parameter on the shared `MaRowKeyItem` with a null default, so the feature row is
+untouched and there is still exactly one implementation.
+
+## The icon rule is now in HANDOFF
+
+> **A button in a settings list always carries its icon.**
+
+His words: *he recognises an image faster than text*. A list of names alone makes him translate twice
+— word to picture, picture to key. It also catches a class of mistake for free: **a row whose glyph
+is wrong is visible the moment the screen opens.**

@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -131,6 +132,7 @@ fun MaCopyRowScreen() = FlorisScreen {
                 entry = entry,
                 macroSlots = macroSlots,
                 lifted = lifted,
+                accent = MaCopyRowAccent,
                 onToggle = {
                     commit(
                         row.copy(
@@ -173,6 +175,16 @@ fun MaCopyRowScreen() = FlorisScreen {
         }
     }
 }
+
+/**
+ * The copy row's own colour: a dark amber, dim enough to sit under white text.
+ *
+ * Not the sand used on the keyboard itself. That colour means "this key is holding something"
+ * throughout the app, and reusing it here for "this is the copy row" would give one colour two
+ * jobs — the first time a lit key and a copy row appeared on one screen they would say the same
+ * thing and mean different ones.
+ */
+private val MaCopyRowAccent = Color(0xFF3A2A16)
 
 /** One "where does it appear" tick. Two of them, and they are independent. */
 @Composable

@@ -400,6 +400,14 @@ internal fun MaRowKeyItem(
     entry: MaRows.Entry,
     macroSlots: List<MaMacroSlots.Slot>,
     lifted: Boolean,
+    /**
+     * A tint for the row's own colour, or null for the theme's.
+     *
+     * The copy row is edited on its own screen and is a different row on the keyboard, so it gets
+     * its own colour — enough to know at a glance which list is being edited, without a second
+     * layout to maintain. Null keeps the feature row exactly as it was.
+     */
+    accent: Color? = null,
     onToggle: () -> Unit,
     onEditMacro: (Int) -> Unit,
     onRemove: () -> Unit,
@@ -410,10 +418,12 @@ internal fun MaRowKeyItem(
             .padding(horizontal = 12.dp, vertical = 4.dp)
             .shadow(if (lifted) 8.dp else 0.dp, RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
-        color = if (lifted) {
-            MaterialTheme.colorScheme.surfaceVariant
-        } else {
-            MaterialTheme.colorScheme.surface
+        color = when {
+            // Lifted always wins, so the key under the finger reads as lifted whatever list it is
+            // in — the drag feedback matters more than the identity of the row.
+            lifted -> MaterialTheme.colorScheme.surfaceVariant
+            accent != null -> accent
+            else -> MaterialTheme.colorScheme.surface
         },
     ) {
         Row(

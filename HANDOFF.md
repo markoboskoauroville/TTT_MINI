@@ -119,6 +119,11 @@ tree before writing.
   term through `MaMagicTargets.resolveTerm` against the taught list — it must never read a term
   straight out of a preference and press that. Rename it once on the Magic finger screen and both
   follow. **Any future way of firing send joins them the same way**: one list, one term, no copies.
+- **A button in a settings list always carries its icon.** Wherever a screen lists keys, buttons or
+  rows, each line shows the same glyph the keyboard draws, beside the name. He asked for this by
+  name: *he recognises an image faster than text*, and a list of names alone makes him translate
+  twice — once from the word to the picture, again from the picture to the key. It also catches a
+  whole class of mistake, because a row whose glyph is wrong is visible the moment the screen opens.
 - **Roles are wired, not chosen.** `MaRoles` decides: AssemblyAI transcribes, Anthropic rewords and
   proofreads, Groq detects language. The call path resolves through it at the moment of use, so a
   stale stored id cannot survive. Give a new provider a role there; never give the user a chip.
