@@ -62,6 +62,9 @@ fun MaReaderScreen() = FlorisScreen {
 
     content {
         val prefs by FlorisPreferenceStore
+        // Declared here rather than beside the display list, because moving the speed block above
+        // that list left three uses of `scope` sitting above its declaration.
+        val scope = rememberCoroutineScope()
 
         Text(
             text = "The speaker key reads what is on screen. Press again to pause, again to " +
@@ -131,7 +134,6 @@ fun MaReaderScreen() = FlorisScreen {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
         val display by prefs.dictate.maReaderDisplay.collectAsState()
-        val scope = rememberCoroutineScope()
         for ((value, label, detail) in listOf(
             Triple("subtitle", "Subtitle row", "A row of its own showing the sentence, current word lit"),
             Triple("spacebar", "On the spacebar", "One word at a time, only while the keys are shown"),
