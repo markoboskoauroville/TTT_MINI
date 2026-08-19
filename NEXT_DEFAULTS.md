@@ -3739,3 +3739,32 @@ they do not, the tree was never the feature — the instances were.
 `name`, `isActive`, `isDefault`, `configurationData`, and `duplicate()`. One storage shape reused by
 prompts, rows and voices rather than three implementations — the same argument that made the copy row
 share the feature row's editor rather than copy it.
+
+---
+
+# 97. The zone keys get their frame back, and the ring goes
+
+Two builds ago the `n k c` keys were a letter inside a small keyboard outline with a spacebar line
+under it. Then the outline moved to the key as a lit green ring and the letter grew to fill the bare
+face. He looked at it on the row and called it ugly, amateurish, a downgrade, and out of standard
+with the rest of the application — and every word of that is correct.
+
+**Why the ring was wrong.** Nothing else in that row wears a border. AP, AC, the clipboard keys, the
+mic, the gear, the speakers — all of them are a shape on a plain key face, and state is said by
+colour. Three keys with a green outline around them are not emphasised, they are *different*, and
+different is what the eye lands on first. The ring did read from further away. It also read as
+something added later by somebody who had not looked at the row.
+
+**Why the bare letter was wrong.** Every neighbour has a silhouette. A loose lowercase letter sitting
+among drawn glyphs looks like a placeholder waiting for its icon.
+
+**What it is now.** The keyboard outline is back inside the glyph, drawn at the full width of the
+box. The spacebar line is gone: at this size the rounded outline reads as a keyboard without it, and
+the bar was costing the bottom quarter of the body to prove something already obvious. That quarter
+went to the letter, which is now `0.70` of the glyph box against the `0.40` it had — nearly twice the
+height, inside a frame, which was the whole point of the exercise the ring was invented to solve.
+
+**The rule this leaves.** Colour is the state channel and it is the only one. Shape is the identity
+channel. If a frame crowds its content, take detail out of the frame; do not take the frame away.
+Both HANDOFF entries that said the opposite have been rewritten rather than deleted, so the next
+person can see it was tried.

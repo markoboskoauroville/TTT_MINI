@@ -43,9 +43,12 @@ rows, each entry shows the glyph it actually has on the keyboard, beside the nam
 image faster than a word, and a list of names alone makes him translate twice — once from the name
 to the picture, once from the picture to the key. This is not decoration; it is how he finds things.
 
-**Emphasise a key with a border around the whole key, not with a mark inside it.** A lit outline
-reads from further away than a lit glyph, and it leaves the whole face for the label. That is what
-turned `n k c` from unreadable to obvious.
+**A key says its state with colour, and its identity with a drawn shape.** Reversed on 19.8.2026,
+after a build that emphasised the zone keys with a lit ring around the whole key and stripped the
+glyph down to a bare letter to make room for it. He called it a downgrade, amateurish, and out of
+standard with the rest of the app — and it was, because no other key in the row wears a border, so
+the three that did read as bolted on. Green means on. The face carries a shape, and the shape is
+what tells the keys apart. Do not put a border on one key that the keys beside it do not have.
 
 **He runs several projects at once, and sometimes a message lands in the wrong chat.** He asked for
 this check by name. If a message does not belong to TTT mini — another repo, another app, a website,
@@ -168,5 +171,11 @@ Groq and Grok cost a whole exchange before that was written down.
   row shows the same glyph the keyboard shows, beside the name. He recognises the image before he
   reads the word, and a list of bare names makes him translate twice. `MaRowKeyItem` is the shape to
   copy, and reusing it is better than matching it.
-- **An important key says it is on with an outline around the KEY**, not by tinting something inside
-  it. A ring reads from across the room and leaves the whole face free for one large glyph.
+- **An important key says it is on by COLOUR, not by a border around the key.** Tried the other way
+  round on 19.8.2026 and reversed the same day: a ring on three keys in a row where nothing else has
+  one is the thing the eye lands on, and it reads as a patch rather than as emphasis. Colour is the
+  app's state channel everywhere else; keep it the only one.
+- **A key on the row carries a drawn shape, not a bare letter.** Every neighbour has a silhouette,
+  and a loose letter among them looks unfinished. The zone keys are a letter inside a keyboard
+  outline (`MaZoneGlyph`) for this reason. If the frame crowds the letter, take detail out of the
+  frame — the spacebar line went for exactly this — rather than taking the frame away.

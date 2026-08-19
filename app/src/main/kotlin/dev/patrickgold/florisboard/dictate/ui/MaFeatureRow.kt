@@ -16,8 +16,6 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -952,13 +950,11 @@ fun MaFeatureRow(
                     // 1, the number row. Digits, or whichever set the row is showing.
                     ThemedKey(
                         code = KeyCode.NOOP,
-                        // The border IS the on state, drawn around the whole key.
-                        //
-                        // It used to be a small keyboard outline inside the face, which left the
-                        // letter too small to read at a glance — the reason for using letters at
-                        // all. Moving the outline to the key frees the whole face for the letter,
-                        // and a lit border reads from further away than a lit glyph.
-                        modifier = if (zone1) keyMod.border(2.dp, onGreen, MaZoneKeyShape) else keyMod,
+                        // No ring around the key. The keyboard outline is back inside the glyph
+                        // where it belongs, and the zone being open is said the way every other key
+                        // in this app says a state: by colour. A border around one key and not the
+                        // others made these three read as bolted on rather than as part of the row.
+                        modifier = keyMod,
                         onClick = { scope.launch { prefs.dictate.maExtraRow.set(!zone1) } },
                     ) { fg ->
                         MaZoneGlyph("n", if (zone1) onGreen else fg, size = 30.dp)
@@ -970,13 +966,11 @@ fun MaFeatureRow(
                     // and on a keyboard driven by voice it is off more often than it is on.
                     ThemedKey(
                         code = KeyCode.NOOP,
-                        // The border IS the on state, drawn around the whole key.
-                        //
-                        // It used to be a small keyboard outline inside the face, which left the
-                        // letter too small to read at a glance — the reason for using letters at
-                        // all. Moving the outline to the key frees the whole face for the letter,
-                        // and a lit border reads from further away than a lit glyph.
-                        modifier = if (zone2) keyMod.border(2.dp, onGreen, MaZoneKeyShape) else keyMod,
+                        // No ring around the key. The keyboard outline is back inside the glyph
+                        // where it belongs, and the zone being open is said the way every other key
+                        // in this app says a state: by colour. A border around one key and not the
+                        // others made these three read as bolted on rather than as part of the row.
+                        modifier = keyMod,
                         onClick = { scope.launch { prefs.dictate.maZoneKeyboard.set(!zone2) } },
                     ) { fg ->
                         MaZoneGlyph("k", if (zone2) onGreen else fg, size = 30.dp)
@@ -987,13 +981,11 @@ fun MaFeatureRow(
                     // 3, the copy and paste row along the top. Paste, copy, history and the rest of it.
                     ThemedKey(
                         code = KeyCode.NOOP,
-                        // The border IS the on state, drawn around the whole key.
-                        //
-                        // It used to be a small keyboard outline inside the face, which left the
-                        // letter too small to read at a glance — the reason for using letters at
-                        // all. Moving the outline to the key frees the whole face for the letter,
-                        // and a lit border reads from further away than a lit glyph.
-                        modifier = if (zone3) keyMod.border(2.dp, onGreen, MaZoneKeyShape) else keyMod,
+                        // No ring around the key. The keyboard outline is back inside the glyph
+                        // where it belongs, and the zone being open is said the way every other key
+                        // in this app says a state: by colour. A border around one key and not the
+                        // others made these three read as bolted on rather than as part of the row.
+                        modifier = keyMod,
                         onClick = { scope.launch { prefs.dictate.maEditRow.set(!zone3) } },
                     ) { fg ->
                         MaZoneGlyph("c", if (zone3) onGreen else fg, size = 30.dp)
@@ -1281,8 +1273,5 @@ private fun MaWandBar(
  * ending, which are both moments when starting again is what he would want.
  */
 private var maBucketRank by mutableStateOf(0)
-
-/** The zone keys' outline, matching the shape the keys are already clipped to. */
-private val MaZoneKeyShape = RoundedCornerShape(16.dp)
 
 private val MaSand = Color(0xFFE8B15C)
