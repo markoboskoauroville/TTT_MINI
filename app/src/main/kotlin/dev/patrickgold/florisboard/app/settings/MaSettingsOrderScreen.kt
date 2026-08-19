@@ -78,6 +78,10 @@ val MaSettingsEntry.icon: ImageVector
         // note about Reorder is the reason to reuse an icon proven to resolve.
         MaSettingsEntry.VOICE_COMMANDS -> Icons.Default.Mic
         MaSettingsEntry.SHORTCUTS -> Icons.Default.Keyboard
+        // Spellcheck, already imported and proven in this file. A prompt is an instruction
+        // about how text should read, which is the nearest thing to it in the set, and this file's
+        // own note says an icon that resolves beats an icon that fits.
+        MaSettingsEntry.PROMPTS -> Icons.Default.Spellcheck
         MaSettingsEntry.VOICE_FORMAT -> Icons.Default.Spellcheck
         MaSettingsEntry.READER -> Icons.AutoMirrored.Filled.VolumeUp
         MaSettingsEntry.COPY_ROW -> Icons.Default.ContentPasteGo
@@ -111,6 +115,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.MAGIC -> Routes.Settings.MaMagic
         MaSettingsEntry.VOICE_COMMANDS -> Routes.Settings.MaVoiceCommands
         MaSettingsEntry.SHORTCUTS -> Routes.Settings.MaShortcuts
+        MaSettingsEntry.PROMPTS -> Routes.Settings.MaPrompts
         MaSettingsEntry.VOICE_FORMAT -> Routes.Settings.MaVoiceFormat
         MaSettingsEntry.READER -> Routes.Settings.MaReader
         MaSettingsEntry.COPY_ROW -> Routes.Settings.MaCopyRow

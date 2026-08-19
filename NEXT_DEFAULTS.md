@@ -3768,3 +3768,47 @@ height, inside a frame, which was the whole point of the exercise the ring was i
 channel. If a frame crowds its content, take detail out of the frame; do not take the frame away.
 Both HANDOFF entries that said the opposite have been rewritten rather than deleted, so the next
 person can see it was tried.
+
+---
+
+# 98. Prompts become a category of named instances — Avid layer 2, first use
+
+Section 96 said layer 2 is the actual idea and prompts are where it pays first. This builds it there
+and nowhere else.
+
+**Ctrl+P and Ctrl+F each hold a set now**, not a wording. Any number of named instances, exactly one
+with the checkmark, and that is the one the key sends. Radio and not a tick-box: there is one wording
+in force and the control should say so rather than leave two looking equally chosen.
+
+**Default is a real instance and it is locked.** Its text is empty, which means *use the instruction
+compiled into the app* — empty rather than a copy of the shipped words, so improving the built-in
+text later reaches everybody instead of only the people who never touched it. It cannot be renamed,
+edited or deleted, and its editor offers one verb: duplicate. That is the Avid behaviour rather than
+a restriction. Nobody edits a factory setting; they copy it and edit the copy.
+
+**Duplicate does not steal the checkmark.** A copy is the start of an experiment, and a key that
+changed what it does the moment you pressed copy would be a nasty surprise mid-sentence.
+
+## Migration is a shape check, not a flag
+
+The old preference held plain text. A stored value that does not start with `{` is therefore a
+wording from the previous version, and is read as two instances: the locked Default and one called
+**Mine** holding what he wrote, active. No flag, no version number, nothing to run once — a value
+written by the old build is simply legible to the new one, forever.
+
+## The bug this nearly shipped with
+
+The shortcuts screen used to write a paragraph straight into that same preference. Left alone it
+would have looked like a legacy value on the next read and **silently discarded every other instance
+in the category**. A row that destroys data by doing exactly what it always did is the worst kind,
+because nothing about it looks new. It shows and routes now; the editing lives on one screen.
+
+## Tested
+
+Ten cases against the parse/serialize rules before any of it was wired up: first run, legacy
+promotion, a round trip carrying quotes, newlines, tabs and a backslash, an active name that no
+longer exists, a file with no Default, duplicate names, corrupt JSON, and the copy-naming ladder.
+
+**Also caught before the build:** an unused-import sweep removed `getValue`, which `by` delegation
+needs without ever naming it. HANDOFF already warns that import checking must be exact-line; it
+should also say that `getValue` and `setValue` are never textually present and must never be swept.

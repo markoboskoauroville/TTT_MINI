@@ -38,6 +38,11 @@ real.
 
 **He is paying for every build.** A red build costs him the same as a green one.
 
+**`getValue` and `setValue` are invisible and must never be swept.** Property delegation — `val x by
+pref.collectAsState()`, `var y by remember { mutableStateOf(...) }` — needs those imports and never
+names them in the code. Any tool that removes imports by searching for the symbol will delete both
+and the file stops compiling with an error that points at the delegation rather than at the import.
+
 **A button in settings always carries its icon.** Wherever a settings screen lists keys, buttons or
 rows, each entry shows the glyph it actually has on the keyboard, beside the name. He recognises an
 image faster than a word, and a list of names alone makes him translate twice — once from the name

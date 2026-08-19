@@ -15,10 +15,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.AlertDialog
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.height
@@ -32,17 +30,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.MaPrompts
+import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.dictate.MaFlow
 import dev.patrickgold.florisboard.dictate.MaProofread
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.PreferenceData
 import dev.patrickgold.jetpref.datastore.model.collectAsState
-import kotlinx.coroutines.launch
 
 /**
  * Every Ctrl shortcut the keyboard understands, written down.
@@ -99,6 +95,12 @@ fun MaShortcutsScreen() = FlorisScreen {
             pref = prefs.dictate.maFlowPrompt,
             shipped = MaFlow.INSTRUCTION,
         )
+        Text(
+            text = "Both open Prompts, where you can keep several wordings and tick the one in use.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+        )
 
         Spacer(Modifier.height(16.dp))
 
@@ -148,15 +150,19 @@ fun MaShortcutsScreen() = FlorisScreen {
 }
 
 /**
- * One shortcut whose instruction can be rewritten, shown as the thing it is.
+ * One prompt shortcut, showing which wording is in force, and opening Prompts to change it.
  *
- * The name is blue and underlined because it opens something — the same signal the settings home
- * uses for a link. A description that can be edited and gives no sign of it is a description
- * somebody reads twice and never touches.
+ * ### Why it stopped editing the text here
  *
- * What it shows underneath is **the prompt actually in use**: his if he has written one, the shipped
- * one otherwise. Not a summary of it. A summary is a second thing to keep true, and it was already
- * drifting from what the key really did.
+ * It used to open a dialog and write straight into the preference. That preference now holds a whole
+ * set of named wordings, so writing a paragraph into it would have looked like a value from the old
+ * version — which `MaPrompts.parse` reads as "one legacy wording", quietly discarding every other
+ * instance in the category. A row that destroys data by doing exactly what it always did is the
+ * worst kind, because nothing about it looks new.
+ *
+ * So it shows and it routes. The name of the active instance is the answer to the question this row
+ * is asked most — *which one is it using* — and the words underneath are the wording itself rather
+ * than a summary of it, because a summary is a second thing to keep true.
  */
 @Composable
 private fun PromptShortcut(
@@ -165,15 +171,16 @@ private fun PromptShortcut(
     pref: PreferenceData<String>,
     shipped: String,
 ) {
-    val scope = rememberCoroutineScope()
-    val stored by pref.collectAsState()
-    val inUse = stored.ifBlank { shipped }
-    var editing by remember { mutableStateOf(false) }
+    val navController = LocalNavController.current
+    val raw by pref.collectAsState()
+    val set = remember(raw) { MaPrompts.parse(raw) }
+    val active = set.active
+    val inUse = active.text.ifBlank { shipped }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { editing = true }
+            .clickable { navController.navigate(Routes.Settings.MaPrompts) }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.Top,
     ) {
@@ -199,52 +206,16 @@ private fun PromptShortcut(
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (stored.isNotBlank()) {
+            // Named only when it is not the built-in one. Saying "Default" under every row would be
+            // a line of text that is almost always the same, which is a line the eye stops reading.
+            if (!active.locked) {
                 Text(
-                    text = "your wording",
+                    text = active.name,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
-    }
-
-    if (editing) {
-        // Edited in a dialog rather than in the row, because these are paragraphs. A box in a list
-        // is either too small to write in or too tall to scroll past.
-        var draft by remember { mutableStateOf(inUse) }
-        AlertDialog(
-            onDismissRequest = { editing = false },
-            title = { Text("$keys \u2014 $name") },
-            text = {
-                OutlinedTextField(
-                    value = draft,
-                    onValueChange = { draft = it },
-                    minLines = 6,
-                    maxLines = 14,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    // Saving the shipped text unchanged stores nothing, so it keeps following the
-                    // default if that is ever improved. Only a real edit becomes his wording.
-                    scope.launch { pref.set(if (draft.trim() == shipped.trim()) "" else draft) }
-                    editing = false
-                }) { Text("Save") }
-            },
-            dismissButton = {
-                Row {
-                    if (stored.isNotBlank()) {
-                        TextButton(onClick = {
-                            scope.launch { pref.set("") }
-                            editing = false
-                        }) { Text("Use default") }
-                    }
-                    TextButton(onClick = { editing = false }) { Text("Cancel") }
-                }
-            },
-        )
     }
 }
 

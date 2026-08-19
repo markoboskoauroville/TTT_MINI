@@ -80,10 +80,16 @@ object MaProofread {
      * otherwise select the whole field and work on that. Both are exactly right here — correct what
      * I marked, or correct all of it — and neither needed new code.
      */
-    /** What he has written in settings, or empty. */
+    /**
+     * The wording of the instance that carries the checkmark, or empty for the shipped one.
+     *
+     * The preference holds a whole set of named wordings now rather than a single one, so this is
+     * "which of his is in force" rather than "has he written one". [MaPrompts.parse] reads a value
+     * written by the old version just as happily, so nothing had to be migrated for this to work.
+     */
     fun custom(): String {
         val prefs by FlorisPreferenceStore
-        return prefs.dictate.maProofreadPrompt.get()
+        return MaPrompts.activeText(prefs.dictate.maProofreadPrompt.get())
     }
 
     fun prompt(): PromptModel = PromptModel(
