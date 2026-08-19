@@ -56,6 +56,73 @@ object MaSpeechify {
     private const val BASE = "https://api.sws.speechify.com/v1/audio/speech"
     private const val TIMEOUT_MS = 30_000
 
+    /**
+     * One word, and when it is spoken. Times are milliseconds from the start of the audio.
+     *
+     * Speechify returns these with every synthesis at no extra cost, which is what makes the
+     * karaoke word on the spacebar free rather than a second request.
+     */
+    data class Word(val text: String, val startMs: Int, val endMs: Int)
+
+    /** The words of the last synthesis, in order. Empty when the marks could not be read. */
+    @Volatile
+    var lastWords: List<Word> = emptyList()
+        private set
+
+    /**
+     * Pulls the word timings out of a response.
+     *
+     * The marks arrive as a nested object — a sentence with a `chunks` array of words — rather than
+     * the flat list the name suggests. Reading it defensively because a shape change here should
+     * cost the karaoke display, never the audio.
+     */
+    fun parseWords(marks: JSONObject?): List<Word> {
+        val chunks = marks?.optJSONArray("chunks") ?: return emptyList()
+        return buildList {
+            for (i in 0 until chunks.length()) {
+                val c = chunks.optJSONObject(i) ?: continue
+                if (c.optString("type") != "word") continue
+                val value = c.optString("value").trim()
+                if (value.isEmpty()) continue
+                add(Word(value, c.optInt("start_time", -1), c.optInt("end_time", -1)))
+            }
+        }.filter { it.startMs >= 0 && it.endMs >= it.startMs }
+    }
+
+    /**
+     * The word being spoken at [positionMs], or null between words.
+     *
+     * A plain scan rather than a binary search: a screen is a few hundred words and this runs a few
+     * times a second, so the clearer code costs nothing measurable.
+     */
+    fun wordAt(words: List<Word>, positionMs: Int): String? =
+        words.firstOrNull { positionMs >= it.startMs && positionMs < it.endMs }?.text
+
+    /**
+     * The sentence being spoken, and which word inside it is current.
+     *
+     * ### Sentences are derived, not given
+     *
+     * Measured: a passage of three sentences comes back as ONE mark object of type `sentence` with
+     * a flat list of words. There is no per-sentence nesting to read, whatever the type field
+     * suggests. So a sentence here is simply the run of words between one ending in `.`, `!` or `?`
+     * and the next — which is what the subtitle row needs and costs nothing to compute.
+     *
+     * Returns the words of the current sentence and the index of the current word within them, or
+     * an empty list between sentences.
+     */
+    fun sentenceAround(words: List<Word>, positionMs: Int): Pair<List<Word>, Int> {
+        if (words.isEmpty()) return emptyList<Word>() to -1
+        val current = words.indexOfFirst { positionMs >= it.startMs && positionMs < it.endMs }
+        if (current < 0) return emptyList<Word>() to -1
+        fun ends(w: Word) = w.text.lastOrNull() in setOf('.', '!', '?')
+        var start = current
+        while (start > 0 && !ends(words[start - 1])) start--
+        var end = current
+        while (end < words.lastIndex && !ends(words[end])) end++
+        return words.subList(start, end + 1) to (current - start)
+    }
+
     /** A voice he can pick, with the model it actually works on. */
     data class Voice(
         val id: String,
@@ -200,8 +267,11 @@ object MaSpeechify {
         val code = conn.responseCode
         if (code != 200) return code
         val payload = conn.inputStream.bufferedReader().use { it.readText() }
-        val audio = JSONObject(payload).optString("audio_data")
+        val json = JSONObject(payload)
+        val audio = json.optString("audio_data")
         if (audio.isBlank()) return -1
+        // Timings kept alongside the audio, so the karaoke word costs nothing extra.
+        lastWords = parseWords(json.optJSONObject("speech_marks"))
         dest.writeBytes(Base64.decode(audio, Base64.DEFAULT))
         return 200
     }

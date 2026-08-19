@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -66,6 +67,71 @@ fun MaReaderScreen() = FlorisScreen {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
+
+        Text(
+            text = "While reading",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        val display by prefs.dictate.maReaderDisplay.collectAsState()
+        val scope = rememberCoroutineScope()
+        for ((value, label, detail) in listOf(
+            Triple("subtitle", "Subtitle row", "A row of its own showing the sentence, current word lit"),
+            Triple("spacebar", "On the spacebar", "One word at a time, only while the keys are shown"),
+            Triple("off", "Nothing", "Just the voice"),
+        )) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = display == value,
+                        onClick = { scope.launch { prefs.dictate.maReaderDisplay.set(value) } },
+                    )
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = display == value,
+                    onClick = { scope.launch { prefs.dictate.maReaderDisplay.set(value) } },
+                )
+                Column(modifier = Modifier.padding(start = 8.dp)) {
+                    Text(text = label, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        // Speed, in tenths, applied to playback rather than to the synthesis — so changing it costs
+        // nothing and takes effect on the next press instead of the next request.
+        val speed by prefs.dictate.maReaderSpeed.collectAsState()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Speed", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = "How fast the voice reads",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            TextButton(onClick = {
+                scope.launch { prefs.dictate.maReaderSpeed.set((speed - 1).coerceAtLeast(5)) }
+            }) { Text("\u2212", style = MaterialTheme.typography.titleMedium) }
+            Text(
+                text = "%.1f\u00D7".format(speed / 10f),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 6.dp),
+            )
+            TextButton(onClick = {
+                scope.launch { prefs.dictate.maReaderSpeed.set((speed + 1).coerceAtMost(25)) }
+            }) { Text("+", style = MaterialTheme.typography.titleMedium) }
+        }
 
         VoiceGroup(
             heading = "Croatian",

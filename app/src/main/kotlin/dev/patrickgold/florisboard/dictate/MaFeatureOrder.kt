@@ -159,6 +159,15 @@ enum class MaFeatureKey(val id: String, val label: String) {
     READER("reader", "Reader, speak the screen"),
 
     /**
+     * S: show or hide the subtitle row.
+     *
+     * A key rather than only a setting, because it is the kind of thing he changes while reading —
+     * the row is wanted for a passage he is following closely and in the way for one he is only
+     * half listening to. A trip into settings for that is a trip he would not make.
+     */
+    SUBTITLE("subtitle", "S, show the reading subtitle"),
+
+    /**
      * The dictation history: everything transcribed, ready to put back into a field.
      *
      * A key rather than a menu because it is the recovery route. A dictation that went into the
@@ -283,6 +292,7 @@ object MaFeatureOrder {
         MaFeatureKey.CHANGE_CASE,
         MaFeatureKey.PIN,
         MaFeatureKey.READER,
+        MaFeatureKey.SUBTITLE,
         MaFeatureKey.SPACER,
     )
 

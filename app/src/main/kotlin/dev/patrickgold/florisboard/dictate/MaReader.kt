@@ -15,6 +15,7 @@ import android.media.MediaPlayer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +54,26 @@ object MaReader {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var player: MediaPlayer? = null
+    private var ticker: kotlinx.coroutines.Job? = null
+
+    /**
+     * The word being spoken right now, or empty.
+     *
+     * Read by the spacebar, which shows it while the voice reads — a karaoke line on the widest key
+     * on the board. The timings come free with the synthesis, so this costs one comparison every
+     * 60 ms and nothing else.
+     */
+    var currentWord by mutableStateOf("")
+        private set
+
+    /**
+     * How often the word is looked up.
+     *
+     * 60 ms is about four times faster than speech, so a short word is never skipped, and slow
+     * enough that the cost is invisible. Faster would redraw the spacebar for no gain; slower and
+     * quick words like "je" — 213 ms in the measured sample — would flicker past unseen.
+     */
+    private const val TICK_MS = 60L
 
     /**
      * The one press. Speaks the screen, pauses, or resumes, depending on where it is.
@@ -79,6 +100,7 @@ object MaReader {
     }
 
     private fun start(context: Context, onMessage: (String) -> Unit) {
+        val prefs by FlorisPreferenceStore
         if (!DictateAccessibilityService.isRunning) {
             onMessage("Turn on the accessibility service to read the screen")
             return
@@ -98,6 +120,9 @@ object MaReader {
                 onMessage("Could not speak this \u2014 check your Speechify key")
                 return@launch
             }
+            // Read once, outside the player, because both the playback rate and the karaoke
+            // ticker need the same number and they must not be able to disagree.
+            val speed = prefs.dictate.maReaderSpeed.get().coerceIn(5, 25) / 10f
             runCatching {
                 stopPlayer()
                 player = MediaPlayer().apply {
@@ -112,13 +137,45 @@ object MaReader {
                         true
                     }
                     prepare()
+                    // Speed applies to playback, not to the synthesis.
+                    //
+                    // Changing it therefore costs nothing and takes effect on the next press
+                    // rather than the next request — and the word timings stay valid, because they
+                    // are positions in the audio and the position is scaled by the same rate.
+                    if (speed != 1.0f) {
+                        runCatching { playbackParams = playbackParams.setSpeed(speed) }
+                    }
                     start()
                 }
                 state = State.SPEAKING
+                startTicker(speed)
             }.onFailure {
                 state = State.IDLE
                 onMessage("Could not play the audio")
             }
+        }
+    }
+
+    /**
+     * Follows the playhead and publishes the word being spoken.
+     *
+     * The position is divided by the speed before the lookup, because the timings describe the
+     * audio at normal rate while `currentPosition` advances in real time. At 1.5x, two seconds of
+     * listening is three seconds of script — without this the karaoke would drift further behind
+     * the voice the longer he listened, which is worse than not having it.
+     */
+    private fun startTicker(speed: Float) {
+        ticker?.cancel()
+        ticker = scope.launch {
+            while (state == State.SPEAKING || state == State.PAUSED) {
+                if (state == State.SPEAKING) {
+                    val pos = runCatching { player?.currentPosition ?: 0 }.getOrDefault(0)
+                    val scriptPos = (pos * speed).toInt()
+                    currentWord = MaSpeechify.wordAt(MaSpeechify.lastWords, scriptPos).orEmpty()
+                }
+                kotlinx.coroutines.delay(TICK_MS)
+            }
+            currentWord = ""
         }
     }
 
@@ -129,6 +186,9 @@ object MaReader {
     }
 
     private fun stopPlayer() {
+        ticker?.cancel()
+        ticker = null
+        currentWord = ""
         runCatching { player?.stop() }
         runCatching { player?.release() }
         player = null

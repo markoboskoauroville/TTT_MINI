@@ -494,6 +494,7 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.KeyboardCapslock, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CHANGE_CASE -> letters("Aa")
             MaFeatureKey.AUTO_BUCKET -> letters("A1")
+            MaFeatureKey.SUBTITLE -> letters("S")
             MaFeatureKey.READER ->
                 Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.PIN ->

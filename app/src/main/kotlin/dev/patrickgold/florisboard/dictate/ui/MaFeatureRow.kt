@@ -646,6 +646,23 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
                 // what the key is — which is the whole point of the move.
                 MaFeatureKey.PIN -> MaPinKey(modifier = keyMod, litColor = MaSand)
 
+                MaFeatureKey.SUBTITLE -> {
+                    // Lit when the row is on, because the key changes something that may be showing
+                    // nothing at that moment — between sentences the row is blank, and without the
+                    // lit state a press would look like it had done nothing at all.
+                    val display by prefs.dictate.maReaderDisplay.collectAsState()
+                    val on = display == "subtitle"
+                    ThemedTextKey(
+                        label = "S",
+                        modifier = keyMod,
+                        tint = if (on) MaSand else null,
+                    ) {
+                        scope.launch {
+                            prefs.dictate.maReaderDisplay.set(if (on) "off" else "subtitle")
+                        }
+                    }
+                }
+
                 MaFeatureKey.READER -> {
                     // The face shows what the NEXT press does, not what is happening now.
                     //

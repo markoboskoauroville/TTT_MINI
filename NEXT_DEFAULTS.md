@@ -2974,3 +2974,55 @@ not condemn**, anything else says what it was rather than guessing. 7 mapping ca
 
 `MaKeyRingStore` is told on both success and rejection, so the verdict shown on this screen is the
 same one the reader will act on — there is only one place holding it.
+
+---
+
+# 82. Karaoke: the subtitle row, the spacebar word, and reading speed
+
+**Speechify returns word timings free with every synthesis.** Measured: each word carries
+`start_time` and `end_time` in milliseconds, and the windows have no gaps or overlaps. So following
+along costs one comparison every 60 ms and no second request.
+
+## The subtitle row is the default, and the spacebar version is the option
+
+The spacebar borrows a key that **only exists while the letter keyboard is shown** — so it vanishes
+exactly when he reads a screen with the keys folded away, which is most of the time. The subtitle row
+belongs to the reader instead, and is there whenever the reader is.
+
+**One sentence, not the passage.** A screen of text on one line is unreadable and chasing a highlight
+through it is worse than nothing. Sand and bold for the word being said, dim for the rest — two
+states only, because a fade of "recently said" makes the eye chase the gradient.
+
+**Nothing at all when nothing is being read**, not an empty bar, so it can sit in the layout
+unconditionally without the keyboard changing height mid-reading.
+
+**Sentences are derived, not given.** Measured: three sentences come back as ONE mark object with a
+flat word list, whatever the `type` field claims. A sentence is therefore the run between one word
+ending in `.` `!` `?` and the next. Verified against real timings — every boundary lands correctly.
+
+## The S key
+
+`MaFeatureKey.SUBTITLE`, face `S`, toggles the row. A key rather than only a setting because it is
+changed **while reading**: wanted for a passage being followed closely, in the way for one half
+heard. Lit when on, because between sentences the row is blank and an unlit press would look like it
+had done nothing.
+
+## Speed
+
+`0.5×` to `2.5×` in tenths, stepped in reader settings. **Applied to playback, not to the
+synthesis** — so it costs nothing, takes effect on the next press rather than the next request, and
+no audio is re-bought to hear it faster.
+
+**The karaoke divides the playhead by the speed before looking up the word.** The timings describe
+the audio at normal rate while `currentPosition` advances in real time, so without that the
+highlight would drift further behind the longer he listened — worse than not having it.
+
+## Tested
+
+**Test 1 on the word lookup — 13 cases, 0 failures**, using the real timings from a live call: every
+boundary, both sides, past the end, and negative. Confirmed no gaps and no overlaps.
+
+**Test 1 on sentences — every boundary correct** across three sentences of real marks.
+
+**Not tested: the phone.** Whether 60 ms feels smooth, whether the highlight sits right against the
+voice, and whether `setSpeed` is honoured on his Android 16.

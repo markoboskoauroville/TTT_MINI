@@ -78,6 +78,7 @@ import dev.patrickgold.florisboard.ime.popup.rememberPopupUiController
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingGesture
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeGesture
+import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
@@ -420,7 +421,20 @@ private fun TextKeyButton(
             // Centred again. The corner was for a label long enough to be in the way; a single
             // mark is not, and a lone glyph pushed into a corner reads as a mistake.
             val alignment = if (isTelPadKey) BiasAlignment(-0.5f, 0f) else Alignment.Center
-            val isSpaceMark = key.computedData.code == KeyCode.SPACE && customLabel == "\u23B5"
+            // The spacebar reads along while the voice does.
+            //
+            // The widest key on the board, doing nothing during a reading, next to a screen whose
+            // text is being spoken — so the word being said goes there. Speechify returns the
+            // timings free with the audio (§82), so this costs a comparison every 60 ms.
+            //
+            // It replaces the mark rather than sitting beside it: the bar is one line tall and two
+            // things on it would make both unreadable. The mark returns the moment reading stops.
+            val karaoke = if (prefs.dictate.maReaderDisplay.get() == "spacebar") MaReader.currentWord else ""
+            val isSpaceKey = key.computedData.code == KeyCode.SPACE
+            // Assigned, not shadowed. `customLabel` is the var set above, and a new val of the same
+            // name reading its own initialiser does not compile.
+            if (isSpaceKey && karaoke.isNotEmpty()) customLabel = karaoke
+            val isSpaceMark = isSpaceKey && customLabel == "\u23B5"
             SnyggText(
                 modifier = Modifier
                     .wrapContentSize()

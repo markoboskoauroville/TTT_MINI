@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.dictate.gif.GifSearchPanel
 import dev.patrickgold.florisboard.dictate.ui.MaFeatureRow
+import dev.patrickgold.florisboard.dictate.ui.MaSubtitleRow
 import dev.patrickgold.florisboard.dictate.ui.MaExtraRow
 import dev.patrickgold.florisboard.dictate.ui.LegacyEditRow
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardEditorPanel
@@ -140,6 +141,17 @@ fun TextInputLayout(
         val maZoneKeyboard by prefs.dictate.maZoneKeyboard.collectAsState()
         if (!state.isActionsOverflowVisible) {
             MaExtraRow()
+        }
+        // The subtitle row, above the keys and below the status line.
+        //
+        // Placed here rather than at the bottom because the eye is already on the text being read,
+        // which is above the keyboard — the closer the words are to it, the less the eye travels.
+        //
+        // Draws nothing at all when nothing is being read, so it costs no space the rest of the
+        // time. That is why it can sit in the layout unconditionally instead of being switched in
+        // and out, which would make the keyboard change height mid-reading.
+        if (prefs.dictate.maReaderDisplay.collectAsState().value == "subtitle") {
+            MaSubtitleRow()
         }
         if (state.isActionsOverflowVisible) {
             QuickActionsOverflowPanel()

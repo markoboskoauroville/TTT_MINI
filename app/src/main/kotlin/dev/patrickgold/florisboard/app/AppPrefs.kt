@@ -1143,6 +1143,34 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         /** The voice that reads Croatian. Empty means the shipped default, Lesya. */
+        /**
+         * How fast the reader speaks, as a multiplier of the natural rate.
+         *
+         * Applied to PLAYBACK rather than sent to Speechify, so changing it costs nothing and takes
+         * effect on the next press instead of the next synthesis. The word timings stay correct
+         * because they describe the audio and the playhead is scaled by the same number.
+         *
+         * Stored in TENTHS as an integer. Every other numeric preference here is an int, and a lone
+         * float type would be the first of its kind for a number with one decimal place — the
+         * stepper moves in tenths anyway, so nothing is lost.
+         */
+        /**
+         * Where the reading is shown: "subtitle", "spacebar" or "off".
+         *
+         * The subtitle row is the default because it does not depend on the keyboard being the
+         * thing on screen — the spacebar version borrows a key that only exists while the letters
+         * are shown, and vanishes with them.
+         */
+        val maReaderDisplay = string(
+            key = "dictate__ma_reader_display",
+            default = "subtitle",
+        )
+
+        val maReaderSpeed = int(
+            key = "dictate__ma_reader_speed_tenths",
+            default = 10,
+        )
+
         val maReaderVoiceHr = string(
             key = "dictate__ma_reader_voice_hr",
             default = "lesya",
