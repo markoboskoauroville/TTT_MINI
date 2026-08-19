@@ -3535,3 +3535,37 @@ untouched and there is still exactly one implementation.
 His words: *he recognises an image faster than text*. A list of names alone makes him translate twice
 — word to picture, picture to key. It also catches a class of mistake for free: **a row whose glyph
 is wrong is visible the moment the screen opens.**
+
+---
+
+# 95. The zone keys: a big letter, and the border says it is on
+
+The keyboard outline inside the glyph is gone, and the little spacebar line with it. **At the size a
+key actually is, that outline left room for a letter too small to read at a glance** — which defeats
+the whole reason for using `n k c` instead of `1 2 3`.
+
+**The border moved to the key.** A lit outline around the whole key reads from further away than a
+lit glyph inside one, and it leaves the entire face for the letter, which is now 30dp against the
+old 24dp with most of that spent on the outline.
+
+`MaZoneKeyShape` matches the shape the keys are already clipped to, so the border sits exactly on the
+key's own edge rather than near it.
+
+**Written into HANDOFF as a standing rule**, because it generalises: *emphasise a key with a border
+around the whole key, not with a mark inside it.*
+
+## Also into HANDOFF: a button in settings always carries its icon
+
+Wherever a settings screen lists keys, buttons or rows, each entry shows the glyph it has on the
+keyboard, beside the name. **He recognises an image faster than a word**, and a list of names alone
+makes him translate twice — name to picture, picture to key.
+
+## The copy row is amber
+
+`MaRowKeyItem` takes an optional `accent`, and the copy row editor passes a dark amber. Lifted still
+wins, so the key under the finger reads as lifted in either list — drag feedback matters more than
+which row it belongs to.
+
+**Deliberately not the sand** used on the keyboard. That colour means "this key is holding
+something" throughout the app; reusing it for "this is the copy row" would give one colour two jobs,
+and the first screen showing both would say the same thing twice and mean different things.

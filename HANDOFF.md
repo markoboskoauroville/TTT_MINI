@@ -38,6 +38,15 @@ real.
 
 **He is paying for every build.** A red build costs him the same as a green one.
 
+**A button in settings always carries its icon.** Wherever a settings screen lists keys, buttons or
+rows, each entry shows the glyph it actually has on the keyboard, beside the name. He recognises an
+image faster than a word, and a list of names alone makes him translate twice — once from the name
+to the picture, once from the picture to the key. This is not decoration; it is how he finds things.
+
+**Emphasise a key with a border around the whole key, not with a mark inside it.** A lit outline
+reads from further away than a lit glyph, and it leaves the whole face for the label. That is what
+turned `n k c` from unreadable to obvious.
+
 **He runs several projects at once, and sometimes a message lands in the wrong chat.** He asked for
 this check by name. If a message does not belong to TTT mini — another repo, another app, a website,
 a film, a design note about something this app does not contain — say so and stop:

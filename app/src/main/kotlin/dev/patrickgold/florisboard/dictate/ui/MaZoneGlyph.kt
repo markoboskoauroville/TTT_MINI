@@ -17,12 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,15 +48,13 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun MaZoneGlyph(
     /**
-     * The letter inside the keyboard outline: `n`, `k` or `c`.
+     * The letter: `n`, `k` or `c` — number row, keyboard, copy row.
      *
-     * Letters rather than 1, 2, 3. A digit says only which position a key holds in a list nobody
-     * can see; `n` for the number row, `k` for the keyboard and `c` for the copy row say what the
-     * key actually toggles. He reads a picture faster than a word and a word faster than a code,
-     * and 1, 2, 3 was a code.
-     *
-     * Lowercase on purpose: it sits inside the outline without touching it, where a capital reaches
-     * the walls of a body only two thirds of the glyph tall.
+     * The keyboard outline and its little spacebar line are gone. At the size a key actually is,
+     * that outline left room for a letter too small to read at a glance, which defeated the whole
+     * reason for using letters instead of digits. **The key's own border carries the "this is on"
+     * state now**, so the glyph has the whole face to itself and the letter can be as big as it
+     * needs to be.
      */
     letter: String,
     tint: Color,
@@ -69,46 +62,16 @@ fun MaZoneGlyph(
     size: androidx.compose.ui.unit.Dp = 24.dp,
 ) {
     Box(
-        modifier = modifier
-            .size(size)
-            .drawBehind {
-                val w = this.size.width
-                val h = this.size.height
-                // The body: a little wider than tall, the way a keyboard is.
-                val bodyTop = h * 0.16f
-                val bodyHeight = h * 0.68f
-                val stroke = Stroke(width = w * 0.075f)
-                drawRoundRect(
-                    color = tint,
-                    topLeft = Offset(0f, bodyTop),
-                    size = Size(w, bodyHeight),
-                    cornerRadius = CornerRadius(w * 0.14f, w * 0.14f),
-                    style = stroke,
-                )
-                // The spacebar, low and wide. One mark rather than a grid of keys: at this size a
-                // grid turns to mush, and this single bar is what makes the outline read as a
-                // keyboard rather than as a plain box.
-                val barInset = w * 0.26f
-                val barY = bodyTop + bodyHeight * 0.74f
-                drawLine(
-                    color = tint,
-                    start = Offset(barInset, barY),
-                    end = Offset(w - barInset, barY),
-                    strokeWidth = w * 0.075f,
-                )
-            },
-        // Centred on the body rather than on the whole glyph, and nudged up by the height of the
-        // spacebar so the number sits in the empty part instead of on the bar.
+        modifier = modifier.size(size),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = letter,
             color = tint,
-            // Sized against the glyph rather than fixed, so the number keeps its proportions when
-            // the same glyph is drawn small on the row and larger in the editor.
-            fontSize = (size.value * 0.40f).sp,
+            // Nearly the whole glyph. Sized against it rather than fixed, so the same letter keeps
+            // its proportions drawn small on the row and larger in the editor.
+            fontSize = (size.value * 0.86f).sp,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.offset(y = -(size * 0.06f)),
         )
     }
 }
