@@ -32,6 +32,10 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.KeyboardTab
 import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Delete
@@ -494,6 +498,14 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.KeyboardCapslock, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CHANGE_CASE -> letters("Aa")
             MaFeatureKey.AUTO_BUCKET -> letters("A1")
+            MaFeatureKey.PASTE ->
+                Icon(Icons.Default.ContentPaste, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.CUT ->
+                Icon(Icons.Default.ContentCut, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.COPY ->
+                Icon(Icons.Default.ContentCopy, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.CLIP_HISTORY ->
+                Icon(Icons.Default.ContentPasteGo, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.SUBTITLE -> letters("S")
             MaFeatureKey.READER ->
                 Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = tint, modifier = size)

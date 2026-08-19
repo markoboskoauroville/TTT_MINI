@@ -3329,3 +3329,42 @@ The first attempt sliced from `SUBTITLE` to `PIN` and replaced **nothing**, beca
 cannot tell "nothing changed" from "changed correctly"; it took reading the file for the branches to
 see it. Same lesson as §87's type mismatch, from the other direction: **after a scripted edit, verify
 the thing the edit was supposed to produce, not the shape of the file.**
+
+---
+
+# 91. The copy row becomes an ordinary feature row
+
+His copy row lived in the **Smartbar quick actions** — a separate arrangement with its own editor and
+its own key set. That is why it could hold paste **or** AP and never both: `ALL_PASTE` and
+`ALL_CLEAR` are not Smartbar actions and never could be dragged there.
+
+**So the four clipboard keys moved into the feature row vocabulary:** `PASTE`, `CUT`, `COPY`,
+`CLIP_HISTORY`. Each goes through `tapKey`, the very path the Smartbar action used, so a paste from
+this row is the same paste — **the key moved, its behaviour did not.**
+
+That makes his request possible in one place: the copy row is now just a feature row, arranged in the
+editor that already exists, where any key can replace any key and reset restores the default. No new
+editor was needed; the row simply had to stop being special.
+
+**Shipped as default row two:** select all, paste, cut, clipboard history, dictation history, AP, AC.
+
+**COPY is deliberately absent.** He listed seven keys and copy was not among them. One tick away in
+the catalogue if that was an oversight rather than a decision — and it is worth asking, because a
+copy row without copy is a surprising thing to ship silently.
+
+## Two traps caught before the build
+
+**`ROW_COUNT` is 3.** Adding the copy row as a fourth would have been **silently dropped** — `parse`
+pads or truncates to exactly three, so the list would have looked right in the source and never
+reached the keyboard. The copy row takes slot two and one empty row remains.
+
+**Three failed anchors before one landed.** `SELECT_ALL("selectall"` was wrong — the real id is
+`select_all` — and the script asserted, wrote nothing, and reported success for the parts that ran
+before it. **A scripted edit that aborts halfway leaves the file in neither state**, and only reading
+the result afterwards showed it.
+
+## Note for the next session
+
+He must press **Reset all three rows** in Feature row settings, or install fresh. A stored
+arrangement always wins over a changed default — that is the whole point of storing it, and it means
+a default change never reaches an existing install by itself.

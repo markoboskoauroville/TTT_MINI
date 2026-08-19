@@ -173,9 +173,33 @@ object MaRows {
             ).map { Entry(Button.Builtin(it)) },
             enabled = true,
         ),
-        // Two and three start empty and off. A row arriving full of keys nobody chose has to be
-        // emptied before it can be used, which is more work than filling an empty one.
-        Row(emptyList(), enabled = false),
+        // Row two: the copy row, in the order he asked for.
+        //
+        // Select all, paste, cut, clipboard history, dictation history, AP, AC. It is the row he
+        // had been arranging by hand in the Smartbar, which could never hold AP and AC because
+        // those are not Smartbar actions — the four clipboard keys were moved into the feature row
+        // vocabulary precisely so this row could exist in one place and be edited like any other.
+        //
+        // COPY is deliberately absent: he listed seven keys and copy was not among them. It is one
+        // tick away in the catalogue if that was an oversight rather than a decision.
+        Row(
+            listOf(
+                MaFeatureKey.SELECT_ALL,
+                MaFeatureKey.PASTE,
+                MaFeatureKey.CUT,
+                MaFeatureKey.CLIP_HISTORY,
+                MaFeatureKey.HISTORY,
+                MaFeatureKey.ALL_PASTE,
+                MaFeatureKey.ALL_CLEAR,
+            ).map { Entry(Button.Builtin(it)) },
+            enabled = true,
+        ),
+        // Three starts empty and off. A row arriving full of keys nobody chose has to be emptied
+        // before it can be used, which is more work than filling an empty one.
+        //
+        // Only one empty row now, because the copy row above took the second slot and ROW_COUNT is
+        // three. A fourth Row here would be silently dropped by `parse`, which pads or truncates to
+        // exactly three — the list would look right in this file and never reach the keyboard.
         Row(emptyList(), enabled = false),
     )
 

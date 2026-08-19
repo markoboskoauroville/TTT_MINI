@@ -45,6 +45,10 @@ import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Dashboard
@@ -644,6 +648,42 @@ fun MaFeatureRow(modifier: Modifier = Modifier, rowHeight: Dp) {
 
                 // Both drawn by their modules. The row names the key and says nothing about what
                 // the key is, which is the whole point of moving them out.
+                // The four clipboard keys, now ordinary feature keys.
+                //
+                // Each goes through tapKey, the very path the Smartbar action used, so a paste from
+                // this row is the same paste — the key moved, its behaviour did not.
+                MaFeatureKey.PASTE -> ThemedIconKey(
+                    code = KeyCode.CLIPBOARD_PASTE,
+                    icon = Icons.Default.ContentPaste,
+                    contentDescription = "Paste",
+                    modifier = keyMod,
+                    tint = null,
+                ) { keyboardManager.tapKey(KeyCode.CLIPBOARD_PASTE) }
+
+                MaFeatureKey.CUT -> ThemedIconKey(
+                    code = KeyCode.CLIPBOARD_CUT,
+                    icon = Icons.Default.ContentCut,
+                    contentDescription = "Cut",
+                    modifier = keyMod,
+                    tint = null,
+                ) { keyboardManager.tapKey(KeyCode.CLIPBOARD_CUT) }
+
+                MaFeatureKey.COPY -> ThemedIconKey(
+                    code = KeyCode.CLIPBOARD_COPY,
+                    icon = Icons.Default.ContentCopy,
+                    contentDescription = "Copy",
+                    modifier = keyMod,
+                    tint = null,
+                ) { keyboardManager.tapKey(KeyCode.CLIPBOARD_COPY) }
+
+                MaFeatureKey.CLIP_HISTORY -> ThemedIconKey(
+                    code = KeyCode.NOOP,
+                    icon = Icons.Default.ContentPasteGo,
+                    contentDescription = "Clipboard history",
+                    modifier = keyMod,
+                    tint = null,
+                ) { keyboardManager.activeState.imeUiMode = ImeUiMode.CLIPBOARD }
+
                 MaFeatureKey.SUBTITLE -> MaSubtitleToggleKey(modifier = keyMod, litColor = MaSand)
 
                 MaFeatureKey.READER -> MaReaderKey(

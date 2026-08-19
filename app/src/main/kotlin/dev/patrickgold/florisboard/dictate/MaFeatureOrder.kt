@@ -31,6 +31,19 @@ enum class MaFeatureKey(val id: String, val label: String) {
     // itself says AP, so the list said one thing and the keyboard said another.
     ALL_PASTE("ap", "AP (all paste)"),
     SELECT_ALL("select_all", "Select all"),
+
+    /**
+     * The four clipboard keys, brought into the feature row.
+     *
+     * They existed only as Smartbar quick actions — a separate arrangement, with its own editor and
+     * its own key set — so a row could hold paste OR AP, never both, and no amount of dragging
+     * could put them side by side. Adding them here is what makes his row possible at all, and it
+     * follows the rule the rebuild is for: any key, any row, any order.
+     */
+    PASTE("paste", "Paste"),
+    CUT("cut", "Cut"),
+    COPY("copy", "Copy"),
+    CLIP_HISTORY("clip_history", "Clipboard history"),
     BACKSPACE("backspace", "Backspace"),
 
     /**
@@ -271,6 +284,10 @@ object MaFeatureOrder {
     val DEFAULT: List<MaFeatureKey> = listOf(
         MaFeatureKey.ALL_PASTE,
         MaFeatureKey.SELECT_ALL,
+        MaFeatureKey.PASTE,
+        MaFeatureKey.CUT,
+        MaFeatureKey.COPY,
+        MaFeatureKey.CLIP_HISTORY,
         MaFeatureKey.BACKSPACE,
         MaFeatureKey.ALL_CLEAR,
         MaFeatureKey.MIC,
