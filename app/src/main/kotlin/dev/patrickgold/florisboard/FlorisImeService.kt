@@ -42,8 +42,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import android.view.WindowManager
+import android.media.AudioManager
 import android.os.SystemClock
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaLog
@@ -772,6 +778,22 @@ class FlorisImeService : LifecycleInputMethodService() {
         }
     }
 
+    /** The open hold, cancelled the moment the finger lifts. */
+    private var maVolumeJob: Job? = null
+
+    /** Whether this press already became the volume, so the release must not also act. */
+    @Volatile
+    private var maVolumeDidRepeat = false
+
+    /**
+     * Its own scope, on Main.
+     *
+     * The service's lifecycle scope would carry this across a keyboard that has been hidden, and a
+     * volume key repeating for a keyboard nobody can see is the sort of thing that gets an app
+     * uninstalled.
+     */
+    private val maVolumeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (maHandleVolumeKey(keyCode, event)) return true
         return keyboardManager.onHardwareKeyDown(keyCode, event) || super.onKeyDown(keyCode, event)
@@ -802,63 +824,117 @@ class FlorisImeService : LifecycleInputMethodService() {
      * The event is consumed so the system neither changes the volume nor flashes its slider, which
      * would otherwise happen on top of the keyboard on every press.
      */
+    /**
+     * A volume key going down. Starts the hold that becomes the real volume.
+     *
+     * ### Quick click acts, long hold is the volume
+     *
+     * His design, and it dissolves a problem that had no good answer before. The keys are the app's
+     * while the keyboard is up, which left no way to change the volume without folding the keyboard
+     * away. Deciding on RELEASE is what makes both possible on one key: a quick tap is a tap, and a
+     * finger still down after [MA_VOL_HOLD_MS] was never a tap at all.
+     *
+     * So nothing happens on the way down. That is the change — recording used to start here, and it
+     * cannot any more, because at the moment of pressing there is no way to know which of the two
+     * he meant.
+     */
     private fun maHandleVolumeKey(keyCode: Int, event: KeyEvent?): Boolean {
         if (!prefs.dictate.maVolumeKeys.get()) return false
         if (!isInputViewShown) return false
-        // Only the first press of a hold. The system repeats a held volume key, and a repeat here
-        // would start a recording and stop it again while the finger is still down.
+        if (keyCode != KeyEvent.KEYCODE_VOLUME_UP && keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return false
+        }
+        // The system repeats a held key. Only the first press opens a hold; the repeats are
+        // swallowed, because the repeating is done here on our own clock.
         if (event != null && event.repeatCount > 0) return true
-        return when (keyCode) {
+        maVolumeDidRepeat = false
+        maVolumeJob?.cancel()
+        maVolumeJob = maVolumeScope.launch {
+            delay(MA_VOL_HOLD_MS)
+            // Past the threshold: this was never a tap. From here it is the volume, repeating on
+            // its own until the finger comes up.
+            maVolumeDidRepeat = true
+            MaLog.add("keys", "volume hold, passing through")
+            val direction = if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+                AudioManager.ADJUST_RAISE
+            } else {
+                AudioManager.ADJUST_LOWER
+            }
+            val am = getSystemService(AUDIO_SERVICE) as? AudioManager
+            while (isActive) {
+                runCatching {
+                    am?.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI)
+                }
+                delay(MA_VOL_REPEAT_MS)
+            }
+        }
+        return true
+    }
+
+    /**
+     * A volume key coming up. Acts only if the hold never became the volume.
+     *
+     * The recording starts here now rather than on the way down. For a quick tap that is a delay of
+     * the length of the tap itself, which is not felt; for a hold it is the difference between
+     * changing the volume and starting a recording he did not ask for.
+     */
+    private fun maFinishVolumeKey(keyCode: Int): Boolean {
+        if (!prefs.dictate.maVolumeKeys.get()) return false
+        if (!isInputViewShown) return false
+        if (keyCode != KeyEvent.KEYCODE_VOLUME_UP && keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return false
+        }
+        maVolumeJob?.cancel()
+        maVolumeJob = null
+        // The hold already spent this press on the volume. Doing the app action as well would give
+        // him both, which is the one outcome nobody wants.
+        if (maVolumeDidRepeat) {
+            maVolumeDidRepeat = false
+            return true
+        }
+        when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
-                MaLog.add("keys", "volume up taken by the keyboard")
-                // Straight away, on the way down, which is how it was before build 121 and how he
-                // wants it again.
-                //
-                // The hold was introduced so a short press could still be the volume while bhajan
-                // was playing. It solved that and cost more than it saved: every dictation, dozens
-                // a day, began with waiting half a second for a key that used to answer at once.
-                // The volume is the rarer need of the two while the keyboard is up, and it has an
-                // easy answer — put the keyboard away and the keys are ordinary volume keys again.
+                MaLog.add("keys", "volume up tap, recording")
                 DictateController.onMicClick(this)
-                true
             }
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                // The magic finger term, Send by default, also on the way down. Same reasoning: if
-                // the key is taken at all it should answer immediately.
                 // Resolved through the magic finger's own list, never read straight from the
-                // preference. This key and the send key on the row are the same button pressed two
-                // ways, and they must not be able to disagree: renaming the term on the Magic
-                // finger screen has to move both, or the hardware button quietly goes on pressing a
-                // word that no longer exists.
+                // preference, so this key and the send key on the row cannot disagree.
                 val stored = prefs.dictate.maVolumeDownTerm.get()
                 val targets = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
                     .ifEmpty { MaMagicTargets.defaults() }
                 val term = MaMagicTargets.resolveTerm(targets, stored)
                 val serviceUp = DictateAccessibilityService.isRunning
-                MaLog.add("keys", "volume down: '$stored' -> '$term', service=$serviceUp")
+                MaLog.add("keys", "volume down tap: '$stored' -> '$term', service=$serviceUp")
                 if (term.isNotEmpty() && serviceUp) {
                     val pressed = DictateAccessibilityService.pressScreenTarget(listOf(term))
                     MaLog.add("keys", "pressed=${pressed ?: "nothing found"}")
                 }
-                true
             }
-            else -> false
         }
+        return true
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        // Only volume up, and only its release. Volume down is not consumed on the way down any
-        // more, so consuming its release would leave the system half a press and no way to act on
-        // it.
-        if (prefs.dictate.maVolumeKeys.get() && isInputViewShown &&
-            (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
-        ) {
-            return true
-        }
+        // The release is where the decision is made, so it does the work rather than being
+        // swallowed. A quick tap acts; a press that already became the volume does nothing more.
+        if (maFinishVolumeKey(keyCode)) return true
         return keyboardManager.onHardwareKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
     }
 
 }
+
+/**
+ * How long a volume key must be held before it stops being a tap and becomes the volume.
+ *
+ * 500 ms. Long enough that a deliberate tap never crosses it, short enough that a hold does not feel
+ * dead — he said "about a second", and half of that is the point where a finger resting on a key
+ * starts to expect an answer. One number, easy to move if it reads wrong on the phone.
+ */
+private const val MA_VOL_HOLD_MS = 500L
+
+/** The gap between repeats once the hold has taken over. His number. */
+private const val MA_VOL_REPEAT_MS = 111L
 
 /** How long the pin's re-show attempts are counted over. */
 private const val MA_PIN_WINDOW_MS = 6_000L

@@ -3026,3 +3026,43 @@ boundary, both sides, past the end, and negative. Confirmed no gaps and no overl
 
 **Not tested: the phone.** Whether 60 ms feels smooth, whether the highlight sits right against the
 voice, and whether `setSpeed` is honoured on his Android 16.
+
+---
+
+# 83. Volume button passthrough: quick tap acts, hold is the volume
+
+His design, and it dissolves a problem that had no good answer. The keys are the app's while the
+keyboard is up, which left no way to change the volume without folding the keyboard away.
+
+**The decision moves to RELEASE.** A quick tap is a tap; a finger still down after 500 ms was never
+a tap at all. Nothing happens on the way down any more — at the moment of pressing there is no way to
+know which of the two he meant.
+
+- **Volume up, tap** — start or stop recording.
+- **Volume down, tap** — press the magic finger term, still resolved through the row's own list.
+- **Either, held past 500 ms** — real volume, repeating every **111 ms** (his number) with the
+  system's own volume UI showing, until the finger lifts.
+
+**The cost, stated:** recording used to start on the way down and now starts on the way up. For a tap
+that is the length of the tap — not felt. It is the price of one key doing two jobs, and it is the
+right trade.
+
+**Its own coroutine scope, on Main.** The service's lifecycle scope would carry a repeat across a
+keyboard that has been hidden, and a volume key repeating for a keyboard nobody can see is how an app
+gets uninstalled.
+
+**Held-key repeats from the system are swallowed**, because the repeating is done here on our own
+clock — otherwise both would run and the volume would race.
+
+## Tested
+
+**Test 1 — 7 cases, 0 failures**: instant tap, normal tap, the last millisecond that is still a tap,
+the first that is not, and three hold lengths with their exact step counts.
+
+**Both invariants proved across 429 hold lengths:** *never both* — no press ever produces an app
+action and a volume change — and *always one* — no press ever does nothing at all. Those two are the
+whole feature, and a case-by-case table would not have shown them.
+
+**Not tested: the phone.** Whether 500 ms reads as the right threshold under a real thumb, and
+whether `FLAG_SHOW_UI` puts the system volume bar somewhere that covers the keyboard. Both are one
+constant away if they feel wrong.
