@@ -3812,3 +3812,29 @@ longer exists, a file with no Default, duplicate names, corrupt JSON, and the co
 **Also caught before the build:** an unused-import sweep removed `getValue`, which `by` delegation
 needs without ever naming it. HANDOFF already warns that import checking must be exact-line; it
 should also say that `getValue` and `setValue` are never textually present and must never be swept.
+
+---
+
+# 99. The highlight becomes a setting, and the page turns white
+
+Three separate controls in Reader settings rather than a list of presets, because they combine:
+white-and-underlined is a real choice and so is yellow-and-bold, and a preset list would need eight
+rows to say what three switches say.
+
+- **Colour: yellow or white.** Two, not a picker. It has to carry against a near-black box and it
+  has to differ from the words around it; everything outside those two is either one of them or
+  worse than both.
+- **Bold, off by default.** The reason it was removed in the first place still stands: bold changes
+  the WIDTH of a word, so the line re-flows as the highlight passes and the text appears to breathe.
+  It is a choice now rather than a ban, because he asked for it and on a short page the movement is
+  small.
+- **Underline, off by default.** The one mark that costs nothing: it sits in the descender space the
+  line already reserves, so it can be on with a white highlight on white text and still be the only
+  thing that moves.
+
+**The rest of the page is now plain white**, where it was a dim grey. He asked for it, and it is also
+what makes the white highlight usable at all — with a grey page, "white" would just have been a
+second colour rather than the same colour marked a different way.
+
+Defaults are yellow, not bold, not underlined, which is exactly what it did before, so nobody's
+reading changes until they change it.

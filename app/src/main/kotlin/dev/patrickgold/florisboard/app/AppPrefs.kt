@@ -1215,6 +1215,43 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = true,
         )
 
+        /**
+         * The colour of the word being spoken: `"yellow"` or `"white"`.
+         *
+         * Two, not a picker. A colour picker on this would be a thousand answers to a question with
+         * two good ones — it has to carry against a near-black box and it has to be distinct from
+         * the words around it, and everything else is either those two or worse than both.
+         */
+        val maReaderHighlightColor = string(
+            key = "dictate__ma_reader_highlight_color",
+            default = "yellow",
+        )
+
+        /**
+         * Whether the spoken word is drawn bold.
+         *
+         * Off by default, and the reason is worth keeping: bold changes the WIDTH of a word, so the
+         * line re-flows as the highlight passes through it and the text appears to breathe. That is
+         * why weight was taken out when the highlight was first fixed. It is a choice rather than a
+         * ban because he asked for it, and on a short page the movement is small.
+         */
+        val maReaderHighlightBold = boolean(
+            key = "dictate__ma_reader_highlight_bold",
+            default = false,
+        )
+
+        /**
+         * Whether the spoken word is underlined.
+         *
+         * The one mark that changes nothing about the layout: an underline occupies space the line
+         * already reserves for descenders, so it can be on with a white highlight on white text and
+         * still be the only thing moving.
+         */
+        val maReaderHighlightUnderline = boolean(
+            key = "dictate__ma_reader_highlight_underline",
+            default = false,
+        )
+
         val maReaderSpeed = int(
             key = "dictate__ma_reader_speed_tenths",
             default = 10,

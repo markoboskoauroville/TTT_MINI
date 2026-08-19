@@ -28,6 +28,11 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.jetpref.datastore.model.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.dictate.MaReader
@@ -73,6 +78,14 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val pages = remember(words) { paginate(words.map { it.text }, PAGE_CHARS) }
     val page = remember(pages, index) { pages.firstOrNull { index in it.range } } ?: return
 
+    // How the spoken word is marked, read as Compose state so a change in settings shows on the very
+    // next word rather than the next reading.
+    val prefs by FlorisPreferenceStore
+    val litColour by prefs.dictate.maReaderHighlightColor.collectAsState()
+    val litBold by prefs.dictate.maReaderHighlightBold.collectAsState()
+    val litUnderline by prefs.dictate.maReaderHighlightUnderline.collectAsState()
+    val lit = if (litColour == "white") MaSubtitleWhite else MaSubtitleYellow
+
     val text = buildAnnotatedString {
         page.words.forEachIndexed { i, w ->
             if (i > 0) append(" ")
@@ -80,16 +93,26 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
             // and matching on its letters lands on the first one, which is what made the highlight
             // jump to the top of the screen on every "the".
             if (page.range.first + i == index) {
-                // Colour only, never weight.
+                // Colour always, weight and underline only if he asked for them.
                 //
-                // Bold changes the WIDTH of the word, so every word the highlight touched nudged
-                // the whole line sideways — the text appeared to breathe as it was read. A colour
-                // change moves nothing.
-                withStyle(SpanStyle(color = MaSubtitleLit)) {
+                // Bold is off by default because it changes the WIDTH of the word, so the line
+                // re-flows as the highlight passes and the text appears to breathe. Underline costs
+                // nothing: it sits in the descender space the line already reserves, so it is the
+                // one mark that can be on without anything moving.
+                withStyle(
+                    SpanStyle(
+                        color = lit,
+                        fontWeight = if (litBold) FontWeight.Bold else null,
+                        textDecoration = if (litUnderline) TextDecoration.Underline else null,
+                    ),
+                ) {
                     append(w)
                 }
             } else {
-                withStyle(SpanStyle(color = MaSubtitleDim)) { append(w) }
+                // The rest of the page is plain white. It was a dim grey, which made the box read as
+                // mostly switched off; white is what he asked for and it is also what lets the
+                // highlight be white too, marked by weight or an underline instead of by colour.
+                withStyle(SpanStyle(color = MaSubtitleWhite)) { append(w) }
             }
         }
     }
@@ -167,8 +190,11 @@ private const val PAGE_CHARS = 105
  */
 private val SUBTITLE_HEIGHT = 96.dp
 
-private val MaSubtitleLit = Color(0xFFE8B15C)
-private val MaSubtitleDim = Color(0xFF8A8A8A)
+/** The sand this app uses everywhere for a lit thing. */
+private val MaSubtitleYellow = Color(0xFFE8B15C)
+
+/** Plain white, for the page and for the second highlight colour. */
+private val MaSubtitleWhite = Color(0xFFFFFFFF)
 
 /** The composer's own dark fill, so the box belongs to the screen rather than sitting on it. */
 private val MaSubtitleBackground = Color(0xFF1E1E20)

@@ -164,6 +164,66 @@ fun MaReaderScreen() = FlorisScreen {
             }
         }
 
+        // How the spoken word is marked.
+        //
+        // Three separate answers rather than a list of presets, because they combine: white and
+        // underlined is a real choice, and so is yellow and bold. A preset list would have to hold
+        // eight rows to say the same thing.
+        Text(
+            text = "The word being spoken",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        Text(
+            text = "The rest of the page is white. This is the one word that differs.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        val litColour by prefs.dictate.maReaderHighlightColor.collectAsState()
+        for ((value, label, detail) in listOf(
+            Triple("yellow", "Yellow", "The colour this app uses for a lit thing"),
+            Triple("white", "White", "Same as the page \u2014 mark it with bold or an underline"),
+        )) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = litColour == value,
+                        onClick = { scope.launch { prefs.dictate.maReaderHighlightColor.set(value) } },
+                    )
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = litColour == value,
+                    onClick = { scope.launch { prefs.dictate.maReaderHighlightColor.set(value) } },
+                )
+                Column(modifier = Modifier.padding(start = 8.dp)) {
+                    Text(text = label, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        val litBold by prefs.dictate.maReaderHighlightBold.collectAsState()
+        HighlightTick(
+            label = "Bold",
+            detail = "Heavier, but it widens the word and the line shifts as the highlight passes",
+            checked = litBold,
+        ) { on -> scope.launch { prefs.dictate.maReaderHighlightBold.set(on) } }
+
+        val litUnderline by prefs.dictate.maReaderHighlightUnderline.collectAsState()
+        HighlightTick(
+            label = "Underline",
+            detail = "Moves nothing \u2014 it sits in space the line already reserves",
+            checked = litUnderline,
+        ) { on -> scope.launch { prefs.dictate.maReaderHighlightUnderline.set(on) } }
+
         VoiceGroup(
             heading = "Croatian",
             note = "Speechify has no Croatian voice \u2014 none exists on any model. These read " +
@@ -192,6 +252,33 @@ private fun playPreview(path: String) {
         player.setOnErrorListener { mp, _, _ -> mp.release(); true }
         player.prepare()
         player.start()
+    }
+}
+
+/** One on/off for the highlight, with the reason underneath rather than left to be discovered. */
+@Composable
+private fun HighlightTick(
+    label: String,
+    detail: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = checked, onClick = { onChange(!checked) })
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = onChange)
+        Column(modifier = Modifier.padding(start = 8.dp)) {
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
