@@ -3634,7 +3634,8 @@ object DictateController {
     }.getOrNull()
 
     /** One request against one key. Null on anything other than a clean answer. */
-    private fun probeOnce(audio: File, key: String): String? = runCatching {
+    /** One request with one key. Returns the reported language AND the transcript, or null. */
+    private fun probeOnce(audio: File, key: String): Pair<String, String>? = runCatching {
         val boundary = "----ttt" + System.currentTimeMillis()
         val url = java.net.URL("https://api.groq.com/openai/v1/audio/transcriptions")
         val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
@@ -3665,7 +3666,10 @@ object DictateController {
             return null
         }
         val body = conn.inputStream.bufferedReader().use { it.readText() }
-        JSONObject(body).optString("language").takeIf { it.isNotBlank() }
+        val json = JSONObject(body)
+        // Both halves. The transcript is what actually settles the question and it arrives in the
+        // same response at no extra cost.
+        json.optString("language") to json.optString("text")
     }.getOrNull()
 
     private fun transcriptionAccount(): ProviderAccount {
