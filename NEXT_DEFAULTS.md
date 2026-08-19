@@ -3066,3 +3066,51 @@ whole feature, and a case-by-case table would not have shown them.
 **Not tested: the phone.** Whether 500 ms reads as the right threshold under a real thumb, and
 whether `FLAG_SHOW_UI` puts the system volume bar somewhere that covers the keyboard. Both are one
 constant away if they feel wrong.
+
+---
+
+# 84. The subtitle box, and reading past the fold
+
+## Why it vibrated
+
+The row scrolled horizontally to keep the current word in view, so **every word shifted the whole
+line** — and on a long sentence the highlight ran off the edge anyway.
+
+It is one wrapped block now, three lines, in a rounded box **the height of the composer he reads
+beside** (96dp), so the two read as one interface. Nothing moves except the colour.
+
+**Built as one `AnnotatedString`, not a `Row` of `Text`s** — a Row cannot wrap, so it would push the
+sentence sideways again: the same bug in different clothes.
+
+**Fixed height rather than wrapping to fit**, or the keyboard would change height between a short
+sentence and a long one, with his thumb already moving towards a key.
+
+## Reading past the fold
+
+When a screenful finishes, it scrolls a page and reads the next, until the bottom.
+
+**Two independent stop conditions, because either alone fails:**
+
+- **Nothing scrolled** — catches a screen that cannot move at all.
+- **The text is identical to last time** — catches the far commoner case of a list that reports a
+  *successful* scroll and does not actually move. **That is what would otherwise scroll forever at
+  the bottom.**
+
+Comparing text rather than counting attempts is deliberate: a fixed number of tries would stop early
+on a long page and spin on a short one.
+
+`lastPassage` is cleared in `stop()` and **not** in `stopPlayer()`, which runs between screenfuls —
+clearing it there would erase the very comparison that detects the end, and pressing play again on
+the same screen would stop instantly, reading as a reader that had died.
+
+**450 ms settle** after a scroll, because a list needs a moment to build the rows it just moved into
+place; reading instantly finds the old ones or none.
+
+## Tested
+
+**Test 1 — 5 scenarios, no runaway in any:** three normal pages, a scroll refused immediately, a
+**list that lies** (reports success, text repeats), a blank page after two, and a single-page screen.
+The liar case stops after one passage rather than spinning, which was the whole point.
+
+**Not tested: the phone.** Whether 450 ms is enough for Claude's message list, and whether the box
+lines up with the composer as intended.

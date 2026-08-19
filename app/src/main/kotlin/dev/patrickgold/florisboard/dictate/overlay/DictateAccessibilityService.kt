@@ -834,6 +834,12 @@ class DictateAccessibilityService : AccessibilityService() {
          * Wrapped here rather than exposing `instance`, so the service stays the only thing that
          * knows whether it is alive and callers cannot hold a reference to a dead one.
          */
+        /** Scrolls the screen down one page. False when nothing scrolled. */
+        suspend fun scrollScreenDown(): Boolean {
+            val ims = instance ?: return false
+            return MaScreenTargets.scrollBy(ims, 1)
+        }
+
         fun readableScreenText(): String {
             val ims = instance ?: return ""
             return MaScreenTargets.readableText(ims)

@@ -10,17 +10,23 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.dictate.MaReader
@@ -49,9 +55,6 @@ import dev.patrickgold.florisboard.dictate.MaSpeechify
  */
 @Composable
 fun MaSubtitleRow(modifier: Modifier = Modifier) {
-    // Recomposes as the word changes, because `currentWord` is the Compose state the ticker writes.
-    // The position is not read here: the word is what changed, and asking the player again would
-    // race the ticker for no gain.
     val word = MaReader.currentWord
     if (word.isEmpty()) return
 
@@ -61,28 +64,54 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val sentence = sentenceContaining(words.map { it.text }, index)
     if (sentence.first.isEmpty()) return
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    // One block of wrapped text, not a scrolling line.
+    //
+    // The first version scrolled horizontally to keep the current word in view, and the effect was
+    // that every word shifted the whole line — the text appeared to vibrate, and the highlight ran
+    // off the edge on a long sentence. Wrapping instead means nothing moves except the colour.
+    //
+    // Built as one AnnotatedString rather than a Row of Texts, because a Row cannot wrap: it would
+    // push the sentence sideways again, which is the same bug wearing different clothes.
+    val text = buildAnnotatedString {
         sentence.first.forEachIndexed { i, w ->
-            val isCurrent = i == sentence.second
-            Text(
-                text = w,
-                fontSize = 17.sp,
-                // Sand and bold for the word being said, dim for the rest. Two states only: a
-                // gradient of "recently said" would make the eye chase the fade instead of resting
-                // on the word.
-                color = if (isCurrent) MaSubtitleLit else MaSubtitleDim,
-                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                modifier = Modifier.padding(end = 6.dp),
-            )
+            if (i > 0) append(" ")
+            if (i == sentence.second) {
+                withStyle(SpanStyle(color = MaSubtitleLit, fontWeight = FontWeight.Bold)) {
+                    append(w)
+                }
+            } else {
+                withStyle(SpanStyle(color = MaSubtitleDim)) { append(w) }
+            }
         }
     }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaSubtitleBackground)
+            // The height of the box he types into, so the two read as one interface. Fixed rather
+            // than wrapping to fit, or the keyboard would change height between a short sentence
+            // and a long one — with his thumb already moving towards a key.
+            .height(SUBTITLE_HEIGHT)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.TopStart,
+    ) {
+        Text(
+            text = text,
+            fontSize = 17.sp,
+            lineHeight = 23.sp,
+            // Three lines hold a long sentence. Past that it is cut rather than scrolled, since a
+            // sentence long enough to overflow is one where the highlight matters least.
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
+
+/** Matching the composer he reads beside, so the two read as one interface. */
+private val SUBTITLE_HEIGHT = 96.dp
 
 /**
  * The run of words around [index] that forms a sentence, and where [index] sits inside it.
@@ -103,3 +132,6 @@ private fun sentenceContaining(words: List<String>, index: Int): Pair<List<Strin
 
 private val MaSubtitleLit = Color(0xFFE8B15C)
 private val MaSubtitleDim = Color(0xFF8A8A8A)
+
+/** The composer's own dark fill, so the box belongs to the screen rather than sitting on it. */
+private val MaSubtitleBackground = Color(0xFF1E1E20)

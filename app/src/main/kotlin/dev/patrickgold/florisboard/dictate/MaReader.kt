@@ -57,6 +57,18 @@ object MaReader {
     private var ticker: kotlinx.coroutines.Job? = null
 
     /**
+     * The passage last spoken, used to notice the bottom of a page.
+     *
+     * A list that will not scroll further often reports a SUCCESSFUL scroll and does not move, so
+     * "did it scroll" is not enough to know when to stop. Identical text twice running is the
+     * reliable signal, and it is what keeps the reader from scrolling forever at the end.
+     */
+    private var lastPassage: String = ""
+
+    /** How long a list is given to build the rows it has just scrolled into place. */
+    private const val SETTLE_MS = 450L
+
+    /**
      * The word being spoken right now, or empty.
      *
      * Read by the spacebar, which shows it while the voice reads — a karaoke line on the widest key
@@ -110,15 +122,28 @@ object MaReader {
             onMessage("Nothing to read on this screen")
             return
         }
+        scope.launch { speak(context, text, onMessage) }
+    }
+
+    /**
+     * Synthesises one passage and plays it. Shared by the first press and every continuation.
+     *
+     * Factored out precisely so the scroll-and-continue path cannot drift from the first read:
+     * the same voice, the same speed, the same ticker and the same completion handler, or the
+     * second screenful would behave subtly unlike the first.
+     */
+    private suspend fun speak(context: Context, text: String, onMessage: (String) -> Unit) {
+        val prefs by FlorisPreferenceStore
+        lastPassage = text
         val voice = MaSpeechify.chosenVoice(MaLanguage.active())
         state = State.LOADING
-        scope.launch {
+        run {
             val dest = File(context.cacheDir, "ma_reader.mp3")
             val file = withContext(Dispatchers.IO) { MaSpeechify.synthesize(text, voice, dest) }
             if (file == null) {
                 state = State.IDLE
                 onMessage("Could not speak this \u2014 check your Speechify key")
-                return@launch
+                return
             }
             // Read once, outside the player, because both the playback rate and the karaoke
             // ticker need the same number and they must not be able to disagree.
@@ -128,8 +153,11 @@ object MaReader {
                 player = MediaPlayer().apply {
                     setDataSource(file.path)
                     setOnCompletionListener {
-                        state = State.IDLE
+                        // A screenful is finished. Scroll and carry on rather than stopping at the
+                        // edge, which is what he asked for and what makes it a reader rather than a
+                        // sampler.
                         stopPlayer()
+                        scope.launch { continueBelow(context, onMessage) }
                     }
                     setOnErrorListener { _, _, _ ->
                         state = State.IDLE
@@ -154,6 +182,37 @@ object MaReader {
                 onMessage("Could not play the audio")
             }
         }
+    }
+
+    /**
+     * Scrolls down and reads the next screenful, or stops at the bottom.
+     *
+     * ### Knowing when to stop
+     *
+     * Two independent conditions, because either alone fails. **Nothing scrolled** catches a screen
+     * that cannot move at all; **the text is the same as last time** catches the far commoner case
+     * of a list that reports a successful scroll and does not actually move, which is what turns a
+     * reader into the maniac scrolling forever at the bottom.
+     *
+     * Comparing the text rather than counting attempts is deliberate: a fixed number of tries would
+     * either stop early on a long page or spin on a short one.
+     */
+    private suspend fun continueBelow(context: Context, onMessage: (String) -> Unit) {
+        val moved = DictateAccessibilityService.scrollScreenDown()
+        if (!moved) {
+            state = State.IDLE
+            return
+        }
+        // The list needs a moment to build the rows it just scrolled into place. Reading instantly
+        // would find the old ones, or none at all.
+        kotlinx.coroutines.delay(SETTLE_MS)
+        val next = DictateAccessibilityService.readableScreenText()
+        if (next.isBlank() || next == lastPassage) {
+            state = State.IDLE
+            MaLog.add("read", "reached the end")
+            return
+        }
+        speak(context, next, onMessage)
     }
 
     /**
@@ -182,6 +241,12 @@ object MaReader {
     /** Unconditional. Used when he leaves, and by a press during loading. */
     fun stop() {
         stopPlayer()
+        // Cleared here and NOT in stopPlayer, which runs between screenfuls: clearing it there
+        // would erase the very comparison that detects the bottom of a page.
+        //
+        // Without this, pressing play again on the same screen would find the text identical to
+        // last time and stop immediately, which reads as a reader that has died.
+        lastPassage = ""
         state = State.IDLE
     }
 
