@@ -3114,3 +3114,37 @@ The liar case stops after one passage rather than spinning, which was the whole 
 
 **Not tested: the phone.** Whether 450 ms is enough for Claude's message list, and whether the box
 lines up with the composer as intended.
+
+---
+
+# 85. Jump between pages, do not glide
+
+He cannot watch animated scrolling. **The animation is the app's, not ours** — `ACTION_SCROLL_FORWARD`
+is a *request*, and a list answers it with its own smooth scroll. There is no flag from here that
+turns that off.
+
+But there is another action. **`ACTION_SCROLL_TO_POSITION` is answered by a RecyclerView with
+`scrollToPosition`, which moves in one frame with nothing to watch.** So `scrollBy` now tries the
+jump first and only falls back to the animated scroll when the app will not take it:
+
+- Read the list's `collectionInfo` for the total row count.
+- Work out the visible span from the `collectionItemInfo` of the attached children.
+- Ask for the row one screenful further on.
+- If any of that is missing — no collection, no item rows, target out of range — return false and
+  let the old action run.
+
+**Where an app publishes no collection, the animation stays and is not ours to remove.** Said
+plainly rather than promised away.
+
+## The waits, which WERE ours
+
+`SETTLE_MS` cut from **450 ms to 120 ms**. The long wait was sized for a smooth scroll to finish
+travelling; a jump has nothing to travel, and the only thing left is the rows being attached — one
+or two frames.
+
+**Not zero.** At zero the read happens in the same frame as the jump and finds the OLD rows, which
+would not look like a fast reader, it would look like one that skips a screen.
+
+`SCROLL_SETTLE_MS` (220 ms) is untouched and never fires for the reader: it only runs *between*
+pages of a multi-page scroll, and the reader asks for one page at a time. Verified rather than
+assumed — **total wait per page is 120 ms and nothing else.**

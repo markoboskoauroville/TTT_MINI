@@ -65,8 +65,17 @@ object MaReader {
      */
     private var lastPassage: String = ""
 
-    /** How long a list is given to build the rows it has just scrolled into place. */
-    private const val SETTLE_MS = 450L
+    /**
+     * How long a list is given to build the rows it has just scrolled into place.
+     *
+     * Cut from 450 ms to 120 ms. The long wait was sized for a smooth scroll to finish travelling;
+     * a jump has nothing to travel, and the only thing left to wait for is the rows being attached,
+     * which is one or two frames.
+     *
+     * Not zero. At zero the read happens in the same frame as the jump and finds the old rows —
+     * which would not look like a fast reader, it would look like a reader that skips a screen.
+     */
+    private const val SETTLE_MS = 120L
 
     /**
      * The word being spoken right now, or empty.

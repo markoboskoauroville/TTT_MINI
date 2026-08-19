@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import android.accessibilityservice.AccessibilityService
 import android.graphics.Rect
+import android.os.Bundle
 import dev.patrickgold.florisboard.dictate.MaScreenText
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
@@ -449,7 +450,17 @@ object MaScreenTargets {
         repeat(kotlin.math.abs(pages)) { step ->
             val target = findScrollable(service) ?: return moved
             val ok = try {
-                target.performAction(action)
+                // Jump if the app will let us, animate only if it will not.
+                //
+                // ACTION_SCROLL_FORWARD is a REQUEST, and a list answers it with its own smooth
+                // scroll — the animation belongs to the app, not to us, and cannot be turned off
+                // from here. ACTION_SCROLL_TO_POSITION is different: a RecyclerView answers it with
+                // `scrollToPosition`, which moves in one frame with nothing to watch.
+                //
+                // It only works where the list publishes its row count, so this tries the jump and
+                // falls back. On a screen that does not expose a collection, the animation stays
+                // and is not ours to remove.
+                jumpForward(target, pages > 0) || target.performAction(action)
             } finally {
                 runCatching { target.recycle() }
             }
@@ -462,6 +473,46 @@ object MaScreenTargets {
             if (step < kotlin.math.abs(pages) - 1) delay(SCROLL_SETTLE_MS)
         }
         return moved
+    }
+
+    /**
+     * Moves a list by one screenful with no animation, or false when it cannot.
+     *
+     * Works out how many rows are on screen from the ones currently attached, then asks for the row
+     * one screenful further on. A list that publishes neither a collection nor any item rows cannot
+     * be jumped, and says so rather than guessing at a position.
+     */
+    private fun jumpForward(node: AccessibilityNodeInfo, forward: Boolean): Boolean {
+        val collection = node.collectionInfo ?: return false
+        val total = collection.rowCount
+        if (total <= 0) return false
+        val rows = visibleRowRange(node) ?: return false
+        val span = (rows.last - rows.first + 1).coerceAtLeast(1)
+        val target = if (forward) rows.last + span else rows.first - span
+        if (target < 0 || target >= total) return false
+        val args = Bundle().apply {
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_ROW_INT, target)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_COLUMN_INT, 0)
+        }
+        return node.performAction(
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_TO_POSITION.id,
+            args,
+        )
+    }
+
+    /** The first and last row indices currently attached, or null when the list publishes none. */
+    private fun visibleRowRange(node: AccessibilityNodeInfo): IntRange? {
+        var lowest = Int.MAX_VALUE
+        var highest = Int.MIN_VALUE
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val row = child.collectionItemInfo?.rowIndex
+            runCatching { child.recycle() }
+            if (row == null || row < 0) continue
+            if (row < lowest) lowest = row
+            if (row > highest) highest = row
+        }
+        return if (highest >= lowest) lowest..highest else null
     }
 
     /**
