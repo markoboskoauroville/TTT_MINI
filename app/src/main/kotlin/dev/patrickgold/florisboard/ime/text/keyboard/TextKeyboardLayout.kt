@@ -369,6 +369,7 @@ private fun TextKeyButton(
     desiredKey: TextKey,
     debugShowTouchBoundaries: Boolean,
 ) = with(LocalDensity.current) {
+    val maPrefs by FlorisPreferenceStore
     val attributes = mapOf(
         FlorisImeUi.Attr.Code to key.computedData.code,
         FlorisImeUi.Attr.Mode to evaluator.keyboard.mode.toString(),
@@ -429,7 +430,11 @@ private fun TextKeyButton(
             //
             // It replaces the mark rather than sitting beside it: the bar is one line tall and two
             // things on it would make both unreadable. The mark returns the moment reading stops.
-            val karaoke = if (prefs.dictate.maReaderDisplay.get() == "spacebar") MaReader.currentWord else ""
+            // Read as Compose state here, because TextKeyButton has no `prefs` of its own — and
+            // the mode has to be observed anyway, or switching to the spacebar view mid-reading
+            // would not take effect until the key was redrawn for some other reason.
+            val readerDisplay by maPrefs.dictate.maReaderDisplay.collectAsState()
+            val karaoke = if (readerDisplay == "spacebar") MaReader.currentWord else ""
             val isSpaceKey = key.computedData.code == KeyCode.SPACE
             // Assigned, not shadowed. `customLabel` is the var set above, and a new val of the same
             // name reading its own initialiser does not compile.
