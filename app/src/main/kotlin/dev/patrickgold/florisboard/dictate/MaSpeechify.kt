@@ -147,6 +147,37 @@ object MaSpeechify {
         return null
     }
 
+    /**
+     * Checks one key against the voice catalogue. Returns the HTTP status, or -1 for a real network
+     * failure.
+     *
+     * ### Why this exists rather than the shared validator
+     *
+     * `OpenAiCompatibleClient.validateKey()` asks for `/models`, which every OpenAI-shaped provider
+     * has and **Speechify does not**. It answered 404 "The requested resource could not be found",
+     * which fell through to the catch-all and was reported as **"no connection"** — sending him to
+     * look at his wifi over a key that was perfectly good and an API that was answering.
+     *
+     * `/v1/voices?limit=1` is the cheapest thing Speechify will answer: one voice, no synthesis, no
+     * billing. Measured against the real API — a good key returns 200, a nonsense key returns 401
+     * with `{"error":{"code":"unauthorized"}}`.
+     *
+     * **A test must ask the question the service can answer**, not the question the other services
+     * happen to share.
+     */
+    fun validateKey(key: String): Int = runCatching {
+        val conn = (URL("https://api.sws.speechify.com/v1/voices?limit=1").openConnection()
+            as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = TIMEOUT_MS
+            readTimeout = TIMEOUT_MS
+            setRequestProperty("Authorization", "Bearer $key")
+        }
+        val code = conn.responseCode
+        runCatching { conn.disconnect() }
+        code
+    }.getOrDefault(-1)
+
     /** One request with one key. Returns the HTTP status; writes [dest] only on 200. */
     private fun speakOnce(text: String, voice: Voice, key: String, dest: File): Int {
         val conn = (URL(BASE).openConnection() as HttpURLConnection).apply {

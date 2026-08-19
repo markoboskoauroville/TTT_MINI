@@ -2948,3 +2948,29 @@ reading is pleasant. All need the phone and his Speechify keys imported.
 **He must import the keys first** — Speechify is registered now (it was recognised by `MaKeys` all
 along but missing from `ProviderRegistry`, exactly the gap Groq had in §31), so the keys screen will
 accept them.
+
+---
+
+# 82. The Speechify key test asked the wrong question
+
+The keys screen showed **"no connection"** with *The requested resource could not be found* against
+keys that work perfectly. The API was answering; the test was asking for something that does not
+exist.
+
+`OpenAiCompatibleClient.validateKey()` requests **`/models`**. Every OpenAI-shaped provider has it and
+**Speechify does not**, so it answered 404, which fell to the catch-all branch and was reported as a
+network failure — **sending him to look at his wifi over a healthy key**.
+
+`MaSpeechify.validateKey` asks `GET /v1/voices?limit=1` instead: the cheapest thing Speechify will
+answer, one voice, no synthesis, nothing billed. Measured against the real API — a good key returns
+200, a nonsense key returns 401 with `{"error":{"code":"unauthorized"}}`.
+
+**A test must ask the question the service can answer, not the question the other services happen to
+share.** That is the general lesson; the specific one is that a 404 is not a connection failure and
+must never be reported as one.
+
+Statuses follow the engine handoff: 200 works, 401/403 condemns the key, **429 is throttling and does
+not condemn**, anything else says what it was rather than guessing. 7 mapping cases, 0 failures.
+
+`MaKeyRingStore` is told on both success and rejection, so the verdict shown on this screen is the
+same one the reader will act on — there is only one place holding it.

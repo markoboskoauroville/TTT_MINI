@@ -61,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.patrickgold.florisboard.dictate.MaSpeechify
 import dev.patrickgold.florisboard.dictate.MaKeyImport
 import dev.patrickgold.florisboard.dictate.MaRoles
 import dev.patrickgold.florisboard.dictate.MaKeyRingStore
@@ -235,6 +236,31 @@ fun DictateKeysScreen() = FlorisScreen {
             MaKeyRingStore.forget(context, preset.id, key)
             return scope.launch {
                 val status = withContext(Dispatchers.IO) {
+                    // Speechify is asked a question it can answer.
+                    //
+                    // The shared validator requests /models, which Speechify does not have, so a
+                    // perfectly good key came back 404 and was reported as "no connection" — his
+                    // wifi blamed for an API that was answering correctly. The voice catalogue is
+                    // the cheapest endpoint it does have: one voice, no synthesis, nothing billed.
+                    if (preset.id == MaSpeechify.PROVIDER_ID) {
+                        return@withContext when (val code = MaSpeechify.validateKey(key)) {
+                            200 -> {
+                                MaKeyRingStore.onSuccess(context, preset.id, key)
+                                KeyStatus(KeyHealth.WORKING, "works, voices available")
+                            }
+                            401, 403 -> {
+                                MaKeyRingStore.onFailure(
+                                    context, preset.id, key,
+                                    DictateApiException.Kind.INVALID_API_KEY, "",
+                                )
+                                KeyStatus(KeyHealth.REJECTED, "rejected by the service")
+                            }
+                            // Throttled says nothing about the key, so it is not condemned.
+                            429 -> KeyStatus(KeyHealth.OFFLINE, "too many requests, not checked")
+                            -1 -> KeyStatus(KeyHealth.OFFLINE, "no connection, key not checked")
+                            else -> KeyStatus(KeyHealth.OFFLINE, "could not be checked, http $code")
+                        }
+                    }
                     try {
                         val count = OpenAiCompatibleClient
                             .from(
