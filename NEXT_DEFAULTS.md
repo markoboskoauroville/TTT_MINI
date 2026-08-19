@@ -3407,3 +3407,50 @@ keyboard never shows it.
 `MaFeatureRow` gained `copyRowOnly`, so the transcription view draws that row and not the three that
 belong to the typing keyboard. **Same composable either way**, so a key behaves identically in both
 places; the caller chooses which rows, not which implementation.
+
+---
+
+# 92. Groq removed, restore added with history, copy row made its own thing
+
+## Auto language detection is gone
+
+The probe, its constants, `MaLanguageProbe`, the AUTO badge state and Groq from the offered
+providers. **Detection was never reliable enough to be trusted with a whole dictation, and a wrong
+language does not fail visibly** — it returns fluent nonsense in the other language. Manual is one
+tap slower and right every time.
+
+The Groq *preset* stays in the registry so an existing stored account still parses instead of
+becoming an unknown provider. `MODE_AUTO` stays as a constant for the same reason: an older install
+with `"auto"` saved is read as Croatian rather than as a value nobody recognises.
+
+## Restore, with dates
+
+Backup shipped without its other half. It now writes **`settings-YYYY-MM-DD-HH-mm.jetpref`** beside
+the plain file and keeps **twenty**.
+
+**The stamp is big-endian in the filename and day-first on screen.** Sorting is by name, and only
+year-month-day sorts correctly; what he reads is `19.08. 18:30`. Two orders on purpose, and one
+function knows both.
+
+**History is read from the folder**, never from a list this class maintains — a list drifts the first
+time a file is moved by hand, and the folder is the truth.
+
+**The list is the confirmation.** A yes/no dialog followed by "restore the latest" gives him no way
+to reach the backup from *before* the change he is undoing, which is the only reason anybody opens
+this. Choosing a date is both the safeguard and the feature. The newest is labelled, because it is
+what he wants nine times in ten and should not need a date read.
+
+The plain `settings.jetpref` is untouched, so setup's restore still finds "the backup" without
+knowing history exists.
+
+## The copy row is its own row
+
+Not one of the three. Stored in `maCopyRow`, edited on its own screen, and **drawn only in the
+transcription view** — the screen with no letters, where the clipboard is most of the work.
+
+**Its own preference rather than a fourth slot**, because `MaRows.parse` pads and truncates to
+exactly `ROW_COUNT` — a fourth row there is silently dropped and the source looks right while the
+keyboard never shows it.
+
+Same `Row`, same `Entry`, same catalogue, same keys. **A key added to the app appears in this editor
+with nobody remembering to add it.** Only the storage and the surface differ.

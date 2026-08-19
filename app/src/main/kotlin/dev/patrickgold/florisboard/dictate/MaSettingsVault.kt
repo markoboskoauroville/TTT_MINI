@@ -11,6 +11,10 @@
 package dev.patrickgold.florisboard.dictate
 
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import dev.patrickgold.jetpref.datastore.runtime.ImportStrategy
 import dev.patrickgold.jetpref.datastore.runtime.FileBasedStorage
 
@@ -42,11 +46,72 @@ object MaSettingsVault {
      * The folder is created on demand, exactly as the key backup does, so a first backup on a fresh
      * install does not need anything to exist first.
      */
+    /** One saved backup: the file, and when it was written. */
+    data class Snapshot(val file: File, val display: String)
+
+    private const val PREFIX = "settings-"
+    private const val SUFFIX = ".jetpref"
+
+    /** How many stamped backups are kept. Older ones go as new ones arrive. */
+    private const val KEEP = 20
+
+    /**
+     * Every kept backup, newest first.
+     *
+     * Read from the folder rather than from a list this class maintains. A list would drift the
+     * first time a file was moved or deleted by hand, and the folder is the truth.
+     */
+    fun history(): List<Snapshot> = runCatching {
+        val dir = MaVault.dir()
+        if (!dir.exists()) return emptyList()
+        dir.listFiles().orEmpty()
+            .filter { it.isFile && it.name.startsWith(PREFIX) && it.name.endsWith(SUFFIX) }
+            .sortedByDescending { it.name }
+            .map { Snapshot(it, prettyStamp(it.name)) }
+    }.getOrDefault(emptyList())
+
+    /**
+     * The filename stamp turned back into something readable.
+     *
+     * The name is big-endian — year, month, day, hour, minute — because sorting is by NAME and only
+     * that order sorts correctly. What he reads is day-first. The two orders differ on purpose and
+     * this is the one place that knows both.
+     */
+    private fun prettyStamp(name: String): String {
+        val raw = name.removePrefix(PREFIX).removeSuffix(SUFFIX)
+        return runCatching {
+            val d = raw.split("-")
+            "${d[2]}.${d[1]}. ${d[3]}:${d[4]}"
+        }.getOrDefault(raw)
+    }
+
+    /** Restores one particular snapshot, chosen from the history. */
+    suspend fun restore(snapshot: Snapshot): Boolean = runCatching {
+        FlorisPreferenceStore.import(
+            ImportStrategy.Merge,
+            FileBasedStorage(snapshot.file.path),
+        ).getOrThrow()
+        MaLog.add("settings", "restored ${snapshot.file.name}")
+        true
+    }.getOrElse {
+        MaLog.add("settings", "restore failed: ${it.message}")
+        false
+    }
+
     suspend fun backup(): Boolean = runCatching {
         val dir = MaVault.dir()
         if (!dir.exists() && !dir.mkdirs()) return false
         FlorisPreferenceStore.export(FileBasedStorage(MaVault.settingsFile().path)).getOrThrow()
-        MaLog.add("settings", "backed up to ${MaVault.SETTINGS_DISPLAY_PATH}")
+        // And a stamped copy, so a backup no longer destroys the one before it.
+        //
+        // The plain file stays exactly as it was, so the setup step and anything else looking for
+        // "the backup" finds it without knowing history exists. This is a second write of the same
+        // bytes, which costs nothing at this size.
+        val stamp = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US).format(Date())
+        MaVault.settingsFile().copyTo(File(dir, "$PREFIX$stamp$SUFFIX"), overwrite = true)
+        // Oldest out first. Twenty reaches back through a bad week and keeps the folder readable.
+        history().drop(KEEP).forEach { runCatching { it.file.delete() } }
+        MaLog.add("settings", "backed up, ${history().size} kept")
         true
     }.getOrElse {
         MaLog.add("settings", "backup failed: ${it.message}")

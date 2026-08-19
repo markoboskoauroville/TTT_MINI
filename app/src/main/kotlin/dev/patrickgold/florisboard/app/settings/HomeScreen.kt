@@ -22,6 +22,8 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.rememberCoroutineScope
 import dev.patrickgold.florisboard.dictate.MaSettingsVault
 import dev.patrickgold.florisboard.dictate.MaVault
@@ -171,28 +173,42 @@ fun HomeScreen() = FlorisScreen {
                 onDismissRequest = { showRestore = false },
                 title = { Text("Restore settings") },
                 text = {
-                    Text(
-                        "This replaces every current setting with the last backup from " +
-                            MaVault.SETTINGS_DISPLAY_PATH + ".",
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showRestore = false
-                        scope.launch {
-                            val ok = MaSettingsVault.restore()
-                            Toast.makeText(
-                                context,
-                                if (ok) {
-                                    "Settings restored"
-                                } else {
-                                    "No backup found at " + MaVault.SETTINGS_DISPLAY_PATH
-                                },
-                                Toast.LENGTH_LONG,
-                            ).show()
+                    // The list IS the confirmation.
+                    //
+                    // A yes/no dialog followed by "restore the latest" gives him no way to reach the
+                    // backup from before the change he is trying to undo — which is the only reason
+                    // anybody opens this. Choosing a date is both the safeguard and the feature.
+                    Column {
+                        val snapshots = remember { MaSettingsVault.history() }
+                        if (snapshots.isEmpty()) {
+                            Text("No backups yet. Press backup first.")
+                        } else {
+                            Text(
+                                text = "Pick one. This replaces every current setting.",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            for ((index, snap) in snapshots.withIndex()) {
+                                TextButton(onClick = {
+                                    showRestore = false
+                                    scope.launch {
+                                        val ok = MaSettingsVault.restore(snap)
+                                        Toast.makeText(
+                                            context,
+                                            if (ok) "Restored " + snap.display else "Could not read that backup",
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                    }
+                                }) {
+                                    // The newest is named, because that is the one he wants nine
+                                    // times out of ten and it should not need reading a date.
+                                    Text(if (index == 0) snap.display + "   (newest)" else snap.display)
+                                }
+                            }
                         }
-                    }) { Text("Restore") }
+                    }
                 },
+                confirmButton = {},
                 dismissButton = {
                     TextButton(onClick = { showRestore = false }) { Text("Cancel") }
                 },
