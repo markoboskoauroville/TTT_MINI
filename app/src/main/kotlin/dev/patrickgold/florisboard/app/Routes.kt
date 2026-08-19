@@ -68,6 +68,7 @@ import dev.patrickgold.florisboard.app.settings.dictate.MaVoiceCommandsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaShortcutsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaLogScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaCopyRowScreen
+import dev.patrickgold.florisboard.app.settings.dictate.MaProfilesScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaReaderScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaVoiceFormatScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPredictionsScreen
@@ -183,6 +184,10 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictate/copy-row")
         object MaCopyRow
+
+        @Serializable
+        @Deeplink("settings/dictate/profiles")
+        object MaProfiles
 
         @Serializable
         @Deeplink("settings/dictate/predictions")
@@ -431,6 +436,7 @@ object Routes {
             composableWithDeepLink(Settings.MaVoiceFormat::class) { MaVoiceFormatScreen() }
             composableWithDeepLink(Settings.MaReader::class) { MaReaderScreen() }
             composableWithDeepLink(Settings.MaCopyRow::class) { MaCopyRowScreen() }
+            composableWithDeepLink(Settings.MaProfiles::class) { MaProfilesScreen() }
             composableWithDeepLink(Settings.MaPredictions::class) { MaPredictionsScreen() }
             composableWithDeepLink(Settings.MaSwitchboard::class) { MaSwitchboardScreen() }
             composableWithDeepLink(Settings.MaSettingsOrder::class) { MaSettingsOrderScreen() }

@@ -1180,6 +1180,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * that preference is silently dropped, and the source would look right while the keyboard
          * never showed it. Empty means the shipped default.
          */
+        /**
+         * Which profile is in force, by name. Empty when none has been chosen.
+         *
+         * A name rather than a file path, because the folder is the truth and a path would break
+         * the moment a profile was renamed or the phone changed. A name that no longer exists
+         * simply shows nothing as active, which is the right answer.
+         */
+        val maActiveProfile = string(
+            key = "dictate__ma_active_profile",
+            default = "",
+        )
+
         val maCopyRow = string(
             key = "dictate__ma_copy_row",
             default = "",

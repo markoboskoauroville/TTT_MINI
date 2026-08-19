@@ -46,6 +46,80 @@ object MaSettingsVault {
      * The folder is created on demand, exactly as the key backup does, so a first backup on a fresh
      * install does not need anything to exist first.
      */
+    /**
+     * A named profile: every setting in the app, saved under a name he chose.
+     *
+     * ### The Avid idea, and why it fits here
+     *
+     * Avid's user profiles hot-swap an entire configuration — layouts, keyboard maps, export
+     * presets — because an editor works one way cutting rushes and another way finishing. He has
+     * the same split: the keyboard he wants dictating at four in the morning is not the keyboard he
+     * wants at the studio with a client behind him.
+     *
+     * A profile is the same bytes the timestamped backup writes. **The only difference is that the
+     * name is his rather than a clock's**, which is what makes it a thing to choose rather than a
+     * thing to recover.
+     */
+    data class Profile(val file: File, val name: String)
+
+    private const val PROFILE_PREFIX = "profile-"
+
+    /** Every named profile, alphabetical. */
+    fun profiles(): List<Profile> = runCatching {
+        val dir = MaVault.dir()
+        if (!dir.exists()) return emptyList()
+        dir.listFiles().orEmpty()
+            .filter { it.isFile && it.name.startsWith(PROFILE_PREFIX) && it.name.endsWith(SUFFIX) }
+            .sortedBy { it.name.lowercase() }
+            .map { Profile(it, it.name.removePrefix(PROFILE_PREFIX).removeSuffix(SUFFIX)) }
+    }.getOrDefault(emptyList())
+
+    /**
+     * Saves everything as [name], overwriting a profile of that name.
+     *
+     * Overwriting on purpose: saving under a name that already exists is how somebody updates a
+     * profile, and a silent second copy called "studio 2" would be worse than replacing it.
+     */
+    suspend fun saveProfile(name: String): Boolean = runCatching {
+        val clean = name.trim().replace(Regex("[^A-Za-z0-9 _-]"), "").take(40)
+        if (clean.isEmpty()) return false
+        val dir = MaVault.dir()
+        if (!dir.exists() && !dir.mkdirs()) return false
+        FlorisPreferenceStore.export(
+            FileBasedStorage(File(dir, "$PROFILE_PREFIX$clean$SUFFIX").path),
+        ).getOrThrow()
+        MaLog.add("settings", "saved profile '$clean'")
+        true
+    }.getOrElse {
+        MaLog.add("settings", "save profile failed: ${it.message}")
+        false
+    }
+
+    /** Loads [profile] over the current settings. */
+    suspend fun applyProfile(profile: Profile): Boolean = runCatching {
+        FlorisPreferenceStore.import(
+            ImportStrategy.Merge,
+            FileBasedStorage(profile.file.path),
+        ).getOrThrow()
+        MaLog.add("settings", "switched to profile '${profile.name}'")
+        true
+    }.getOrElse {
+        MaLog.add("settings", "apply profile failed: ${it.message}")
+        false
+    }
+
+    /** Copies a profile under a new name. Avid's duplicate, and for the same reason. */
+    suspend fun duplicateProfile(profile: Profile, newName: String): Boolean = runCatching {
+        val clean = newName.trim().replace(Regex("[^A-Za-z0-9 _-]"), "").take(40)
+        if (clean.isEmpty()) return false
+        profile.file.copyTo(File(MaVault.dir(), "$PROFILE_PREFIX$clean$SUFFIX"), overwrite = true)
+        MaLog.add("settings", "duplicated '${profile.name}' as '$clean'")
+        true
+    }.getOrDefault(false)
+
+    fun deleteProfile(profile: Profile): Boolean =
+        runCatching { profile.file.delete() }.getOrDefault(false)
+
     /** One saved backup: the file, and when it was written. */
     data class Snapshot(val file: File, val display: String)
 

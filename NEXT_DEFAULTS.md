@@ -3647,3 +3647,44 @@ present, not clickable, and long enough to pass every filter.
 with no text worth reading, or text found and the voice failing after. `readableText` now logs
 **windows, lines and characters**, so one paste of the log separates them instead of another round of
 guessing.
+
+---
+
+# 96. Profiles — the first piece of the Avid model
+
+He asked for Avid's settings architecture: collapsible folders, duplication, checkmarks, a
+master-detail pane. **That is a redesign of every settings screen, not one build.** This is the piece
+worth having first and on its own.
+
+## What shipped
+
+**Profiles**: every setting in the app, saved under a name, swapped in one tap. Settings → Profiles.
+
+Three of Avid's behaviours, and they are the ones that carry the idea:
+
+- **The checkmark is a radio.** Exactly one profile is in force and choosing another visibly takes it
+  from the last, so the list reads as a state rather than as a folder of files.
+- **Duplicate.** Nobody edits a working configuration directly — they copy it, rename the copy, and
+  edit that. It is the difference between a settings screen and version control.
+- **Saving under an existing name updates it**, rather than quietly creating "studio 2".
+
+**A profile is the same bytes the timestamped backup writes.** The only difference is that the name
+is his rather than a clock's, which is what turns a thing to recover into a thing to choose.
+
+`maActiveProfile` stores a **name, not a path** — the folder is the truth, a path breaks on rename or
+a new phone, and a name that no longer exists simply shows nothing active, which is correct.
+
+## What is deliberately not built
+
+**The collapsible tree and the master-detail pane.** They reorganise every screen in the app, and
+profiles are worth having before anything is rearranged around them.
+
+**When they are built**, the shape to follow: `MaSettingsEntry` is already an ordered list of
+categories, and `MaSettingsOrderScreen` already routes each to a screen. A tree is that list with a
+`children` field and a twist-down; the detail pane is the existing screen rendered beside it rather
+than pushed onto it.
+
+**And the deeper idea worth stealing before the UI:** Avid's real move is that a *setting* is an
+instance you can have several of — three export presets, four keyboard maps. Here that would mean
+several named feature-row layouts or prompt sets, not just one of each. **Profiles do it for the whole
+app at once; per-category instances would do it properly.**
