@@ -4098,3 +4098,34 @@ not exist before is precisely when code has been moved. So it runs on new files 
 
 Verified both ways on a genuinely new path: both missing imports named, and silent on the corrected
 version.
+
+---
+
+# 106. The documents get their own housekeeping
+
+The code came out of this round clean: no dead preferences, no settings entry without a screen, no
+`TODO` left in the dictate package, every enum branch covered. The debt was in the documents, and it
+was mine.
+
+**`HANDOFF.md` said "last updated at build 122."** We are at 214. Its "open and not built" list named
+Groq language detection — a feature that has since been **built and then removed entirely**. A
+briefing that is ninety builds stale is worse than none, because it is believed.
+
+Rewritten to what is actually true, including the honest list of what is open: the Avid settings, the
+rest of the controller split, the key modules, offline retry, the English dictionary.
+
+**`NEXT_DEFAULTS.md` is 4,000 lines and 101 sections**, and `HANDOFF` was telling every new chat to
+read it second. My own rule in `MANTRA_MANIFEST/modules/handoff.md` says a document that grows
+forever becomes a log and a log is read by nobody — and this is exactly that, written by the person
+who wrote the rule.
+
+It is not deleted, because the reasoning in it is the most valuable thing in the repository. It is
+**named as an archive**: search it for one decision, do not read it end to end, and do not trust an
+old section as current, since later ones override earlier and several describe features that are
+gone.
+
+`NEXT_DEFAULTS_INDEX.md` lists all 94 titled sections so a decision can be found without reading the
+log. Regenerate it whenever sections are added.
+
+**The rule this leaves:** when a briefing and a log both exist, the briefing must be rewritten every
+time it stops being true, and the log must never be the thing a new chat is told to read.

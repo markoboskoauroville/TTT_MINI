@@ -1,16 +1,27 @@
 # TTT mini — where things stand
 
-Last updated at build 122. Read this first, then `NEXT_DEFAULTS.md`.
+Last updated at **build 214**. Read this first. Read `NEXT_DEFAULTS.md` only when you need the
+reasoning behind one particular decision — it is a 4,000-line log, not a briefing.
 
 ## Where it is now
 
-Build 122. Since 108: the switcher long-press list, magic finger spacers and rename, voice commands
-("press send"), volume keys reshaped twice, audio focus removed entirely, Groq registered and Gemini
-unregistered, roles hard-wired, Ctrl+P proofread and Ctrl+F flow, a shipped Croatian dictionary, TAB
-and Shift+TAB by accessibility tree, a row Shift, and the Aa case cycle.
+**Build 214.** The last stretch, newest first: the controller split began (`MaProviders.kt`); a
+pre-push verifier (`scripts/verify.py`) that turns every red build this project has had into a check;
+the switchboard expanded to thirteen switches in three groups; five caption styles and a full-screen
+reader that scrolls the spoken line to the top; volume down while recording now stops, transcribes
+and presses Send in one gesture; named prompt instances for Ctrl+P and Ctrl+F; the copy row as its
+own arrangeable row; settings backup with dated restore; Groq and automatic language detection
+removed entirely.
 
-Open and designed but not built, all in `NEXT_DEFAULTS.md`: §28 Groq language detection (26), bucket
-copy (§37), the pinned row, the three-state language button, configurable spacer width.
+**Open, designed, not built:**
+
+- **Avid-style settings** — a triangle beside each entry opening it in place rather than pushing a
+  screen. Postponed by Marko himself; it touches all nineteen screens.
+- **The rest of the controller split.** History is the obvious next block and is NOT free: it reads
+  `_state`, `transcribe` and the output sink. A seam that requires widening visibility is not a seam.
+- **Key modules** — five of about twenty keys extracted into `MaKeyModules.kt`.
+- **Offline retry** with a manual resend in the status line.
+- **An English base dictionary**, twin of the Croatian one.
 
 ## What this app is
 
@@ -24,9 +35,13 @@ vision and dyslexia, and uses this all day. He dictates in Croatian and English.
 
 ## The two documents
 
-- **`NEXT_DEFAULTS.md`** — the working file. `THE LIST` at the top numbers every pending feature;
-  everything below it is the detail. **Marko picks by number.** When one is done and he confirms it
-  works, strike it off and reissue the list.
+- **`NEXT_DEFAULTS.md`** — the **archive**, not a briefing. 101 numbered sections and 4,000 lines,
+  one per build, each recording what was decided and why. Search it for a specific decision; do not
+  read it end to end and do not treat its old sections as current — several describe features that
+  have since been removed, Groq's language detection among them.
+  **Everything still true lives in this file.**
+- **`NEXT_DEFAULTS_INDEX.md`** — every section of the archive in one list, so a decision can be found
+  without reading the archive. Regenerate it whenever sections are added.
 - **`SEQUENCER_PARKED.md`** — one parked feature with its own design note and the refactor it needs.
 
 ## How he works

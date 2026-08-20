@@ -1,0 +1,101 @@
+# Archive index
+
+Every numbered section in `NEXT_DEFAULTS.md`, so a decision can be found without reading 4,000
+lines. The file is a log: **later sections override earlier ones**, and several early entries
+describe features that have since been removed.
+
+- **§9** — The Switchboard, three fixes
+- **§10** — Switching between keyboard views, properly
+- **§23** — Automatic language, clamped to two
+- **§24** — The corpus he already has
+- **§25** — The two switchers become two slots
+- **§26** — Voice commands — "press send" (shipped, build 110)
+- **§27** — The hardware trigger — and why it cannot be Power
+- **§28** — Groq decides the language, from the first five seconds
+- **§29** — Audio focus: removed, and not to be rebuilt
+- **§30** — Ctrl+P, proofreading — and the correction to §28
+- **§31** — The keyring: Groq in, Gemini out
+- **§32** — The roles are fixed, and the chips are gone
+- **§33** — Croatian suggestions, and why not the neural model
+- **§34** — TAB for fields, through the node tree
+- **§35** — Shift+Tab, a row Shift, and Aa
+- **§36** — Volume keys, and the finger's reach
+- **§37** — The spacebar mark, and volume down carries a term
+- **§38** — Ctrl+F, better flow
+- **§39** — Dictation with no text field, from anywhere — SHIPPED, build 123
+- **§40** — How §39 was actually built
+- **§41** — The dot key's comma, and per-spacer width
+- **§42** — Dictating into a field nobody tapped
+- **§43** — The setup flow, rebuilt
+- **§44** — The bottom row gives its width to the spacebar
+- **§45** — Global volume keys: what to check when they do nothing
+- **§46** — Build 124 broke the accessibility service. Reverted at 131.
+- **§47** — Rolled back: the volume keys act on press again, and the global handler is gone
+- **§48** — The dot key has two functions again
+- **§48** — The dot key, pinned to two meanings
+- **§49** — The log — shipped, build 136
+- **§50** — The magic finger defaults are his row now
+- **§51** — Ctrl+P and Ctrl+F stop typing the model's chatter into his messages
+- **§52** — The status line moved to the bottom, and the automatic bucket
+- **§53** — Rolled back: the status line returns to the top, and the pin becomes a key
+- **§54** — Why it suggested "things" while he was typing "other"
+- **§55** — The model learns from his history, the suggestion row can appear, and the spacebar stops doubling
+- **§56** — Why send worked in Claude and not in Gemini
+- **§57** — Send has one definition and two triggers
+- **§58** — The automatic bucket and the bin are one mechanism
+- **§59** — A-bucket scrolls the ladder along
+- **§60** — The top strip always has something to say
+- **§61** — The dictation view can be pinned as the opening view
+- **§62** — The cursor trackpad, and the road to flicking
+- **§63** — Configurable transcription view — designed, NOT built
+- **§64** — The cursor pad trapped him. Three ways out now, and it works in both views.
+- **§65** — The trackpad: stays open, and can select and delete
+- **§66** — The pad was drawn on top but did not receive touches
+- **§67** — Every spacebar already opens the pad — and now says so in the log
+- **§68** — A suggestion replaces the whole word, and the best guess sits in the middle
+- **§69** — Step one of the modular rebuild: keys become modules
+- **§70** — The likeliest word is now drawn larger
+- **§71** — Exclusive recording: ask, but never listen
+- **§72** — Ctrl+P and Ctrl+F carry his own wording
+- **§73** — Settings back up beside the keys
+- **§74** — One prompt, one place
+- **§75** — The number row stands on its own
+- **§76** — Spoken formatting commands
+- **§77** — Voice formatting: the full set, with pronunciations he can hear
+- **§78** — AUTO language, at last (item 26)
+- **§79** — The probe sends 30 seconds, not the whole recording
+- **§79** — Croatian text, English suggestions — a chain I built myself
+- **§79** — History says what is finished, and can send again
+- **§80** — Two bugs in AUTO, both mine, both about WHEN not WHAT
+- **§81** — The screen reader, with Speechify voices
+- **§82** — The Speechify key test asked the wrong question
+- **§82** — Karaoke: the subtitle row, the spacebar word, and reading speed
+- **§83** — Volume button passthrough: quick tap acts, hold is the volume
+- **§84** — The subtitle box, and reading past the fold
+- **§85** — Jump between pages, do not glide
+- **§86** — Two real highlight bugs, found by looking rather than tuning
+- **§87** — Detect the language from the TRANSCRIPT, not from the sound
+- **§88** — Suggestions were eating the trackpad's selection
+- **§89** — Voice formatting stops flattening newlines
+- **§90** — Two more keys become modules
+- **§91** — The copy row becomes an ordinary feature row
+- **§92** — Groq removed, restore added, and the copy row gets its own screen
+- **§92** — Groq removed, restore added with history, copy row made its own thing
+- **§93** — "null" instead of every dictation — the worst bug I have shipped
+- **§94** — n, k, c — and the copy row editor is the feature row editor
+- **§95** — The copy row gets its own colour, and the icon rule becomes standing
+- **§95** — The zone keys: a big letter, and the border says it is on
+- **§95** — The letter is the glyph, and the ring is the state
+- **§96** — Tap the subtitle to skip, and hear a voice before choosing it
+- **§96** — Profiles — the first piece of the Avid model
+- **§96** — The Avid settings architecture: what exists, what is missing, and the order to build it
+- **§97** — The zone keys get their frame back, and the ring goes
+- **§98** — Prompts become a category of named instances — Avid layer 2, first use
+- **§99** — The highlight becomes a setting, and the page turns white
+- **§100** — One gesture: up to record, down to send
+- **§101** — Five caption styles, and the box goes full screen
+- **§102** — Full screen means full screen, and the line comes to the eye
+- **§103** — The switchboard becomes the whole remote
+- **§104** — The housekeeping: every red build becomes a check
+- **§105** — The controller starts coming apart, at the only seam that is free
+- **§106** — The documents get their own housekeeping
