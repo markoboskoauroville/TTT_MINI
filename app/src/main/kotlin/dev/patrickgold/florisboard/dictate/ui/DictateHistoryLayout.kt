@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import android.text.format.DateUtils
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
@@ -106,6 +108,7 @@ fun DictateHistoryLayout(
     // the panel asks rather than guessing: the transcript is worth keeping forever, the audio is what
     // fills the phone, and being made to lose one to reclaim the other is a false choice.
     var pendingDelete by remember { mutableStateOf<DictateHistoryEntry?>(null) }
+    var confirmClearAll by remember { mutableStateOf(false) }
 
     SnyggColumn(
         elementName = FlorisImeUi.Media.elementName,
@@ -142,6 +145,23 @@ fun DictateHistoryLayout(
                 modifier = Modifier.padding(start = 4.dp),
             )
             Spacer(Modifier.weight(1f))
+            // Delete all, at the top, where a thing that acts on the WHOLE list belongs.
+            //
+            // It was only reachable per entry, so clearing a long history meant pressing Delete once
+            // per recording. An action whose scope is the list should live on the list, not be
+            // assembled out of repeated single actions.
+            //
+            // It asks first. Everything else here can be undone or re-transcribed; this cannot, and
+            // it is two taps from the thing he actually came to do.
+            Text(
+                text = "Delete all",
+                color = MaDestructive,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .clickable { confirmClearAll = true }
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+            )
             // Jump straight to the full history management screen in the settings app.
             SnyggIconButton(
                 elementName = FlorisImeUi.MediaBottomRowButton.elementName,
@@ -219,6 +239,22 @@ fun DictateHistoryLayout(
                     )
                 }
             }
+        }
+        if (confirmClearAll) {
+            AlertDialog(
+                onDismissRequest = { confirmClearAll = false },
+                title = { Text("Delete every recording?") },
+                text = { Text("Every transcript and every audio file in this list. This cannot be undone.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        confirmClearAll = false
+                        scope.launch { DictateHistoryStore.clearAll(context) }
+                    }) { Text("Delete all", color = MaDestructive) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { confirmClearAll = false }) { Text("Cancel") }
+                },
+            )
         }
         pendingDelete?.let { target ->
             MaDeleteChooser(
@@ -391,7 +427,12 @@ private fun HistoryPanelRow(
         // Equal gaps, edge to edge. Composition: the eye reads uneven spacing as a mistake even
         // when it cannot name what is wrong, and four labels at four different distances is exactly
         // that. SpaceBetween puts the same air between every pair.
-        horizontalArrangement = Arrangement.SpaceBetween,
+        // Centred, not spread. SpaceBetween spaces children but does not shrink them, so when the
+        // words were wider than the row the last one — Delete — simply left the screen. Twice, and
+        // neither time did anything report it: an off-screen child is not an error.
+        //
+        // The bullets provide the rhythm now, and centring keeps the group together as a phrase.
+        horizontalArrangement = Arrangement.Center,
     ) {
         // Full words, never clipped. The labels were being cut to "Inse" and "Dele" because the row
         // shared its width with a long transcript; giving the actions their own line and equal
@@ -408,6 +449,7 @@ private fun HistoryPanelRow(
             onClick = onInsert,
         )
         if (entry.audioPath != null) {
+            MaBullet(accent)
             // THE BADGE IS A TOGGLE. RE-TRANSCRIBE IS THE ACTION. Two steps, not one.
             //
             // It did both at once: tapping the badge swapped the language and immediately sent the
@@ -431,6 +473,7 @@ private fun HistoryPanelRow(
                     chosen = if (chosen == MaLanguage.EN) MaLanguage.HR else MaLanguage.EN
                 },
             )
+            MaBullet(accent)
             MaHistoryAction(
                 label = "Re-Transcribe",
                 enabled = true,
@@ -444,6 +487,7 @@ private fun HistoryPanelRow(
                 },
             )
         }
+        MaBullet(accent)
         MaHistoryAction(
             label = "Delete",
             enabled = true,
@@ -457,6 +501,17 @@ private fun HistoryPanelRow(
 }
 
 /** One labelled action. Text rather than an icon, because the words are the whole point here. */
+/** The separator. Dimmed, because it is punctuation and not one of the things he can press. */
+@Composable
+private fun MaBullet(tint: Color) {
+    Text(
+        text = "\u00B7",
+        color = tint.copy(alpha = 0.45f),
+        fontSize = 13.sp,
+        modifier = Modifier.padding(horizontal = 6.dp),
+    )
+}
+
 @Composable
 private fun MaHistoryAction(
     label: String,

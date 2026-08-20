@@ -5060,3 +5060,28 @@ raised seventy complaints about legitimate overloads, which is how a checker get
 The colour was on the title, so a note whose title failed to generate looked exactly like every other
 entry — **the very case where recognising it matters most.** The transcript itself is teal now, so an
 offline note is identifiable whether or not the model ever named it.
+
+---
+
+# 132. Bullets, and Delete all at the top
+
+## Why Delete kept disappearing
+
+`Arrangement.SpaceBetween` **spaces children; it does not shrink them.** When the four words were
+wider than the row, the last one — Delete — simply left the screen. It happened twice, and neither
+time did anything report it: **an off-screen child is not an error.**
+
+The actions are one centred line joined by `·` now. Words plus two characters each, no arrangement to
+overflow, nothing to clip. And it reads as what it is: a short list of things he can do to this
+recording.
+
+`Insert · [ENG] · Re-Transcribe · Delete`
+
+## Delete all belongs on the list
+
+It was reachable only per entry, so clearing a long history meant pressing Delete once per recording.
+**An action whose scope is the list should live on the list**, not be assembled out of repeated
+single actions.
+
+At the top, in the header, red, and it asks first — everything else here can be undone or
+re-transcribed; this cannot, and it sits two taps from what he came to do.
