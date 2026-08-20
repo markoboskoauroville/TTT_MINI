@@ -4770,10 +4770,20 @@ thumb misses.
 
 ## The recording strip
 
-The bare red line said *something is happening*. It now says **what**: the red dot, the word
-`recording` in lowercase, on black at 70% so the line of text underneath stays readable. A solid
-strip would cost him whatever he was reading, and this exists to inform him, not to take something.
+He asked for **the recording bar**, and I built a strip with the word `recording` on it — my own idea,
+answering a question he had not asked. He had already described it and sent a screenshot.
 
-**Tapping it opens the keyboard**, which is why `FLAG_NOT_TOUCHABLE` is gone — but `NOT_FOCUSABLE`
-stays, because it must never steal the cursor from the field being dictated into. The whole strip is
-the target: anything more precise would be something to aim at while walking.
+It is the bar now: **ENG, the bin, the red dot and the clock, and send.** The same controls doing the
+same things, so the interface does not change identity depending on whether the keyboard is up — it
+moves back to its usual place when the keyboard arrives, and that is all.
+
+**Tapping the numbers brings the keyboard up.** His instruction, and the right target: the clock is
+the biggest thing on the bar and the one the eye is already on.
+
+Plain Android views rather than Compose, because a Compose overlay needs lifecycle and saved-state
+owners this service does not have. The clock reads the recorder's own state once a second instead of
+counting for itself, so a pause is honoured and the two views can never disagree about how long he
+has been speaking.
+
+`FLAG_NOT_TOUCHABLE` is gone since every glyph is a control; `NOT_FOCUSABLE` stays, because it must
+never take the cursor from the field being dictated into.

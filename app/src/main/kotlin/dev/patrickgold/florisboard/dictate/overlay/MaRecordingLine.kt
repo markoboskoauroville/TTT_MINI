@@ -10,6 +10,11 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import dev.patrickgold.florisboard.dictate.MaLanguage
+import dev.patrickgold.florisboard.dictate.DictateController
+import android.os.SystemClock
+import android.os.Looper
+import android.os.Handler
 import dev.patrickgold.florisboard.dictate.MaLog
 import android.widget.TextView
 import android.widget.LinearLayout
@@ -68,65 +73,132 @@ class MaRecordingLine(private val service: AccessibilityService) {
         if (visible) add() else remove()
     }
 
+    private var timer: TextView? = null
+    private var ticker: Runnable? = null
+    private val handler = Handler(Looper.getMainLooper())
+
     private fun add() {
         val d = service.resources.displayMetrics.density
-        val v = LinearLayout(service).apply {
+        fun px(v: Int) = (d * v).toInt()
+
+        val row = LinearLayout(service).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            // Black at seventy per cent, so what is underneath stays readable. A solid strip would
-            // hide a line of whatever he is looking at, and this exists to inform him, not to cost
-            // him the thing he was reading.
-            setBackgroundColor(0xB3000000.toInt())
-            setPadding((d * 14).toInt(), (d * 6).toInt(), (d * 14).toInt(), (d * 6).toInt())
+            setBackgroundColor(0xF20B0D10.toInt())
+            setPadding(px(10), px(8), px(10), px(8))
+        }
 
-            // The red dot: the same sign the recording bar uses, so the two views say it the same
-            // way rather than each inventing a language.
-            addView(
-                View(context).apply {
-                    background = GradientDrawable().apply {
-                        shape = GradientDrawable.OVAL
-                        setColor(0xFFEF4444.toInt())
-                    }
-                },
-                LinearLayout.LayoutParams((d * 10).toInt(), (d * 10).toInt()),
-            )
+        // ENG / HR — the same badge, doing the same thing, so switching language does not require
+        // the keyboard he does not have open.
+        val lang = TextView(service).apply {
+            text = MaLanguage.badge()
+            setTextColor(0xFFF2DDB4.toInt())
+            textSize = 14f
+            setPadding(px(14), px(6), px(14), px(6))
+            setOnClickListener {
+                MaLanguage.cycleMode(service)
+                text = MaLanguage.badge()
+            }
+        }
+        row.addView(lang)
 
-            addView(
-                TextView(context).apply {
-                    text = "recording"
-                    // Lowercase, as he asked for elsewhere: this is a state, not a headline.
-                    setTextColor(0xFFF2DDB4.toInt())
-                    textSize = 13f
-                    setPadding((d * 10).toInt(), 0, 0, 0)
-                },
-            )
+        // The bin: throw this recording away. Present because the moment he realises he did not mean
+        // to start is exactly the moment the keyboard is not up.
+        row.addView(
+            glyph("\uD83D\uDDD1", px(14)) { DictateController.cancelRecording() },
+        )
 
-            // The whole strip opens the keyboard, because the strip IS the answer to "where is it".
-            // Anything more specific would be a target to aim at while walking.
+        val spacerL = View(service)
+        row.addView(spacerL, LinearLayout.LayoutParams(0, 1, 1f))
+
+        // The red dot and the clock, together, because they are one statement.
+        row.addView(
+            View(service).apply {
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(0xFFEF4444.toInt())
+                }
+            },
+            LinearLayout.LayoutParams(px(10), px(10)),
+        )
+        val clock = TextView(service).apply {
+            text = "0:00"
+            setTextColor(0xFFFFFFFF.toInt())
+            textSize = 22f
+            setPadding(px(10), 0, 0, 0)
+            // TAPPING THE NUMBERS BRINGS THE KEYBOARD UP. His instruction, and the right target: the
+            // clock is the biggest thing on the bar and the one the eye is already on.
             setOnClickListener {
                 runCatching {
                     (service.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
                         ?.showSoftInput(null, InputMethodManager.SHOW_FORCED)
                 }
-                MaLog.add("keys", "recording strip tapped, asking for the keyboard")
+                MaLog.add("keys", "overlay clock tapped, asking for the keyboard")
             }
         }
+        timer = clock
+        row.addView(clock)
+
+        val spacerR = View(service)
+        row.addView(spacerR, LinearLayout.LayoutParams(0, 1, 1f))
+
+        // Send: stop and transcribe. The same press the microphone key makes.
+        row.addView(
+            glyph("\u27A4", px(14)) { DictateController.onMicClick(service) },
+        )
+
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            // Focusable is still off — it must never steal the cursor from the field he is dictating
-            // into — but touchable is now ON, because tapping it is the way back to the keyboard.
+            // Touchable, because every glyph on it is a control. Never focusable: it must not take
+            // the cursor from the field he is dictating into.
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
         ).apply { gravity = Gravity.BOTTOM or Gravity.START }
 
         runCatching {
-            windowManager.addView(v, params)
-            view = v
+            windowManager.addView(row, params)
+            view = row
             added = true
+            startTicking()
         }
+    }
+
+    /** One glyph as a button, sized for a thumb rather than for its own ink. */
+    private fun glyph(text: String, pad: Int, onClick: () -> Unit) = TextView(service).apply {
+        this.text = text
+        setTextColor(0xFFF2DDB4.toInt())
+        textSize = 18f
+        setPadding(pad, pad / 2, pad, pad / 2)
+        setOnClickListener { onClick() }
+    }
+
+    /**
+     * The clock, once a second.
+     *
+     * Read from the recorder's own state rather than counted here, so a pause is honoured and the
+     * two views can never disagree about how long he has been speaking.
+     */
+    private fun startTicking() {
+        val r = object : Runnable {
+            override fun run() {
+                val st = DictateController.state.value
+                if (st is DictateController.UiState.Recording) {
+                    val ms = if (st.paused) {
+                        st.accumulatedMs
+                    } else {
+                        st.accumulatedMs + (SystemClock.elapsedRealtime() - st.startedAtMs)
+                    }
+                    val total = ms / 1000
+                    timer?.text = "%d:%02d".format(total / 60, total % 60)
+                }
+                handler.postDelayed(this, 1000)
+            }
+        }
+        ticker = r
+        handler.post(r)
     }
 
     private fun remove() {
@@ -134,6 +206,9 @@ class MaRecordingLine(private val service: AccessibilityService) {
         // Wrapped, because a window can already be gone if the service was torn down under it, and
         // an exception here would take the accessibility service with it — which would cost him the
         // finger, the reader and the line all at once.
+        ticker?.let { handler.removeCallbacks(it) }
+        ticker = null
+        timer = null
         runCatching { windowManager.removeView(v) }
         view = null
         added = false
