@@ -19,6 +19,8 @@ import androidx.compose.foundation.clickable
 import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.MaLog
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -126,6 +128,19 @@ fun DictateHistoryLayout(
             ) {
                 SnyggIcon(imageVector = Icons.AutoMirrored.Filled.ArrowBack)
             }
+            // BALANCE. The arrow is on the left, so the cog belongs on the right, and the title
+            // sits between them.
+            //
+            // Removing the language badge left the cog stranded beside the arrow and the whole row
+            // leaning into the left corner. **A row with everything at one end is not a row, it is a
+            // pile** — an interface is a composition, and weight has to be distributed as
+            // deliberately as it is in a photograph.
+            SnyggText(
+                elementName = FlorisImeUi.MediaEmojiSubheader.elementName,
+                text = stringRes(R.string.dictate__history_title),
+                modifier = Modifier.padding(start = 4.dp),
+            )
+            Spacer(Modifier.weight(1f))
             // Jump straight to the full history management screen in the settings app.
             SnyggIconButton(
                 elementName = FlorisImeUi.MediaBottomRowButton.elementName,
@@ -336,20 +351,27 @@ private fun HistoryPanelRow(
         elementName = FlorisImeUi.MediaBottomRow.elementName,
         modifier = Modifier
             .fillMaxWidth()
-            // Tighter than it was: four labels now share the line, and the words carry the
-            // meaning, so the space between them was doing nothing but pushing them apart.
-            .padding(start = 2.dp, end = 2.dp, bottom = 6.dp),
+            .padding(start = 8.dp, end = 8.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
+        // Equal gaps, edge to edge. Composition: the eye reads uneven spacing as a mistake even
+        // when it cannot name what is wrong, and four labels at four different distances is exactly
+        // that. SpaceBetween puts the same air between every pair.
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         // Full words, never clipped. The labels were being cut to "Inse" and "Dele" because the row
         // shared its width with a long transcript; giving the actions their own line and equal
         // shares means each one has room to say what it does.
+        // NO WEIGHTS. Every label is as wide as its own word.
+        //
+        // They were weighted, and a weight is a promise about width that a word cannot keep: "Insert"
+        // got a quarter of the line whatever it needed, so it clipped to "Ins" and "Delete" to "Del"
+        // while the badge was squeezed to nothing and never appeared at all. Sized to content and
+        // spread evenly, each label says its whole word and the gaps between them are equal.
         MaHistoryAction(
             label = "Insert",
             enabled = !entry.failed,
             tint = accent,
             onClick = onInsert,
-            modifier = Modifier.weight(1f),
         )
         if (entry.audioPath != null) {
             // The language this recording was SENT in, as a badge on the recording itself.
@@ -360,26 +382,30 @@ private fun HistoryPanelRow(
             //
             // Tapping it changes the language and re-transcribes in one press. Correcting the
             // mistake is one gesture because that is what the mistake costs him.
+            // The badge: in square brackets, so it reads as a label on the recording rather than
+            // as a fourth action. It says the language this audio was SENT in — the question he
+            // asks on this screen is "it came back wrong, what did I send it as".
+            //
+            // Tapping it swaps the language and re-transcribes in one press, because that is the
+            // whole errand and it should cost one gesture.
             MaHistoryAction(
-                label = if (entry.language == MaLanguage.EN) "ENG" else "HR",
+                label = if (entry.language == MaLanguage.EN) "[ENG]" else "[HR]",
                 enabled = true,
                 tint = accent,
                 onClick = {
                     val next = if (entry.language == MaLanguage.EN) MaLanguage.HR else MaLanguage.EN
                     MaLanguage.set(rowContext, next)
-                    MaLog.add("keys", "history badge: retranscribing in $next")
+                    MaLog.add("keys", "history badge: re-transcribing in $next")
                     onRetranscribe()
                 },
-                modifier = Modifier.weight(0.6f),
             )
             MaHistoryAction(
-                // The whole word. It was "Transcribe" and it clipped to "Transcri", and it was the
+                // The whole word, with the dash. It clipped to "Transcri", and "Transcribe" was the
                 // wrong word anyway: this recording has already been transcribed once.
-                label = "Retranscribe",
+                label = "Re-Transcribe",
                 enabled = true,
                 tint = accent,
                 onClick = onRetranscribe,
-                modifier = Modifier.weight(1.4f),
             )
         }
         MaHistoryAction(
@@ -389,7 +415,6 @@ private fun HistoryPanelRow(
             // keeping: it is the only action here that cannot be undone.
             tint = MaDestructive,
             onClick = onDeleteRequested,
-            modifier = Modifier.weight(1f),
         )
     }
     }
@@ -408,7 +433,7 @@ private fun MaHistoryAction(
         elementName = FlorisImeUi.MediaBottomRowButton.elementName,
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.padding(horizontal = 2.dp),
+        modifier = modifier,
     ) {
         Text(
             text = label,

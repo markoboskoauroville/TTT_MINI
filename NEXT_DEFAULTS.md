@@ -4817,3 +4817,30 @@ what produced two near-misses.
 
 **The answer is to host the real composable**, by giving the overlay window the owners Compose needs
 and the theme provider the bar reads. That is its own build, and it is the next one.
+
+---
+
+# 124. The badge appears, the words are whole, and the header balances
+
+Three faults, one cause: **I sized words by fractions of the line.**
+
+A weight is a promise about width that a word cannot keep. Given a quarter each, "Insert" clipped to
+"Ins", "Delete" to "Del", "Re-Transcribe" to "Retranscri", and the badge — the narrowest — was
+squeezed to nothing and **never appeared at all.** He reported it as missing; it had been drawn with
+no room to exist.
+
+Sized to content, spread with `SpaceBetween`. Each label says its whole word and every gap is equal.
+
+**The badge is `[ENG]` / `[HR]`**, in square brackets so it reads as a label on the recording rather
+than a fourth action. Tap it: the language swaps and the audio goes back up in one press.
+**Re-Transcribe** keeps its dash and its final letters.
+
+## The header
+
+Removing the old header badge left the cog stranded beside the back arrow, with the whole row leaning
+into the left corner. The title is back between them and the cog is at the far edge.
+
+**A row with everything at one end is not a row, it is a pile.** Written into
+`MANTRA_MANIFEST/modules/design-language.md` §10 along with the rest: equal distances everywhere, and
+**after removing anything from a row, look at the row** — balance breaks silently, and it breaks in
+whatever was left behind.
