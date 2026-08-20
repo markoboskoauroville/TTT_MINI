@@ -70,8 +70,15 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val words = MaSpeechify.lastWords
     if (index >= words.size) return
 
+    // How the spoken word is marked, read as Compose state so a change in settings shows on the very
+    // next word rather than the next reading.
+    val prefs by FlorisPreferenceStore
     val style by prefs.dictate.maReaderStyle.collectAsState()
     val full by prefs.dictate.maReaderFullscreen.collectAsState()
+    val litColour by prefs.dictate.maReaderHighlightColor.collectAsState()
+    val litBold by prefs.dictate.maReaderHighlightBold.collectAsState()
+    val litUnderline by prefs.dictate.maReaderHighlightUnderline.collectAsState()
+    val lit = if (litColour == "white") MaSubtitleWhite else MaSubtitleYellow
 
     // Pages of a size that FITS, not sentences.
     //
@@ -87,15 +94,6 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val perPage = if (full) FULLSCREEN_CHARS else PAGE_CHARS
     val pages = remember(words, perPage) { paginate(words.map { it.text }, perPage) }
     val page = remember(pages, index) { pages.firstOrNull { index in it.range } } ?: return
-
-    // How the spoken word is marked, read as Compose state so a change in settings shows on the very
-    // next word rather than the next reading.
-    val prefs by FlorisPreferenceStore
-    val litColour by prefs.dictate.maReaderHighlightColor.collectAsState()
-    val litBold by prefs.dictate.maReaderHighlightBold.collectAsState()
-    val litUnderline by prefs.dictate.maReaderHighlightUnderline.collectAsState()
-    val lit = if (litColour == "white") MaSubtitleWhite else MaSubtitleYellow
-
 
     // ONE WORD is its own layout: the word alone, as large as the box will hold.
     //
