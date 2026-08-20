@@ -4787,3 +4787,33 @@ has been speaking.
 
 `FLAG_NOT_TOUCHABLE` is gone since every glyph is a control; `NOT_FOCUSABLE` stays, because it must
 never take the cursor from the field being dictated into.
+
+---
+
+# 123. The language badge moves onto the recording it describes
+
+**The header badge is gone.** It said what the *next* send would use — a fact about the future,
+attached to a list of the past — and it was clipping to "HR" besides.
+
+**Each recording now carries its own badge: the language it was actually sent in.** That answers the
+question being asked in that screen: *this came back wrong, what did I send it as?*
+
+**Tapping it switches the language and re-transcribes in one press.** Correcting the mistake is one
+gesture, because that is what the mistake costs him.
+
+**"Transcribe" is now "Retranscribe"** — the whole word, and the right one: this recording has
+already been transcribed once. It had been clipping to "Transcri", so the row is tighter too: four
+labels share the line now and the words carry the meaning, so the space between them was doing
+nothing but pushing them apart.
+
+## Still owed: the overlay bar, pixel for pixel
+
+He has asked three times and I have approximated it twice, which is worse than not starting.
+
+The obstacle is real and worth writing down: the bar is a **Compose** composable using `SnyggIconButton`
+and the IME's theme scope, and the overlay is a plain window owned by the accessibility service —
+which has no lifecycle owner, no saved-state registry and no Snygg provider. Rebuilding it in Views is
+what produced two near-misses.
+
+**The answer is to host the real composable**, by giving the overlay window the owners Compose needs
+and the theme provider the bar reads. That is its own build, and it is the next one.

@@ -97,9 +97,6 @@ fun DictateHistoryLayout(
         flow { emitAll(DictateHistoryStore.flow(context)) }.flowOn(Dispatchers.IO)
     }.collectAsState(initial = null)
 
-    // Observed, so the badge changes face the moment it is tapped. MaLanguage.badge() reads the
-    // store directly and would leave the old label showing until something else redrew the panel.
-    val activeLangCode by prefs.dictate.activeInputLanguage.collectPrefAsState()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     // Which entry is being deleted, if any. The three deletions are genuinely different outcomes, so
@@ -129,44 +126,6 @@ fun DictateHistoryLayout(
             ) {
                 SnyggIcon(imageVector = Icons.AutoMirrored.Filled.ArrowBack)
             }
-            SnyggText(
-                elementName = FlorisImeUi.MediaEmojiSubheader.elementName,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 4.dp),
-                text = stringRes(R.string.dictate__history_title),
-            )
-            // The language a re-transcribe will use, and the whole reason it is here.
-            //
-            // Recording English while the app is set to Croatian is a mistake that is only noticed
-            // after reading the transcript — and the fix, re-transcribing, used whatever language
-            // was still set, which was the wrong one. So the panel that offers the re-transcribe now
-            // offers the language beside it.
-            //
-            // It writes activeInputLanguage, which retranscribeHistoryEntry already reads through
-            // MaLanguage.active(), so nothing else had to change: set it here, press replay, and the
-            // audio goes up in the other language.
-            SnyggText(
-                elementName = FlorisImeUi.MediaEmojiSubheader.elementName,
-                modifier = Modifier
-                    .clickable {
-                        MaLanguage.cycleMode(context)
-                        MaLog.add("keys", "history badge tapped, now ${MaLanguage.badge()}")
-                    }
-                    // A real touch target. It was text with padding, and text is exactly as big as
-                    // its letters — two of them here. On a list where every other control is a full
-                    // row, a target the size of the word "HR" is one a thumb misses and reads as a
-                    // control that does not work.
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                // Derived from the OBSERVED value, not from a fresh read of the store.
-                //
-                // It called MaLanguage.badge(), which reads the preference directly. Compose cannot
-                // see that dependency, so the label had no reason to redraw when the preference
-                // changed — the tap worked and the badge went on saying what it said before, which
-                // from outside is a button that does nothing. Reading the state that is already
-                // being collected makes the redraw a fact rather than a hope.
-                text = if (activeLangCode == MaLanguage.EN) "ENG" else "HR",
-            )
             // Jump straight to the full history management screen in the settings app.
             SnyggIconButton(
                 elementName = FlorisImeUi.MediaBottomRowButton.elementName,
@@ -215,6 +174,7 @@ fun DictateHistoryLayout(
                 items(loadedEntries, key = { it.id }) { entry ->
                     HistoryPanelRow(
                         entry = entry,
+                        rowContext = context,
                         accent = accent,
                         onInsert = {
                             DictateController.insertHistoryText(context, entry.text)
@@ -306,6 +266,7 @@ private fun MaDeleteChooser(
 @Composable
 private fun HistoryPanelRow(
     entry: DictateHistoryEntry,
+    rowContext: android.content.Context,
     accent: Color,
     onInsert: () -> Unit,
     onInsertOriginal: () -> Unit,
@@ -375,7 +336,9 @@ private fun HistoryPanelRow(
         elementName = FlorisImeUi.MediaBottomRow.elementName,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 8.dp, end = 8.dp, bottom = 6.dp),
+            // Tighter than it was: four labels now share the line, and the words carry the
+            // meaning, so the space between them was doing nothing but pushing them apart.
+            .padding(start = 2.dp, end = 2.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Full words, never clipped. The labels were being cut to "Inse" and "Dele" because the row
@@ -389,12 +352,34 @@ private fun HistoryPanelRow(
             modifier = Modifier.weight(1f),
         )
         if (entry.audioPath != null) {
+            // The language this recording was SENT in, as a badge on the recording itself.
+            //
+            // It was a badge in the header, which said what the next send would use — a fact about
+            // the future attached to a list of the past. Here it answers the question actually
+            // being asked: this transcript came back wrong, what did I send it as?
+            //
+            // Tapping it changes the language and re-transcribes in one press. Correcting the
+            // mistake is one gesture because that is what the mistake costs him.
             MaHistoryAction(
-                label = "Transcribe",
+                label = if (entry.language == MaLanguage.EN) "ENG" else "HR",
+                enabled = true,
+                tint = accent,
+                onClick = {
+                    val next = if (entry.language == MaLanguage.EN) MaLanguage.HR else MaLanguage.EN
+                    MaLanguage.set(rowContext, next)
+                    MaLog.add("keys", "history badge: retranscribing in $next")
+                    onRetranscribe()
+                },
+                modifier = Modifier.weight(0.6f),
+            )
+            MaHistoryAction(
+                // The whole word. It was "Transcribe" and it clipped to "Transcri", and it was the
+                // wrong word anyway: this recording has already been transcribed once.
+                label = "Retranscribe",
                 enabled = true,
                 tint = accent,
                 onClick = onRetranscribe,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1.4f),
             )
         }
         MaHistoryAction(
