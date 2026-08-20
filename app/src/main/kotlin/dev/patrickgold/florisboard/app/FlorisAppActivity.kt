@@ -117,11 +117,25 @@ class FlorisAppActivity : ComponentActivity() {
         appContext.preferenceStoreLoaded.collectIn(lifecycleScope) { loaded ->
             if (!loaded || isModelLoaded.getAndSet(true)) return@collectIn
             // Check if android 13+ is running and the NotificationPermission is not set
+            // THIS is why the wizard came back on every update.
+            //
+            // Inherited from upstream: if the notification permission has never been answered, it
+            // set `isImeSetUp = false` and the whole setup reappeared. On a phone where that
+            // permission is simply never granted — his — the condition is true forever, so every
+            // single launch after every single install walked back through six pages he had
+            // already finished, several times a day.
+            //
+            // Setup reappearing is not a way to ask for a permission. Once somebody has finished
+            // it, **finished is a fact and not a state to be revoked** by an unrelated toggle.
+            // Anything that still needs asking can ask where it is needed.
+            //
+            // Left as it was for a first run, which is the only time it was ever right: there
+            // `isImeSetUp` is already false and this line changes nothing.
             if (AndroidVersion.ATLEAST_API33_T &&
-                prefs.internal.notificationPermissionState.get() == NotificationPermissionState.NOT_SET
+                prefs.internal.notificationPermissionState.get() == NotificationPermissionState.NOT_SET &&
+                !prefs.internal.isImeSetUp.get()
             ) {
-                // update pref value to show the setup screen again
-                prefs.internal.isImeSetUp.set(false)
+                prefs.internal.notificationPermissionState.set(NotificationPermissionState.NOT_SET)
             }
             AppVersionUtils.updateVersionOnInstallAndLastUse(this, prefs)
             setContent {

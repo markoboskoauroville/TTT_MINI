@@ -4486,3 +4486,57 @@ back tiny is itself the answer, and a silent success looks identical to a silent
 what the tree is. Nothing here is broken, and an instrument should not look like an alarm.
 
 Add it from Feature row settings; it is called **Dump the screen for diagnosis**.
+
+---
+
+# 116. The dead end at the end of setup, and why the wizard kept coming back
+
+## The dead end, which was mine
+
+Removing the seventh page put **Finish** inside the `else` of the accessibility step — the branch that
+only draws when accessibility is **off**. His has been on for weeks, so he reached the last page of
+setup with no button on it and no way forward. **A dead end at the end of a wizard**, which is the
+worst place to put one.
+
+Outside the branch now. Setup ends whatever the state of that switch, because the switch is optional
+and finishing is not.
+
+## Why it appeared on every update
+
+Inherited from upstream, and it had nothing to do with updating:
+
+```kotlin
+if (API33+ && notificationPermissionState == NOT_SET) {
+    prefs.internal.isImeSetUp.set(false)   // "show the setup screen again"
+}
+```
+
+**If the notification permission has never been answered, the whole setup reappears.** On a phone
+where that permission is simply never granted, the condition is true **forever** — so every launch
+after every install walked back through six pages he had already finished, several times a day.
+
+**Setup reappearing is not a way to ask for a permission.** Once somebody has finished it, *finished
+is a fact and not a state to be revoked* by an unrelated toggle. The reset is gone; anything that
+still needs asking asks where it is needed.
+
+## Skip setup
+
+A link in the header, on **every** page. Skipping one slide was never the problem — the problem is
+being asked at all, six times, by a wizard whose entire content he wrote.
+
+**In the header rather than the footer**, so it is reachable on a page with no other button and
+cannot be scrolled past on the pages that have several. Nothing is lost by taking it: every grant it
+offers is also in Settings, and the ones already granted stay granted.
+
+**One `finishSetup`**, shared by Skip and Finish, because the flag must be written or the wizard
+returns on the next launch, and `popUpTo` must be inclusive or Back walks straight into it again.
+
+## Also fixed: reading anything long
+
+His log gave the answer to the other bug in one pass. Every passage of **1,906 characters or fewer
+spoke; every one of 2,110 or more came back HTTP 400** — twenty-three readings, no exceptions either
+side of that gap. `MAX_CHARS` was **4,000**, chosen by me and never tested against the service, so a
+long screen simply refused to read and filled the log with 400s that looked like a key fault.
+
+Now 1,800, measured. **A cap invented rather than measured is wrong in one direction and silent
+about it.**

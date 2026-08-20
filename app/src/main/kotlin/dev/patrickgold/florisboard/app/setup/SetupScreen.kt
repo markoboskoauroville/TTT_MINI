@@ -248,6 +248,20 @@ private fun FlorisScreenScope.content(
     }
 
     content {
+        /**
+         * Leave setup, whichever page he is on.
+         *
+         * One definition, used by the Finish button and by Skip setup, so the two cannot end setup
+         * differently — the flag has to be written or the wizard returns on the next launch, and
+         * `popUpTo` has to be inclusive or Back walks straight into it again.
+         */
+        fun finishSetup() {
+            scope.launch { prefs.internal.isImeSetUp.set(true) }
+            navController.navigate(Routes.Settings.Home) {
+                popUpTo(Routes.Setup.Screen) { inclusive = true }
+            }
+        }
+
         LaunchedEffect(
             isFlorisBoardEnabled, isFlorisBoardSelected, isMicGranted,
             hasNotificationPermission, isProviderConfigured, providerSkipped,
@@ -289,7 +303,28 @@ private fun FlorisScreenScope.content(
             nextLabel = stringRes(R.string.setup__nav_next),
             header = {
                 StepText(stringRes(R.string.setup__intro_message))
-                Spacer(modifier = Modifier.height(16.dp))
+                // Skip the whole thing, from any page.
+                //
+                // He reinstalls several times a day and knows every one of these pages by heart.
+                // Skipping a single slide was never the problem — the problem is being asked at
+                // all, six times, by a wizard whose entire content he wrote.
+                //
+                // In the header rather than at the bottom, so it is reachable on the page that has
+                // no other button and cannot be scrolled past on the pages that do. Nothing is lost
+                // by taking it: every grant it offers is also offered in Settings, and the ones
+                // already granted stay granted.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(onClick = { finishSetup() }) {
+                        Text(
+                            text = "Skip setup \u2014 go to Settings",
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             },
             steps = steps(
                 context, navController, requestNotification, requestMic,
@@ -474,22 +509,17 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                // Setup ends here.
-                //
-                // There was a seventh page after this saying "You're all set", with a button that
-                // set a flag and navigated. It taught nothing: everything on it was already true,
-                // and everything it pointed at was in the settings list it opened. A page whose
-                // only content is a summary of the pages already read is a page to press past.
-                //
-                // The flag and the navigation live on this button instead, so the last thing he
-                // does in setup is a real step rather than an acknowledgement of one.
-                StepButton(label = "Finish") {
-                    scope.launch { this@steps.prefs.internal.isImeSetUp.set(true) }
-                    navController.navigate(Routes.Settings.Home) {
-                        popUpTo(Routes.Setup.Screen) { inclusive = true }
-                    }
-                }
             }
+            // OUTSIDE the branch, and that is the whole point.
+            //
+            // It was inside the `else`, so somebody who already had accessibility running — which is
+            // everybody after the first install — reached the last page of setup with no button on
+            // it at all and no way forward. A dead end at the end of the wizard, which is the worst
+            // place to put one.
+            //
+            // Setup ends here whatever the state of that switch, because the switch is optional and
+            // finishing is not.
+            StepButton(label = "Finish") { finishSetup() }
         },
     )
 }

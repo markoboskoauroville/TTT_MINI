@@ -115,5 +115,21 @@ object MaScreenText {
      * the screen that is not normal — a wall of text in a reader app — where one press would
      * otherwise become a long synthesis he did not ask for and cannot easily stop.
      */
-    const val MAX_CHARS = 4000
+    /**
+     * MEASURED, not chosen. Speechify refuses a longer request with HTTP 400.
+     *
+     * From his own log on 20.8.2026: every passage of 1,906 characters or fewer spoke; every one of
+     * 2,110 or more came back `speak refused, http 400`. Twenty-three readings, no exceptions on
+     * either side of that gap.
+     *
+     * The old value was 4,000 — chosen by me, never tested against the service — so a long screen
+     * simply refused to read, repeatedly, and the log filled with 400s that looked like a key
+     * problem. **A cap invented rather than measured is a cap that is wrong in one direction and
+     * silent about it.**
+     *
+     * 1,800 sits below the largest success with room for the service to tighten. A screen longer
+     * than this is not truncated in practice: full screen scrolls and re-reads, which is what that
+     * mode is for.
+     */
+    const val MAX_CHARS = 1800
 }
