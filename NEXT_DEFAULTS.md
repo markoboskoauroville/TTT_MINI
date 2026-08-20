@@ -4086,7 +4086,15 @@ being resolution and belongs back in the controller.
 Moved with it, since its only user went with it — and the doc comment went too, because the reason
 it is an allow-list is the whole value of the line.
 
-`scripts/verify.py` did **not** catch this: it reads one file at a time and cannot see a symbol that
-left its declaration behind. That gap is now known, and the check that found it — listing every
-capitalised symbol a moved file uses and confirming each is imported or same-package — should be
-added to the script next.
+`scripts/verify.py` did **not** catch this and CI did: four more symbols were left behind — `File`,
+`OpenAiCompatibleClient`, `MaResample` and two sync constants. **Moving code is the one edit that
+breaks references without touching the line that uses them**, so both files keep their shape and
+neither looks wrong.
+
+`check_symbols_resolve` closes it, and its scope is the interesting part. Over the whole tree it
+raises **256 complaints on code that has compiled for years** — annotations, nested types, things a
+regex cannot see the shape of. Over a file **HEAD has never seen** it is exact, and a file that did
+not exist before is precisely when code has been moved. So it runs on new files only.
+
+Verified both ways on a genuinely new path: both missing imports named, and silent on the corrected
+version.

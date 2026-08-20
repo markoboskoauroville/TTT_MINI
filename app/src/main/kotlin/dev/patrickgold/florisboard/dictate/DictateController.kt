@@ -506,11 +506,6 @@ object DictateController {
     // Realtime (#128): after finish(), how long to wait for the provider to flush the last words before we
     // commit the already-streamed text. Short — the text is already on screen; we only wait for the tail.
     private const val REALTIME_FINALIZE_TIMEOUT_MS = 1_200L
-    // AssemblyAI Sync bounds, both sides. The endpoint rejects anything under 80 ms as too short, so half
-    // a second is a comfortable floor for something that is meant to be speech at all. The margin keeps a
-    // calculated duration from arguing with the service's own measurement at the two minute ceiling.
-    private const val MIN_SYNC_SECONDS = 0.5
-    private const val SYNC_SECONDS_MARGIN = 2.0
 
     private const val AUDIO_LEVEL_SAMPLE_MS = 50L
 

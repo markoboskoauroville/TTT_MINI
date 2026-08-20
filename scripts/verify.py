@@ -174,6 +174,61 @@ def check_preferences_exist(path: Path, text: str) -> None:
             fail(path.name, f"preference does not exist in AppPrefs: {name}")
 
 
+def is_new_file(path: Path) -> bool:
+    """True when HEAD has never seen this file."""
+    rel = path.relative_to(ROOT).as_posix()
+    r = subprocess.run(["git", "-C", str(ROOT), "cat-file", "-e", f"HEAD:{rel}"], capture_output=True)
+    return r.returncode != 0
+
+
+def check_symbols_resolve(path: Path, text: str) -> None:
+    """
+    Red build: a block moved to a new file left four symbols behind.
+
+    Moving code is the one edit that breaks references without touching the line that uses them. The
+    old file keeps compiling — it lost only the caller — while the new file names constants, classes
+    and helpers that are no longer in scope, and nothing about either file's shape looks wrong.
+
+    Every capitalised name the file uses must be imported, declared here, or reachable in the same
+    package. The allow-list below is the language itself plus enum members reached through a
+    receiver, which cannot be told apart from types by regex alone.
+    """
+    # NEW files only, and that scope is the point.
+    #
+    # Run over the whole tree this raises 256 complaints on code that has compiled for years —
+    # annotations, nested types, generated references, things a regex cannot see the shape of. Run
+    # over a file that did not exist before this commit it is exact, and a file that did not exist
+    # before is precisely when code has been MOVED, which is the only edit that breaks references
+    # without touching the line that uses them.
+    if not is_new_file(path):
+        return
+    code = strip_code(text)
+    code = "\n".join(ln for ln in code.splitlines() if not ln.startswith(("import ", "package ")))
+    used = set(re.findall(r"\b([A-Z][A-Za-z0-9_]{2,})\b", code))
+    imported = {ln.rsplit(".", 1)[-1].strip() for ln in text.splitlines() if ln.startswith("import ")}
+    declared = set(re.findall(r"\b(?:val|const val|fun|object|class|enum class|interface)\s+(\w+)", text))
+
+    # Same package: anything declared in a sibling file needs no import.
+    siblings: set[str] = set()
+    for f in path.parent.glob("*.kt"):
+        siblings |= set(re.findall(r"\n(?:internal |private )?(?:object|class|enum class|interface|data class) (\w+)", f.read_text()))
+
+    builtins = {
+        "String", "Boolean", "Int", "Long", "Float", "Double", "List", "Set", "Map", "Unit", "Any",
+        "Exception", "Throwable", "Pair", "Triple", "Array", "IntArray", "Regex", "Result", "Char",
+    }
+    unknown = sorted(used - imported - declared - siblings - builtins)
+    # Enum members and companion constants arrive as ALL_CAPS through a receiver; a regex cannot see
+    # the receiver, so they are reported only if nothing anywhere declares them.
+    unknown = [u for u in unknown if not u.isupper()]
+    # Nested types reached through a receiver — `DictateApiException.Kind.NETWORK` — read as a bare
+    # `Kind` to a regex, and the outer type is what actually needs importing. If the name always
+    # appears with something before the dot, it is not the thing to complain about.
+    unknown = [u for u in unknown if re.search(rf"(?<![.\w])\b{re.escape(u)}\b", code)]
+    for u in unknown:
+        fail(path.name, f"uses `{u}` with no import, declaration or sibling in this package")
+
+
 def check_balance(path: Path, text: str) -> None:
     """The old check, kept: braces and parens against HEAD rather than against zero."""
     rel = path.relative_to(ROOT).as_posix()
@@ -243,6 +298,7 @@ def main() -> int:
         check_icon_imports(path, text)
         check_delegation_imports(path, text)
         check_preferences_exist(path, text)
+        check_symbols_resolve(path, text)
         check_balance(path, text)
     check_when_coverage()
     check_no_secrets()

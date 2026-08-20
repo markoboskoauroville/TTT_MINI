@@ -15,6 +15,9 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.provider.DictateApiException
 import dev.patrickgold.florisboard.dictate.provider.LocalTranscriptionProvider
 import dev.patrickgold.florisboard.dictate.provider.ProviderAccount
+import dev.patrickgold.florisboard.dictate.provider.OpenAiCompatibleClient
+import dev.patrickgold.florisboard.dictate.audio.MaResample
+import java.io.File
 import dev.patrickgold.florisboard.dictate.provider.ProviderPreset
 import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
 import dev.patrickgold.florisboard.dictate.provider.TranscriptionApi
@@ -54,6 +57,12 @@ object MaProviders {
      * has actually been read by somebody. Slow costs seconds; wrong costs the sentence.
      */
     private val SYNC_SAFE_LANGUAGES = setOf("en")
+
+    // AssemblyAI Sync bounds, both sides. The endpoint rejects anything under 80 ms as too short, so half
+    // a second is a comfortable floor for something that is meant to be speech at all. The margin keeps a
+    // calculated duration from arguing with the service's own measurement at the two minute ceiling.
+    private const val MIN_SYNC_SECONDS = 0.5
+    private const val SYNC_SECONDS_MARGIN = 2.0
 
     /** The same store the controller reads. Resolution answers from settings and nothing else. */
     private val prefs by FlorisPreferenceStore
