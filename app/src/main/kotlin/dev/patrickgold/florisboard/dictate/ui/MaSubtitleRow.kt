@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -114,11 +115,6 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val pages = remember(words, perPage) { paginate(words.map { it.text }, perPage) }
     val page = remember(pages, index) { pages.firstOrNull { index in it.range } } ?: return
 
-    // ONE WORD is its own layout: the word alone, as large as the box will hold.
-    //
-    // The style Instagram and TikTok captions made ordinary — one word at a time, centred, big
-    // enough to read at arm's length. It is the only one of the five that does not show its
-    // neighbours, which is exactly why it is worth having: there is nothing to read ahead to.
     // THE BLACK VOID.
     //
     // Full screen, true black, and one word at a time as large as it will go. Nothing else is drawn
@@ -157,28 +153,13 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (full) {
+                MaCloseCorner { scope.launch { prefs.dictate.maReaderFullscreen.set(false) } }
+            }
         }
         return
     }
 
-    if (style == "oneword") {
-        val word = words.getOrNull(index)?.text.orEmpty()
-        SubtitleBox(modifier, full) {
-            Text(
-                text = word,
-                color = lit,
-                // One word is the exception that earns its size: there is only ever one on screen,
-                // so it takes the room the others share. Still tied to his setting rather than to
-                // whether the box is full.
-                fontSize = (fontSp * 2).coerceIn(20, 72).sp,
-                lineHeight = (fontSp * 2.2f).coerceIn(24f, 80f).sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        return
-    }
 
     val text = buildAnnotatedString {
         page.words.forEachIndexed { i, w ->
@@ -342,6 +323,33 @@ private fun lineText(
  * element that is already under the thumb while reading.
  */
 @OptIn(ExperimentalFoundationApi::class)
+/**
+ * The way out of full screen, in the corner, barely there.
+ *
+ * Long press closes it too, and that is the gesture he chose — but a gesture is invisible, and a
+ * full-screen view with no visible way out is a trap the first time somebody forgets it. A dark grey
+ * X costs nothing to ignore and everything to not have.
+ *
+ * Deliberately near-invisible: an escape hatch, not a control. Anything brighter would compete with
+ * the word being read, which is the only thing on that screen worth looking at.
+ */
+@Composable
+private fun MaCloseCorner(onClose: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize().padding(6.dp),
+        contentAlignment = Alignment.TopEnd,
+    ) {
+        Text(
+            text = "\u2715",
+            color = MaSubtitleShadow,
+            fontSize = 22.sp,
+            // A touch target larger than the glyph: a small mark in a corner is hard to hit, and
+            // this is what somebody reaches for when they want out.
+            modifier = Modifier.clickable { onClose() }.padding(horizontal = 14.dp, vertical = 10.dp),
+        )
+    }
+}
+
 @Composable
 private fun SubtitleBox(
     modifier: Modifier,

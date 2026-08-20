@@ -794,13 +794,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // swap its contents. Croatian diacritics are the other thing constantly reached for on this
         // phone, and hunting them through long-press popups mid-sentence is slower than a row.
         // Volume keys as dictation controls while the keyboard is up: volume up starts and then
-        // sends, volume down swaps view. On by default because it was asked for, and switchable
-        // because taking the volume keys is a real trade and somebody should be able to decline it.
-        val maVolumeKeys = boolean(
-            key = "dictate__ma_volume_keys",
-            default = true,
-        )
-        // Case forced on whatever comes back: "none", "lower" or "upper". A recogniser returns
+        // sends, volume down swaps view. On by default because it was asked for, and switchable        // Case forced on whatever comes back: "none", "lower" or "upper". A recogniser returns
         // sentence case with a full stop because it is guessing at prose; when the words are going
         // into a search box, a filename or a command line, that guess is wrong every time and has to
         // be undone by hand.
@@ -1223,7 +1217,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * the words around it, and everything else is either those two or worse than both.
          */
         /**
-         * How the reading is drawn: `highlight`, `typewriter`, `karaoke`, `spotlight`, `oneword`.
+         * How the reading is drawn: `highlight`, `typewriter`, `karaoke`, `spotlight`, `void`.
+         *
+         * `oneword` was removed: it was the void with a smaller word and a box around it, which is
+         * not a second effect, it is the same one done less well. A stored `oneword` falls through
+         * to `highlight`, which is the safe direction — a page he can read rather than one word he
+         * did not choose.
          *
          * Five, and every one of them obeys the rule that nothing moves. Each marks the spoken word
          * differently while the words around it stay exactly where they were, because a caption

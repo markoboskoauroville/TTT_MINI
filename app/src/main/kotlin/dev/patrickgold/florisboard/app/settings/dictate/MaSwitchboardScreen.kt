@@ -153,8 +153,6 @@ private fun MaSwitchRowFor(entry: MaSwitchboardOrder.Entry, lifted: Boolean) {
             MaSwitchRow("Copy buckets", Icons.Default.Inventory2, prefs.dictate.maBucketsEnabled, Routes.Settings.MaBuckets, modifier)
         MaSwitchboardOrder.Entry.MAGIC_ROW ->
             MaSwitchRow("Magic Finger row", Icons.Default.TouchApp, prefs.dictate.maMagicRowShown, Routes.Settings.MaMagic, modifier)
-        MaSwitchboardOrder.Entry.VOLUME_KEYS ->
-            MaSwitchRow("Volume keys", Icons.AutoMirrored.Filled.VolumeUp, prefs.dictate.maVolumeKeys, null, modifier)
         MaSwitchboardOrder.Entry.FULLSCREEN ->
             MaSwitchRow("Full screen reading", Icons.Default.Fullscreen, prefs.dictate.maReaderFullscreen, Routes.Settings.MaReader, modifier)
         MaSwitchboardOrder.Entry.SUBTITLE ->

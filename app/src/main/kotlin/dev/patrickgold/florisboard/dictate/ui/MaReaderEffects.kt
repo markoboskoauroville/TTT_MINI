@@ -26,7 +26,6 @@ object MaReaderEffects {
         Effect("typewriter", "Typewriter"),
         Effect("karaoke", "Karaoke"),
         Effect("spotlight", "Spotlight"),
-        Effect("oneword", "One word"),
         Effect("void", "Void"),
     )
 }

@@ -49,12 +49,44 @@ def changed_files() -> list[Path]:
 
 
 def strip_code(text: str) -> str:
-    """Comments and string bodies out, so counting is not fooled by prose."""
-    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
-    text = re.sub(r"//[^\n]*", "", text)
-    text = re.sub(r'"""(?:.|\n)*?"""', '""', text)
-    text = re.sub(r'"(?:\\.|[^"\\])*"', '""', text)
-    return text
+    """
+    Comments and string bodies out, so counting is not fooled by prose.
+
+    Scanned character by character with real state, not with regexes applied to the whole file. The
+    regex version reported this project's largest file as two braces out when it was balanced, and
+    cost three rounds of hunting a fault that did not exist — a checker that is wrong is worse than
+    no checker, because it is believed.
+    """
+    out: list[str] = []
+    i, n = 0, len(text)
+    in_block = False
+    while i < n:
+        if in_block:
+            if text.startswith("*/", i):
+                in_block = False
+                i += 2
+            else:
+                i += 1
+            continue
+        if text.startswith("/*", i):
+            in_block = True
+            i += 2
+            continue
+        if text.startswith("//", i):
+            while i < n and text[i] != "\n":
+                i += 1
+            continue
+        if text[i] == '"':
+            i += 1
+            while i < n and text[i] != '"':
+                if text[i] == "\\":
+                    i += 1
+                i += 1
+            i += 1
+            continue
+        out.append(text[i])
+        i += 1
+    return "".join(out)
 
 
 def check_duplicate_imports(path: Path, text: str) -> None:

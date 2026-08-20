@@ -58,14 +58,6 @@ fun GesturesScreen() = FlorisScreen {
         // one of them is a way to trigger something by accident mid-sentence. The space bar gestures
         // stay, because those are aimed at one key and do the one thing worth doing there.
         PreferenceGroup(title = "Volume keys") {
-            SwitchPreference(
-                prefs.dictate.maVolumeKeys,
-                modifier = Modifier.settingsSearchAnchor("ma__volume_keys"),
-                title = "Volume keys control dictation",
-                summary = "While the keyboard is on screen, volume up starts recording and stops " +
-                    "it, and volume down presses the button below. They are ordinary volume keys " +
-                    "again the moment the keyboard closes \u2014 put it away to change the volume.",
-            )
             // Which taught term volume down presses.
             //
             // Offered as a list of the terms he has already taught the finger rather than a text

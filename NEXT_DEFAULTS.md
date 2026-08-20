@@ -4581,3 +4581,44 @@ simply refused to read and the log filled with 400s that looked like a key probl
 
 Now 1,800, below the largest measured success with room for the service to tighten. **A cap invented
 rather than measured is wrong in one direction and silent about it.**
+
+---
+
+# 117. The volume keys, rewritten, with no way to switch them off
+
+Rewritten as `MaVolumeKeys`, specified in **`VOLUME_KEYS.md`**, and **the setting is gone** — no
+preference, no switchboard row, no gestures entry.
+
+That setting is the whole story. It defaulted on, it sat in a list of thirteen switches that had just
+become draggable, and one touch turned it off in silence. He lost days believing the feature had been
+deleted; I spent three rounds reading a handler that was correct the entire time.
+
+**A control that can silently disable the thing somebody uses most is not a feature, it is a
+trapdoor.** The specification says not to add it back and why.
+
+Behaviour unchanged and now written down: up taps to record and to stop; down while recording stops,
+transcribes and presses Send when the words land; down otherwise presses Send; either held is the
+real volume. Decision on release, send armed rather than performed, disarmed on every abandoned path.
+
+## One word is gone
+
+It was the void with a smaller word and a box around it — not a second effect, the same one done less
+well. A stored `oneword` falls through to `highlight`, which is the safe direction: a page he can read
+rather than one word he did not choose.
+
+## A way out of full screen that can be seen
+
+Long press still closes it, but a gesture is invisible and a full-screen view with no visible exit is
+a trap the first time it is forgotten. A dark grey **✕** in the corner, with a touch target larger
+than the glyph. Deliberately near-invisible: an escape hatch, not a control.
+
+## Two tools that were wrong, and cost more than the bugs
+
+**The balance checker in `verify.py` reported the largest file in this project as two braces out when
+it was balanced.** It stripped block comments with a regex over the whole file. Three rounds went into
+hunting a fault that did not exist. It scans character by character with real state now — **a checker
+that is wrong is worse than none, because it is believed.**
+
+**And my own cut of the One word block took the Void's comment with it**, because I chose the
+boundary by eye rather than by structure. Restored from HEAD and cut again by locating both blocks
+first. When removing code, find the end of what you are removing before removing the start of it.

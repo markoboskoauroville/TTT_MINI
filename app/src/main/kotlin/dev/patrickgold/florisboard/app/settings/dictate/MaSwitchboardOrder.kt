@@ -46,7 +46,6 @@ object MaSwitchboardOrder {
         EDIT_ROW("edit_row"),
         BUCKETS("buckets"),
         MAGIC_ROW("magic_row"),
-        VOLUME_KEYS("volume_keys"),
         SUBTITLE("subtitle"),
         FULLSCREEN("fullscreen"),
     }
