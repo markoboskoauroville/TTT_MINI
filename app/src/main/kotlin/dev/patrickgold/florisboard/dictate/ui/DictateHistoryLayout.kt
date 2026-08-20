@@ -12,7 +12,6 @@ package dev.patrickgold.florisboard.dictate.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.AlertDialog
 import android.text.format.DateUtils
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
@@ -263,7 +262,21 @@ fun DictateHistoryLayout(
                     tint = MaDestructive,
                     onClick = {
                         confirmClearAll = false
-                        scope.launch { DictateHistoryStore.clearAll(context) }
+                        // ON IO, AND WRAPPED — like the other two, which it was not.
+                        //
+                        // `clearAll` walks the audio directory and deletes every file in it. On the
+                        // main thread that blocks the keyboard for as long as the disk takes, and
+                        // with a few hundred recordings that is long enough for Android to kill the
+                        // input method for not responding.
+                        //
+                        // Wrapped because a delete can throw — a file held open by a media scanner,
+                        // a revoked permission — and an exception escaping a launched coroutine
+                        // takes the keyboard down. **He asked for delete that does not crash; the
+                        // crash is not always in the dialog.**
+                        scope.launch(Dispatchers.IO) {
+                            runCatching { DictateHistoryStore.clearAll(context) }
+                                .onFailure { MaLog.add("history", "clear all failed: ${it.javaClass.simpleName}") }
+                        }
                     },
                 )
                 MaBullet(accent)
@@ -279,11 +292,17 @@ fun DictateHistoryLayout(
             MaDeleteChooser(
                 accent = accent,
                 onAudioOnly = {
-                    scope.launch(Dispatchers.IO) { DictateHistoryStore.deleteAudioOnly(context, target) }
+                    scope.launch(Dispatchers.IO) {
+                        runCatching { DictateHistoryStore.deleteAudioOnly(context, target) }
+                            .onFailure { MaLog.add("history", "audio delete failed: ${it.javaClass.simpleName}") }
+                    }
                     pendingDelete = null
                 },
                 onEverything = {
-                    scope.launch(Dispatchers.IO) { DictateHistoryStore.delete(context, target) }
+                    scope.launch(Dispatchers.IO) {
+                        runCatching { DictateHistoryStore.delete(context, target) }
+                            .onFailure { MaLog.add("history", "delete failed: ${it.javaClass.simpleName}") }
+                    }
                     pendingDelete = null
                 },
                 onCancel = { pendingDelete = null },

@@ -5117,3 +5117,41 @@ to a working example of why not to.**
 **When a screen already solves a problem, copy that solution; do not reach for the standard
 component.** And when a fix does not work, the next attempt should change *kind*, not degree — four
 attempts at arranging a row that could not be arranged is three more than the evidence justified.
+
+---
+
+# 133. EN in the circle, and the deletes tested properly
+
+## EN, not ENG
+
+Three letters do not fit inside a round key and the last one was being cut at the edge. Two letters
+fit, and HR is already two — so the pair is even, and **a badge whose width changed with the language
+would shift every key beside it each time he switched.**
+
+The history panel keeps ENG, where the row is wide and the extra letter costs nothing.
+
+## The deletes, put through the four tests
+
+**Test 1, the logic alone.** Eleven cases against a model of the three deletions, holding one
+invariant: *no row may point at a file that is gone.* Delete, audio-only, an entry with no audio, a
+file delete that fails, clear-all with an undeletable directory, deleting twice. **0 failures** — the
+order in the store is already right, file first and row second.
+
+**Test 3, the ugly cases** — and this is where the real faults were, after the dialog crash was
+already fixed:
+
+- **`clearAll` ran on the main thread.** It walks the audio directory and deletes every file in it.
+  With a few hundred recordings that blocks the keyboard long enough for Android to kill the input
+  method for not responding. The other two were already on IO; this one was not.
+- **None of the three was wrapped.** A delete can throw — a file held open by a media scanner, a
+  revoked permission — and **an exception escaping a launched coroutine takes the keyboard down.** He
+  asked for delete that does not crash; the crash is not always in the dialog.
+
+All three are on IO and guarded now, and a failure writes a line naming what threw.
+
+## Not fixed, and worth knowing
+
+**A row whose audio file was removed from outside the app** — storage cleared, files pruned — still
+shows Re-Transcribe, and pressing it will fail. The row is not corrupt and nothing crashes; the
+button is simply offering something that cannot happen. Fixing it means checking the file exists when
+the row is drawn, which is disk work in a list, so it needs doing carefully rather than quickly.

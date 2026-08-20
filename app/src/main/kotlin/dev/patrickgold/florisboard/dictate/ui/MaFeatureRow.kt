@@ -908,7 +908,18 @@ fun MaFeatureRow(
                     // from it would keep its old face after a tap until something else redrew the
                     // row — a toggle that appears not to have worked.
                     ThemedTextKey(
-                        label = remember(activeLangCode, langMode) { MaLanguage.badge() },
+                        // EN, not ENG. Two letters, because this key is a circle.
+                        //
+                        // Every other key in this row holds one glyph; three letters do not fit
+                        // inside a round face and the last one was being cut off at the edge. HR is
+                        // already two, so the pair is even as well — and a badge whose width changes
+                        // with the language would shift the keys beside it every time he switched.
+                        //
+                        // The history panel keeps ENG, where the row is wide and the extra letter
+                        // costs nothing.
+                        label = remember(activeLangCode, langMode) {
+                            if (MaLanguage.active() == MaLanguage.EN) "EN" else "HR"
+                        },
                         // ENG and HR is a switcher: it changes which language is heard, and types
                         // nothing.
                         switcher = true,
