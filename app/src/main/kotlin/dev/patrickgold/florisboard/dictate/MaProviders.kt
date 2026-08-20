@@ -21,7 +21,7 @@ import java.io.File
 import dev.patrickgold.florisboard.dictate.provider.ProviderPreset
 import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
 import dev.patrickgold.florisboard.dictate.provider.TranscriptionApi
-import dev.patrickgold.florisboard.dictate.provider.local.LocalModelManager
+import dev.patrickgold.florisboard.dictate.provider.LocalModelManager
 
 /**
  * Which provider does which job, and on which path.

@@ -229,6 +229,35 @@ def check_symbols_resolve(path: Path, text: str) -> None:
         fail(path.name, f"uses `{u}` with no import, declaration or sibling in this package")
 
 
+def check_imports_resolve(path: Path, text: str) -> None:
+    """
+    Red build: an import that exists but points at the wrong package.
+
+    `check_symbols_resolve` asks whether a symbol has an import. It does NOT ask whether that import
+    is true — and a moved block carries its imports with it, so a name that lived in a different
+    package in the old file arrives looking perfectly well imported. That cost a second red build on
+    the same extraction.
+
+    New files only, same reasoning as above: this is the failure that happens when code moves.
+    """
+    if not is_new_file(path):
+        return
+    for ln in text.splitlines():
+        if not ln.startswith("import "):
+            continue
+        fq = ln[len("import "):].strip()
+        if fq.startswith(("java.", "kotlin.", "android.", "androidx.", "org.", "com.")) or "*" in fq:
+            continue
+        pkg, name = fq.rsplit(".", 1)
+        hits = subprocess.run(
+            ["grep", "-rl", f"^package {pkg}$", "--include=*.kt", "app/", "lib/"],
+            capture_output=True, text=True, cwd=ROOT,
+        ).stdout.split()
+        decl = re.compile(rf"\b(?:object|class|interface|enum class|data class|val|fun) {re.escape(name)}\b")
+        if not any(decl.search((ROOT / h).read_text()) for h in hits):
+            fail(path.name, f"import does not resolve: {fq}")
+
+
 def check_balance(path: Path, text: str) -> None:
     """The old check, kept: braces and parens against HEAD rather than against zero."""
     rel = path.relative_to(ROOT).as_posix()
@@ -299,6 +328,7 @@ def main() -> int:
         check_delegation_imports(path, text)
         check_preferences_exist(path, text)
         check_symbols_resolve(path, text)
+        check_imports_resolve(path, text)
         check_balance(path, text)
     check_when_coverage()
     check_no_secrets()
