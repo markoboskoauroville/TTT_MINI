@@ -10,12 +10,6 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
-import kotlin.math.roundToInt
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -139,30 +133,27 @@ fun MaReaderDashboard(onClose: () -> Unit) {
 
         Spacer(Modifier.height(12.dp))
 
-        // VOICE — only the ones for the language being read, because the other list is not a choice
-        // he can make right now without also changing the language.
-        Text(text = "voice", color = MaDashDim, fontSize = 13.sp)
+        // EFFECTS, not voices.
+        //
+        // The voice is chosen once and then left alone — it is a matter of taste settled in an
+        // afternoon. The effect is what he changes for THIS passage: void for something hard,
+        // highlight for something he is skimming, karaoke when he wants to see the sentence coming.
+        // That is what belongs on a panel opened mid-reading; the voice belongs in settings.
+        Text(text = "effect", color = MaDashDim, fontSize = 13.sp)
         Spacer(Modifier.height(6.dp))
+        val style by prefs.dictate.maReaderStyle.collectAsState()
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(voices) { voice ->
-                val on = voice.id == chosenVoice.id
+            items(MaReaderEffects.ALL) { effect ->
+                val on = effect.id == style
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(14.dp))
                         .background(if (on) MaDashAccent else MaDashChip)
-                        .clickable {
-                            scope.launch {
-                                if (language == MaLanguage.EN) {
-                                    prefs.dictate.maReaderVoiceEn.set(voice.id)
-                                } else {
-                                    prefs.dictate.maReaderVoiceHr.set(voice.id)
-                                }
-                            }
-                        }
+                        .clickable { scope.launch { prefs.dictate.maReaderStyle.set(effect.id) } }
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                 ) {
                     Text(
-                        text = voice.label,
+                        text = effect.label,
                         color = if (on) Color.Black else MaDashInk,
                         fontSize = 14.sp,
                         fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
@@ -173,74 +164,44 @@ fun MaReaderDashboard(onClose: () -> Unit) {
 
         Spacer(Modifier.height(12.dp))
 
-        // BRIGHTNESS, not colour.
+        // SEVEN SWATCHES, dark to white. He asked for swatches and got a slider; this is the
+        // correction.
         //
-        // Four coloured chips became one grey-to-white ramp, because he does not want a colourful
-        // app and a highlight does not need a hue. What it needs is to be *more* than the page
-        // around it, and on a white page that is one axis: how bright.
+        // Greys only, because a highlight over a white page needs to be brighter than the page, not
+        // a different colour. Seven because a row of seven is read at a glance and chosen without
+        // aiming — a slider needs a precise finger and gives back a number nobody wanted.
         //
-        // Half grey to white, and no darker. Below about half the word stops out-reading the page
-        // and the highlight is doing the opposite of its job — so the dim end of the ramp is a
-        // choice, not a limit anybody would want to pass.
+        // **The dark end is not black.** Black on this background is invisible, so the darkest
+        // swatch would be a square that appears to do nothing and a highlight that vanishes. It
+        // starts at the darkest grey that still reads as a mark.
         Text(text = "highlight", color = MaDashDim, fontSize = 13.sp)
         Spacer(Modifier.height(6.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Brush.horizontalGradient(listOf(MaRampFrom, Color.White)))
-                .pointerInput(Unit) {
-                    fun set(x: Float) {
-                        val f = (x / size.width).coerceIn(0f, 1f)
-                        scope.launch { prefs.dictate.maReaderHighlightHex.set(rampHex(f)) }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(MaSwatches.GREYS) { swatch ->
+                val on = hex.equals(swatch, ignoreCase = true)
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(swatchColour(swatch))
+                        .clickable { scope.launch { prefs.dictate.maReaderHighlightHex.set(swatch) } },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (on) {
+                        // A dark dot on a pale swatch and a pale one on a dark swatch, so the mark
+                        // is visible at both ends of a row that runs from grey to white.
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (swatch >= "#B0") Color.Black else Color.White),
+                        )
                     }
-                    detectTapGestures { set(it.x) }
                 }
-                .pointerInput(Unit) {
-                    detectDragGestures { change, _ ->
-                        val f = (change.position.x / size.width).coerceIn(0f, 1f)
-                        scope.launch { prefs.dictate.maReaderHighlightHex.set(rampHex(f)) }
-                    }
-                },
-        ) {
-            // The marker sits where the current brightness is, so the bar shows the setting rather
-            // than only accepting one.
-            Box(
-                modifier = Modifier
-                    .rampMarker(rampFraction(hex))
-                    .size(width = 4.dp, height = 44.dp)
-                    .background(Color(0xFF0B0D10)),
-            )
+            }
         }
     }
 }
-
-/** The dim end of the ramp: half grey. Darker than this and the highlight stops leading the eye. */
-private val MaRampFrom = Color(0xFF808080)
-
-/** A position on the ramp to a grey. 0 is half grey, 1 is white. */
-private fun rampHex(fraction: Float): String {
-    val v = (128 + (127 * fraction)).toInt().coerceIn(128, 255)
-    return "#%02X%02X%02X".format(v, v, v)
-}
-
-/** A stored grey back to its position, so the marker can be drawn where he left it. */
-private fun rampFraction(hex: String): Float {
-    val h = hex.trim().removePrefix("#")
-    if (h.length != 6) return 1f
-    val v = h.substring(0, 2).toIntOrNull(16) ?: return 1f
-    return ((v - 128) / 127f).coerceIn(0f, 1f)
-}
-
-/** Places the ramp marker along the bar. */
-private fun Modifier.rampMarker(fraction: Float) = this.then(
-    Modifier.layout { measurable, constraints ->
-        val placeable = measurable.measure(constraints)
-        val x = ((constraints.maxWidth - placeable.width) * fraction).roundToInt()
-        layout(constraints.maxWidth, placeable.height) { placeable.place(x, 0) }
-    },
-)
 
 @Composable
 private fun DashButton(label: String, onClick: () -> Unit) {

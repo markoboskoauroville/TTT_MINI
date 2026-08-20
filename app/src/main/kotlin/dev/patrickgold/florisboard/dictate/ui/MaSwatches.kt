@@ -61,5 +61,21 @@ object MaSwatches {
      * all. Then the app's amber, then a cool and a warm alternative for when a passage needs to look
      * different from the last one.
      */
+    /**
+     * Seven greys, dark to white, for the reader highlight.
+     *
+     * Greys only: a highlight over a white page needs to be BRIGHTER than the page, not a different
+     * colour. Seven because a row of seven is read at a glance and chosen without aiming, where a
+     * slider needs a precise finger and hands back a number nobody asked for.
+     *
+     * **The dark end is not black.** `#000000` on a near-black background is a square that appears
+     * to do nothing, and a highlight set to it disappears into the page — a setting that defeats the
+     * control offering it. `#6E6E73` is the darkest that still reads as a mark, and the row climbs
+     * from there in even steps to white.
+     */
+    val GREYS: List<String> = listOf(
+        "#6E6E73", "#8A8A8E", "#A5A5AA", "#C0C0C4", "#D6D6DA", "#EDEDF0", "#FFFFFF",
+    )
+
     val QUICK: List<String> = listOf("#FFFFFF", "#E8B15C", "#6FE0EE", "#FF6B6B")
 }

@@ -4408,3 +4408,43 @@ modelling `start()` on nothing as *silence* did it reproduce the failure he actu
 **The rule: when a test says the bug does not exist, suspect the test.** It had already been fixed in
 the code, so the test agreeing was worthless — what proved it was the test failing on the old
 behaviour and passing on the new.
+
+---
+
+# 113. Swatches as asked, effects not voices, and the volume keys prove themselves
+
+## The swatches I should have built the first time
+
+He asked for swatches. I built a slider and wrote a paragraph justifying it. **That was not a better
+answer to his question, it was a different question answered instead.**
+
+**Seven greys, dark to white.** Seven because a row of seven is read at a glance and chosen without
+aiming; a slider needs a precise finger and hands back a number nobody asked for.
+
+**The dark end is not black.** `#000000` on a near-black page is a square that appears to do nothing,
+and a highlight set to it disappears into the text — a setting that defeats the control offering it.
+The row starts at `#6E6E73`, the darkest that still reads as a mark.
+
+## Effects, not voices
+
+The voice is chosen once and left; it is taste, settled in an afternoon. **The effect is what changes
+per passage** — void for something hard, highlight for skimming, karaoke to see the sentence coming.
+That is what belongs on a panel opened mid-reading.
+
+The six effects now live in `MaReaderEffects`, shared by the dashboard and the Reader screen, so a
+new one cannot be added to one and forgotten in the other.
+
+## The volume keys, made to prove what happened
+
+The handlers are correct — read twice now, line by line. But *"the volume keys do not work"* has
+**three** causes that are indistinguishable from outside: **the events never reach the keyboard**, the
+switch is off, or the keyboard is not on screen. Only the last two were logged, which is why two
+rounds of checking the handler found nothing.
+
+Every volume press is now logged **before any decision is taken**. If nothing appears in the log when
+he presses volume, the events are not arriving and no amount of reading the handler will help,
+because it is never called.
+
+And a disabled switch now says so **out loud, on screen** rather than only in a log. That switch did
+not exist a week ago, it sits in a list, and one stray tap turns it off. An invisible failure cost him
+days of believing a feature had been deleted; a toast turns it into a fact he cannot miss.

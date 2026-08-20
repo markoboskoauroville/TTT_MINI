@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import android.view.WindowManager
 import android.media.AudioManager
+import android.widget.Toast
 import android.os.SystemClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -856,15 +857,26 @@ class FlorisImeService : LifecycleInputMethodService() {
         // work went into these keys and the next time they seem dead the log should answer it in one
         // line rather than costing another session of searching for lost code.
         val isVolume = keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
-        if (isVolume && !prefs.dictate.maVolumeKeys.get()) {
-            MaLog.add("keys", "volume key ignored: the Volume keys switch is OFF")
-            return false
-        }
-        if (isVolume && !isInputViewShown) {
-            MaLog.add("keys", "volume key ignored: the keyboard is not on screen")
-            return false
-        }
         if (!isVolume) return false
+        // Logged on EVERY volume press, before any decision.
+        //
+        // This is the decisive fact and it was the one missing. "The volume keys do not work" has
+        // three causes and they are indistinguishable from outside: the events never reach the
+        // keyboard at all, the switch is off, or the keyboard is not on screen. A line here proves
+        // the first — if nothing appears in the log when he presses volume, no amount of reading
+        // the handler below will help, because it is never called.
+        MaLog.add("keys", "volume ${if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) "up" else "down"} received")
+        if (!prefs.dictate.maVolumeKeys.get()) {
+            // Said out loud, not only to the log. An invisible failure cost him a week of believing
+            // the feature had been deleted; a toast turns it into a fact he cannot miss.
+            MaLog.add("keys", "ignored: the Volume keys switch is OFF")
+            Toast.makeText(this, "Volume keys are switched off \u2014 Switchboard", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (!isInputViewShown) {
+            MaLog.add("keys", "ignored: the keyboard is not on screen")
+            return false
+        }
         // The system repeats a held key. Only the first press opens a hold; the repeats are
         // swallowed, because the repeating is done here on our own clock.
         if (event != null && event.repeatCount > 0) return true
