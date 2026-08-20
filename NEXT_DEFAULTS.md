@@ -5155,3 +5155,43 @@ All three are on IO and guarded now, and a failure writes a line naming what thr
 shows Re-Transcribe, and pressing it will fail. The row is not corrupt and nothing crashes; the
 button is simply offering something that cannot happen. Fixing it means checking the file exists when
 the row is drawn, which is disk work in a list, so it needs doing carefully rather than quickly.
+
+---
+
+# 134. A row that lost its audio now says so
+
+A row records where a recording was put; it cannot know when something else removes it. Clearing the
+app's storage, a restore that carried the database but not the audio, an OS pruning files — each
+leaves a row insisting it has audio that is gone, and the list then offers **Re-Transcribe on a file
+that cannot be read.**
+
+## Repair, not hide
+
+The quick fix was to check the file while drawing each row and quietly not offer the button. That is
+**disk work inside a scrolling list**, it runs again on every recomposition, and it leaves the
+database still lying — the same wrong answer handed to every other reader.
+
+`repairMissingAudio` writes the truth once instead: any row whose file is missing has its `audioPath`
+cleared. **The transcript is untouched — losing a file is not a reason to lose the words.**
+
+## Three things that make it safe
+
+**It cannot loop.** A row is only written when the path is set *and* the file is missing; afterwards
+the path is null, so the next pass skips it. The write triggers one more emission of the list, and
+that emission finds nothing to do.
+
+**A failed check leaves the row alone.** `exists()` throwing — a revoked permission, an unmounted
+volume — returns *true* by default, so an unreadable check can never destroy a good pointer. **Only a
+definite answer is acted on.**
+
+**Once per opening, not per row.** `LaunchedEffect(Unit)` on IO, in both the keyboard panel and the
+settings screen, because they read the same rows and a fix in one that leaves the other lying is not
+a fix.
+
+It says nothing when nothing was wrong, which is every ordinary open.
+
+## Tested
+
+Seven cases: no repairs when every file is present, exactly one when one is missing, **the second
+pass doing nothing** (the convergence property), all-missing then stable, rows without audio skipped,
+a throwing check leaving the row intact, and the transcript surviving in every case. 0 failures.

@@ -322,6 +322,46 @@ object DictateHistoryStore {
         db(context).dao().clearAudio(entry.id)
     }
 
+    /**
+     * Clears `audioPath` on any row whose file is no longer on disk.
+     *
+     * ### Why the rows go stale at all
+     *
+     * The database records where a recording was put; it cannot know when something else removes it.
+     * Clearing the app's storage, a restore from a backup that carried the database but not the
+     * audio, an OS pruning files — any of these leave a row insisting it has audio that is gone, and
+     * the list then offers **Re-Transcribe on a file that cannot be read.**
+     *
+     * ### Repair, not hide
+     *
+     * The alternative was to check the file while drawing each row and quietly not offer the button.
+     * That is disk work inside a scrolling list, it runs again on every recomposition, and it leaves
+     * the database still lying — the same wrong answer given to everything else that reads it.
+     *
+     * Writing the truth once fixes it for every reader, and the transcript is untouched: **losing a
+     * file is not a reason to lose the words.**
+     *
+     * ### It cannot loop
+     *
+     * Rows are only written when `audioPath` is set AND the file is missing. Afterwards the path is
+     * null, so the next pass skips them. A repair triggers one more emission of the list and that
+     * emission finds nothing to do.
+     *
+     * Returns how many rows were repaired, so the caller can say nothing when the answer is zero —
+     * which it is on every ordinary open.
+     */
+    suspend fun repairMissingAudio(context: Context): Int {
+        val dao = db(context).dao()
+        var repaired = 0
+        for (entry in dao.getAllNewestFirst()) {
+            val path = entry.audioPath ?: continue
+            if (runCatching { File(path).exists() }.getOrDefault(true)) continue
+            dao.clearAudio(entry.id)
+            repaired++
+        }
+        return repaired
+    }
+
     suspend fun clearAll(context: Context) {
         db(context).dao().deleteAll()
         runCatching { audioDir(context).deleteRecursively() }

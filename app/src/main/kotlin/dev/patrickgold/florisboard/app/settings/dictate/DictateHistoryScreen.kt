@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.app.settings.dictate
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -126,6 +128,14 @@ fun DictateHistoryScreen() = FlorisScreen {
     val maxAgeDays by prefs.dictate.historyMaxAgeDays.collectAsState()
     val audioBudgetMb by prefs.dictate.historyAudioBudgetMb.collectAsState()
     val entries by remember { DictateHistoryStore.flow(context) }.collectFlowAsState(initial = emptyList())
+    // The same repair the keyboard panel runs, because this screen reads the same rows and would
+    // otherwise keep offering a re-transcribe on audio that is gone. Once per opening, on IO, and
+    // silent when there was nothing wrong.
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            runCatching { DictateHistoryStore.repairMissingAudio(context) }
+        }
+    }
 
     var confirmClear by remember { mutableStateOf(false) }
     var showLimits by remember { mutableStateOf(false) }

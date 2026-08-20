@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.TextButton
 import android.text.format.DateUtils
@@ -102,6 +104,22 @@ fun DictateHistoryLayout(
         flow { emitAll(DictateHistoryStore.flow(context)) }.flowOn(Dispatchers.IO)
     }.collectAsState(initial = null)
 
+    // Once when the panel opens, never while it scrolls.
+    //
+    // A row can outlive its audio file — storage cleared, a backup that carried the database but not
+    // the recordings — and it then offers Re-Transcribe on something that cannot be read.
+    //
+    // Checked HERE and not in the row: a file check inside a list item is disk work during scrolling
+    // and it runs again on every recomposition. `LaunchedEffect(Unit)` runs it once per opening, on
+    // IO, and the repair writes the truth into the database so every other reader is fixed too.
+    //
+    // Nothing is said when nothing was wrong, which is every ordinary open.
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val repaired = runCatching { DictateHistoryStore.repairMissingAudio(context) }.getOrDefault(0)
+            if (repaired > 0) MaLog.add("history", "$repaired row(s) had lost their audio, cleared")
+        }
+    }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     // Which entry is being deleted, if any. The three deletions are genuinely different outcomes, so
