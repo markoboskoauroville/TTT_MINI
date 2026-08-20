@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.app.settings.dictate
 
+import androidx.compose.ui.draw.alpha
+import androidx.compose.runtime.remember
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.ClosedCaption
@@ -92,178 +94,118 @@ fun MaSwitchboardScreen() = FlorisScreen {
 
         Spacer(Modifier.height(8.dp))
 
-        Section("On the keyboard")
+        // One list, in his order, with no headings and no prose.
+        //
+        // It had three headings and a paragraph of explanation, and he said plainly that he already
+        // knows what "on the keyboard" means. He is right: a heading that names a category he can
+        // see is a line to scroll past, and a switchboard is read at a glance or not at all.
+        //
+        // Rearrangeable for the same reason the settings list and the rows are. **The one he uses
+        // most goes at the top**, and only he knows which that is — a shipped order is a guess, and
+        // a guess repeated every day is worse than a control.
+        val scope = rememberCoroutineScope()
+        val raw by prefs.dictate.maSwitchboardOrder.collectAsState()
+        val items = remember(raw) { MaSwitchboardOrder.parse(raw) }
 
-        MaSwitchRow(
-            title = "The keys",
-            summary = "The letters and the bottom row \u2014 off leaves the rows and the microphone",
-            icon = Icons.Default.Keyboard,
-            pref = prefs.dictate.maZoneKeyboard,
-            route = null,
-        )
-        MaSwitchRow(
-            title = "Number row",
-            summary = "Digits along the top of the letters",
-            icon = Icons.Default.Numbers,
-            pref = prefs.dictate.maExtraRow,
-            // No screen of its own: it is one switch and nothing else, so sending him to a page
-            // holding that same switch would be a journey to arrive where he already was.
-            route = null,
-        )
-        MaSwitchRow(
-            title = "Feature row",
-            summary = "The rows of keys above the keyboard",
-            icon = Icons.Default.DragHandle,
-            pref = prefs.dictate.maFeatureRowShown,
-            route = Routes.Settings.MaFeatureRow,
-        )
-        MaSwitchRow(
-            title = "Suggestion row",
-            summary = "Word predictions above the keys",
-            icon = Icons.Default.Spellcheck,
-            pref = prefs.suggestion.enabled,
-            route = Routes.Settings.MaPredictions,
-        )
-
-        Section("The copy row")
-
-        MaSwitchRow(
-            title = "Copy row here",
-            summary = "Select all, paste, cut and the histories, on the typing keyboard",
-            icon = Icons.Default.ContentPaste,
-            pref = prefs.dictate.maCopyRowOnKeyboard,
-            route = Routes.Settings.MaCopyRow,
-        )
-        MaSwitchRow(
-            title = "Copy row in dictation",
-            summary = "The same row, in the transcription view",
-            icon = Icons.Default.ContentPasteGo,
-            pref = prefs.dictate.maCopyRowOnDictate,
-            route = Routes.Settings.MaCopyRow,
-        )
-        MaSwitchRow(
-            title = "Edit row",
-            summary = "The copy and paste strip both views share",
-            icon = Icons.Default.ContentCut,
-            pref = prefs.dictate.maEditRow,
-            route = null,
-        )
-        MaSwitchRow(
-            title = "Copy buckets",
-            summary = "C1 to C10, and whether they catch what you copy",
-            icon = Icons.Default.Inventory2,
-            pref = prefs.dictate.maBucketsEnabled,
-            route = Routes.Settings.MaBuckets,
-        )
-
-        Section("Pressing and speaking")
-
-        MaSwitchRow(
-            title = "Magic Finger row",
-            summary = "The magic finger and one key for each thing it presses",
-            icon = Icons.Default.TouchApp,
-            pref = prefs.dictate.maMagicRowShown,
-            route = Routes.Settings.MaMagic,
-        )
-        MaSwitchRow(
-            title = "Volume keys",
-            summary = "Up records, down sends. Off gives the keys back to the volume",
-            icon = Icons.AutoMirrored.Filled.VolumeUp,
-            pref = prefs.dictate.maVolumeKeys,
-            route = null,
-        )
-        MaSwitchRow(
-            title = "Subtitle row",
-            summary = "The words as they are read aloud",
-            icon = Icons.Default.ClosedCaption,
-            // A string preference behind a switch: "subtitle" or "off", because the third value
-            // lives on the spacebar and belongs in the Reader screen where it can be explained.
-            // Switching it back on returns it to the subtitle row, which is what he last had.
-            stringPref = prefs.dictate.maReaderDisplay,
-            onValue = "subtitle",
-            offValue = "off",
-            route = Routes.Settings.MaReader,
-        )
-        MaSwitchRow(
-            title = "Full screen reading",
-            summary = "The whole passage, with the line being read at the top",
-            icon = Icons.Default.Fullscreen,
-            pref = prefs.dictate.maReaderFullscreen,
-            route = Routes.Settings.MaReader,
-        )
+        MaReorderableColumn(
+            items = items,
+            rowHeight = SWITCH_ROW_HEIGHT,
+            onMove = { from, to ->
+                val next = items.toMutableList()
+                next.add(to, next.removeAt(from))
+                scope.launch { prefs.dictate.maSwitchboardOrder.set(MaSwitchboardOrder.serialize(next)) }
+            },
+            onSettled = { },
+        ) { _, entry, lifted ->
+            MaSwitchRowFor(entry = entry, lifted = lifted)
+        }
 
         Spacer(Modifier.height(24.dp))
     }
 }
 
 /**
- * One row backed by a boolean.
+ * One row, chosen by id.
  *
- * Two entry points rather than one function with both kinds of preference in it, because reading a
- * preference in Compose has to happen the same way on every pass. A single function branching on
- * which kind it was given would call `collectAsState` a different number of times depending on the
- * argument, which is the sort of thing that works until it does not.
+ * A `when` over the entry rather than a list of composables built up front, so a switch that reads a
+ * preference only reads it when it is actually drawn.
  */
+@Composable
+private fun MaSwitchRowFor(entry: MaSwitchboardOrder.Entry, lifted: Boolean) {
+    val prefs by FlorisPreferenceStore
+    val modifier = if (lifted) Modifier.alpha(0.7f) else Modifier
+    when (entry) {
+        MaSwitchboardOrder.Entry.KEYS ->
+            MaSwitchRow("The keys", Icons.Default.Keyboard, prefs.dictate.maZoneKeyboard, null, modifier)
+        MaSwitchboardOrder.Entry.NUMBER_ROW ->
+            MaSwitchRow("Number row", Icons.Default.Numbers, prefs.dictate.maExtraRow, null, modifier)
+        MaSwitchboardOrder.Entry.FEATURE_ROW ->
+            MaSwitchRow("Feature row", Icons.Default.DragHandle, prefs.dictate.maFeatureRowShown, Routes.Settings.MaFeatureRow, modifier)
+        MaSwitchboardOrder.Entry.SUGGESTIONS ->
+            MaSwitchRow("Suggestion row", Icons.Default.Spellcheck, prefs.suggestion.enabled, Routes.Settings.MaPredictions, modifier)
+        MaSwitchboardOrder.Entry.COPY_KEYBOARD ->
+            MaSwitchRow("Copy row here", Icons.Default.ContentPaste, prefs.dictate.maCopyRowOnKeyboard, Routes.Settings.MaCopyRow, modifier)
+        MaSwitchboardOrder.Entry.COPY_DICTATION ->
+            MaSwitchRow("Copy row in dictation", Icons.Default.ContentPasteGo, prefs.dictate.maCopyRowOnDictate, Routes.Settings.MaCopyRow, modifier)
+        MaSwitchboardOrder.Entry.EDIT_ROW ->
+            MaSwitchRow("Edit row", Icons.Default.ContentCut, prefs.dictate.maEditRow, null, modifier)
+        MaSwitchboardOrder.Entry.BUCKETS ->
+            MaSwitchRow("Copy buckets", Icons.Default.Inventory2, prefs.dictate.maBucketsEnabled, Routes.Settings.MaBuckets, modifier)
+        MaSwitchboardOrder.Entry.MAGIC_ROW ->
+            MaSwitchRow("Magic Finger row", Icons.Default.TouchApp, prefs.dictate.maMagicRowShown, Routes.Settings.MaMagic, modifier)
+        MaSwitchboardOrder.Entry.VOLUME_KEYS ->
+            MaSwitchRow("Volume keys", Icons.AutoMirrored.Filled.VolumeUp, prefs.dictate.maVolumeKeys, null, modifier)
+        MaSwitchboardOrder.Entry.FULLSCREEN ->
+            MaSwitchRow("Full screen reading", Icons.Default.Fullscreen, prefs.dictate.maReaderFullscreen, Routes.Settings.MaReader, modifier)
+        MaSwitchboardOrder.Entry.SUBTITLE ->
+            MaSwitchRow("Subtitle row", Icons.Default.ClosedCaption, prefs.dictate.maReaderDisplay, "subtitle", "off", Routes.Settings.MaReader, modifier)
+    }
+}
+
 @Composable
 private fun MaSwitchRow(
     title: String,
-    summary: String,
     icon: ImageVector,
     pref: PreferenceData<Boolean>,
     route: Any?,
+    modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     val checked by pref.collectAsState()
-    MaSwitchRowBase(title, summary, icon, checked, route) { on ->
+    MaSwitchRowBase(title, icon, checked, route, modifier) { on ->
         scope.launch { pref.set(on) }
     }
 }
 
-/**
- * One row backed by a word.
- *
- * The subtitle row stores `subtitle`, `spacebar` or `off`, because it has three values and only two
- * of them are shown. A switch is still the honest control: he is asking for it or not, and *where*
- * it appears is a choice for the Reader screen where there is room to explain it. Switching it back
- * on returns the value he is most likely to want rather than the one he last had, because the one he
- * last had was `off`.
- */
 @Composable
 private fun MaSwitchRow(
     title: String,
-    summary: String,
     icon: ImageVector,
     stringPref: PreferenceData<String>,
     onValue: String,
     offValue: String,
     route: Any?,
+    modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     val value by stringPref.collectAsState()
-    MaSwitchRowBase(title, summary, icon, value != offValue, route) { on ->
+    MaSwitchRowBase(title, icon, value != offValue, route, modifier) { on ->
         scope.launch { stringPref.set(if (on) onValue else offValue) }
     }
 }
 
-/**
- * The row itself: a name that opens a screen, and a switch that does not.
- *
- * The switch has its own click target rather than the whole row toggling, because the row navigates.
- * A line where tapping anywhere does one thing and tapping a small part does another is only safe
- * when the small part is obviously a control, which a switch is.
- */
 @Composable
 private fun MaSwitchRowBase(
     title: String,
-    summary: String,
     icon: ImageVector,
     checked: Boolean,
     route: Any?,
+    rowModifier: Modifier,
     onToggle: (Boolean) -> Unit,
 ) {
     val navController = LocalNavController.current
     Row(
-        modifier = Modifier
+        modifier = rowModifier
             .fillMaxWidth()
             .heightIn(min = 64.dp)
             .then(
@@ -296,13 +238,6 @@ private fun MaSwitchRowBase(
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (route != null) MaSand else MaterialTheme.colorScheme.onSurface,
             )
-            // Summaries stay grey. They describe, they do not lead anywhere, and colouring them
-            // would say they did.
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
         Spacer(Modifier.width(12.dp))
         Switch(
@@ -331,3 +266,6 @@ private fun Section(title: String) {
  * save four characters would tie two things together that are only equal by coincidence today.
  */
 private val MaSand = Color(0xFFE8B15C)
+
+/** One switch row, tall enough for a 24dp icon and a name with room around them. */
+private val SWITCH_ROW_HEIGHT = 64.dp

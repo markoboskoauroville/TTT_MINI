@@ -851,11 +851,20 @@ class FlorisImeService : LifecycleInputMethodService() {
      * he meant.
      */
     private fun maHandleVolumeKey(keyCode: Int, event: KeyEvent?): Boolean {
-        if (!prefs.dictate.maVolumeKeys.get()) return false
-        if (!isInputViewShown) return false
-        if (keyCode != KeyEvent.KEYCODE_VOLUME_UP && keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) {
+        // Say WHY when it declines, because "the volume keys stopped working" has two causes that
+        // look identical from outside: the switch is off, or the keyboard is not on screen. Weeks of
+        // work went into these keys and the next time they seem dead the log should answer it in one
+        // line rather than costing another session of searching for lost code.
+        val isVolume = keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+        if (isVolume && !prefs.dictate.maVolumeKeys.get()) {
+            MaLog.add("keys", "volume key ignored: the Volume keys switch is OFF")
             return false
         }
+        if (isVolume && !isInputViewShown) {
+            MaLog.add("keys", "volume key ignored: the keyboard is not on screen")
+            return false
+        }
+        if (!isVolume) return false
         // The system repeats a held key. Only the first press opens a hold; the repeats are
         // swallowed, because the repeating is done here on our own clock.
         if (event != null && event.repeatCount > 0) return true

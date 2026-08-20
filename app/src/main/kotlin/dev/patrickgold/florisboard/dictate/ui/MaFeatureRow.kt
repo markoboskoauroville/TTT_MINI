@@ -878,6 +878,9 @@ fun MaFeatureRow(
                     // row — a toggle that appears not to have worked.
                     ThemedTextKey(
                         label = remember(activeLangCode, langMode) { MaLanguage.badge() },
+                        // ENG and HR is a switcher: it changes which language is heard, and types
+                        // nothing.
+                        switcher = true,
                         modifier = keyMod,
                         tint = null,
                     ) {
@@ -975,6 +978,8 @@ fun MaFeatureRow(
                         // an amateur patch however carefully it is proportioned. Colour still says
                         // whether the zone is open, the way it does everywhere in this app.
                         modifier = keyMod,
+                        // A switcher: it changes what the keyboard shows rather than typing.
+                        switcher = true,
                         onClick = { scope.launch { prefs.dictate.maExtraRow.set(!zone1) } },
                     ) { fg ->
                         Icon(
@@ -999,6 +1004,8 @@ fun MaFeatureRow(
                         // an amateur patch however carefully it is proportioned. Colour still says
                         // whether the zone is open, the way it does everywhere in this app.
                         modifier = keyMod,
+                        // A switcher: it changes what the keyboard shows rather than typing.
+                        switcher = true,
                         onClick = { scope.launch { prefs.dictate.maZoneKeyboard.set(!zone2) } },
                     ) { fg ->
                         Icon(
@@ -1022,6 +1029,8 @@ fun MaFeatureRow(
                         // an amateur patch however carefully it is proportioned. Colour still says
                         // whether the zone is open, the way it does everywhere in this app.
                         modifier = keyMod,
+                        // A switcher: it changes what the keyboard shows rather than typing.
+                        switcher = true,
                         onClick = { scope.launch { prefs.dictate.maEditRow.set(!zone3) } },
                     ) { fg ->
                         Icon(
@@ -1155,6 +1164,8 @@ internal fun ThemedTextKey(
     label: String,
     modifier: Modifier,
     tint: Color?,
+    /** A switcher rather than an action. See [ThemedIconKey]. */
+    switcher: Boolean = false,
     // Optional and null by default. The fold gesture that every key once had is gone, so a long
     // press here means whatever the individual key decides — the scroll key uses it for its stepper
     // and most keys use it for nothing.
@@ -1164,6 +1175,7 @@ internal fun ThemedTextKey(
     ThemedKey(
         code = KeyCode.NOOP,
         modifier = modifier,
+        switcher = switcher,
         onLongClick = onLongClick,
         onClick = onClick,
     ) { fg ->

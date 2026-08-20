@@ -1241,6 +1241,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = 17,
         )
 
+        /**
+         * The switchboard's own order, as ids separated by commas.
+         *
+         * Empty means the order it ships in. Stored like every other arrangement in this app,
+         * because the switchboard is a list he uses constantly and the one he uses most should be
+         * at the top — his rule, and the same one that governs the settings list and the rows.
+         */
+        val maSwitchboardOrder = string(
+            key = "dictate__ma_switchboard_order",
+            default = "",
+        )
+
         val maReaderStyle = string(
             key = "dictate__ma_reader_style",
             default = "highlight",

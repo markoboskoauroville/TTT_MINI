@@ -427,6 +427,8 @@ fun LegacyDictateLayout(
 internal fun ThemedKey(
     code: Int,
     modifier: Modifier = Modifier,
+    /** Draws the switcher ring. See [ThemedIconKey]. */
+    switcher: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
     content: @Composable (foreground: Color) -> Unit,
@@ -446,6 +448,15 @@ internal fun ThemedKey(
             .padding(horizontal = KeyMarginH, vertical = KeyMarginV)
             .clip(LegacyKeyShape)
             .background(bg)
+            // After the background and on the same shape, so the ring sits on the key's own edge
+            // rather than outside its margins or cutting across its corners.
+            .then(
+                if (switcher) {
+                    Modifier.border(1.5.dp, MaSwitcherRing, LegacyKeyShape)
+                } else {
+                    Modifier
+                },
+            )
             .combinedClickable(
                 interactionSource = interaction,
                 indication = ripple(),
@@ -467,13 +478,34 @@ internal fun ThemedIconKey(
     modifier: Modifier = Modifier,
     tint: Color? = null,
     iconSize: Dp = 22.dp,
+    /**
+     * Whether this key SWITCHES something rather than doing it.
+     *
+     * A ring in the ordinary ink, no colour. The row mixes two kinds of key that look identical and
+     * behave nothing alike: a clipboard icon that pastes, and a clipboard icon that shows the copy
+     * row. Nothing on the face can tell them apart — they are the same picture — so the distinction
+     * has to be around the key rather than inside it.
+     *
+     * Deliberately not a colour. Colour is the state channel: green means this switcher is ON, and
+     * a second colour meaning "this is a switcher" would give one channel two jobs. The ring says
+     * *kind*; the ink says *state*. Monochrome, because he asked for an app that is not colourful
+     * and because a row of tinted keys reads as decoration.
+     */
+    switcher: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    ThemedKey(code = code, modifier = modifier, onLongClick = onLongClick, onClick = onClick) { fg ->
+    ThemedKey(
+        code = code,
+        modifier = modifier,
+        switcher = switcher,
+        onLongClick = onLongClick,
+        onClick = onClick,
+    ) { fg ->
         Icon(imageVector = icon, contentDescription = contentDescription, tint = tint ?: fg, modifier = Modifier.size(iconSize))
     }
 }
+
 
 /**
  * Editing-action row. The buttons are user-configurable (issue #183/#194): the ordered set comes from
@@ -1665,3 +1697,12 @@ internal val MaRecordInk = Color(0xFFE8B15C)
  */
 internal val MaStatusFontSize = 13.sp
 internal val MaStatusFontFamily = FontFamily.Monospace
+
+/**
+ * The switcher ring: the ordinary ink, held back.
+ *
+ * Not a colour of its own. Colour is the state channel — green means a switcher is on — and a second
+ * colour meaning "this is a switcher" would give one channel two jobs. Low alpha so a row of them
+ * reads as a set rather than as an alarm.
+ */
+private val MaSwitcherRing = Color(0xFFF2DDB4).copy(alpha = 0.55f)

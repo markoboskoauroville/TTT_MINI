@@ -4266,3 +4266,53 @@ Swatches is the default view. Four of them also sit on the dashboard, where ther
 It called `jetpref` and `kotlinx` imports unresolved, because it searched only `app/` and `lib/`.
 Reporting that a dependency lives outside the repository is true and useless. It now checks only
 imports this repository could satisfy.
+
+---
+
+# 110. Switchers get a ring, the switchboard gets his order, and the volume keys say why
+
+## The volume keys
+
+**Nothing was lost in the split.** `onKeyDown`, `onKeyUp`, `maHandleVolumeKey` and
+`maFinishVolumeKey` are all intact and correct — up records, down while recording stops and sends,
+down otherwise presses the target. The code that took weeks is there.
+
+What is missing is an explanation when it declines, and there are exactly two reasons: **the Volume
+keys switch is off**, or **the keyboard is not on screen**. Those look identical from outside, and
+one of them is now reachable by a stray tap on the switchboard that did not exist a week ago.
+
+Both now write a line to the log naming the cause. The next time these seem dead, `log` answers it in
+one line rather than costing a session searching for code that was never lost.
+
+## Switchers wear a ring
+
+The row mixes two kinds of key that look identical and behave nothing alike: **a clipboard icon that
+pastes, and a clipboard icon that shows the copy row.** Same picture, opposite jobs. Nothing on the
+face can separate them, so the distinction goes around the key.
+
+A ring in the ordinary ink at 55% — **not a colour.** Colour is the state channel: green means a
+switcher is ON, and a second colour meaning "this is a switcher" would give one channel two jobs. The
+ring says *kind*; the ink says *state*. Monochrome, as he asked.
+
+Worn by the three zone keys and the language badge. Any future key that switches rather than types
+passes `switcher = true`.
+
+Drawn **after the background and on the key's own shape** — the first attempt put it on the modifier
+before `ThemedKey`'s own padding, which would have placed it outside the key entirely.
+
+## The switchboard is one list, in his order
+
+Three headings and a paragraph of prose are gone. He said he already knows what "on the keyboard"
+means, and he is right: **a heading naming a category he can see is a line to scroll past.** Titles
+and icons only.
+
+And it drags. Every list he reads often is arrangeable — the settings home, the rows, the copy row —
+and the switchboard was the last one still in an order somebody else chose. **A shipped order is a
+guess, and a guess repeated every day is worse than a control.**
+
+**Stored by id, never by position.** A list of numbers would mean something different the moment a
+switch is added. Unknown ids are dropped, missing ones **appended rather than hidden**, so a switch
+added next year is reachable by somebody whose arrangement predates it.
+
+Tested: 5 cases, and the invariant that every switch is present exactly once whatever is stored —
+empty, unknown, duplicated, partial.
