@@ -126,12 +126,22 @@ def check_duplicate_declarations(path: Path, text: str) -> None:
     scope: list[int] = []
     counter = 0
     seen: set[tuple[tuple[int, ...], str]] = set()
-    decl = re.compile(r"^\s*(?:private |internal |public |@Volatile |const |lateinit )*va[lr] (\w+)\s*[:=]")
+    # Functions as well as properties. Two definitions of one composable compiled fine twice in this
+    # project — Kotlin only complains when something calls the ambiguous name, so a duplicate that
+    # nothing calls yet sits there silently until an edit wakes it up.
+    decl = re.compile(
+        r"^\s*(?:private |internal |public |@Volatile |const |lateinit |suspend |inline )*"
+        r"(?:va[lr]|fun) (\w+)\s*[:=(]"
+    )
 
     for line in code.splitlines():
         m = decl.match(line)
         if m:
-            key = (tuple(scope), m.group(1))
+            # Keyed by name AND the parameter list, because Kotlin allows overloads: `fun clear()`
+            # and `fun clear(mode: Mode)` are two functions, not a mistake. Comparing names alone
+            # raised seventy complaints about code that has compiled for years.
+            sig = line.split("(", 1)[1] if "(" in line else ""
+            key = (tuple(scope), m.group(1), sig.strip())
             if key in seen:
                 fail(path.name, f"declared twice in the same scope: {m.group(1)}")
             seen.add(key)

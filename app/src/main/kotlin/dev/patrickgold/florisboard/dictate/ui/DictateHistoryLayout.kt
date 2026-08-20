@@ -456,48 +456,6 @@ private fun HistoryPanelRow(
     }
 }
 
-/**
- * The delete choice, as a strip along the bottom of the panel rather than a dialog.
- *
- * A dialog over a keyboard is awkward: it steals focus from the field being typed into and can push
- * the panel around. A strip stays inside the keyboard's own bounds and reads as part of it.
- */
-@Composable
-private fun MaDeleteChooser(
-    accent: Color,
-    onAudioOnly: () -> Unit,
-    onEverything: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    SnyggRow(
-        elementName = FlorisImeUi.MediaBottomRow.elementName,
-        modifier = Modifier.fillMaxWidth().padding(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        MaHistoryAction(
-            label = "Audio only",
-            enabled = true,
-            tint = MaDestructive,
-            onClick = onAudioOnly,
-            modifier = Modifier.weight(1f),
-        )
-        MaHistoryAction(
-            label = "Delete both",
-            enabled = true,
-            tint = MaDestructive,
-            onClick = onEverything,
-            modifier = Modifier.weight(1f),
-        )
-        MaHistoryAction(
-            label = "Cancel",
-            enabled = true,
-            tint = accent,
-            onClick = onCancel,
-            modifier = Modifier.weight(0.8f),
-        )
-    }
-}
-
 /** One labelled action. Text rather than an icon, because the words are the whole point here. */
 @Composable
 private fun MaHistoryAction(

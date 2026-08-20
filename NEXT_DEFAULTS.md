@@ -5046,8 +5046,14 @@ exactly what it always was.
 
 ## Delete had fallen off the row
 
-It was in a stale second copy of `HistoryPanelRow` that an earlier edit of mine left behind — two
-definitions of the same function, and the file compiled, so nothing said so. One copy now.
+It was in a stale second copy of `HistoryPanelRow` that an earlier edit of mine left behind — and
+removing that revealed a second duplicate, `MaDeleteChooser`, which then failed the build with
+"conflicting overloads".
+
+**Kotlin only complains when something calls the ambiguous name**, so a duplicate that nothing calls
+yet sits there silently until an edit wakes it up. `verify.py` checked duplicate properties but not
+duplicate functions; it does both now, **keyed by name and parameter list** — comparing names alone
+raised seventy complaints about legitimate overloads, which is how a checker gets ignored.
 
 ## The note carries the colour, not its title
 
