@@ -4052,3 +4052,41 @@ edits, and it still catches the real one.
 
 **All five reproduced red builds caught, 5 of 5.** Then end to end: two real faults injected into a
 real file → exit 1 naming both; restored → exit 0.
+
+---
+
+# 105. The controller starts coming apart, at the only seam that is free
+
+`DictateController` was 3,821 lines holding recording, transcription, history, prompts, audio routing
+and provider resolution. It is 3,657 now, with **`MaProviders.kt`** holding the last of those.
+
+## Why this block and not a bigger one
+
+The obvious candidate was history — eleven functions, contiguous, 230 lines. It reads `_state`,
+`transcribe` and the output sink, so moving it would mean **making the controller's private state
+public purely to relocate code.** That trades one problem for a worse one, and the worse one is
+permanent.
+
+This block was measured before it was moved: **it reads nothing but preferences.** No state, no sink,
+no scope. It answers questions — which account, which preset, which model, may this take the fast
+path — from settings alone, which is exactly the shape that belongs outside a controller.
+
+**The rule for the next extraction:** measure what a block touches before deciding to move it. A
+seam that requires widening visibility is not a seam.
+
+## What the file must never become
+
+A place where anything is decided by side effect. Everything in it is a pure question about
+configuration; the moment something there writes a preference or touches the UI, it has stopped
+being resolution and belongs back in the controller.
+
+## The red build this avoided
+
+`maUseSyncPath` uses `SYNC_SAFE_LANGUAGES`, a **private** const still sitting in the controller.
+Moved with it, since its only user went with it — and the doc comment went too, because the reason
+it is an allow-list is the whole value of the line.
+
+`scripts/verify.py` did **not** catch this: it reads one file at a time and cannot see a symbol that
+left its declaration behind. That gap is now known, and the check that found it — listing every
+capitalised symbol a moved file uses and confirming each is imported or same-package — should be
+added to the script next.

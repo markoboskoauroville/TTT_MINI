@@ -512,17 +512,6 @@ object DictateController {
     private const val MIN_SYNC_SECONDS = 0.5
     private const val SYNC_SECONDS_MARGIN = 2.0
 
-    /** 20 Hz is responsive for a voice indicator while avoiding a display-rate UI loop. */
-    /**
-     * The only languages allowed on the Sync path.
-     *
-     * An allow-list on purpose. Sync's fast model is strong on English and returns confident nonsense
-     * on Croatian — fluent-sounding sentences that are the wrong words — so the cost of guessing
-     * wrong is a transcript nobody can tell is broken. A language stays slow until its Sync output
-     * has actually been read by somebody. Slow costs seconds; wrong costs the sentence.
-     */
-    private val SYNC_SAFE_LANGUAGES = setOf("en")
-
     private const val AUDIO_LEVEL_SAMPLE_MS = 50L
 
     /** Cumulative recorded audio (seconds) after which the rate / donate nudges appear (roadmap 9.7/9.8). */
@@ -1038,7 +1027,7 @@ object DictateController {
         // No key AND no local model. Both are checked because forceLocal is decided when he stops
         // rather than when he starts — holding send picks the on-device engine — so refusing on a
         // missing key alone would block a recording he intended to transcribe offline.
-        val noKey = transcriptionAccount().apiKey.isBlank()
+        val noKey = MaProviders.transcriptionAccount().apiKey.isBlank()
         val noLocalModel = LocalModelManager.installedIds(context.applicationContext).isEmpty()
         if (noKey && noLocalModel) {
             _state.value = UiState.Error(
@@ -1296,11 +1285,11 @@ object DictateController {
         latencyTrace: BatchLatencyTrace = BatchLatencyTrace(),
     ) {
         logLatency(latencyTrace, "transcribeEntered")
-        val account = if (forceLocal) localTranscriptionAccount() else transcriptionAccount()
+        val account = if (forceLocal) MaProviders.localTranscriptionAccount() else MaProviders.transcriptionAccount()
         val apiKey = account.apiKey
-        val preset = presetFor(account)
+        val preset = MaProviders.presetFor(account)
         val appContext = context.applicationContext
-        val model = transcriptionModelFor(appContext, account, preset, "gpt-4o-mini-transcribe")
+        val model = MaProviders.transcriptionModelFor(appContext, account, preset, "gpt-4o-mini-transcribe")
         // History metadata (issue #140), resolved once so the success (capture) and EVERY failure path —
         // including the early returns below (no key / model not downloaded) — log the same info.
         val historyProviderName = account.displayName.ifBlank { preset.displayName }
@@ -1342,7 +1331,7 @@ object DictateController {
             }
         }
 
-        if (apiKey.isBlank() && requiresKey(account)) {
+        if (apiKey.isBlank() && MaProviders.requiresKey(account)) {
             _state.value = UiState.Error(
                 message = context.getString(R.string.dictate__error_no_api_key),
                 kind = DictateApiException.Kind.INVALID_API_KEY,
@@ -1456,7 +1445,7 @@ object DictateController {
                         if (uploadFile !== audioFile) runCatching { uploadFile.delete() }
                         uploadFile = resampled
                     }
-                    maFast = maUseSyncPath(preset, chatAudio, uploadFile)
+                    maFast = MaProviders.maUseSyncPath(preset, chatAudio, uploadFile)
                     // The AAC encode is for the async path only: Sync accepts WAV and PCM and nothing
                     // else, so encoding first would guarantee a rejection.
                     if (!maFast) {
@@ -1543,7 +1532,7 @@ object DictateController {
                                     sendPreset, maKey,
                                     // Sync has its own host and is never user-editable, so an override
                                     // belonging to the account would point it at the wrong one.
-                                    baseUrlOverride = if (fast) null else baseUrlOverrideFor(account),
+                                    baseUrlOverride = if (fast) null else MaProviders.baseUrlOverrideFor(account),
                                     proxy = prefs.dictate.dictateProxyConfig(),
                                     // Single-call multimodal (issue #130): route audio through chat/completions.
                                     useChatAudio = chatAudio,
@@ -1598,7 +1587,7 @@ object DictateController {
                     } catch (e: DictateApiException) {
                         // Offline fallback (#104): the cloud call failed because we're offline (after its
                         // retries) — transcribe on-device with the downloaded model instead of erroring.
-                        val fallback = localFallbackProvider(appContext, preset, e) ?: throw e
+                        val fallback = MaProviders.localFallbackProvider(appContext, preset, e) ?: throw e
                         _state.value = UiState.Transcribing()
                         LocalTranscriptionProvider.setIdleUnloadMillis(
                             prefs.dictate.localModelUnloadMinutes.get() * 60_000L,
@@ -1862,11 +1851,11 @@ object DictateController {
     /** The realtime wire API to use for the active transcription account, or null if realtime shouldn't run. */
     private fun realtimeApiForActiveAccount(): RealtimeApi? {
         if (!prefs.dictate.realtimeTranscription.get()) return null
-        val account = transcriptionAccount()
+        val account = MaProviders.transcriptionAccount()
         // The raw field on purpose: this only asks whether any key exists at all, and the ring can
         // legitimately have flagged every one of them without that meaning realtime is unavailable.
         if (account.apiKey.isBlank()) return null
-        val preset = presetFor(account)
+        val preset = MaProviders.presetFor(account)
         return if (preset.supportsRealtime) preset.realtimeApi else null
     }
 
@@ -1877,8 +1866,8 @@ object DictateController {
      */
     private fun localStreamingModelDir(context: Context): File? {
         if (!prefs.dictate.realtimeTranscription.get()) return null
-        val account = transcriptionAccount()
-        if (presetFor(account).transcriptionApi != TranscriptionApi.LOCAL_ONDEVICE) return null
+        val account = MaProviders.transcriptionAccount()
+        if (MaProviders.presetFor(account).transcriptionApi != TranscriptionApi.LOCAL_ONDEVICE) return null
         // The live model has its own slot on the local account (#233) — `realtimeModel`, which for this
         // provider means the streaming model rather than a remote model id. The one-shot slot is also
         // accepted as a source: before the two slots existed a streaming model could only be picked
@@ -1915,8 +1904,8 @@ object DictateController {
         // realtimeApiForActiveAccount() would reject it before ever getting here.
         val localModelDir = localStreamingModelDir(appContext)
         val api = if (localModelDir != null) null else realtimeApiForActiveAccount() ?: return null
-        val account = transcriptionAccount()
-        val preset = presetFor(account)
+        val account = MaProviders.transcriptionAccount()
+        val preset = MaProviders.presetFor(account)
         val model = if (localModelDir != null) {
             localModelDir.name
         } else {
@@ -2040,8 +2029,8 @@ object DictateController {
                 }
                 // History (issue #140): capture the metadata + WAV before deleting the cache file, so
                 // audio retention (if on) can copy it in during finalize; then drop the cache original.
-                val rtAccount = transcriptionAccount()
-                val rtPreset = presetFor(rtAccount)
+                val rtAccount = MaProviders.transcriptionAccount()
+                val rtPreset = MaProviders.presetFor(rtAccount)
                 val rtModel = rtAccount.realtimeModel.takeIf { it.isNotBlank() }
                     ?: rtPreset.defaultRealtimeModel ?: ""
                 val rtCapture = HistoryCapture(
@@ -2082,7 +2071,7 @@ object DictateController {
             outputTarget == OutputTarget.IME &&
             !livePromptArmed &&
             !isRealtimeActive(context) &&
-            !transcriptionAccount().transcriptionViaChat
+            !MaProviders.transcriptionAccount().transcriptionViaChat
 
     private fun initSegmented(appContext: Context) {
         segmentedActive = true
@@ -2259,9 +2248,9 @@ object DictateController {
      * post-processing once and replace the preview with the finished (formatted/reworded) text.
      */
     private suspend fun finalizeSegmentedEnd(appContext: Context) {
-        val account = transcriptionAccount()
-        val preset = presetFor(account)
-        val model = transcriptionModelFor(appContext, account, preset)
+        val account = MaProviders.transcriptionAccount()
+        val preset = MaProviders.presetFor(account)
+        val model = MaProviders.transcriptionModelFor(appContext, account, preset)
         val assembled = realtimeShown.toString().trim()
         val recordedSeconds = segmentRecordedSeconds
         // Snapshot the kept segment files (in cut order) before resetting; merge them into one WAV so the
@@ -2307,14 +2296,14 @@ object DictateController {
         // cut/stop — so the model can't hallucinate ghost text ("Vielen Dank" / "Thanks for watching")
         // from it. Fails open (transcribes) if the check can't run, so real speech is never dropped.
         if (prefs.dictate.skipSilentRecordings.get() && !SpeechGate.hasSpeech(appContext, wav)) return null
-        val account = transcriptionAccount()
+        val account = MaProviders.transcriptionAccount()
         // ONE key, chosen by the ring. This field holds every key separated by newlines, so passing
         // it straight through sent all of them as a single credential and the service answered with
         // a complaint about a line break in the header. That worked for as long as there was only
         // ever one key in it.
         val apiKey = MaKeyRingStore.currentKey(account.providerId, account.apiKey)
-        val preset = presetFor(account)
-        val model = transcriptionModelFor(appContext, account, preset, "gpt-4o-mini-transcribe")
+        val preset = MaProviders.presetFor(account)
+        val model = MaProviders.transcriptionModelFor(appContext, account, preset, "gpt-4o-mini-transcribe")
         val language = MaLanguage.active()
         val style = transcriptionStylePrompt()
         val prompt = continuity.takeLast(200).trim().let { if (it.isEmpty()) style else "$it $style".trim() }
@@ -2326,17 +2315,17 @@ object DictateController {
                     LocalTranscriptionProvider(LocalTranscriptionProvider.modelDir(appContext, model)).transcribe(request)
                 }
             } else {
-                if (apiKey.isBlank() && requiresKey(account)) return null
+                if (apiKey.isBlank() && MaProviders.requiresKey(account)) return null
                 try {
                     OpenAiCompatibleClient.from(
                         preset, apiKey,
-                        baseUrlOverride = baseUrlOverrideFor(account),
+                        baseUrlOverride = MaProviders.baseUrlOverrideFor(account),
                         proxy = prefs.dictate.dictateProxyConfig(),
                         useChatAudio = false,
                         trustUserCerts = prefs.dictate.trustUserCertificates.get(),
                     ).transcribe(request)
                 } catch (e: DictateApiException) {
-                    val fallback = localFallbackProvider(appContext, preset, e) ?: throw e
+                    val fallback = MaProviders.localFallbackProvider(appContext, preset, e) ?: throw e
                     fallback.transcribe(request)
                 }
             }
@@ -3287,7 +3276,7 @@ object DictateController {
             return
         }
 
-        if (rewordingApiKey().isBlank()) {
+        if (MaProviders.rewordingApiKey().isBlank()) {
             _state.value = UiState.Error(
                 message = appContext.getString(R.string.dictate__error_no_api_key),
                 kind = DictateApiException.Kind.INVALID_API_KEY,
@@ -3378,7 +3367,7 @@ object DictateController {
         if (!prefs.dictate.rewordingEnabled.get() || transcript.isBlank()) return transcript
         // No rewording key (not even a shared transcription one) → nothing here can run; return the raw
         // transcript instead of flashing "Formatting…" and looping through doomed throw/catch calls.
-        if (rewordingApiKey().isBlank()) return transcript
+        if (MaProviders.rewordingApiKey().isBlank()) return transcript
         var text = transcript
 
         // 1) Auto-formatting (spoken cues → Markdown). Low-level prompt, no be-precise suffix.
@@ -3424,7 +3413,7 @@ object DictateController {
         val queued = _pendingPrompts.value
         _pendingPrompts.value = emptyList()
         if (queued.isEmpty()) return text
-        if (rewordingApiKey().isBlank()) return text
+        if (MaProviders.rewordingApiKey().isBlank()) return text
         var result = text
         for (p in queued) {
             val raw = p.prompt.orEmpty()
@@ -3471,24 +3460,24 @@ object DictateController {
         reasoning: DictateReasoningEffort? = null,
         reasoningCustom: String? = null,
     ): String {
-        val account = rewordingAccount()
+        val account = MaProviders.rewordingAccount()
         // Blank rewording key falls back to the transcription account's key (legacy "reuse" behavior).
         // Through the ring in both cases, and under the id of whichever account the key came from,
         // so a key borrowed from transcription is flagged where its owner will see it.
-        val ringId = if (account.apiKey.isNotBlank()) account.providerId else transcriptionAccount().providerId
-        val stored = account.apiKey.ifBlank { transcriptionAccount().apiKey }
+        val ringId = if (account.apiKey.isNotBlank()) account.providerId else MaProviders.transcriptionAccount().providerId
+        val stored = account.apiKey.ifBlank { MaProviders.transcriptionAccount().apiKey }
         val apiKey = MaKeyRingStore.currentKey(ringId, stored)
-        if (apiKey.isBlank() && requiresKey(account)) {
+        if (apiKey.isBlank() && MaProviders.requiresKey(account)) {
             throw DictateApiException(DictateApiException.Kind.INVALID_API_KEY, "No API key set")
         }
-        val preset = presetFor(account)
+        val preset = MaProviders.presetFor(account)
         val model = account.chatModel.ifBlank { preset.defaultChatModel ?: "gpt-4o-mini" }
         // Built per key inside the ring walk below, because the key is what it is built with. Kept as
         // a lambda rather than a value so a roll to the next key really does mean a new client.
         val clientFor: (String) -> OpenAiCompatibleClient = { key ->
             OpenAiCompatibleClient.from(
                 preset, key,
-                baseUrlOverride = baseUrlOverrideFor(account),
+                baseUrlOverride = MaProviders.baseUrlOverrideFor(account),
                 proxy = prefs.dictate.dictateProxyConfig(),
                 trustUserCerts = prefs.dictate.trustUserCertificates.get(),
             )
@@ -3582,56 +3571,6 @@ object DictateController {
         return parts.joinToString("\n\n")
     }
 
-    /** The active transcription provider's stored credentials (keyring). */
-
-    private fun transcriptionAccount(): ProviderAccount {
-        val accounts = prefs.dictate.providerAccounts.get()
-        // Resolved, not read. The stored id is a fallback for a setup with no AssemblyAI key; it is
-        // never allowed to point transcription at the language provider. See MaRoles.
-        val id = MaRoles.transcription(accounts, prefs.dictate.transcriptionProviderId.get())
-        return accounts.getOrEmpty(id)
-    }
-
-    /**
-     * The on-device provider's stored account (issue #228): the selected local model lives in its
-     * [ProviderAccount.transcriptionModel]. Used by the long-press "send with local model" shortcut.
-     */
-    private fun localTranscriptionAccount(): ProviderAccount =
-        prefs.dictate.providerAccounts.get().getOrEmpty(ProviderRegistry.LOCAL.id)
-
-    /**
-     * The transcription model to run for [account], resolving the on-device special case: the local
-     * provider holds two picks (#233), and if the user only installed a streaming model, batch paths —
-     * real-time off, long-form, the floating button — must use that one instead of failing with
-     * "no model downloaded".
-     */
-    private fun transcriptionModelFor(
-        context: Context,
-        account: ProviderAccount,
-        preset: ProviderPreset,
-        fallback: String = "",
-    ): String {
-        val chosen = account.transcriptionModel.takeIf { it.isNotBlank() }
-            ?: preset.defaultTranscriptionModel
-            ?: fallback
-        if (preset.transcriptionApi != TranscriptionApi.LOCAL_ONDEVICE) return chosen
-        if (chosen.isNotBlank() && LocalModelManager.isInstalled(context, chosen)) return chosen
-        return account.realtimeModel.takeIf {
-            it.isNotBlank() && LocalModelManager.isInstalled(context, it)
-        } ?: chosen
-    }
-
-    /** The active rewording provider's stored credentials (keyring). */
-    private fun rewordingAccount(): ProviderAccount {
-        val accounts = prefs.dictate.providerAccounts.get()
-        val id = MaRoles.rewording(accounts, prefs.dictate.rewordingProviderId.get())
-        return accounts.getOrEmpty(id)
-    }
-
-    /** Effective rewording key: the rewording account's, falling back to the transcription account's. */
-    private fun rewordingApiKey(): String =
-        rewordingAccount().apiKey.ifBlank { transcriptionAccount().apiKey }
-
     private fun promptsDb(context: Context) = PromptsDatabaseHelper.getInstance(context)
 
     // Audio focus was requested here while recording, and it is deliberately gone.
@@ -3713,109 +3652,5 @@ object DictateController {
         audioManager = null
         btRouter?.deactivate()
         btRouter = null
-    }
-
-    /** Resolves the registry preset (base URL, defaults, headers) backing [account]. */
-    private fun presetFor(account: ProviderAccount): ProviderPreset = when {
-        account.isCustom -> ProviderRegistry.custom(account.customBaseUrl)
-        else -> ProviderRegistry.byId(account.providerId) ?: ProviderRegistry.OPENAI
-    }
-
-    /**
-     * Whether this particular recording goes up the AssemblyAI Sync path.
-     *
-     * Every condition here is a reason to say no, and that asymmetry is deliberate. Fast is a
-     * preference; arriving is not. A recording that cannot take the fast path takes the slow one and
-     * nobody is told, because from where Marko sits the only difference is how long the words take,
-     * and the long recording, the one that took the most effort to speak, must never be the one that
-     * fails.
-     *
-     * [file] must already be the resampled WAV, so the length and the size below are measured rather
-     * than assumed.
-     */
-
-    /**
-     * Whether this dictation goes down the Sync path, decided by language first of all.
-     *
-     * ### The failure this exists to prevent
-     *
-     * Sync's fast model transcribes Croatian badly, and badly in the worst possible way: it returns
-     * fluent Croatian that is the wrong words. Not garbled, not empty, not obviously broken —
-     * plausible sentences nobody would question without knowing what was said. A wrong answer that
-     * looks right is worse than an error, because there is nothing to notice.
-     *
-     * So the language decides the path, and speed is no longer something the user sets. Croatian is
-     * always async. English may use Sync while the clip fits its window, and the length check below
-     * turns that into "fast until about two minutes, then slow" without any timer of its own.
-     */
-    private fun maUseSyncPath(preset: ProviderPreset, chatAudio: Boolean, file: File): Boolean {
-        // MaLanguage.active() and not the raw preference, deliberately. It answers hr or en and
-        // nothing else, collapsing anything left over from an older install — including the auto
-        // detect this app no longer offers — to Croatian. The gate therefore has two cases rather
-        // than three, and an install that still has "detect" stored gets the safe one.
-        val lang = MaLanguage.active()
-
-        // An allow-list, not a deny-list, and that direction is the point. Sync's fast model returns
-        // fluent Croatian that is the wrong words, so being wrong here costs the sentence and there
-        // is nothing in the result to notice. Only a language whose Sync output has actually been
-        // read belongs on this list.
-        if (lang !in SYNC_SAFE_LANGUAGES) return false
-
-        // Deliberately not gated on any speed preference, and this is not an oversight.
-        //
-        // There was one. It defaulted to SLOW and held whatever the old FAST/SLOW key was last left
-        // on, so reading it meant English silently never taking the fast path on any install that
-        // had tapped that key. A control that has been removed must not keep voting — and once
-        // nothing read it, the preference and its enum were deleted rather than left waiting.
-        //
-        // The language decides, and nothing else does.
-        // Sync belongs to AssemblyAI and to no other account. Anything else keeps its own path.
-        if (preset.transcriptionApi != TranscriptionApi.ASSEMBLYAI_ASYNC) return false
-        // Chat-audio transcribes and formats in one chat request; Sync does transcription only.
-        if (chatAudio) return false
-        if (file.length() > OpenAiCompatibleClient.SYNC_MAX_BYTES) return false
-        // Not knowing how long the audio is counts as too long. A header that will not parse is not a
-        // thing to gamble a dictation on.
-        val seconds = MaResample.durationSeconds(file) ?: return false
-        // A margin under the real limit: the service rejects at 120 s and this reading is a
-        // calculation, so the last two seconds are left as room for the two to disagree.
-        return seconds >= MIN_SYNC_SECONDS && seconds <= OpenAiCompatibleClient.SYNC_MAX_SECONDS - SYNC_SECONDS_MARGIN
-    }
-
-    /**
-     * The account's own base URL, when it has one: custom endpoints always, and base-URL-editable
-     * built-ins like Ollama (issue #136). Null → the preset's default base URL is used.
-     */
-    private fun baseUrlOverrideFor(account: ProviderAccount): String? =
-        if (account.isCustom || presetFor(account).allowsCustomBaseUrl) {
-            account.customBaseUrl.takeIf { it.isNotBlank() }
-        } else {
-            null
-        }
-
-    /** Whether [account] needs an API key: built-in cloud providers do; custom/local servers may not. */
-    private fun requiresKey(account: ProviderAccount): Boolean =
-        !account.isCustom && presetFor(account).apiKeyUrl != null
-
-    /**
-     * The on-device provider to retry [error] on as an offline fallback (#104), or null when it doesn't
-     * apply: the fallback is disabled, the failure isn't a connectivity one, the active provider is
-     * already local, or no local model is downloaded.
-     */
-    private fun localFallbackProvider(
-        context: Context,
-        activePreset: ProviderPreset,
-        error: DictateApiException,
-    ): LocalTranscriptionProvider? {
-        if (!prefs.dictate.localFallbackEnabled.get()) return null
-        if (activePreset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) return null
-        if (error.kind != DictateApiException.Kind.NETWORK &&
-            error.kind != DictateApiException.Kind.TIMEOUT
-        ) return null
-        val localAccount = prefs.dictate.providerAccounts.get().getOrEmpty(ProviderRegistry.LOCAL.id)
-        val localModel = transcriptionModelFor(context, localAccount, ProviderRegistry.LOCAL)
-            .takeIf { it.isNotBlank() } ?: return null
-        if (!LocalModelManager.isInstalled(context, localModel)) return null
-        return LocalTranscriptionProvider(LocalTranscriptionProvider.modelDir(context, localModel))
     }
 }
