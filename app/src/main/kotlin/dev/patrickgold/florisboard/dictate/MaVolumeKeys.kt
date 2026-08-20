@@ -146,12 +146,18 @@ object MaVolumeKeys {
         // means the obvious thing for the situation in front of him needs no mode and no memory.
         if (MaReader.currentIndex >= 0) {
             when (keyCode) {
-                KeyEvent.KEYCODE_VOLUME_UP -> {
-                    MaLog.add("vol", "up tap while reading \u2014 skip forward")
+                // DOWN goes FORWARD. Not a mistake and not a preference.
+                //
+                // The text moves down the screen as it is read, so down is where the next sentence
+                // is. Every scroll on this phone works that way, and the hand is already trained by
+                // every one of them. Mapping up to "next" because up is bigger would be a rule from
+                // arithmetic imposed on a rule from movement.
+                KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                    MaLog.add("vol", "down tap while reading \u2014 next sentence")
                     MaReader.skipSentence()
                 }
-                KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                    MaLog.add("vol", "down tap while reading \u2014 back")
+                KeyEvent.KEYCODE_VOLUME_UP -> {
+                    MaLog.add("vol", "up tap while reading \u2014 previous sentence")
                     MaReader.previousSentence()
                 }
             }

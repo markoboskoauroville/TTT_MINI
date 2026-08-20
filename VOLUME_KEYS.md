@@ -38,18 +38,28 @@ to make the *keyboard* not take them when it is not on screen — which is alrea
 
 | Press | What happens |
 |---|---|
-| **Volume UP**, quick tap | skip forward one sentence |
-| **Volume DOWN**, quick tap | back — see below |
+| **Volume DOWN**, quick tap | **next** sentence |
+| **Volume UP**, quick tap | **previous** sentence |
 | **Either**, held | still the real volume |
+
+**Down goes forward.** The text moves down the screen as it is read, so down is where the next
+sentence is, and every scroll on the phone already trains the hand that way. Mapping up to "next"
+because up is bigger would impose a rule from arithmetic on a rule from movement.
 
 **Nobody dictates into a screen they are listening to.** So while a reading is in progress a tap
 means skip, not record. The keys are not remapped by a setting; they follow what is on screen, and a
 control that means the obvious thing for the situation in front of him needs no mode and no memory.
 
-**Back is two-step**, as every media player is: pressing back part-way through a sentence returns to
-the start of *that* sentence; pressing again goes to the one before. The threshold is 1.5 seconds of
-speech — before that he has heard almost none of it and means the previous one; after it he means
-this one again.
+**One step, always. No replay window, no two-step.** A skip key skips. An earlier version restarted
+the current sentence when he was already part-way into it — the media-player convention — and he was
+clear that it is wrong here: to hear a sentence again he presses up then down, which is two
+deliberate presses and takes less thought than a key whose meaning changes with how long he has been
+listening.
+
+**A control that does two different things depending on timing is one that has to be predicted.** At
+speed, predictable beats clever.
+
+The only asymmetry is the first sentence, where there is no previous one: up restarts it.
 
 "Quick tap" means released in under **500 ms**. Held means longer. Once held, the volume repeats every
 **111 ms** until the finger lifts.

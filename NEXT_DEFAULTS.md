@@ -4663,3 +4663,26 @@ and "I want the one before".
 Seven open by default is seven things to look past every time the panel is raised, and the panel is
 raised for speed far more often than for colour. One swatch showing the current choice; tap to unfold,
 and it folds itself away once chosen — the row exists to answer one question and it has been answered.
+
+---
+
+# 119. Down is forward, and back is one step
+
+Both corrections from him, both about the same instinct.
+
+**Down goes to the next sentence, up to the previous.** The text moves down the screen as it is read,
+so down is where the next sentence is, and every scroll on the phone has already trained the hand.
+Mapping up to "next" because up is bigger imposes a rule from arithmetic on a rule from movement.
+
+**Back is one step. No replay window.** The first version restarted the current sentence if he was
+already part-way into it — the media-player convention, and wrong here. A skip key skips. To hear a
+sentence again he presses up then down: two deliberate presses, and less thought than a key whose
+meaning changes with how long he has been listening.
+
+**A control that does two different things depending on timing is one that has to be predicted.** At
+speed, predictable beats clever. `REPLAY_WINDOW_MS` is deleted rather than raised, because any value
+for it is the wrong idea.
+
+Checked: up-then-down returns to the same sentence from anywhere except the first, where there is no
+previous one and up restarts it instead. Each press moves exactly one sentence, and the last sentence
+holds rather than running off the end.
