@@ -4844,3 +4844,29 @@ into the left corner. The title is back between them and the cog is at the far e
 `MANTRA_MANIFEST/modules/design-language.md` §10 along with the rest: equal distances everywhere, and
 **after removing anything from a row, look at the row** — balance breaks silently, and it breaks in
 whatever was left behind.
+
+---
+
+# 125. The VU meter, from the module rather than from scratch
+
+Third time asked, and he was right to keep asking.
+
+**It reads `DictateController.audioLevel` — the same StateFlow the keyboard's meter collects.** The dB
+conversion, the −54 floor, the 0.6 dB peak decay and the three colours are lifted from
+`MaRecordMeter` unchanged. **One source of numbers drawn twice, rather than two meters that happen to
+look similar.**
+
+Drawn with a Canvas rather than composed, because the overlay window has no lifecycle owner for
+Compose to attach to. **That is a difference in the brush, not in the picture** — and it is the whole
+of what "the module" could not be reused literally, which I should have said two builds ago instead
+of quietly approximating.
+
+**Peak hold, because a bar alone is a flicker at speech rates.** The mark falls at 0.6 dB per frame:
+slow enough to read, fast enough to follow a sentence. That is what makes it a meter rather than a
+light.
+
+**Fast attack, slow release**, the asymmetry every hardware meter has — an attack that lags feels
+dead, a release that snaps feels nervous.
+
+It sits directly under the clock, as one column, which is how the keyboard's bar arranges them: the
+numbers with the level beneath, not two things sharing a row.

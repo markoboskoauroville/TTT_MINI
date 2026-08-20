@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import android.graphics.Paint
+import android.graphics.Canvas
 import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.DictateController
 import android.os.SystemClock
@@ -137,7 +139,19 @@ class MaRecordingLine(private val service: AccessibilityService) {
             }
         }
         timer = clock
-        row.addView(clock)
+        // The clock and the meter as one column, which is how the keyboard's bar arranges them: the
+        // numbers with the level directly beneath, not two separate things sharing a row.
+        row.addView(
+            LinearLayout(service).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                addView(clock)
+                addView(
+                    MaVuView(service),
+                    LinearLayout.LayoutParams(px(150), px(4)).apply { topMargin = px(3) },
+                )
+            },
+        )
 
         val spacerR = View(service)
         row.addView(spacerR, LinearLayout.LayoutParams(0, 1, 1f))
@@ -212,5 +226,92 @@ class MaRecordingLine(private val service: AccessibilityService) {
         runCatching { windowManager.removeView(v) }
         view = null
         added = false
+    }
+}
+
+/**
+ * The VU meter, on the overlay, reading the same numbers as the one on the keyboard.
+ *
+ * ### It is the module, not a lookalike
+ *
+ * The level comes from `DictateController.audioLevel` — the same StateFlow the keyboard's meter
+ * collects. The dB conversion, the floor, the peak decay and the three colours are lifted from
+ * `MaRecordMeter` unchanged, so the two cannot disagree about how loud he is: **one source of
+ * numbers, drawn twice, rather than two meters that happen to look similar.**
+ *
+ * It is drawn with a Canvas rather than composed because this window has no lifecycle owner for
+ * Compose to attach to. That is a difference in the brush, not in the picture.
+ *
+ * ### Peak hold
+ *
+ * A bar alone tells you the current instant, which at speech rates is a flicker. The peak mark falls
+ * at 0.6 dB per frame — slow enough to read, fast enough to follow a sentence — and it is what makes
+ * the thing a meter rather than a light.
+ */
+private class MaVuView(context: Context) : View(context) {
+
+    private val bar = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF2A2A2E.toInt() }
+    private val peakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF2DDB4.toInt() }
+
+    private var smoothed = FLOOR_DB
+    private var peakDb = FLOOR_DB
+
+    private val tick = object : Runnable {
+        override fun run() {
+            val db = toDb(DictateController.audioLevel.value)
+            // Fast to rise, slow to fall: an attack that lags makes the meter feel dead, a release
+            // that snaps makes it feel nervous. The same asymmetry every hardware meter has.
+            smoothed = if (db > smoothed) db else smoothed + (db - smoothed) * 0.3f
+            peakDb = if (db > peakDb) db else (peakDb - 0.6f).coerceAtLeast(FLOOR_DB)
+            invalidate()
+            postDelayed(this, 40L)
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        post(tick)
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(tick)
+        super.onDetachedFromWindow()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val w = width.toFloat()
+        val h = height.toFloat()
+        canvas.drawRoundRect(0f, 0f, w, h, h / 2, h / 2, track)
+        val n = norm(smoothed)
+        if (n > 0f) {
+            bar.color = colourFor(smoothed)
+            canvas.drawRoundRect(0f, 0f, w * n, h, h / 2, h / 2, bar)
+        }
+        val p = norm(peakDb)
+        if (p > 0f) {
+            val x = (w * p).coerceIn(2f, w - 2f)
+            canvas.drawRect(x - 1.5f, 0f, x + 1.5f, h, peakPaint)
+        }
+    }
+
+    private companion object {
+        const val FLOOR_DB = -54f
+
+        fun toDb(level: Float): Float {
+            val v = kotlin.math.abs(level)
+            if (v <= 0.0005f) return FLOOR_DB
+            return (20.0 * kotlin.math.log10(v.toDouble())).toFloat().coerceIn(FLOOR_DB, 0f)
+        }
+
+        fun norm(db: Float): Float = ((db - FLOOR_DB) / (0f - FLOOR_DB)).coerceIn(0f, 1f)
+
+        // The same three, from MaRecordMeter: green while there is headroom, amber approaching, and
+        // the app's recording red at the top.
+        fun colourFor(db: Float): Int = when {
+            db > -3f -> 0xFF9B3B33.toInt()
+            db > -12f -> 0xFFF0883E.toInt()
+            else -> 0xFF56D364.toInt()
+        }
     }
 }
