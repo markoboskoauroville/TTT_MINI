@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -88,8 +89,17 @@ fun TextInputLayout(
         val maReaderFull by prefs.dictate.maReaderFullscreen.collectAsState()
         val maReaderReading = MaReader.currentIndex >= 0
         if (maReaderSubtitle && maReaderFull && maReaderReading) {
-            // The whole keyboard's height: the keys plus the bands that would have been above them.
-            MaSubtitleRow(modifier = Modifier.height(FlorisImeSizing.keyboardUiHeight() + 160.dp))
+            // THE WHOLE DISPLAY, not the whole keyboard.
+            //
+            // An input method draws in its own window, and that window is as tall as the view asks
+            // to be. Asking for the keyboard's height gave a keyboard-sized void with the chat still
+            // above it — a half void, which is what he got and what he correctly refused.
+            //
+            // Asking for the display's height makes the window cover the screen. The app behind
+            // pans up as it does for any tall keyboard; nothing is hidden from it that it needs.
+            MaSubtitleRow(
+                modifier = Modifier.height(LocalConfiguration.current.screenHeightDp.dp),
+            )
             return@Column
         }
 

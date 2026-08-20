@@ -84,7 +84,10 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val litColour by prefs.dictate.maReaderHighlightColor.collectAsState()
     val litBold by prefs.dictate.maReaderHighlightBold.collectAsState()
     val litUnderline by prefs.dictate.maReaderHighlightUnderline.collectAsState()
-    val lit = if (litColour == "white") MaSubtitleWhite else MaSubtitleYellow
+    // A chosen colour wins; the yellow-or-white pair is what it falls back to.
+    val litHex by prefs.dictate.maReaderHighlightHex.collectAsState()
+    val lit = parseHex(litHex)
+        ?: if (litColour == "white") MaSubtitleWhite else MaSubtitleYellow
     // One size, both views. Full screen shows MORE, not BIGGER — the two were tied together and he
     // could not have the whole page without also having large type he had not asked for.
     val fontSp by prefs.dictate.maReaderFontSize.collectAsState()
@@ -447,3 +450,16 @@ private val MaSubtitleShadow = Color(0xFF3A3A3C)
 
 /** The composer's own dark fill, so the box belongs to the screen rather than sitting on it. */
 private val MaSubtitleBackground = Color(0xFF1E1E20)
+
+/**
+ * `#RRGGBB` to a colour, or null if it is not one.
+ *
+ * Null rather than a default, so a stored value that has been corrupted falls back to his real
+ * setting instead of silently becoming black on black.
+ */
+private fun parseHex(hex: String): Color? {
+    val h = hex.trim().removePrefix("#")
+    if (h.length != 6) return null
+    val v = h.toLongOrNull(16) ?: return null
+    return Color(0xFF000000L or v)
+}

@@ -1258,6 +1258,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = false,
         )
 
+        /**
+         * The highlight colour as `#RRGGBB`, chosen on the wheel.
+         *
+         * Empty means fall back to `maReaderHighlightColor` — the yellow-or-white choice that came
+         * first. Kept rather than replaced so nobody's existing setting changes the day the wheel
+         * arrives, and so the two words still mean something to somebody reading the file.
+         */
+        val maReaderHighlightHex = string(
+            key = "dictate__ma_reader_highlight_hex",
+            default = "",
+        )
+
         val maReaderHighlightColor = string(
             key = "dictate__ma_reader_highlight_color",
             default = "yellow",

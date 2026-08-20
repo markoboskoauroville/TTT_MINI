@@ -216,6 +216,8 @@ def check_symbols_resolve(path: Path, text: str) -> None:
     builtins = {
         "String", "Boolean", "Int", "Long", "Float", "Double", "List", "Set", "Map", "Unit", "Any",
         "Exception", "Throwable", "Pair", "Triple", "Array", "IntArray", "Regex", "Result", "Char",
+        "FloatArray", "LongArray", "ByteArray", "CharArray", "Math", "Byte", "Short", "Number",
+        "Comparable", "Iterable", "Sequence", "Collection", "MutableList", "MutableSet", "MutableMap",
     }
     unknown = sorted(used - imported - declared - siblings - builtins)
     # Enum members and companion constants arrive as ALL_CAPS through a receiver; a regex cannot see

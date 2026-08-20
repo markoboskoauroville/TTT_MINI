@@ -4175,3 +4175,41 @@ has nothing for it, that is a reason to reconsider the key, not a reason to draw
 
 **The colour picker** — a full-screen wheel, DaVinci-grade, with a draggable loupe, used everywhere
 a colour is chosen. It is a real build of its own and deserves one.
+
+---
+
+# 108. A void that is actually the screen, and the colour wheel
+
+## The half void
+
+The reader asked for `keyboardUiHeight()`, so it filled the keyboard and the chat stayed above it. He
+called it a half void and he was right.
+
+**An input method draws in its own window, and that window is as tall as the view asks to be.** It
+asks for `LocalConfiguration.screenHeightDp` now, so the window covers the display and the void is
+the screen. The app behind pans up as it does for any tall keyboard.
+
+## The colour wheel
+
+Full screen, HSV, with a loupe. Hue round the rim, saturation from white at the centre to full colour
+at the edge, brightness on a bar underneath — **the arrangement every professional tool uses**, and
+using a different one would cost him muscle memory he already has.
+
+**The loupe sits above the finger**, not under it. That offset is the entire reason a loupe exists;
+without it a picker is a guess made with a thumb in the way.
+
+**Held as HSV, not as a Color.** Converting back and forth loses the hue of a fully desaturated
+colour — drag to the centre and out again and the hue would have been forgotten on the way.
+
+**Two gradients, not a bitmap:** a sweep for hue, a radial white for saturation. Scales to any screen
+and costs nothing.
+
+**Live and cancellable.** The colour applies as it is dragged, so it is judged against the thing it
+is for; Cancel puts back what it was, which is what makes dragging freely safe.
+
+Wired to the reader highlight first. `maReaderHighlightHex` overrides the yellow-or-white pair rather
+than replacing it, so no existing setting changes the day the wheel arrives, and a corrupted value
+falls back rather than becoming black on black.
+
+**Next place it belongs:** the subtitle page colour, the void's word colour, and the sand used for a
+lit key — one wheel, everywhere a colour is chosen.

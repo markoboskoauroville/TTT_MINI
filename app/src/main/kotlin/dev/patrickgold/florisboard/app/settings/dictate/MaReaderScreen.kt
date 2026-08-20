@@ -10,6 +10,15 @@
 
 package dev.patrickgold.florisboard.app.settings.dictate
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -254,6 +263,49 @@ fun MaReaderScreen() = FlorisScreen {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
+        // The wheel, above the two named colours it overrides.
+        val litHex by prefs.dictate.maReaderHighlightHex.collectAsState()
+        var wheelOpen by remember { mutableStateOf(false) }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .selectable(selected = false, onClick = { wheelOpen = true })
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(readerHex(litHex) ?: Color(0xFFE8B15C)),
+            )
+            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                Text(text = "Pick a colour", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = if (litHex.isBlank()) "Using the named colour below" else litHex,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (litHex.isNotBlank()) {
+                TextButton(onClick = { scope.launch { prefs.dictate.maReaderHighlightHex.set("") } }) {
+                    Text("Clear")
+                }
+            }
+        }
+        if (wheelOpen) {
+            MaColourWheel(
+                initial = readerHex(litHex) ?: Color(0xFFE8B15C),
+                onDismiss = { wheelOpen = false },
+                onPick = { c ->
+                    wheelOpen = false
+                    scope.launch {
+                        prefs.dictate.maReaderHighlightHex.set("#%06X".format(c.toArgb() and 0xFFFFFF))
+                    }
+                },
+            )
+        }
+
         val litColour by prefs.dictate.maReaderHighlightColor.collectAsState()
         for ((value, label, detail) in listOf(
             Triple("yellow", "Yellow", "The colour this app uses for a lit thing"),
@@ -414,4 +466,12 @@ private fun VoiceGroup(
             }
         }
     }
+}
+
+/** `#RRGGBB` to a colour, or null. Same rule as the reader's own parser. */
+private fun readerHex(hex: String): Color? {
+    val h = hex.trim().removePrefix("#")
+    if (h.length != 6) return null
+    val v = h.toLongOrNull(16) ?: return null
+    return Color(0xFF000000L or v)
 }
