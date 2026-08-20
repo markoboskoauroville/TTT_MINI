@@ -3880,3 +3880,56 @@ row producing exactly two sends.
 
 **Not tested: the phone.** Whether the send lands reliably after the commit in a given app, and
 whether any app needs a moment between the text arriving and the button being pressed.
+
+---
+
+# 101. Five caption styles, and the box goes full screen
+
+He asked for the styles people put on captions, and for the small box to be able to fill the screen
+like the reader in `ma-reader-thermux` does.
+
+## The five
+
+| Style | What it does |
+|---|---|
+| **Highlight** | the page stays readable, one word marked — the old behaviour, still the default |
+| **Typewriter** | the words arrive as they are spoken; nothing ahead is visible |
+| **Karaoke** | the line fills up behind the voice: said in amber, saying in white, coming in grey |
+| **Spotlight** | everything turned down but the word being said |
+| **One word** | that word alone, large, centred — the style Instagram and TikTok made ordinary |
+
+**All five leave the layout alone, and that is why these five and not five others.** Colour, alpha
+and decoration change nothing about where a word sits.
+
+**Typewriter draws what has not been said yet as fully transparent rather than absent**, so it still
+occupies its space and the words already on screen never move to make room. That is the whole trick;
+without it, typewriter is the worst offender of them all.
+
+**Karaoke's current word is white and NOT bold.** The first version bolded it, and Test 1 caught that
+it was the only style able to re-flow the line — in a style whose entire effect is a steady front
+edge moving along a *still* line, that ruins it. Three colours say it without weight.
+
+**One word is the only one that hides its neighbours**, which is the point: there is nothing to read
+ahead to.
+
+## Full screen
+
+Long-press the box and it grows to 330dp, covering the keys; 26sp text, nine lines, and pagination
+follows — 460 characters a page instead of 105, because a fullscreen box paged for three lines shows
+a paragraph floating in an empty screen and turns a page every few seconds for nothing.
+
+**The rule taken from MA Reader:** full screen there hides *every* child of the view except the text,
+so anything added later is hidden by default and has to argue its way back on. The version before it
+named the things to hide — a list — and lists go stale, which is exactly how the player bar survived
+into full screen. Here the same idea costs one number: the box covers the keys and nothing else is
+asked to move.
+
+**Two gestures, no controls drawn.** Tap skips the sentence, long press toggles full screen. A
+caption with buttons on it is not a caption, and both gestures are on the element already under the
+thumb.
+
+## Tested
+
+The style rules alone across four styles at three positions, and the layout check that found the
+karaoke bold. **Not tested: the phone** — whether 330dp covers the keys on his Nothing Phone 2a, and
+whether 460 characters is right for nine lines at 26sp.

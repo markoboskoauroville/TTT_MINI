@@ -1222,6 +1222,30 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * two good ones — it has to carry against a near-black box and it has to be distinct from
          * the words around it, and everything else is either those two or worse than both.
          */
+        /**
+         * How the reading is drawn: `highlight`, `typewriter`, `karaoke`, `spotlight`, `oneword`.
+         *
+         * Five, and every one of them obeys the rule that nothing moves. Each marks the spoken word
+         * differently while the words around it stay exactly where they were, because a caption
+         * that re-flows as it reads is a caption the eye chases instead of reads.
+         */
+        val maReaderStyle = string(
+            key = "dictate__ma_reader_style",
+            default = "highlight",
+        )
+
+        /**
+         * Whether the subtitle box fills the keyboard.
+         *
+         * A whole page at a time instead of three lines. Kept as a preference rather than as
+         * transient state so it survives the keyboard being folded away mid-reading, which is
+         * exactly when he would fold it away.
+         */
+        val maReaderFullscreen = boolean(
+            key = "dictate__ma_reader_fullscreen",
+            default = false,
+        )
+
         val maReaderHighlightColor = string(
             key = "dictate__ma_reader_highlight_color",
             default = "yellow",

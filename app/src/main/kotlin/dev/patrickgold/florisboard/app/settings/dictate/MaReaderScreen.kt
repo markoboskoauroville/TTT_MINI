@@ -164,6 +164,52 @@ fun MaReaderScreen() = FlorisScreen {
             }
         }
 
+        // The five styles, which are five answers to one question: what does the word being spoken
+        // look like. All of them leave the layout alone — that is why these five and not others.
+        Text(
+            text = "Caption style",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        Text(
+            text = "Long-press the subtitle box to fill the screen with it. Tap it to skip a sentence.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        val readerStyle by prefs.dictate.maReaderStyle.collectAsState()
+        for ((value, label, detail) in listOf(
+            Triple("highlight", "Highlight", "The page stays readable, one word marked"),
+            Triple("typewriter", "Typewriter", "The words arrive as they are spoken, nothing ahead"),
+            Triple("karaoke", "Karaoke", "The line fills up behind the voice"),
+            Triple("spotlight", "Spotlight", "Everything dimmed but the word being said"),
+            Triple("oneword", "One word", "That word alone, large \u2014 nothing to read ahead to"),
+        )) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = readerStyle == value,
+                        onClick = { scope.launch { prefs.dictate.maReaderStyle.set(value) } },
+                    )
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = readerStyle == value,
+                    onClick = { scope.launch { prefs.dictate.maReaderStyle.set(value) } },
+                )
+                Column(modifier = Modifier.padding(start = 8.dp)) {
+                    Text(text = label, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
         // How the spoken word is marked.
         //
         // Three separate answers rather than a list of presets, because they combine: white and
