@@ -38,6 +38,12 @@ real.
 
 **He is paying for every build.** A red build costs him the same as a green one.
 
+**Keys and tokens follow `SECRETS.md`, without exception.** Extract by shape into
+`/home/claude/.secret`, never print, never commit, use by reference, and scan the staged diff for
+key shapes before every push. The vault does not survive a session — rebuild it from
+`/mnt/user-data/uploads` at the start of each one, and if that folder is empty say so instead of
+hunting. Shred only on his word, and say plainly that shredding is not revoking.
+
 **`getValue` and `setValue` are invisible and must never be swept.** Property delegation — `val x by
 pref.collectAsState()`, `var y by remember { mutableStateOf(...) }` — needs those imports and never
 names them in the code. Any tool that removes imports by searching for the symbol will delete both

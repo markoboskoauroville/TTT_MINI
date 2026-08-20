@@ -85,3 +85,11 @@ tools/glide-dict/dist/
 
 # Demo recording for the README/store listings — kept locally, too large to version
 /img/dictate_demo.mp4
+
+# Secrets. Nothing key-shaped is ever committed — see SECRETS.md.
+# Here as a net, not as the plan: the plan is that keys live in /home/claude/.secret,
+# outside the repo entirely, and never get near a working tree.
+.secret/
+*_token.txt
+*_keys.txt
+*_api.txt
