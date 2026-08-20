@@ -197,14 +197,6 @@ fun MaSwitchboardScreen() = FlorisScreen {
 }
 
 /**
- * One row: a name that opens a screen, and a switch that does not.
- *
- * The switch is given its own click target rather than the whole row toggling, because the row
- * navigates. A line where tapping anywhere does one thing and tapping a small part does another is
- * only safe when the small part is obviously a control, which a switch is.
- */
-@Composable
-/**
  * One row backed by a boolean.
  *
  * Two entry points rather than one function with both kinds of preference in it, because reading a
