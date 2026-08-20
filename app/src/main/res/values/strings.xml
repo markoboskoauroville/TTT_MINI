@@ -820,11 +820,6 @@
     <string name="setup__provider__other_provider">Use a different AI provider</string>
     <string name="setup__provider__other_provider_hint">Advanced: pick another service instead of Groq. You\'ll need an API key from that provider.</string>
 
-    <string name="setup__finish_up__title">You\'re all set!</string>
-    <string name="setup__finish_up__description_p1">{app_name} is ready. Switch to it with the keyboard switcher, tap the microphone, and start speaking.</string>
-    <string name="setup__finish_up__description_p2">Languages, providers and everything else can be changed later. Keys live under API keys, where each one can be tested on its own.</string>
-    <string name="setup__finish_up__add_key_hint">Tip: you haven\'t added an AI key yet. Add one anytime in Settings → Dictate → AI providers to start dictating.</string>
-    <string name="setup__finish_up__finish_btn">Start using {app_name}</string>
     <string name="setup__floating_button__btn" comment="Onboarding button that opens the floating-button settings">Set up the floating button</string>
     <string name="setup__floating_button__title" comment="Title of the optional floating-button onboarding step">Dictate anywhere (optional)</string>
     <string name="setup__floating_button__intro" comment="Explanation on the optional floating-button onboarding step">The floating button puts a small dictation bubble over any app, so you can speak into any text field without switching keyboards.</string>

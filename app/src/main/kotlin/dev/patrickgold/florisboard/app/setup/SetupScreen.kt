@@ -238,7 +238,9 @@ private fun FlorisScreenScope.content(
         // Accessibility last of the grants, because it is the one that is optional in the sense
         // that dictation works without it — everything it powers is a convenience on top.
         !hasAccessibility && !accessibilitySkipped -> Steps.GrantAccessibility.id
-        else -> Steps.FinishUp.id
+        // Nothing left to grant: land on the last real step, which now carries the Finish
+        // button. There is no FinishUp page to fall through to any more.
+        else -> Steps.GrantAccessibility.id
     }
 
     val stepState = rememberSaveable(saver = FlorisStepState.Saver) {
@@ -472,34 +474,23 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            }
-        },
-        FlorisStep(
-            id = Steps.FinishUp.id,
-            title = stringRes(R.string.setup__finish_up__title),
-        ) {
-            StepText(stringRes(R.string.setup__finish_up__description_p1))
-            StepText(stringRes(R.string.setup__finish_up__description_p2))
-            if (!isProviderConfigured) {
-                Spacer(modifier = Modifier.height(8.dp))
-                StepText(
-                    text = stringRes(R.string.setup__finish_up__add_key_hint),
-                    fontStyle = FontStyle.Italic,
-                )
-            }
-            StepButton(label = stringRes(R.string.setup__finish_up__finish_btn)) {
-                scope.launch { this@steps.prefs.internal.isImeSetUp.set(true) }
-                // Into the settings list. This used to land on a blank test page, which was removed
-                // at build 156 along with the preview bar: the keyboard is now reachable from any
-                // text field on the phone, and a page whose only purpose was to be typed into was a
-                // stop on the way to somewhere.
-                navController.navigate(Routes.Settings.Home) {
-                    popUpTo(Routes.Setup.Screen) {
-                        inclusive = true
+                // Setup ends here.
+                //
+                // There was a seventh page after this saying "You're all set", with a button that
+                // set a flag and navigated. It taught nothing: everything on it was already true,
+                // and everything it pointed at was in the settings list it opened. A page whose
+                // only content is a summary of the pages already read is a page to press past.
+                //
+                // The flag and the navigation live on this button instead, so the last thing he
+                // does in setup is a real step rather than an acknowledgement of one.
+                StepButton(label = "Finish") {
+                    scope.launch { this@steps.prefs.internal.isImeSetUp.set(true) }
+                    navController.navigate(Routes.Settings.Home) {
+                        popUpTo(Routes.Setup.Screen) { inclusive = true }
                     }
                 }
             }
-        }
+        },
     )
 }
 
@@ -633,5 +624,4 @@ private sealed class Steps(val id: Int) {
      * not been told. Two buttons, in the order the phone wants them.
      */
     data object GrantAccessibility : Steps(id = 6)
-    data object FinishUp : Steps(id = 7)
 }

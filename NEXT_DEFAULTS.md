@@ -4448,3 +4448,19 @@ because it is never called.
 And a disabled switch now says so **out loud, on screen** rather than only in a log. That switch did
 not exist a week ago, it sits in a list, and one stray tap turns it off. An invisible failure cost him
 days of believing a feature had been deleted; a toast turns it into a fact he cannot miss.
+
+---
+
+# 114. The seventh setup page is gone
+
+"You're all set" said nothing that was not already true, and everything it pointed at was in the
+settings list its own button opened. **A page whose only content is a summary of the pages already
+read is a page to press past.**
+
+The step, its five strings and its entry in the enum are deleted. The flag it set and the navigation
+it did now live on a **Finish** button at the end of the accessibility step, so the last thing he does
+in setup is a real step rather than an acknowledgement of one. Six steps, not seven.
+
+The router's fallback pointed at `FinishUp` when nothing was left to grant; it lands on the last real
+step now. Translated copies of the dead strings are left in the locale files — unused strings cost
+nothing, and rewriting forty of them to delete text nobody reads is not a good trade.
