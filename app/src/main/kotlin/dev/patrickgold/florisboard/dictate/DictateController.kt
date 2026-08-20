@@ -247,6 +247,15 @@ object DictateController {
     @Volatile
     var sendAfterCommit: Boolean = false
 
+    /**
+     * Whether the last dictation actually reached a field.
+     *
+     * Set by the commit, read when the history entry is built. The realtime path delivers through a
+     * different function and leaves this true, which is correct: it only runs while a field is open.
+     */
+    @Volatile
+    private var deliveredToField: Boolean = true
+
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state: StateFlow<UiState> = _state.asStateFlow()
 
@@ -1784,6 +1793,7 @@ object DictateController {
                 copyToSystemClipboard(appContext, outputText)
             }
             val committed = commitOutput(appContext, outputText)
+            deliveredToField = committed
             if (committed) latencyTrace?.let { logLatency(it, "outputCommitted") }
             // Floating button (#156): the accessibility insert can be silently swallowed by some app fields
             // (Gemini's Compose box, WebViews). Don't flash a false green check — stash the text so the
@@ -1827,7 +1837,27 @@ object DictateController {
         if (capture?.isReplay != true) {
             if (recordedSeconds > 0L) creditAudioSeconds(recordedSeconds)
         }
-        recordHistory(appContext, outputText, originalForHistory, recordedSeconds, capture, reworded = live)
+        // DID THE WORDS LAND ANYWHERE?
+        //
+        // He dictates with no text field open — the volume keys record whether or not a keyboard is
+        // up — and the transcript then went to the history looking exactly like every other entry: a
+        // first line, a timestamp, and nothing saying it was never delivered.
+        //
+        // **A dictation with nowhere to go is a note, and a different kind of thing.** Its own
+        // source, its own colour in the list, and a title, because he comes back to it hours later
+        // and a wall of first lines is not something anybody can search by eye.
+        val landed = deliveredToField
+        val historyCapture = if (landed) {
+            capture
+        } else {
+            capture?.copy(source = DictateHistorySource.OFFLINE)
+        }
+        val noteTitle = if (landed) "" else titleFor(outputText)
+        if (!landed) MaLog.add("dictate", "kept as an offline note: \"$noteTitle\"")
+        recordHistory(
+            appContext, outputText, originalForHistory, recordedSeconds, historyCapture,
+            reworded = live, title = noteTitle,
+        )
         discardRetainedAudio()
         _state.value = UiState.Idle
         if (outputTarget != OutputTarget.IME || !showMilestoneNudge(appContext)) {
@@ -2922,6 +2952,7 @@ object DictateController {
         recordedSeconds: Long,
         capture: HistoryCapture?,
         reworded: Boolean,
+        title: String = "",
     ) {
         if (capture == null || text.isBlank()) return
         if (!prefs.dictate.historyEnabled.get()) return
@@ -2948,6 +2979,7 @@ object DictateController {
             // whatever the last measured send was rather than inventing a number.
             sendMs = prefs.dictate.maLastSendMs.get(),
             sendFormat = prefs.dictate.maLastSendFormat.get(),
+            title = title,
         )
     }
 
@@ -3450,6 +3482,30 @@ object DictateController {
      * Low-level rewording call: sends [userContent] verbatim as a single user message. [reasoning] is
      * the per-prompt reasoning-effort override (issue #155); null falls back to the global setting.
      */
+    /**
+     * A short title for a note that had nowhere to go.
+     *
+     * Only for offline notes. Every other entry was watched arriving in a field and needs no name;
+     * paying for a model call on all of them would be spending his money to label things he already
+     * knows.
+     *
+     * **Falls back to the first few words, and never fails the save.** A note without a title is a
+     * note; a note lost because the titling call timed out is not. The whole thing is wrapped and a
+     * failure returns empty, which the list renders as the first line exactly as before.
+     */
+    private suspend fun titleFor(text: String): String {
+        if (text.length < 40) return ""
+        return runCatching {
+            requestRewordRaw(
+                "Give this a title of at most six words. Reply with the title alone, no quotes, no " +
+                    "full stop, in the language the text is written in.\n\n" + text.take(1200),
+            ).trim().removeSurrounding("\"").take(60)
+        }.getOrElse {
+            MaLog.add("dictate", "title failed: ${it.javaClass.simpleName}")
+            ""
+        }
+    }
+
     private suspend fun requestRewordRaw(
         userContent: String,
         reasoning: DictateReasoningEffort? = null,

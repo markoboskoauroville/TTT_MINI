@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.clickable
 import dev.patrickgold.florisboard.dictate.MaLanguage
+import dev.patrickgold.florisboard.dictate.data.history.DictateHistorySource
 import dev.patrickgold.florisboard.dictate.MaLog
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
@@ -324,6 +325,23 @@ private fun HistoryPanelRow(
                 .weight(1f)
                 .padding(horizontal = 8.dp, vertical = 3.dp),
         ) {
+            // An offline note announces itself, in its own colour and with its own title.
+            //
+            // It was never delivered anywhere — he dictated it with no field open — so it is the one
+            // kind of entry he comes back to *looking for*. A title he can scan beats a first line
+            // he has to read, and the colour says at a glance which of these are notes and which are
+            // things he already sent.
+            val isNote = entry.source == DictateHistorySource.OFFLINE
+            if (isNote && entry.title.isNotBlank()) {
+                Text(
+                    text = entry.title,
+                    color = MaNoteAccent,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             SnyggText(
                 elementName = FlorisImeUi.SmartbarCandidateWordText.elementName,
                 fontWeight = FontWeight.SemiBold,
@@ -482,3 +500,13 @@ fun formatHistorySize(bytes: Long): String? = when {
     bytes < 1_000_000L -> "${(bytes / 1000L).coerceAtLeast(1L)} KB"
     else -> String.format("%.1f MB", bytes / 1_000_000.0)
 }
+
+/**
+ * The colour of a note that was never sent anywhere.
+ *
+ * A cool teal, deliberately not the app's amber and deliberately not red. Amber means "this is the
+ * live one" everywhere else in this keyboard, and red means a fault — a note he dictated on purpose
+ * is neither. It is simply a different kind of thing, and a different hue is the shortest way to say
+ * so.
+ */
+private val MaNoteAccent = Color(0xFF6FE0EE)

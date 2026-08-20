@@ -4896,3 +4896,38 @@ which is exactly what happened here, three times.
 The lifecycle goes RESUMED on attach and DESTROYED on removal. A registry left at CREATED composes
 but never animates, so the meter would sit still — a failure that looks like a broken meter rather
 than a missing lifecycle.
+
+---
+
+# 127. The offline note
+
+He dictates with no text field open — the volume keys record whether or not a keyboard is up — and
+until now the transcript went into the history looking exactly like every other entry: a first line, a
+timestamp, and nothing saying **it was never delivered anywhere.**
+
+**A dictation with nowhere to go is a note, and a different kind of thing.**
+
+- **Its own source.** `DictateHistorySource.OFFLINE`, set from the commit's own result rather than
+  guessed: `commitOutput` already returns whether the words landed, and that is the fact.
+- **Its own title**, written by the model. He comes back to these hours later, and a wall of first
+  lines is not something anybody can search by eye.
+- **Its own colour** — teal, deliberately not amber and not red. Amber means "the live one"
+  everywhere else here and red means a fault; a note he dictated on purpose is neither.
+
+## Three decisions worth keeping
+
+**Only notes get titled.** Every other entry was watched arriving in a field. Titling all of them
+would spend his money labelling things he already knows.
+
+**The title never fails the save.** Wrapped, and a failure returns empty — which the list renders as
+the first line, exactly as before. A note without a title is a note; a note lost because a titling
+call timed out is not.
+
+**Under forty characters gets no title.** A six-word title on an eight-word note is not a summary, it
+is the note again in worse handwriting.
+
+## The migration
+
+The title needed a column, and this database falls back to **destructive** migration — which would
+have deleted every recording he has. `MIGRATION_4_5` is one line of SQL. **His history is not
+replaceable and a column is not expensive**, so the fallback must never be the plan.

@@ -36,6 +36,14 @@ object DictateHistorySource {
     const val OVERLAY = "overlay"
     const val REALTIME = "realtime"
     const val IMPORT = "import"
+
+    /**
+     * Dictated with no text field open, so the words went to the history and nowhere else.
+     *
+     * Its own source rather than a flag, because it is genuinely a different kind of entry: it was
+     * never delivered, it carries a title, and it is the only kind he goes looking for.
+     */
+    const val OFFLINE = "offline"
 }
 
 /**
@@ -62,6 +70,16 @@ data class DictateHistoryEntry(
      * copy differing only in line breaks would be noise rather than a recovery path.
      */
     val originalText: String = "",
+
+    /**
+     * A short title, written by the model, for a dictation that had nowhere to go.
+     *
+     * Empty for everything else. A transcript that was typed into a field needs no title — he saw it
+     * arrive and he knows where it is. One that landed only in the history is a note he will come
+     * back to hours later, and a list of first-lines is not something anybody can search by eye.
+     */
+    @ColumnInfo(name = "title")
+    val title: String = "",
     /** Wall-clock creation time in epoch millis. */
     val createdAt: Long,
     /** Provider id of the transcription account (e.g. "openai"); for grouping/debugging. */
@@ -150,7 +168,19 @@ internal val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
-@Database(entities = [DictateHistoryEntry::class], version = 4, exportSchema = true)
+/**
+ * Adds the title column.
+ *
+ * Written by hand rather than left to the destructive fallback, because the fallback deletes every
+ * recording he has. A column is one line of SQL; his history is not replaceable.
+ */
+internal val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE $DICTATE_HISTORY_TABLE ADD COLUMN title TEXT NOT NULL DEFAULT ''")
+    }
+}
+
+@Database(entities = [DictateHistoryEntry::class], version = 5, exportSchema = true)
 abstract class DictateHistoryDatabase : RoomDatabase() {
     abstract fun dao(): DictateHistoryDao
 
@@ -158,7 +188,7 @@ abstract class DictateHistoryDatabase : RoomDatabase() {
         fun new(context: Context): DictateHistoryDatabase {
             return Room
                 .databaseBuilder(context, DictateHistoryDatabase::class.java, DICTATE_HISTORY_TABLE)
-                .addMigrations(MIGRATION_2_3)
+                .addMigrations(MIGRATION_2_3, MIGRATION_4_5)
                 // Only reachable if no migration path exists at all. Kept as a last resort: losing the log
                 // is bad, but an input method that crash-loops on every open is worse, and the user could
                 // not even switch keyboards to fix it.
@@ -225,6 +255,7 @@ object DictateHistoryStore {
         // How long the transcription took and in which upload format, for the format comparison.
         sendMs: Long = 0L,
         sendFormat: String = "",
+        title: String = "",
         nowMs: Long = System.currentTimeMillis(),
     ): Long? {
         if (text.isBlank()) return null
@@ -241,6 +272,7 @@ object DictateHistoryStore {
                 durationSecs = durationSecs.coerceAtLeast(0L),
                 sendMs = sendMs.coerceAtLeast(0L),
                 sendFormat = sendFormat,
+                title = title,
                 audioPath = null,
                 audioBytes = 0L,
                 source = source,
