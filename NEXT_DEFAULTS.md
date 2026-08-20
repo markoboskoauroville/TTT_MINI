@@ -4931,3 +4931,35 @@ is the note again in worse handwriting.
 The title needed a column, and this database falls back to **destructive** migration — which would
 have deleted every recording he has. `MIGRATION_4_5` is one line of SQL. **His history is not
 replaceable and a column is not expensive**, so the fallback must never be the plan.
+
+---
+
+# 128. The crash I shipped in 239
+
+Build 239 hosted the real bar and **would have crashed the moment it was shown.**
+
+`FlorisImeTheme` reads `LocalWindowController`, and that local's default is not a fallback — it is
+`error("only available within an IME view")`, a hard throw. I wrapped the composable in the theme and
+never provided the local, so the first background recording would have taken down the composition.
+
+**That is exactly what "it does not survive without the original keyboard" was**, and he described it
+before I had built it.
+
+Fixed by providing one. `ImeWindowController` takes preferences and a scope and needs no IME; all the
+theme wants from it is a font scale.
+
+## And a guard, because the blast radius was wrong
+
+The accessibility service owns the magic finger and the reader as well as this window. An exception
+while adding the bar would have killed all three — **losing the finger and the reader because a strip
+of UI could not be drawn is a wildly disproportionate way to fail.**
+
+It is wrapped now, and a failure logs and detaches the host. The recording is unaffected either way:
+the microphone does not run through this window, so the worst case is recording without seeing the
+bar, which is where the feature started.
+
+## The lesson
+
+**A composition local whose default is `error()` is a dependency, not a convenience.** Grepping for
+what a composable *calls* found nothing; the dependency was one level down, in what the theme reads.
+When lifting a composable out of its home, check what its wrapper reads too.

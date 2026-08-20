@@ -10,6 +10,13 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.window.LocalWindowController
+import dev.patrickgold.florisboard.ime.window.ImeWindowController
+import androidx.compose.runtime.CompositionLocalProvider
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.graphics.PixelFormat
@@ -63,6 +70,18 @@ class MaRecordingLine(private val service: AccessibilityService) {
 
     private var view: View? = null
     private var lifecycleHost: MaOverlayHost? = null
+
+    /**
+     * Its own window controller, because the theme insists on one and the IME may not be running.
+     *
+     * Built from preferences and this class's own scope. Nothing here drives a real window — the
+     * theme only reads a font scale from it — so a controller of its own is honest rather than a
+     * stand-in for something missing.
+     */
+    private val overlayPrefs by FlorisPreferenceStore
+    private val windowController by lazy {
+        ImeWindowController(overlayPrefs, CoroutineScope(Dispatchers.Main.immediate + SupervisorJob()))
+    }
     private var added = false
 
     /**
@@ -86,6 +105,18 @@ class MaRecordingLine(private val service: AccessibilityService) {
                     appName = R.string.app_name,
                     forceLayoutDirection = LayoutDirection.Ltr,
                 ) {
+                    // THE LOCAL THE THEME NEEDS, WHICH THE IME NORMALLY PROVIDES.
+                    //
+                    // `FlorisImeTheme` reads `LocalWindowController`, and that local's default is
+                    // `error("only available within an IME view")` — a hard throw, not a fallback.
+                    // Without this line the bar crashes the instant it is shown, which is exactly
+                    // what "it does not survive without the keyboard" was.
+                    //
+                    // It is constructed from preferences and a scope; it needs no IME. All the theme
+                    // wants from it is the font scale.
+                    CompositionLocalProvider(
+                        LocalWindowController provides windowController,
+                    ) {
                     FlorisImeTheme {
                         // THE REAL BAR. Not a copy of it.
                         //
@@ -95,6 +126,7 @@ class MaRecordingLine(private val service: AccessibilityService) {
                         // changes on the keyboard changes here, because it is the same code.
                         val state by DictateController.state.collectAsState()
                         DictateSmartbarUi(state = state)
+                    }
                     }
                 }
             }
@@ -118,7 +150,18 @@ class MaRecordingLine(private val service: AccessibilityService) {
             lifecycleHost = host
             added = true
         }.onFailure {
+            // The bar failing must never take the service with it.
+            //
+            // This window hosts a composition that reads the keyboard's theme, and the accessibility
+            // service also owns the magic finger and the reader. An exception thrown here would kill
+            // all three at once — he would lose the finger and the reader because a strip of UI could
+            // not be drawn, which is a wildly disproportionate way to fail.
+            //
+            // The recording itself is unaffected either way: the microphone does not run through
+            // this window. Worst case he records without seeing the bar, which is where this feature
+            // started.
             MaLog.add("keys", "recording bar could not be shown: ${it.javaClass.simpleName}")
+            host.detach()
         }
     }
 
