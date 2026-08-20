@@ -4017,3 +4017,38 @@ instead, so every pass reads its preference the same way.
 All eleven icons confirmed present in the artifact, and every preference named by a row confirmed to
 exist in `AppPrefs` — both by script rather than by eye. Those two are the cause of most red builds
 in this project.
+
+---
+
+# 104. The housekeeping: every red build becomes a check
+
+Six of the last thirty builds were red and **not one was a design mistake.** They were all the same
+shape — a scripted edit leaving a duplicate declaration, an orphaned annotation, an import added
+twice or removed while still used, or a symbol used above the line declaring it.
+
+Each cost five minutes of CI and a message to him saying it had gone red. `scripts/verify.py` turns
+every one of them into a check that runs in under a second.
+
+**What it checks**, each learned from a specific failure: duplicate imports · an import above
+`package` · a name declared twice in one scope · two `@Composable` in a row · an icon used without
+its import · `by` delegation without `getValue` · a preference that no longer exists in `AppPrefs` ·
+a `when` with no branch for a new enum entry · brace and paren balance against `HEAD` · anything
+key-shaped in the diff.
+
+**It reads only the files this commit touches.** A full-tree scan finds old debts and buries today's
+mistake among them.
+
+## The part that took the longest was not crying wolf
+
+The duplicate-declaration check used indentation as a proxy for scope. First version: **454 false
+alarms** on code that compiles perfectly. Tightened: **106**. Both useless, because Kotlin is happy
+for one name to live in two scopes — and **a checker that cries wolf is worse than no checker**,
+since it trains you to ignore it.
+
+It tracks scope by brace depth now. Down to 17 across 407 files, all in files this project never
+edits, and it still catches the real one.
+
+## Tested
+
+**All five reproduced red builds caught, 5 of 5.** Then end to end: two real faults injected into a
+real file → exit 1 naming both; restored → exit 0.

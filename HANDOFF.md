@@ -98,6 +98,13 @@ for, and the correct form was eleven lines further down the same file.
 by extracting the enum names with a regex and diffing against what each `when` covers; do not go by
 memory of how many there are.
 
+**Run `python3 scripts/verify.py` before every push.** It is the balance check plus every other
+red build this project has had: duplicate imports, imports above `package`, a name declared twice in
+one scope, two `@Composable` in a row, an icon used without its import, `by` delegation without
+`getValue`, a preference that no longer exists, a `when` missing a branch for a new enum entry, and
+anything key-shaped in the diff. Each check is there because it cost a build. It reads only the files
+this commit touches, and exit 1 means CI would have said the same thing five minutes later.
+
 **Balance-check every edited file against `HEAD`, not against zero.** Counting braces and parens in
 the new text only tells you it is self-consistent. Comparing the counts to the committed version
 catches a splice that ate one line too many, which happened once and was caught this way.
