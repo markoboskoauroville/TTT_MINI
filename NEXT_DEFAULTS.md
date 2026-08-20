@@ -4464,3 +4464,25 @@ in setup is a real step rather than an acknowledgement of one. Six steps, not se
 The router's fallback pointed at `FinishUp` when nothing was left to grant; it lands on the last real
 step now. Translated copies of the dead strings are left in the locale files — unused strings cost
 nothing, and rewriting forty of them to delete text nobody reads is not a good trade.
+
+---
+
+# 115. A key that copies the screen
+
+Everything this keyboard does to another application depends on the accessibility tree, and when the
+finger cannot find a button or the reader cannot find the words, **that tree is the only place the
+answer lives.**
+
+Reading it used to mean summoning the wand, pressing the thing, and copying from the bar it raised —
+a diagnostic that needed a rehearsal, at the moment something is already going wrong.
+
+**One key.** Press it and the screen underneath is on the clipboard, ready to paste into a chat.
+
+It calls `DictateAccessibilityService.dumpScreen`, the same path the wand's copy button uses, so the
+two cannot produce different dumps. The toast says how many characters were copied — a dump that came
+back tiny is itself the answer, and a silent success looks identical to a silent failure.
+
+**A stack of layers, not a bug icon.** What it reads is the layer under the picture, which is exactly
+what the tree is. Nothing here is broken, and an instrument should not look like an alarm.
+
+Add it from Feature row settings; it is called **Dump the screen for diagnosis**.

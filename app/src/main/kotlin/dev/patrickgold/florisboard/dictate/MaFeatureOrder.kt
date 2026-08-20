@@ -181,6 +181,19 @@ enum class MaFeatureKey(val id: String, val label: String) {
     SUBTITLE("subtitle", "S, show the reading subtitle"),
 
     /**
+     * Dump the accessibility tree of whatever is on screen, onto the clipboard.
+     *
+     * It exists because everything this keyboard does to other applications depends on that tree,
+     * and when the finger cannot find a button or the reader cannot find the words, the tree is the
+     * only place the answer lives. Until now reading it meant summoning the wand, pressing the
+     * thing, and copying from the bar it raised — a diagnostic that needed a rehearsal.
+     *
+     * One key instead. Press it and the screen underneath is on the clipboard, ready to paste into
+     * a chat where somebody can read it.
+     */
+    DUMP("dump", "Dump the screen for diagnosis"),
+
+    /**
      * The dictation history: everything transcribed, ready to put back into a field.
      *
      * A key rather than a menu because it is the recovery route. A dictation that went into the
@@ -310,6 +323,7 @@ object MaFeatureOrder {
         MaFeatureKey.PIN,
         MaFeatureKey.READER,
         MaFeatureKey.SUBTITLE,
+        MaFeatureKey.DUMP,
         MaFeatureKey.SPACER,
     )
 

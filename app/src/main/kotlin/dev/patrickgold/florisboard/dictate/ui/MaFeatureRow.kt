@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.RecordVoiceOver
@@ -725,6 +726,36 @@ fun MaFeatureRow(
                     modifier = keyMod,
                     tint = null,
                 ) { keyboardManager.activeState.imeUiMode = ImeUiMode.CLIPBOARD }
+
+                MaFeatureKey.DUMP -> ThemedIconKey(
+                    code = KeyCode.NOOP,
+                    // A stack of layers: what this reads is the layer under the picture, which is
+                    // exactly what the tree is. Not a bug icon — nothing here is broken, and an
+                    // instrument should not look like an alarm.
+                    icon = Icons.Default.Layers,
+                    contentDescription = "Copy the screen's accessibility tree",
+                    modifier = keyMod,
+                    tint = null,
+                ) {
+                    // Straight to the clipboard, because it is far too long to read on a phone and
+                    // its whole purpose is to be pasted somewhere else. The same path the wand's
+                    // copy button uses, so the two cannot produce different dumps.
+                    if (DictateAccessibilityService.isRunning) {
+                        val dump = DictateAccessibilityService.dumpScreen()
+                        clipboardManager.addNewPlaintext(dump)
+                        Toast.makeText(
+                            context,
+                            "Screen copied \u2014 ${dump.length} characters",
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Turn on the accessibility service to read the screen",
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+                }
 
                 MaFeatureKey.SUBTITLE -> MaSubtitleToggleKey(modifier = keyMod, litColor = MaSand)
 

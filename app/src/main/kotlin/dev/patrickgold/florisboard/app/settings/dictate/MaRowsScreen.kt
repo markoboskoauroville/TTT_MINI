@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.AutoFixHigh
@@ -524,6 +525,8 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.ContentCopy, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CLIP_HISTORY ->
                 Icon(Icons.Default.ContentPasteGo, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.DUMP ->
+                Icon(Icons.Default.Layers, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.SUBTITLE -> letters("S")
             MaFeatureKey.READER ->
                 Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = tint, modifier = size)
