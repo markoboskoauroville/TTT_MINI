@@ -67,20 +67,18 @@ object MaSpeechify {
     private var lastGoodKey: Int = 0
 
     /**
-     * Which key spoke last, counted from one, and how many there are — for the corner of the reader.
+     * The key being tried right now, counted from one, for the corner of the reader.
      *
-     * Exposed as state he can see rather than only as a log line. A ring that walks silently is a
-     * ring nobody can reason about: when a reading is slow to start, the number in the corner says
-     * at once whether it is on key 3 of 21 because two are tired, or on key 1 and simply waiting for
-     * the network. That distinction used to cost a log export.
+     * **Updated on every attempt, not only on success — it is a progress bar.** The first version
+     * showed only the key that worked, on the reasoning that a flickering number is a progress bar
+     * rather than an answer. He wanted the progress bar: while a reading is slow to start, watching
+     * the number climb *is* the diagnosis. A still `1` means waiting for the network; `1 2 3 4` means
+     * the ring is walking past tired keys.
      *
-     * Updated only on success. A number that flickered through every key being tried would be a
-     * progress bar, and a progress bar is a different thing from an answer.
+     * The total is not exposed. He can count his keys in settings, and a second number on a screen
+     * built for one word at a time is one more thing competing for the eye.
      */
     var activeKeyNumber by mutableStateOf(0)
-        private set
-
-    var keyCount by mutableStateOf(0)
         private set
 
     private const val BASE = "https://api.sws.speechify.com/v1/audio/speech"
@@ -225,7 +223,7 @@ object MaSpeechify {
             return null
         }
         val keys = MaKeys.split(account.apiKey).filter { it.isNotBlank() }
-        keyCount = keys.size
+
         if (keys.isEmpty()) {
             MaLog.add("read", "Speechify account has no keys")
             return null
@@ -245,6 +243,9 @@ object MaSpeechify {
         val order = (startAt until keys.size) + (0 until startAt)
         for (index in order) {
             val key = keys[index]
+            // Set before the request, so the walk is visible while it happens rather than only
+            // after it finishes.
+            activeKeyNumber = index + 1
             val result = runCatching { speakOnce(text, voice, key, dest) }.getOrElse { e ->
                 MaLog.add("read", "speak failed: ${e.javaClass.simpleName}")
                 return null
@@ -253,7 +254,6 @@ object MaSpeechify {
                 200 -> {
                     // Remembered, so the next read starts here instead of walking to it again.
                     lastGoodKey = index
-                    activeKeyNumber = index + 1
                     MaLog.add("read", "spoke ${text.length} chars as ${voice.label} on key ${index + 1}")
                     return dest
                 }

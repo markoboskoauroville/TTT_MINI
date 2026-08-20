@@ -4698,8 +4698,13 @@ are on the ring.
 this says at once whether it is on key 3 because two are tired, or on key 1 and simply waiting for the
 network — a distinction that used to cost a log export and a round trip to me.
 
-**Updated only on success.** A number flickering through every key being tried would be a progress
-bar, and a progress bar is a different thing from an answer.
+**Updated on every attempt — it IS the progress bar.** The first version updated only on success, on
+the reasoning that a flickering number is a progress bar rather than an answer. He wanted the progress
+bar, and he was right: while a reading is slow to start, watching the number climb *is* the diagnosis.
+A still `1` means waiting for the network; `1 2 3 4` means the ring is walking past tired keys.
+
+**One number, no total.** He can count his keys in settings, and a second number on a screen built for
+one word at a time is one more thing competing for the eye.
 
 Held as Compose state rather than a plain field, so it actually refreshes — a `@Volatile Int` would
 have been correct and invisible, which is the worst combination for an instrument.

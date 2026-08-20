@@ -337,9 +337,12 @@ private fun lineText(
 /**
  * Which Speechify key is speaking, in the bottom corner, for diagnosis.
  *
- * A ring that walks silently is a ring nobody can reason about. When a reading is slow to start, this
- * says at once whether it is on key 3 of 21 because two are tired, or on key 1 and simply waiting for
- * the network — a distinction that used to cost a log export.
+ * A ring that walks silently is a ring nobody can reason about. It climbs as keys are tried, so
+ * watching it IS the diagnosis: a still `1` means waiting for the network, `1 2 3 4` means the ring is
+ * walking past tired keys. That distinction used to cost a log export.
+ *
+ * One number, no total. He can count his keys in settings, and a second number on a screen built for
+ * one word at a time is one more thing competing for the eye.
  *
  * As dim as the close mark and for the same reason: it is an instrument, not a control, and anything
  * brighter would compete with the words. Drawn only when there is something to say.
@@ -347,14 +350,13 @@ private fun lineText(
 @Composable
 private fun MaKeyCorner() {
     val n = MaSpeechify.activeKeyNumber
-    val total = MaSpeechify.keyCount
-    if (n <= 0 || total <= 0) return
+    if (n <= 0) return
     Box(
         modifier = Modifier.fillMaxSize().padding(8.dp),
         contentAlignment = Alignment.BottomEnd,
     ) {
         Text(
-            text = "$n/$total",
+            text = "$n",
             color = MaSubtitleShadow,
             fontSize = 11.sp,
         )
