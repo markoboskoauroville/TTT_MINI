@@ -5025,3 +5025,32 @@ the time to find that out is one attempt, not three.**
 
 The duplication is real and it will drift — if the keyboard's bar changes, this one will not follow.
 That is now a known, written-down cost rather than a hidden one, and it is the cheaper of the two.
+
+---
+
+# 131. The badge becomes a switch, and the note carries its own colour
+
+## Two steps, not one
+
+The badge swapped the language **and** sent the audio back up in the same tap. That sounded
+efficient and it is wrong: the tag could not be looked at or corrected without spending a
+transcription, and a mis-tap cost a call to the provider.
+
+**The badge now only changes what the tag says. Re-Transcribe sends, in whatever the badge shows.**
+
+**A switch that also acts is two controls wearing one coat.**
+
+The choice lives beside the row rather than in the entry, because it is a decision about the *next*
+send and not a fact about the recording: until Re-Transcribe is pressed, the recording is still
+exactly what it always was.
+
+## Delete had fallen off the row
+
+It was in a stale second copy of `HistoryPanelRow` that an earlier edit of mine left behind — two
+definitions of the same function, and the file compiled, so nothing said so. One copy now.
+
+## The note carries the colour, not its title
+
+The colour was on the title, so a note whose title failed to generate looked exactly like every other
+entry — **the very case where recognising it matters most.** The transcript itself is teal now, so an
+offline note is identifiable whether or not the model ever named it.

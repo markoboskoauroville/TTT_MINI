@@ -342,13 +342,30 @@ private fun HistoryPanelRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            SnyggText(
-                elementName = FlorisImeUi.SmartbarCandidateWordText.elementName,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                text = historyPreview(entry.text),
-            )
+            // THE NOTE ITSELF IS COLOURED, not only its title.
+            //
+            // The colour was on the title, and a note whose title failed to generate looked exactly
+            // like every other entry — which is the case where he most needs to recognise it. The
+            // transcript carries the colour, so an offline note is identifiable whether or not the
+            // model ever named it.
+            if (isNote) {
+                Text(
+                    text = historyPreview(entry.text),
+                    color = MaNoteAccent,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            } else {
+                SnyggText(
+                    elementName = FlorisImeUi.SmartbarCandidateWordText.elementName,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    text = historyPreview(entry.text),
+                )
+            }
             SnyggText(
                 elementName = FlorisImeUi.KeyHint.elementName,
                 // The hint makes the long-press discoverable; without it the second version would exist
@@ -381,10 +398,9 @@ private fun HistoryPanelRow(
         // shares means each one has room to say what it does.
         // NO WEIGHTS. Every label is as wide as its own word.
         //
-        // They were weighted, and a weight is a promise about width that a word cannot keep: "Insert"
-        // got a quarter of the line whatever it needed, so it clipped to "Ins" and "Delete" to "Del"
-        // while the badge was squeezed to nothing and never appeared at all. Sized to content and
-        // spread evenly, each label says its whole word and the gaps between them are equal.
+        // They were weighted, and a weight is a promise about width that a word cannot keep: given a
+        // quarter each, "Insert" clipped to "Ins" and the badge was squeezed to nothing and never
+        // appeared at all.
         MaHistoryAction(
             label = "Insert",
             enabled = !entry.failed,
@@ -392,38 +408,40 @@ private fun HistoryPanelRow(
             onClick = onInsert,
         )
         if (entry.audioPath != null) {
-            // The language this recording was SENT in, as a badge on the recording itself.
+            // THE BADGE IS A TOGGLE. RE-TRANSCRIBE IS THE ACTION. Two steps, not one.
             //
-            // It was a badge in the header, which said what the next send would use — a fact about
-            // the future attached to a list of the past. Here it answers the question actually
-            // being asked: this transcript came back wrong, what did I send it as?
+            // It did both at once: tapping the badge swapped the language and immediately sent the
+            // audio back up. That is one gesture, which sounded efficient, and it is wrong — it
+            // means the tag cannot be *looked at* or corrected without spending a transcription, and
+            // a mis-tap costs a call to the provider.
             //
-            // Tapping it changes the language and re-transcribes in one press. Correcting the
-            // mistake is one gesture because that is what the mistake costs him.
-            // The badge: in square brackets, so it reads as a label on the recording rather than
-            // as a fourth action. It says the language this audio was SENT in — the question he
-            // asks on this screen is "it came back wrong, what did I send it as".
+            // So the badge only changes what the tag says. Nothing is sent until Re-Transcribe is
+            // pressed, and it sends in whatever the badge is showing. **A switch that also acts is
+            // two controls wearing one coat.**
             //
-            // Tapping it swaps the language and re-transcribes in one press, because that is the
-            // whole errand and it should cost one gesture.
+            // The choice lives beside the row rather than in the entry, because it is a decision
+            // about the next send and not a fact about the recording. Until he presses
+            // Re-Transcribe, the recording is still what it always was.
+            var chosen by remember(entry.id) { mutableStateOf(entry.language) }
             MaHistoryAction(
-                label = if (entry.language == MaLanguage.EN) "[ENG]" else "[HR]",
+                label = if (chosen == MaLanguage.EN) "[ENG]" else "[HR]",
                 enabled = true,
                 tint = accent,
                 onClick = {
-                    val next = if (entry.language == MaLanguage.EN) MaLanguage.HR else MaLanguage.EN
-                    MaLanguage.set(rowContext, next)
-                    MaLog.add("keys", "history badge: re-transcribing in $next")
-                    onRetranscribe()
+                    chosen = if (chosen == MaLanguage.EN) MaLanguage.HR else MaLanguage.EN
                 },
             )
             MaHistoryAction(
-                // The whole word, with the dash. It clipped to "Transcri", and "Transcribe" was the
-                // wrong word anyway: this recording has already been transcribed once.
                 label = "Re-Transcribe",
                 enabled = true,
                 tint = accent,
-                onClick = onRetranscribe,
+                onClick = {
+                    // The language is set at the moment of sending, from the badge, so what he can
+                    // see is what goes up.
+                    MaLanguage.set(rowContext, chosen)
+                    MaLog.add("keys", "re-transcribing in $chosen")
+                    onRetranscribe()
+                },
             )
         }
         MaHistoryAction(
@@ -435,6 +453,48 @@ private fun HistoryPanelRow(
             onClick = onDeleteRequested,
         )
     }
+    }
+}
+
+/**
+ * The delete choice, as a strip along the bottom of the panel rather than a dialog.
+ *
+ * A dialog over a keyboard is awkward: it steals focus from the field being typed into and can push
+ * the panel around. A strip stays inside the keyboard's own bounds and reads as part of it.
+ */
+@Composable
+private fun MaDeleteChooser(
+    accent: Color,
+    onAudioOnly: () -> Unit,
+    onEverything: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    SnyggRow(
+        elementName = FlorisImeUi.MediaBottomRow.elementName,
+        modifier = Modifier.fillMaxWidth().padding(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        MaHistoryAction(
+            label = "Audio only",
+            enabled = true,
+            tint = MaDestructive,
+            onClick = onAudioOnly,
+            modifier = Modifier.weight(1f),
+        )
+        MaHistoryAction(
+            label = "Delete both",
+            enabled = true,
+            tint = MaDestructive,
+            onClick = onEverything,
+            modifier = Modifier.weight(1f),
+        )
+        MaHistoryAction(
+            label = "Cancel",
+            enabled = true,
+            tint = accent,
+            onClick = onCancel,
+            modifier = Modifier.weight(0.8f),
+        )
     }
 }
 
