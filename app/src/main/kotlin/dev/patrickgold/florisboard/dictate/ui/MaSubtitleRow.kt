@@ -90,6 +90,8 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val fontSp by prefs.dictate.maReaderFontSize.collectAsState()
     val fontSize = fontSp.coerceIn(10, 40).sp
     val lineHeight = (fontSp.coerceIn(10, 40) * 1.35f).sp
+    // The void draws its own box, so it needs its own scope to toggle full screen.
+    val scope = rememberCoroutineScope()
 
     // Pages of a size that FITS, not sentences.
     //
@@ -114,6 +116,48 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // The style Instagram and TikTok captions made ordinary — one word at a time, centred, big
     // enough to read at arm's length. It is the only one of the five that does not show its
     // neighbours, which is exactly why it is worth having: there is nothing to read ahead to.
+    // THE BLACK VOID.
+    //
+    // Full screen, true black, and one word at a time as large as it will go. Nothing else is drawn
+    // — no page, no neighbours, no box edge, no background lighter than the void itself.
+    //
+    // This is the style built for the way he actually reads. He is dyslexic; a page of text is work
+    // and a single word is not. With nothing else on the screen there is nothing to track back to,
+    // nothing to skip ahead to, and no line to lose — the word arrives, is read, and is replaced.
+    //
+    // Long press collapses it back to the small subtitle box, the same gesture that opened it.
+    if (style == "void") {
+        val word = words.getOrNull(index)?.text.orEmpty()
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .then(if (full) Modifier.fillMaxHeight() else Modifier.height(SUBTITLE_HEIGHT))
+                // True black rather than the box's near-black. The void is the point: anything
+                // lighter draws an edge, and an edge is a second thing on screen.
+                .background(Color.Black)
+                .combinedClickable(
+                    onClick = { MaReader.skipSentence() },
+                    onLongClick = { scope.launch { prefs.dictate.maReaderFullscreen.set(!full) } },
+                )
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = word,
+                color = lit,
+                // As large as the void will hold. Sized from his own setting so the whole app still
+                // answers to one number, but multiplied hard, because a single word on a black
+                // screen can take room that a page never could.
+                fontSize = (if (full) fontSp * 5 else fontSp * 2).coerceIn(24, 120).sp,
+                lineHeight = (if (full) fontSp * 5.4f else fontSp * 2.2f).coerceIn(28f, 130f).sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        return
+    }
+
     if (style == "oneword") {
         val word = words.getOrNull(index)?.text.orEmpty()
         SubtitleBox(modifier, full) {

@@ -211,6 +211,7 @@ fun MaReaderScreen() = FlorisScreen {
             Triple("karaoke", "Karaoke", "The line fills up behind the voice"),
             Triple("spotlight", "Spotlight", "Everything dimmed but the word being said"),
             Triple("oneword", "One word", "That word alone, large \u2014 nothing to read ahead to"),
+            Triple("void", "Black void", "Full screen, true black, one huge word at a time"),
         )) {
             Row(
                 modifier = Modifier

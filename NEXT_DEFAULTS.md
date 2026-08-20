@@ -4129,3 +4129,49 @@ log. Regenerate it whenever sections are added.
 
 **The rule this leaves:** when a briefing and a log both exist, the briefing must be rewritten every
 time it stops being true, and the log must never be the thing a new chat is told to read.
+
+---
+
+# 107. The Black Void, and full screen that actually is
+
+He is dyslexic. The reader is not a nice extra in this app; it is the part that does the most work,
+and this round is about making it serve that properly.
+
+## Full screen was never full screen
+
+The branch sat two thirds of the way down the layout, so the early return skipped only what came
+**after** it — the status line, the edit strip and the number row had already been composed. "Full
+screen" arrived with three bands above it and read as a large box.
+
+It is now the **first thing in the Column**, above the Smartbar and every row, so the return is
+total: while reading expanded, the reader is the entire keyboard.
+
+## The Black Void
+
+A fifth style, and the one built for how he actually reads. **Full screen, true black, one word at a
+time, as large as it will go.** No page, no neighbours, no box edge, no background lighter than the
+void.
+
+With nothing else on screen there is nothing to track back to, nothing to skip ahead to, and no line
+to lose. The word arrives, is read, and is replaced.
+
+**True black rather than the box's near-black**, because anything lighter draws an edge and an edge
+is a second thing on screen. Long press collapses it back to the small box — the same gesture that
+opened it.
+
+## The zone keys get real icons
+
+`n k c` were a hand-drawn keyboard outline with a letter inside, and he was right about them twice.
+The neighbours in that row are drawn glyphs from one set; **a shape drawn by hand beside them reads
+as an amateur patch however carefully it is proportioned.**
+
+Numbers, Keyboard and ContentPaste now, at 24dp like every other icon, green when the zone is open.
+`MaZoneGlyph.kt` is deleted rather than left unused.
+
+**The rule this settles**, after two attempts at drawing it by hand: *use the icon set. If the set
+has nothing for it, that is a reason to reconsider the key, not a reason to draw one.*
+
+## Not built this round
+
+**The colour picker** — a full-screen wheel, DaVinci-grade, with a draggable loupe, used everywhere
+a colour is chosen. It is a real build of its own and deserves one.

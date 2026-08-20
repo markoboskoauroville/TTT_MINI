@@ -75,6 +75,24 @@ fun TextInputLayout(
             .fillMaxWidth()
             .wrapContentHeight(),
     ) {
+        // THE READER, BEFORE ANYTHING ELSE.
+        //
+        // This branch sits at the very top of the Column on purpose. It used to sit two thirds of
+        // the way down, which meant the early return skipped only what came AFTER it — the status
+        // line, the edit strip and the number row had all already been composed, so "full screen"
+        // arrived with three bands above it and looked like a large box rather than a screen.
+        //
+        // Above everything, the return is total: while he is reading with the box expanded, the
+        // reader is the entire keyboard.
+        val maReaderSubtitle = prefs.dictate.maReaderDisplay.collectAsState().value == "subtitle"
+        val maReaderFull by prefs.dictate.maReaderFullscreen.collectAsState()
+        val maReaderReading = MaReader.currentIndex >= 0
+        if (maReaderSubtitle && maReaderFull && maReaderReading) {
+            // The whole keyboard's height: the keys plus the bands that would have been above them.
+            MaSubtitleRow(modifier = Modifier.height(FlorisImeSizing.keyboardUiHeight() + 160.dp))
+            return@Column
+        }
+
         // While an emoji search is running (issue #110), the search panel takes the Smartbar's slot so the
         // keyboard layout below stays available for typing the query.
         if (clipboardEditorActive != null) {
@@ -151,25 +169,6 @@ fun TextInputLayout(
         // Draws nothing at all when nothing is being read, so it costs no space the rest of the
         // time. That is why it can sit in the layout unconditionally instead of being switched in
         // and out, which would make the keyboard change height mid-reading.
-        val maReaderSubtitle = prefs.dictate.maReaderDisplay.collectAsState().value == "subtitle"
-        val maReaderFull by prefs.dictate.maReaderFullscreen.collectAsState()
-        // FULL SCREEN MEANS FULL SCREEN.
-        //
-        // While reading with the box expanded, the reader is the ONLY thing composed — no rows, no
-        // keys, nothing underneath. This is the rule from MA Reader: hide every child except the
-        // text, so that anything added to this keyboard later is hidden by default and has to argue
-        // its way back on. The version that named the things to hide is exactly how a player bar
-        // survived into full screen there.
-        //
-        // Gated on something actually being read, so the keyboard cannot be left unusable by a
-        // preference: stop the reader and every key is back.
-        val maReaderReading = MaReader.currentIndex >= 0
-        if (maReaderSubtitle && maReaderFull && maReaderReading) {
-            // The height the keys would have taken, plus the rows above them. `weight` is no use
-            // here: this Column wraps its content, so a weight of one resolves to nothing.
-            MaSubtitleRow(modifier = Modifier.height(FlorisImeSizing.keyboardUiHeight() + 96.dp))
-            return@Column
-        }
         if (maReaderSubtitle) {
             MaSubtitleRow()
         }

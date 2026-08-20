@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.KeyboardCapslock
+import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Replay
@@ -950,14 +951,22 @@ fun MaFeatureRow(
                     // 1, the number row. Digits, or whichever set the row is showing.
                     ThemedKey(
                         code = KeyCode.NOOP,
-                        // No ring around the key. The keyboard outline is back inside the glyph
-                        // where it belongs, and the zone being open is said the way every other key
-                        // in this app says a state: by colour. A border around one key and not the
-                        // others made these three read as bolted on rather than as part of the row.
+                        // A real icon, at the size and weight of every other icon in the row.
+                        //
+                        // These were a hand-drawn keyboard outline with a letter inside, and he was
+                        // right that they looked like nothing else on the board — the neighbours are
+                        // drawn glyphs from one set, and a shape drawn by hand beside them reads as
+                        // an amateur patch however carefully it is proportioned. Colour still says
+                        // whether the zone is open, the way it does everywhere in this app.
                         modifier = keyMod,
                         onClick = { scope.launch { prefs.dictate.maExtraRow.set(!zone1) } },
                     ) { fg ->
-                        MaZoneGlyph("n", if (zone1) onGreen else fg, size = 30.dp)
+                        Icon(
+                            imageVector = Icons.Default.Numbers,
+                            contentDescription = null,
+                            tint = if (zone1) onGreen else fg,
+                            modifier = Modifier.size(24.dp),
+                        )
                     }
                 }
 
@@ -966,14 +975,22 @@ fun MaFeatureRow(
                     // and on a keyboard driven by voice it is off more often than it is on.
                     ThemedKey(
                         code = KeyCode.NOOP,
-                        // No ring around the key. The keyboard outline is back inside the glyph
-                        // where it belongs, and the zone being open is said the way every other key
-                        // in this app says a state: by colour. A border around one key and not the
-                        // others made these three read as bolted on rather than as part of the row.
+                        // A real icon, at the size and weight of every other icon in the row.
+                        //
+                        // These were a hand-drawn keyboard outline with a letter inside, and he was
+                        // right that they looked like nothing else on the board — the neighbours are
+                        // drawn glyphs from one set, and a shape drawn by hand beside them reads as
+                        // an amateur patch however carefully it is proportioned. Colour still says
+                        // whether the zone is open, the way it does everywhere in this app.
                         modifier = keyMod,
                         onClick = { scope.launch { prefs.dictate.maZoneKeyboard.set(!zone2) } },
                     ) { fg ->
-                        MaZoneGlyph("k", if (zone2) onGreen else fg, size = 30.dp)
+                        Icon(
+                            imageVector = Icons.Default.Keyboard,
+                            contentDescription = null,
+                            tint = if (zone2) onGreen else fg,
+                            modifier = Modifier.size(24.dp),
+                        )
                     }
                 }
 
@@ -981,14 +998,22 @@ fun MaFeatureRow(
                     // 3, the copy and paste row along the top. Paste, copy, history and the rest of it.
                     ThemedKey(
                         code = KeyCode.NOOP,
-                        // No ring around the key. The keyboard outline is back inside the glyph
-                        // where it belongs, and the zone being open is said the way every other key
-                        // in this app says a state: by colour. A border around one key and not the
-                        // others made these three read as bolted on rather than as part of the row.
+                        // A real icon, at the size and weight of every other icon in the row.
+                        //
+                        // These were a hand-drawn keyboard outline with a letter inside, and he was
+                        // right that they looked like nothing else on the board — the neighbours are
+                        // drawn glyphs from one set, and a shape drawn by hand beside them reads as
+                        // an amateur patch however carefully it is proportioned. Colour still says
+                        // whether the zone is open, the way it does everywhere in this app.
                         modifier = keyMod,
                         onClick = { scope.launch { prefs.dictate.maEditRow.set(!zone3) } },
                     ) { fg ->
-                        MaZoneGlyph("c", if (zone3) onGreen else fg, size = 30.dp)
+                        Icon(
+                            imageVector = Icons.Default.ContentPaste,
+                            contentDescription = null,
+                            tint = if (zone3) onGreen else fg,
+                            modifier = Modifier.size(24.dp),
+                        )
                     }
                 }
 

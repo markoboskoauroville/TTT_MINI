@@ -36,6 +36,8 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
+import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Delete
@@ -88,7 +90,6 @@ import dev.patrickgold.florisboard.dictate.MaCommandPalette
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import dev.patrickgold.florisboard.dictate.MaMacroSlots
 import dev.patrickgold.florisboard.dictate.MaRows
-import dev.patrickgold.florisboard.dictate.ui.MaZoneGlyph
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -551,9 +552,12 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 )
             // Green, the colour these three wear on the keyboard when their zone is showing. Colour
             // means state everywhere in this app, so it appears here only for the keys that carry it.
-            MaFeatureKey.ZONE_1 -> MaZoneGlyph("n", Color(0xFF6FA85A), size = 24.dp)
-            MaFeatureKey.ZONE_2 -> MaZoneGlyph("k", Color(0xFF6FA85A), size = 24.dp)
-            MaFeatureKey.ZONE_3 -> MaZoneGlyph("c", Color(0xFF6FA85A), size = 24.dp)
+            MaFeatureKey.ZONE_1 ->
+                Icon(Icons.Default.Numbers, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.ZONE_2 ->
+                Icon(Icons.Default.Keyboard, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.ZONE_3 ->
+                Icon(Icons.Default.ContentPaste, contentDescription = null, tint = tint, modifier = size)
         }
     }
 }
