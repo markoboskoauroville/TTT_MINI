@@ -4316,3 +4316,46 @@ added next year is reachable by somebody whose arrangement predates it.
 
 Tested: 5 cases, and the invariant that every switch is present exactly once whatever is stored —
 empty, unknown, duplicated, partial.
+
+---
+
+# 111. The reader that went dead, and brightness instead of colour
+
+## Why the speaker key died
+
+Not fragmentation, and no module was lost. **`state` and `player` are two facts that can disagree**,
+and when they do the key goes dead in a way that looks like nothing at all.
+
+With `state = SPEAKING` and no player: a press pauses nothing and sets PAUSED, the next press starts
+nothing and sets SPEAKING, and it flips between them **forever**. No sound, no way back to IDLE, and
+the reader is dead until the keyboard is rebuilt. That is exactly what he described.
+
+They come apart easily. The completion handler releases the player and hands off to the
+scroll-and-continue coroutine; if that coroutine is cancelled in between — keyboard hidden, process
+trimmed — the state is left claiming to read with nothing behind it.
+
+**The fix is not to audit every path that could cancel.** There is always one more, and the audit has
+to be redone whenever the code changes. `toggle` now checks the claim against the thing before acting
+on it: **the player is the truth, `state` is a claim about it.** No player means idle, whatever the
+machine believes.
+
+Verified against the exact sequence: the old machine flips paused/resumed forever; the new one starts
+reading on the first press. Normal use is unchanged.
+
+## Brightness, not colour
+
+Four coloured chips became one **grey-to-white ramp**. A highlight over white text does not need a
+hue — it needs to be *more* than the page, and that is one axis.
+
+**Bounded at half grey.** Below that the mark stops out-reading the page and does the opposite of its
+job; a control should not offer settings that defeat it. **Neutral at every position** — r = g = b —
+or it is a colour picker pretending to be a brightness control.
+
+Tested both directions: position → hex → position round-trips exactly, never darker than `#808080`,
+always neutral, and an old coloured value falls back sanely rather than throwing.
+
+## Written into the manifest
+
+Sections 10 to 13 of `MANTRA_MANIFEST/modules/design-language.md`: a dial is judged against what it
+is doing; a switcher is not an action and the face cannot say so; brightness is not colour; state and
+reality are two facts that will disagree.

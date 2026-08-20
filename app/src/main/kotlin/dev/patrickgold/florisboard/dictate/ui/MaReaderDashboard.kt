@@ -10,6 +10,12 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
+import kotlin.math.roundToInt
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -167,34 +173,74 @@ fun MaReaderDashboard(onClose: () -> Unit) {
 
         Spacer(Modifier.height(12.dp))
 
-        // COLOUR — the swatches only. The wheel is a full-screen thing and belongs in settings;
-        // here he wants the four he actually uses, in one tap.
+        // BRIGHTNESS, not colour.
+        //
+        // Four coloured chips became one grey-to-white ramp, because he does not want a colourful
+        // app and a highlight does not need a hue. What it needs is to be *more* than the page
+        // around it, and on a white page that is one axis: how bright.
+        //
+        // Half grey to white, and no darker. Below about half the word stops out-reading the page
+        // and the highlight is doing the opposite of its job — so the dim end of the ramp is a
+        // choice, not a limit anybody would want to pass.
         Text(text = "highlight", color = MaDashDim, fontSize = 13.sp)
         Spacer(Modifier.height(6.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(MaSwatches.QUICK) { swatch ->
-                val on = hex.equals(swatch, ignoreCase = true)
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(swatchColour(swatch))
-                        .clickable { scope.launch { prefs.dictate.maReaderHighlightHex.set(swatch) } }
-                        .padding(3.dp),
-                ) {
-                    if (on) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .clip(RoundedCornerShape(5.dp))
-                                .background(Color.Black),
-                        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Brush.horizontalGradient(listOf(MaRampFrom, Color.White)))
+                .pointerInput(Unit) {
+                    fun set(x: Float) {
+                        val f = (x / size.width).coerceIn(0f, 1f)
+                        scope.launch { prefs.dictate.maReaderHighlightHex.set(rampHex(f)) }
                     }
+                    detectTapGestures { set(it.x) }
                 }
-            }
+                .pointerInput(Unit) {
+                    detectDragGestures { change, _ ->
+                        val f = (change.position.x / size.width).coerceIn(0f, 1f)
+                        scope.launch { prefs.dictate.maReaderHighlightHex.set(rampHex(f)) }
+                    }
+                },
+        ) {
+            // The marker sits where the current brightness is, so the bar shows the setting rather
+            // than only accepting one.
+            Box(
+                modifier = Modifier
+                    .rampMarker(rampFraction(hex))
+                    .size(width = 4.dp, height = 44.dp)
+                    .background(Color(0xFF0B0D10)),
+            )
         }
     }
 }
+
+/** The dim end of the ramp: half grey. Darker than this and the highlight stops leading the eye. */
+private val MaRampFrom = Color(0xFF808080)
+
+/** A position on the ramp to a grey. 0 is half grey, 1 is white. */
+private fun rampHex(fraction: Float): String {
+    val v = (128 + (127 * fraction)).toInt().coerceIn(128, 255)
+    return "#%02X%02X%02X".format(v, v, v)
+}
+
+/** A stored grey back to its position, so the marker can be drawn where he left it. */
+private fun rampFraction(hex: String): Float {
+    val h = hex.trim().removePrefix("#")
+    if (h.length != 6) return 1f
+    val v = h.substring(0, 2).toIntOrNull(16) ?: return 1f
+    return ((v - 128) / 127f).coerceIn(0f, 1f)
+}
+
+/** Places the ramp marker along the bar. */
+private fun Modifier.rampMarker(fraction: Float) = this.then(
+    Modifier.layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        val x = ((constraints.maxWidth - placeable.width) * fraction).roundToInt()
+        layout(constraints.maxWidth, placeable.height) { placeable.place(x, 0) }
+    },
+)
 
 @Composable
 private fun DashButton(label: String, onClick: () -> Unit) {

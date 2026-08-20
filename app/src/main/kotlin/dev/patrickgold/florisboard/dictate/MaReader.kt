@@ -115,6 +115,31 @@ object MaReader {
      * broken feature.
      */
     fun toggle(context: Context, onMessage: (String) -> Unit) {
+        // Heal a state that is lying, before acting on it.
+        //
+        // THE BUG THIS FIXES. `state` and `player` are two facts that can disagree, and when they do
+        // the key goes dead in a way that looks like nothing at all: with `state = SPEAKING` and no
+        // player, a press pauses nothing and sets PAUSED, the next press starts nothing and sets
+        // SPEAKING, and it flips between them forever. The icon changes, no sound arrives, and there
+        // is no way back to IDLE — so the reader is dead until the keyboard is rebuilt.
+        //
+        // They come apart easily. The completion handler releases the player and hands off to the
+        // scroll-and-continue coroutine; if that coroutine is cancelled in between — the keyboard
+        // hidden, the process trimmed — the state is left saying SPEAKING with nothing behind it.
+        //
+        // Rather than hunt every path that could cancel, the state is checked against the thing it
+        // claims. **The player is the truth; `state` is a claim about it.** No player means idle,
+        // whatever the machine believes, and pressing the key always does something again.
+        val live = runCatching { player?.isPlaying }.getOrNull()
+        if (state != State.LOADING && player == null) {
+            if (state != State.IDLE) MaLog.add("read", "state said $state with no player, reset")
+            state = State.IDLE
+        } else if (state == State.SPEAKING && live == false) {
+            // A player that exists but has stopped: the audio finished and nothing said so.
+            MaLog.add("read", "player had stopped while state said SPEAKING")
+            state = State.PAUSED
+        }
+
         when (state) {
             State.SPEAKING -> {
                 runCatching { player?.pause() }
