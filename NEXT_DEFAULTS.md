@@ -4748,3 +4748,32 @@ would be a second thing saying what the first one says.
 Driven by combining the recorder's state with `_imeVisible` rather than by an event, so **it cannot
 be left showing by a path nobody thought of** — every change to either fact re-answers the question.
 `show()` is idempotent because that flow emits on every change and adding a window twice throws.
+
+---
+
+# 122. The strip says what it is, and the history badge answers again
+
+## The history badge
+
+It called `MaLanguage.badge()`, which reads the preference directly. **Compose cannot see that
+dependency**, so the label had no reason to redraw when the preference changed — the tap worked, the
+language changed, and the badge went on saying what it said before. From outside: a button that does
+nothing.
+
+The label now comes from the state already being collected, so the redraw is a fact rather than a
+hope. **A value read outside Compose's knowledge is a value that will eventually stop updating**, and
+it fails as "the control is broken" rather than as anything that looks like a stale read.
+
+Its touch target grew too: it was text with padding, and text is exactly as wide as its letters — two
+of them here. On a list where every other control is a full row, a target the size of "HR" is one a
+thumb misses.
+
+## The recording strip
+
+The bare red line said *something is happening*. It now says **what**: the red dot, the word
+`recording` in lowercase, on black at 70% so the line of text underneath stays readable. A solid
+strip would cost him whatever he was reading, and this exists to inform him, not to take something.
+
+**Tapping it opens the keyboard**, which is why `FLAG_NOT_TOUCHABLE` is gone — but `NOT_FOCUSABLE`
+stays, because it must never steal the cursor from the field being dictated into. The whole strip is
+the target: anything more precise would be something to aim at while walking.

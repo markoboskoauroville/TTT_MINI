@@ -10,6 +10,11 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import dev.patrickgold.florisboard.dictate.MaLog
+import android.widget.TextView
+import android.widget.LinearLayout
+import android.view.inputmethod.InputMethodManager
+import android.graphics.drawable.GradientDrawable
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.graphics.PixelFormat
@@ -64,21 +69,55 @@ class MaRecordingLine(private val service: AccessibilityService) {
     }
 
     private fun add() {
-        val v = View(service).apply {
-            // Red, and this is the one place in this app where red is right: it is the universal
-            // sign for recording, and unlike a full container or a finished bucket, a live
-            // microphone genuinely is something to be aware of.
-            setBackgroundColor(0xFFEF4444.toInt())
+        val d = service.resources.displayMetrics.density
+        val v = LinearLayout(service).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            // Black at seventy per cent, so what is underneath stays readable. A solid strip would
+            // hide a line of whatever he is looking at, and this exists to inform him, not to cost
+            // him the thing he was reading.
+            setBackgroundColor(0xB3000000.toInt())
+            setPadding((d * 14).toInt(), (d * 6).toInt(), (d * 14).toInt(), (d * 6).toInt())
+
+            // The red dot: the same sign the recording bar uses, so the two views say it the same
+            // way rather than each inventing a language.
+            addView(
+                View(context).apply {
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(0xFFEF4444.toInt())
+                    }
+                },
+                LinearLayout.LayoutParams((d * 10).toInt(), (d * 10).toInt()),
+            )
+
+            addView(
+                TextView(context).apply {
+                    text = "recording"
+                    // Lowercase, as he asked for elsewhere: this is a state, not a headline.
+                    setTextColor(0xFFF2DDB4.toInt())
+                    textSize = 13f
+                    setPadding((d * 10).toInt(), 0, 0, 0)
+                },
+            )
+
+            // The whole strip opens the keyboard, because the strip IS the answer to "where is it".
+            // Anything more specific would be a target to aim at while walking.
+            setOnClickListener {
+                runCatching {
+                    (service.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
+                        ?.showSoftInput(null, InputMethodManager.SHOW_FORCED)
+                }
+                MaLog.add("keys", "recording strip tapped, asking for the keyboard")
+            }
         }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
-            (service.resources.displayMetrics.density * 3).toInt().coerceAtLeast(2),
+            WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            // Not focusable and not touchable: it must never take a press meant for the app
-            // underneath. FLAG_LAYOUT_NO_LIMITS lets it sit past the gesture inset, at the true
-            // bottom edge.
+            // Focusable is still off — it must never steal the cursor from the field he is dictating
+            // into — but touchable is now ON, because tapping it is the way back to the keyboard.
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
         ).apply { gravity = Gravity.BOTTOM or Gravity.START }

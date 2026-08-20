@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.clickable
 import dev.patrickgold.florisboard.dictate.MaLanguage
+import dev.patrickgold.florisboard.dictate.MaLog
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -148,9 +149,23 @@ fun DictateHistoryLayout(
             SnyggText(
                 elementName = FlorisImeUi.MediaEmojiSubheader.elementName,
                 modifier = Modifier
-                    .clickable { MaLanguage.cycleMode(context) }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                text = MaLanguage.badge(),
+                    .clickable {
+                        MaLanguage.cycleMode(context)
+                        MaLog.add("keys", "history badge tapped, now ${MaLanguage.badge()}")
+                    }
+                    // A real touch target. It was text with padding, and text is exactly as big as
+                    // its letters — two of them here. On a list where every other control is a full
+                    // row, a target the size of the word "HR" is one a thumb misses and reads as a
+                    // control that does not work.
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                // Derived from the OBSERVED value, not from a fresh read of the store.
+                //
+                // It called MaLanguage.badge(), which reads the preference directly. Compose cannot
+                // see that dependency, so the label had no reason to redraw when the preference
+                // changed — the tap worked and the badge went on saying what it said before, which
+                // from outside is a button that does nothing. Reading the state that is already
+                // being collected makes the redraw a fact rather than a hope.
+                text = if (activeLangCode == MaLanguage.EN) "ENG" else "HR",
             )
             // Jump straight to the full history management screen in the settings app.
             SnyggIconButton(
