@@ -4870,3 +4870,29 @@ dead, a release that snaps feels nervous.
 
 It sits directly under the clock, as one column, which is how the keyboard's bar arranges them: the
 numbers with the level beneath, not two things sharing a row.
+
+---
+
+# 126. The overlay hosts the real bar
+
+Asked four times, approximated three. **It is the same function now: `DictateSmartbarUi`, called
+directly.** Same controls, same icons, same VU meter, same theme — anything that changes on the
+keyboard changes on the overlay, because it is the same code.
+
+## What was actually in the way
+
+A window added by an accessibility service has **no Activity behind it**, and `ComposeView` refuses
+to compose without three things an Activity supplies invisibly: a **lifecycle owner**, a
+**saved-state registry** and a **view-model store**. The failure is a blank view, not an error, which
+is why "reuse the composable" kept collapsing into "reimplement the composable".
+
+`MaOverlayHost` supplies all three in eighty lines.
+
+**Eighty lines against three failed rebuilds.** That trade should have been obvious two builds
+earlier, and the rule is worth keeping: **when reuse is blocked by plumbing, build the plumbing.** A
+copy of a living thing has to be maintained forever and drifts the first time the original changes —
+which is exactly what happened here, three times.
+
+The lifecycle goes RESUMED on attach and DESTROYED on removal. A registry left at CREATED composes
+but never animates, so the meter would sit still — a failure that looks like a broken meter rather
+than a missing lifecycle.
