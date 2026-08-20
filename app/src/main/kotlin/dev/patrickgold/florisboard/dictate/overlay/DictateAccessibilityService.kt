@@ -10,6 +10,14 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import dev.patrickgold.florisboard.dictate.DictateController
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import android.accessibilityservice.AccessibilityService
 import android.app.Notification
 import android.app.NotificationChannel
@@ -56,6 +64,17 @@ class DictateAccessibilityService : AccessibilityService() {
 
 
     private var bubble: DictateBubbleController? = null
+
+    /** One line at the bottom of the screen while recording unseen. */
+    private var recordingLine: MaRecordingLine? = null
+
+    /**
+     * Its own scope, cancelled with the service.
+     *
+     * The line is a window this service owns; a collector that outlived it would try to add one to a
+     * WindowManager that no longer has a service behind it.
+     */
+    private val lineScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
     private var isForeground = false
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -99,6 +118,21 @@ class DictateAccessibilityService : AccessibilityService() {
         flogDebug { "DictateAccessibilityService connected" }
         createNotificationChannel()
         bubble = DictateBubbleController(this).also { it.start() }
+        // The recording line: visible only while recording with no keyboard on screen.
+        //
+        // Driven from the two facts that decide it rather than from an event, so it cannot be left
+        // showing by a path nobody thought of — every change to either one re-answers the question.
+        recordingLine = MaRecordingLine(this)
+        lineScope.launch {
+            combine(
+                DictateController.state,
+                _imeVisible,
+            ) { state, imeUp ->
+                state is DictateController.UiState.Recording && !imeUp
+            }.distinctUntilChanged().collect { show ->
+                recordingLine?.show(show)
+            }
+        }
         updateEditableFocus()
     }
 
@@ -662,6 +696,9 @@ class DictateAccessibilityService : AccessibilityService() {
             _imeVisible.value = false
             bubble?.destroy()
             bubble = null
+            recordingLine?.show(false)
+            recordingLine = null
+            lineScope.coroutineContext.cancelChildren()
             mainHandler.removeCallbacksAndMessages(null)
             stopMicForeground()
             flogDebug { "DictateAccessibilityService disconnected" }

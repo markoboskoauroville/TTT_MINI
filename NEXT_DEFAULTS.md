@@ -4714,3 +4714,37 @@ brighter would compete with the words. Drawn only when there is something to say
 
 **In every reading view**, not only full screen, because the question it answers is asked when
 something is wrong, and being wrong does not pick a view first.
+
+---
+
+# 121. A line that says it is listening
+
+The volume keys record whether or not the keyboard is on screen, and he found that by accident and
+kept it — dictation without opening anything is the feature, not a side effect.
+
+But **a recording nobody can see is a recording he does not know he started**, and the first he would
+learn of it is a transcript arriving from a conversation he had with somebody else in the room.
+
+**Anything that captures a microphone must be visible while it does.** Not as a courtesy — as the
+minimum honesty of a device that listens.
+
+## A line, not a bubble
+
+There is already a floating button and it is a *control*: draggable, pressable, occupying a corner.
+This carries one bit — *this is recording* — and the smallest shape that carries one bit is a line.
+
+Three device-pixels at the very bottom, full width, not touchable and not focusable, sitting in the
+gesture bar's own margin so it covers nothing.
+
+**Red, and this is the one place in this app where red is right.** Buckets stopped turning red when
+full and untranscribed recordings are blue, because neither is a fault — but a live microphone
+genuinely is something to be aware of.
+
+## Only when the keyboard is hidden
+
+With the keyboard up he can already see the timer, the waveform and the red dot. A second indicator
+would be a second thing saying what the first one says.
+
+Driven by combining the recorder's state with `_imeVisible` rather than by an event, so **it cannot
+be left showing by a path nobody thought of** — every change to either fact re-answers the question.
+`show()` is idempotent because that flow emits on every change and adding a window twice throws.
