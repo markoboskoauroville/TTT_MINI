@@ -136,6 +136,28 @@ object MaVolumeKeys {
             MaLog.add("vol", "${name(keyCode)} released after a hold \u2014 nothing more")
             return true
         }
+        // WHILE IT IS READING, THE SAME KEYS DRIVE THE READING.
+        //
+        // Nobody dictates into a screen they are listening to. So for as long as there is a reading
+        // in progress, a tap means skip rather than record — forward on up, back on down — and the
+        // hold still means the volume, because that is the one thing wanted at exactly that moment.
+        //
+        // The keys are not remapped by a setting; they follow what is on screen. A control that
+        // means the obvious thing for the situation in front of him needs no mode and no memory.
+        if (MaReader.currentIndex >= 0) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_VOLUME_UP -> {
+                    MaLog.add("vol", "up tap while reading \u2014 skip forward")
+                    MaReader.skipSentence()
+                }
+                KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                    MaLog.add("vol", "down tap while reading \u2014 back")
+                    MaReader.previousSentence()
+                }
+            }
+            return true
+        }
+
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
                 MaLog.add("vol", "up tap \u2014 record / stop")

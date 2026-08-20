@@ -10,6 +10,10 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -174,28 +178,54 @@ fun MaReaderDashboard(onClose: () -> Unit) {
         // **The dark end is not black.** Black on this background is invisible, so the darkest
         // swatch would be a square that appears to do nothing and a highlight that vanishes. It
         // starts at the darkest grey that still reads as a mark.
+        // COLLAPSED until asked for.
+        //
+        // Seven swatches open by default is seven things to look past every time the panel is
+        // raised, and he raises it to change the speed far more often than the colour. One swatch
+        // showing the current choice; tap it and the row unfolds.
+        //
+        // The closed state is not a button that says "colours" — it IS the current colour, so the
+        // panel still answers "what is the highlight" at a glance without being asked.
         Text(text = "highlight", color = MaDashDim, fontSize = 13.sp)
         Spacer(Modifier.height(6.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(MaSwatches.GREYS) { swatch ->
-                val on = hex.equals(swatch, ignoreCase = true)
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(swatchColour(swatch))
-                        .clickable { scope.launch { prefs.dictate.maReaderHighlightHex.set(swatch) } },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (on) {
-                        // A dark dot on a pale swatch and a pale one on a dark swatch, so the mark
-                        // is visible at both ends of a row that runs from grey to white.
+        var open by remember { mutableStateOf(false) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(swatchColour(hex.ifBlank { MaSwatches.GREYS.last() }))
+                    .clickable { open = !open },
+            )
+            if (open) {
+                Spacer(Modifier.width(10.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(MaSwatches.GREYS) { swatch ->
+                        val on = hex.equals(swatch, ignoreCase = true)
                         Box(
                             modifier = Modifier
-                                .size(12.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (swatch >= "#B0") Color.Black else Color.White),
-                        )
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(swatchColour(swatch))
+                                .clickable {
+                                    scope.launch { prefs.dictate.maReaderHighlightHex.set(swatch) }
+                                    // Folds itself away once chosen. The row exists to answer one
+                                    // question, and it has been answered.
+                                    open = false
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (on) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        // Dark on the pale swatches, pale on the dark ones, so the
+                                        // mark is visible at both ends of a grey ramp.
+                                        .background(if (swatch >= "#B0") Color.Black else Color.White),
+                                )
+                            }
+                        }
                     }
                 }
             }

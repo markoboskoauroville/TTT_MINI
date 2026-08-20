@@ -105,6 +105,9 @@ object MaReader {
      * enough that the cost is invisible. Faster would redraw the spacebar for no gain; slower and
      * quick words like "je" — 213 ms in the measured sample — would flicker past unseen.
      */
+    /** How far into a sentence "back" means this one again rather than the previous one. */
+    private const val REPLAY_WINDOW_MS = 1_500
+
     private const val TICK_MS = 60L
 
     /**
@@ -324,6 +327,47 @@ object MaReader {
         }
         runCatching { player?.seekTo(next.startMs) }
         MaLog.add("read", "skipped to word ${end + 1}")
+    }
+
+    /**
+     * Back to the start of the sentence being read, or to the one before it.
+     *
+     * The two-step rule, which is what every media player does and what a hand expects: **pressing
+     * back part-way through a sentence returns to the start of THAT sentence**, and pressing again
+     * goes to the one before. It is the difference between "I missed that" and "I want the previous
+     * one", and both are asked for with the same key.
+     *
+     * The threshold is a second and a half of speech. Before that, he has heard almost none of the
+     * sentence and clearly means the previous one; after it, he means this one again.
+     */
+    fun previousSentence() {
+        val words = MaSpeechify.lastWords
+        val here = currentIndex
+        if (here < 0 || here >= words.size) return
+        fun ends(w: String) = w.lastOrNull() in setOf('.', '!', '?')
+
+        // Walk back to the first word of the sentence being read.
+        var start = here
+        while (start > 0 && !ends(words[start - 1].text)) start--
+
+        val pos = runCatching { player?.currentPosition }.getOrNull() ?: 0
+        val intoSentence = pos - (words.getOrNull(start)?.startMs ?: 0)
+
+        val target = if (intoSentence > REPLAY_WINDOW_MS && start != here) {
+            start
+        } else {
+            // The sentence before: back past its terminator, then to its first word.
+            var prevEnd = start - 1
+            if (prevEnd < 0) {
+                MaLog.add("read", "back: already in the first sentence")
+                return start.let { runCatching { player?.seekTo(words[it].startMs) }; Unit }
+            }
+            var prevStart = prevEnd
+            while (prevStart > 0 && !ends(words[prevStart - 1].text)) prevStart--
+            prevStart
+        }
+        runCatching { player?.seekTo(words[target].startMs) }
+        MaLog.add("read", "back to word $target")
     }
 
     /**

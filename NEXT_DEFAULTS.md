@@ -4622,3 +4622,44 @@ that is wrong is worse than none, because it is believed.**
 **And my own cut of the One word block took the Void's comment with it**, because I chose the
 boundary by eye rather than by structure. Restored from HEAD and cut again by locating both blocks
 first. When removing code, find the end of what you are removing before removing the start of it.
+
+---
+
+# 118. The reader becomes the thing the keys serve
+
+## The twenty seconds
+
+**The key ring restarted at key one on every single read.** Every dead and every throttled key ahead
+of the good one was paid for again — a full network round trip each — before a word could be spoken.
+His log shows it plainly: `key 1 throttled, rolling forward`.
+
+It resumes from the key that answered last. Measured against his situation — 21 keys, five tired ones
+at the front — that is **six requests per read down to one.** The skipped keys are not forgotten: the
+walk wraps, so a key that recovers is found again.
+
+## Nothing interrupts a reading
+
+`onStartInputView` stopped the reader, and it fires for a notification, a dialog, switching views,
+pinning the keyboard — every one killed a reading mid-sentence. **A reading is a task he started
+deliberately and can end with one press.** It now survives all of that, and the keyboard being
+collapsed by the system.
+
+Three things stop it: the reader key, the ✕, and the end of the passage.
+
+## The volume keys drive the reading
+
+Nobody dictates into a screen they are listening to. While a reading is in progress, **up taps skip
+forward and down taps go back**; holding either is still the volume.
+
+Not a setting — the keys follow what is on screen. A control that means the obvious thing for the
+situation in front of him needs no mode and no memory.
+
+**Back is two-step**, as every media player is: part-way through a sentence it restarts that
+sentence, pressing again goes to the previous one. 1.5 seconds is the line between "I missed that"
+and "I want the one before".
+
+## The swatches collapse
+
+Seven open by default is seven things to look past every time the panel is raised, and the panel is
+raised for speed far more often than for colour. One swatch showing the current choice; tap to unfold,
+and it folds itself away once chosen — the row exists to answer one question and it has been answered.

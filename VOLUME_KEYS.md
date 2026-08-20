@@ -34,6 +34,23 @@ to make the *keyboard* not take them when it is not on screen — which is alrea
 | **Volume DOWN**, quick tap | not recording | press Send on screen |
 | **Either**, held | any | the real system volume, repeating, with the system's own bar |
 
+### While something is being read, the taps drive the reading
+
+| Press | What happens |
+|---|---|
+| **Volume UP**, quick tap | skip forward one sentence |
+| **Volume DOWN**, quick tap | back — see below |
+| **Either**, held | still the real volume |
+
+**Nobody dictates into a screen they are listening to.** So while a reading is in progress a tap
+means skip, not record. The keys are not remapped by a setting; they follow what is on screen, and a
+control that means the obvious thing for the situation in front of him needs no mode and no memory.
+
+**Back is two-step**, as every media player is: pressing back part-way through a sentence returns to
+the start of *that* sentence; pressing again goes to the one before. The threshold is 1.5 seconds of
+speech — before that he has heard almost none of it and means the previous one; after it he means
+this one again.
+
 "Quick tap" means released in under **500 ms**. Held means longer. Once held, the volume repeats every
 **111 ms** until the finger lifts.
 
@@ -72,6 +89,17 @@ keyboard that has been hidden.
 Test them across the whole range of hold lengths, not at three sample points. They are the feature.
 
 ---
+
+## The reading outlives the keyboard
+
+Nothing stops a reading except **the reader key, the ✕, or the passage ending.** Not a new text
+field, not a notification, not a dialog, not switching views, not the keyboard being collapsed by the
+system.
+
+`onStartInputView` used to stop it, and that was wrong: it fires for all of those, and every one of
+them killed a reading mid-sentence. **A reading is a task he started deliberately and can end with one
+press. Interrupting it because a notification arrived is not caution, it is losing his place for
+him.**
 
 ## Diagnosing
 

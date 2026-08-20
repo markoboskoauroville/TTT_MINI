@@ -54,7 +54,6 @@ import kotlinx.coroutines.isActive
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaLog
-import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.ime.text.keyboard.MaCursorPad
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
 import dev.patrickgold.florisboard.dictate.MaVolumeKeys
@@ -453,9 +452,20 @@ class FlorisImeService : LifecycleInputMethodService() {
         // way out. A second, unconditional one: opening any field closes it. So even if every
         // gesture failed, switching app or tapping another box returns a working keyboard.
         MaCursorPad.close()
-        // The reader stops at the door. A voice still describing a screen he has left is the same
-        // mistake as a mode with no way out, and this is the same unconditional cure.
-        MaReader.stop()
+        // THE READER SURVIVES A NEW FIELD. It used to stop here, and that was wrong.
+        //
+        // `onStartInputView` fires for far more than "he walked away": a notification arriving, a
+        // dialog opening, switching between the typing and transcription views, pinning the
+        // keyboard — every one of them reopens the input view, and every one of them killed a
+        // reading mid-sentence. He described it exactly: something pops up and it just stops.
+        //
+        // A reading is a task he started deliberately and can end with one press. It is not a mode
+        // that traps him, which is what the cursor pad above is and why that one still closes
+        // unconditionally. **Interrupting a task because a notification arrived is not caution, it
+        // is losing his place for him.**
+        //
+        // Stopping still happens where it means something: he presses the key, the passage ends, or
+        // the reader itself finds nothing left to read.
         // And with it the selection mode it may have turned on, for the same reason: a flag left
         // set would make arrows select on a field that never saw the pad.
         activeState.isManualSelectionMode = false

@@ -53,6 +53,16 @@ object MaSpeechify {
 
     const val PROVIDER_ID = "speechify"
 
+    /**
+     * The key that answered last, so the ring does not walk to it again every time.
+     *
+     * Held in memory only. It is a shortcut, not a record: a wrong guess costs one request and
+     * corrects itself, and persisting it would mean carrying a stale answer across a session where
+     * the account may have changed entirely.
+     */
+    @Volatile
+    private var lastGoodKey: Int = 0
+
     private const val BASE = "https://api.sws.speechify.com/v1/audio/speech"
     private const val TIMEOUT_MS = 30_000
 
@@ -199,14 +209,30 @@ object MaSpeechify {
             MaLog.add("read", "Speechify account has no keys")
             return null
         }
-        for ((index, key) in keys.withIndex()) {
+        // START FROM THE ONE THAT WORKED LAST TIME.
+        //
+        // THIS IS THE TWENTY SECONDS. The ring restarted at key one on every single read, so every
+        // dead and every throttled key ahead of the good one was paid for again — a full network
+        // round trip each, before a word could be spoken. With twenty-one keys and a few tired ones
+        // at the front, that is the whole delay he was waiting through, on every press.
+        //
+        // A key that answered a moment ago will almost certainly answer now. Remembering it makes
+        // the common case exactly one request. The ones before it are not forgotten: if the
+        // remembered key fails, the walk continues past it and wraps, so nothing is skipped
+        // permanently and a key that recovers is found again on the next wrap.
+        val startAt = lastGoodKey.takeIf { it in keys.indices } ?: 0
+        val order = (startAt until keys.size) + (0 until startAt)
+        for (index in order) {
+            val key = keys[index]
             val result = runCatching { speakOnce(text, voice, key, dest) }.getOrElse { e ->
                 MaLog.add("read", "speak failed: ${e.javaClass.simpleName}")
                 return null
             }
             when (result) {
                 200 -> {
-                    MaLog.add("read", "spoke ${text.length} chars as ${voice.label}")
+                    // Remembered, so the next read starts here instead of walking to it again.
+                    lastGoodKey = index
+                    MaLog.add("read", "spoke ${text.length} chars as ${voice.label} on key ${index + 1}")
                     return dest
                 }
                 401, 403 -> {
