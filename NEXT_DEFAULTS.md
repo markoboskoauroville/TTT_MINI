@@ -4998,3 +4998,30 @@ locals it reads, the height it expects to be given.
 
 **When lifting a composable out of its home, the question is not what it calls — it is what it was
 being given.**
+
+---
+
+# 130. Reverted to the version that works
+
+Back to the hand-built bar from build 238: `LinearLayout` with ENG, the bin, the red dot, the clock,
+the VU meter and send. It draws, and that is the whole of what matters.
+
+The Compose route is abandoned. Two obstacles were found and fixed — the missing
+`LocalWindowController`, then `fillMaxSize()` resolving to zero — and it still did not appear, which
+means there is at least a third I have not found. **Three builds of a feature that already worked,
+spent on making it "properly" reuse code, is a bad trade whichever way it ends.**
+
+`MaOverlayHost` is deleted rather than left in the tree. An unused class that solves a problem nobody
+has is a thing the next person has to read and decide about.
+
+## What this cost, and the rule
+
+He named it correctly: **go back to the one that was working.** I had a working bar at 238 and spent
+239 to 242 replacing it with something that did not, because "the same function drawn twice" is a
+better *argument* than "two implementations of one bar".
+
+It is not a better outcome. **A duplicated thing that works beats a shared thing that does not, and
+the time to find that out is one attempt, not three.**
+
+The duplication is real and it will drift — if the keyboard's bar changes, this one will not follow.
+That is now a known, written-down cost rather than a hidden one, and it is the cheaper of the two.

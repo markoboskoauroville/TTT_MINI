@@ -10,62 +10,51 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
-import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Box
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.CoroutineScope
-import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.ime.window.LocalWindowController
-import dev.patrickgold.florisboard.ime.window.ImeWindowController
-import androidx.compose.runtime.CompositionLocalProvider
+import android.graphics.Paint
+import android.graphics.Canvas
+import dev.patrickgold.florisboard.dictate.MaLanguage
+import dev.patrickgold.florisboard.dictate.DictateController
+import android.os.SystemClock
+import android.os.Looper
+import android.os.Handler
+import dev.patrickgold.florisboard.dictate.MaLog
+import android.widget.TextView
+import android.widget.LinearLayout
+import android.view.inputmethod.InputMethodManager
+import android.graphics.drawable.GradientDrawable
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.graphics.PixelFormat
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.unit.LayoutDirection
-import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.dictate.DictateController
-import dev.patrickgold.florisboard.dictate.MaLog
-import dev.patrickgold.florisboard.dictate.ui.DictateSmartbarUi
-import dev.patrickgold.florisboard.ime.theme.FlorisImeTheme
-import org.florisboard.lib.compose.ProvideLocalizedResources
+
 /**
- * The recording bar, shown over everything while recording with no keyboard in sight.
+ * One line across the bottom of the screen, while a recording is running with no keyboard in sight.
  *
- * ### It is the same bar, not a copy of it
+ * ### Why it exists
  *
- * `DictateSmartbarUi` takes only the recorder's state, so this window calls that function directly:
- * the same controls, the same icons, the same VU meter, in the same theme. Anything that changes on
- * the keyboard changes here, because it is the same code.
+ * The volume keys record whether or not the keyboard is on screen, and that turned out to be the
+ * feature — he can start dictating without opening anything. But a recording nobody can see is a
+ * recording he does not know he started, and the first he learns of it is a transcript arriving from
+ * a conversation he had with somebody else in the room.
  *
- * It was rebuilt by hand three times before this, each version a near-miss — the wrong bin icon, no
- * level meter, different spacing — because a window added by an accessibility service has no
- * Activity behind it, and Compose refuses to run without a lifecycle owner, a saved-state registry
- * and a view-model store. [MaOverlayHost] supplies all three in eighty lines.
+ * **Anything that captures a microphone must be visible while it does.** Not as a courtesy — as the
+ * minimum honesty of a device that listens.
  *
- * **When reuse is blocked by plumbing, build the plumbing.** Three approximations cost more than the
- * owners did, and a copy of a living thing needs maintaining forever and drifts the first time the
- * original changes.
+ * ### Why a line and not a bubble
  *
- * ### Why it exists at all
+ * There is already a floating button, and it is a control: it can be dragged, pressed, and it takes
+ * a corner of the screen. This is not a control. It carries one bit of information — *this is
+ * recording* — and the smallest shape that carries one bit is a line.
  *
- * The volume keys record whether or not the keyboard is on screen, and that is the feature. But a
- * recording nobody can see is one he does not know he started, and the first he would learn of it is
- * a transcript arriving from a conversation he had with somebody else in the room. **Anything that
- * captures a microphone must be visible while it does.**
+ * Three device-pixels tall, at the very bottom, across the full width. Not touchable, not focusable,
+ * and it never covers anything: at that height it sits in the gesture bar's own margin.
  *
- * ### Only when the keyboard is hidden
+ * ### Why only when the keyboard is hidden
  *
- * With the keyboard up this same bar is already on screen in its usual place. Two of them would be
- * two things saying the same thing.
+ * With the keyboard up he can already see the recorder — the timer, the waveform, the red dot. A
+ * second indicator would be a second thing saying what the first one says.
  */
 class MaRecordingLine(private val service: AccessibilityService) {
 
@@ -73,19 +62,6 @@ class MaRecordingLine(private val service: AccessibilityService) {
         service.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
     private var view: View? = null
-    private var lifecycleHost: MaOverlayHost? = null
-
-    /**
-     * Its own window controller, because the theme insists on one and the IME may not be running.
-     *
-     * Built from preferences and this class's own scope. Nothing here drives a real window — the
-     * theme only reads a font scale from it — so a controller of its own is honest rather than a
-     * stand-in for something missing.
-     */
-    private val overlayPrefs by FlorisPreferenceStore
-    private val windowController by lazy {
-        ImeWindowController(overlayPrefs, CoroutineScope(Dispatchers.Main.immediate + SupervisorJob()))
-    }
     private var added = false
 
     /**
@@ -99,100 +75,243 @@ class MaRecordingLine(private val service: AccessibilityService) {
         if (visible) add() else remove()
     }
 
+    private var timer: TextView? = null
+    private var ticker: Runnable? = null
+    private val handler = Handler(Looper.getMainLooper())
 
     private fun add() {
-        val host = MaOverlayHost(service)
-        val compose = ComposeView(service).apply {
-            setContent {
-                ProvideLocalizedResources(
-                    resourcesContext = service,
-                    appName = R.string.app_name,
-                    forceLayoutDirection = LayoutDirection.Ltr,
-                ) {
-                    // THE LOCAL THE THEME NEEDS, WHICH THE IME NORMALLY PROVIDES.
-                    //
-                    // `FlorisImeTheme` reads `LocalWindowController`, and that local's default is
-                    // `error("only available within an IME view")` — a hard throw, not a fallback.
-                    // Without this line the bar crashes the instant it is shown, which is exactly
-                    // what "it does not survive without the keyboard" was.
-                    //
-                    // It is constructed from preferences and a scope; it needs no IME. All the theme
-                    // wants from it is the font scale.
-                    CompositionLocalProvider(
-                        LocalWindowController provides windowController,
-                    ) {
-                    FlorisImeTheme {
-                        // THE REAL BAR. Not a copy of it.
-                        //
-                        // `DictateSmartbarUi` takes only the state, so once the window can host
-                        // Compose there is nothing to reimplement: the same function draws the same
-                        // controls, the same icons, the same meter, in the same theme. Anything that
-                        // changes on the keyboard changes here, because it is the same code.
-                        val state by DictateController.state.collectAsState()
-                        // GIVE IT A HEIGHT. This is why the bar recorded but never appeared.
-                        //
-                        // `DictateSmartbarUi` sizes itself with `fillMaxSize()`, which is right
-                        // inside the keyboard: the smartbar slot there has a fixed height and the
-                        // bar fills it. This window is WRAP_CONTENT, so the parent's height is
-                        // whatever the child asks for — and a child asking to fill its parent, in a
-                        // parent sized by its child, resolves to **zero**.
-                        //
-                        // The window was added, the composition ran, the recording worked. It was
-                        // simply nought pixels tall. Nothing threw, so nothing said so.
-                        //
-                        // `smartbarHeight` is the same number the keyboard gives it, so the bar is
-                        // the size it is at home rather than a size invented here.
-                        Box(modifier = Modifier.height(FlorisImeSizing.smartbarHeight)) {
-                            DictateSmartbarUi(state = state)
-                        }
-                    }
-                    }
-                }
+        val d = service.resources.displayMetrics.density
+        fun px(v: Int) = (d * v).toInt()
+
+        val row = LinearLayout(service).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundColor(0xF20B0D10.toInt())
+            setPadding(px(10), px(8), px(10), px(8))
+        }
+
+        // ENG / HR — the same badge, doing the same thing, so switching language does not require
+        // the keyboard he does not have open.
+        val lang = TextView(service).apply {
+            text = MaLanguage.badge()
+            setTextColor(0xFFF2DDB4.toInt())
+            textSize = 14f
+            setPadding(px(14), px(6), px(14), px(6))
+            setOnClickListener {
+                MaLanguage.cycleMode(service)
+                text = MaLanguage.badge()
             }
         }
-        host.attach(compose)
+        row.addView(lang)
+
+        // The bin: throw this recording away. Present because the moment he realises he did not mean
+        // to start is exactly the moment the keyboard is not up.
+        row.addView(
+            glyph("\uD83D\uDDD1", px(14)) { DictateController.cancelRecording() },
+        )
+
+        val spacerL = View(service)
+        row.addView(spacerL, LinearLayout.LayoutParams(0, 1, 1f))
+
+        // The red dot and the clock, together, because they are one statement.
+        row.addView(
+            View(service).apply {
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(0xFFEF4444.toInt())
+                }
+            },
+            LinearLayout.LayoutParams(px(10), px(10)),
+        )
+        val clock = TextView(service).apply {
+            text = "0:00"
+            setTextColor(0xFFFFFFFF.toInt())
+            textSize = 22f
+            setPadding(px(10), 0, 0, 0)
+            // TAPPING THE NUMBERS BRINGS THE KEYBOARD UP. His instruction, and the right target: the
+            // clock is the biggest thing on the bar and the one the eye is already on.
+            setOnClickListener {
+                runCatching {
+                    (service.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
+                        ?.showSoftInput(null, InputMethodManager.SHOW_FORCED)
+                }
+                MaLog.add("keys", "overlay clock tapped, asking for the keyboard")
+            }
+        }
+        timer = clock
+        // The clock and the meter as one column, which is how the keyboard's bar arranges them: the
+        // numbers with the level directly beneath, not two separate things sharing a row.
+        row.addView(
+            LinearLayout(service).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                addView(clock)
+                addView(
+                    MaVuView(service),
+                    LinearLayout.LayoutParams(px(150), px(4)).apply { topMargin = px(3) },
+                )
+            },
+        )
+
+        val spacerR = View(service)
+        row.addView(spacerR, LinearLayout.LayoutParams(0, 1, 1f))
+
+        // Send: stop and transcribe. The same press the microphone key makes.
+        row.addView(
+            glyph("\u27A4", px(14)) { DictateController.onMicClick(service) },
+        )
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            // Touchable, because every control on the bar is a control. Never focusable: it must not
-            // take the cursor from the field he is dictating into.
+            // Touchable, because every glyph on it is a control. Never focusable: it must not take
+            // the cursor from the field he is dictating into.
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
         ).apply { gravity = Gravity.BOTTOM or Gravity.START }
 
         runCatching {
-            windowManager.addView(compose, params)
-            view = compose
-            lifecycleHost = host
+            windowManager.addView(row, params)
+            view = row
             added = true
-        }.onFailure {
-            // The bar failing must never take the service with it.
-            //
-            // This window hosts a composition that reads the keyboard's theme, and the accessibility
-            // service also owns the magic finger and the reader. An exception thrown here would kill
-            // all three at once — he would lose the finger and the reader because a strip of UI could
-            // not be drawn, which is a wildly disproportionate way to fail.
-            //
-            // The recording itself is unaffected either way: the microphone does not run through
-            // this window. Worst case he records without seeing the bar, which is where this feature
-            // started.
-            MaLog.add("keys", "recording bar could not be shown: ${it.javaClass.simpleName}")
-            host.detach()
+            startTicking()
         }
+    }
+
+    /** One glyph as a button, sized for a thumb rather than for its own ink. */
+    private fun glyph(text: String, pad: Int, onClick: () -> Unit) = TextView(service).apply {
+        this.text = text
+        setTextColor(0xFFF2DDB4.toInt())
+        textSize = 18f
+        setPadding(pad, pad / 2, pad, pad / 2)
+        setOnClickListener { onClick() }
+    }
+
+    /**
+     * The clock, once a second.
+     *
+     * Read from the recorder's own state rather than counted here, so a pause is honoured and the
+     * two views can never disagree about how long he has been speaking.
+     */
+    private fun startTicking() {
+        val r = object : Runnable {
+            override fun run() {
+                val st = DictateController.state.value
+                if (st is DictateController.UiState.Recording) {
+                    val ms = if (st.paused) {
+                        st.accumulatedMs
+                    } else {
+                        st.accumulatedMs + (SystemClock.elapsedRealtime() - st.startedAtMs)
+                    }
+                    val total = ms / 1000
+                    timer?.text = "%d:%02d".format(total / 60, total % 60)
+                }
+                handler.postDelayed(this, 1000)
+            }
+        }
+        ticker = r
+        handler.post(r)
     }
 
     private fun remove() {
         val v = view ?: return
-        // Wrapped, because the window can already be gone if the service was torn down under it, and
-        // an exception here would take the accessibility service with it — costing him the finger,
-        // the reader and the bar at once.
+        // Wrapped, because a window can already be gone if the service was torn down under it, and
+        // an exception here would take the accessibility service with it — which would cost him the
+        // finger, the reader and the line all at once.
+        ticker?.let { handler.removeCallbacks(it) }
+        ticker = null
+        timer = null
         runCatching { windowManager.removeView(v) }
-        lifecycleHost?.detach()
-        lifecycleHost = null
         view = null
         added = false
+    }
+}
+
+/**
+ * The VU meter, on the overlay, reading the same numbers as the one on the keyboard.
+ *
+ * ### It is the module, not a lookalike
+ *
+ * The level comes from `DictateController.audioLevel` — the same StateFlow the keyboard's meter
+ * collects. The dB conversion, the floor, the peak decay and the three colours are lifted from
+ * `MaRecordMeter` unchanged, so the two cannot disagree about how loud he is: **one source of
+ * numbers, drawn twice, rather than two meters that happen to look similar.**
+ *
+ * It is drawn with a Canvas rather than composed because this window has no lifecycle owner for
+ * Compose to attach to. That is a difference in the brush, not in the picture.
+ *
+ * ### Peak hold
+ *
+ * A bar alone tells you the current instant, which at speech rates is a flicker. The peak mark falls
+ * at 0.6 dB per frame — slow enough to read, fast enough to follow a sentence — and it is what makes
+ * the thing a meter rather than a light.
+ */
+private class MaVuView(context: Context) : View(context) {
+
+    private val bar = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF2A2A2E.toInt() }
+    private val peakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF2DDB4.toInt() }
+
+    private var smoothed = FLOOR_DB
+    private var peakDb = FLOOR_DB
+
+    private val tick = object : Runnable {
+        override fun run() {
+            val db = toDb(DictateController.audioLevel.value)
+            // Fast to rise, slow to fall: an attack that lags makes the meter feel dead, a release
+            // that snaps makes it feel nervous. The same asymmetry every hardware meter has.
+            smoothed = if (db > smoothed) db else smoothed + (db - smoothed) * 0.3f
+            peakDb = if (db > peakDb) db else (peakDb - 0.6f).coerceAtLeast(FLOOR_DB)
+            invalidate()
+            postDelayed(this, 40L)
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        post(tick)
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(tick)
+        super.onDetachedFromWindow()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val w = width.toFloat()
+        val h = height.toFloat()
+        canvas.drawRoundRect(0f, 0f, w, h, h / 2, h / 2, track)
+        val n = norm(smoothed)
+        if (n > 0f) {
+            bar.color = colourFor(smoothed)
+            canvas.drawRoundRect(0f, 0f, w * n, h, h / 2, h / 2, bar)
+        }
+        val p = norm(peakDb)
+        if (p > 0f) {
+            val x = (w * p).coerceIn(2f, w - 2f)
+            canvas.drawRect(x - 1.5f, 0f, x + 1.5f, h, peakPaint)
+        }
+    }
+
+    private companion object {
+        const val FLOOR_DB = -54f
+
+        fun toDb(level: Float): Float {
+            val v = kotlin.math.abs(level)
+            if (v <= 0.0005f) return FLOOR_DB
+            return (20.0 * kotlin.math.log10(v.toDouble())).toFloat().coerceIn(FLOOR_DB, 0f)
+        }
+
+        fun norm(db: Float): Float = ((db - FLOOR_DB) / (0f - FLOOR_DB)).coerceIn(0f, 1f)
+
+        // The same three, from MaRecordMeter: green while there is headroom, amber approaching, and
+        // the app's recording red at the top.
+        fun colourFor(db: Float): Int = when {
+            db > -3f -> 0xFF9B3B33.toInt()
+            db > -12f -> 0xFFF0883E.toInt()
+            else -> 0xFF56D364.toInt()
+        }
     }
 }
