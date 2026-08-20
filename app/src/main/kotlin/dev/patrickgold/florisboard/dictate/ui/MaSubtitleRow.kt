@@ -156,6 +156,7 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
             if (full) {
                 MaCloseCorner { scope.launch { prefs.dictate.maReaderFullscreen.set(false) } }
             }
+            MaKeyCorner()
         }
         return
     }
@@ -333,6 +334,33 @@ private fun lineText(
  * Deliberately near-invisible: an escape hatch, not a control. Anything brighter would compete with
  * the word being read, which is the only thing on that screen worth looking at.
  */
+/**
+ * Which Speechify key is speaking, in the bottom corner, for diagnosis.
+ *
+ * A ring that walks silently is a ring nobody can reason about. When a reading is slow to start, this
+ * says at once whether it is on key 3 of 21 because two are tired, or on key 1 and simply waiting for
+ * the network — a distinction that used to cost a log export.
+ *
+ * As dim as the close mark and for the same reason: it is an instrument, not a control, and anything
+ * brighter would compete with the words. Drawn only when there is something to say.
+ */
+@Composable
+private fun MaKeyCorner() {
+    val n = MaSpeechify.activeKeyNumber
+    val total = MaSpeechify.keyCount
+    if (n <= 0 || total <= 0) return
+    Box(
+        modifier = Modifier.fillMaxSize().padding(8.dp),
+        contentAlignment = Alignment.BottomEnd,
+    ) {
+        Text(
+            text = "$n/$total",
+            color = MaSubtitleShadow,
+            fontSize = 11.sp,
+        )
+    }
+}
+
 @Composable
 private fun MaCloseCorner(onClose: () -> Unit) {
     Box(
@@ -379,6 +407,12 @@ private fun SubtitleBox(
         contentAlignment = if (full) Alignment.Center else Alignment.TopStart,
     ) {
         content()
+        // Every reading view carries it, because the question it answers — which key is speaking —
+        // is asked when something is wrong, and being wrong is not a state that picks a view first.
+        MaKeyCorner()
+        if (full) {
+            MaCloseCorner { scope.launch { prefs.dictate.maReaderFullscreen.set(false) } }
+        }
     }
 }
 

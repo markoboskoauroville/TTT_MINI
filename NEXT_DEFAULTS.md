@@ -4686,3 +4686,26 @@ for it is the wrong idea.
 Checked: up-then-down returns to the same sentence from anywhere except the first, where there is no
 previous one and up restarts it instead. Each press moves exactly one sentence, and the last sentence
 holds rather than running off the end.
+
+---
+
+# 120. Which key is speaking, in the corner
+
+A dim `3/21` in the bottom-right of every reading view: the Speechify key that spoke, and how many
+are on the ring.
+
+**A ring that walks silently is a ring nobody can reason about.** When a reading is slow to start,
+this says at once whether it is on key 3 because two are tired, or on key 1 and simply waiting for the
+network — a distinction that used to cost a log export and a round trip to me.
+
+**Updated only on success.** A number flickering through every key being tried would be a progress
+bar, and a progress bar is a different thing from an answer.
+
+Held as Compose state rather than a plain field, so it actually refreshes — a `@Volatile Int` would
+have been correct and invisible, which is the worst combination for an instrument.
+
+As dim as the close mark, and for the same reason: it is an instrument, not a control, and anything
+brighter would compete with the words. Drawn only when there is something to say.
+
+**In every reading view**, not only full screen, because the question it answers is asked when
+something is wrong, and being wrong does not pick a view first.
