@@ -4213,3 +4213,56 @@ falls back rather than becoming black on black.
 
 **Next place it belongs:** the subtitle page colour, the void's word colour, and the sand used for a
 lit key — one wheel, everywhere a colour is chosen.
+
+---
+
+# 109. The dashboard, live speed, and swatches
+
+## The speed was not slow, it was not connected
+
+He changed the speed in settings while the voice was reading and it "started to respond after a few
+sentences". That is exactly what it was doing: **the speed was read once, when a passage began
+playing**, so a change reached the audio only when the next passage started.
+
+`MaReader.setSpeedNow` sets `playbackParams` on the running player, so it applies at once. **A dial
+is judged against what it is doing** — a control that takes effect later is one he cannot judge,
+because by the time it works he has forgotten what he changed it from.
+
+The karaoke needed no adjustment: it reads `currentPosition`, which is a position in the media
+timeline and stays true whatever rate the media plays at. Same reason the speed came out of the
+ticker in §86.
+
+One trap in it: setting params on a *paused* player starts it on some Android versions, so the paused
+state is restored immediately rather than trusted to survive.
+
+## The dashboard
+
+Long press on the reader key no longer leaves the keyboard for the settings app — **it opens three
+dials over the reading: voice, speed, highlight.** Same long press closes it.
+
+**Half the screen, not all of it.** The void takes the display because one word needs no context;
+this is the opposite — he is adjusting *while listening*, so the reading has to stay visible. Covering
+it would mean adjusting blind, which is the problem this solves.
+
+**Only three.** Everything else about the reader is chosen once and left; putting it here would bury
+the one thing wanted mid-sentence. **It closes itself when the reading stops**, so he can never be
+left with a panel to dismiss.
+
+## Swatches beside the wheel
+
+Adobe puts swatches in every program and keeps the picker behind them, because the two answer
+different questions: **a wheel answers "which colour", a grid answers "which of the ones I keep
+using"** — and nine times in ten it is the second.
+
+**Black and white first**, and that ordering is the design. Pure white is a single point at the
+centre of the brightness axis and pure black is another, so on a wheel they are the two colours a
+finger is least likely to hit exactly. A grid makes them one tap. Then greys, the app's own amber,
+then hues in spectrum order, because that is where the eye looks without reading.
+
+Swatches is the default view. Four of them also sit on the dashboard, where there is room for four.
+
+## The verifier learned one more thing
+
+It called `jetpref` and `kotlinx` imports unresolved, because it searched only `app/` and `lib/`.
+Reporting that a dependency lives outside the repository is true and useless. It now checks only
+imports this repository could satisfy.

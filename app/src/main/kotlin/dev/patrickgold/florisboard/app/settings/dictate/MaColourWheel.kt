@@ -10,6 +10,11 @@
 
 package dev.patrickgold.florisboard.app.settings.dictate
 
+import dev.patrickgold.florisboard.dictate.ui.MaSwatches
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.layout
@@ -99,6 +104,8 @@ fun MaColourWheel(
     var sat by remember { mutableFloatStateOf(start[1]) }
     var light by remember { mutableFloatStateOf(start[2]) }
     var loupe by remember { mutableStateOf<Offset?>(null) }
+    // Swatches first: nine times in ten the colour wanted is one already used.
+    var swatches by remember { mutableStateOf(true) }
 
     val picked = Color(ColorUtils.HSLToColor(floatArrayOf(hue, sat, light)))
 
@@ -133,9 +140,56 @@ fun MaColourWheel(
                 )
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
-            Box(
+            // Two views, one picker. Swatches first because it answers the commoner question.
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                for ((value, label) in listOf(true to "Swatches", false to "Wheel")) {
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 6.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (swatches == value) Color(0xFFE8B15C) else Color(0xFF1E1E20))
+                            .clickable { swatches = value }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (swatches == value) Color.Black else Color(0xFFF2DDB4),
+                            fontWeight = if (swatches == value) FontWeight.Bold else FontWeight.Normal,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            if (swatches) {
+                // Seven across: wide enough for the greyscale run to read as one row, narrow enough
+                // that a swatch stays bigger than a fingertip.
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(7),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    items(MaSwatches.ALL) { sw ->
+                        val c = swatchOf(sw)
+                        Box(
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(c)
+                                .clickable {
+                                    val hsl = FloatArray(3)
+                                    ColorUtils.colorToHSL(c.toArgb(), hsl)
+                                    hue = hsl[0]; sat = hsl[1]; light = hsl[2]
+                                },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            } else Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
@@ -281,4 +335,11 @@ private fun Modifier.offsetFraction(fraction: Float) = this.then(
 private fun Color.hex(): String {
     val argb = toArgb()
     return "#%06X".format(argb and 0xFFFFFF)
+}
+
+/** A swatch string to a colour. */
+private fun swatchOf(hex: String): Color {
+    val h = hex.removePrefix("#")
+    val v = h.toLongOrNull(16) ?: return Color.Gray
+    return Color(0xFF000000L or v)
 }

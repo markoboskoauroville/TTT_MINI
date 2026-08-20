@@ -301,6 +301,34 @@ object MaReader {
         MaLog.add("read", "skipped to word ${end + 1}")
     }
 
+    /**
+     * Changes the speed of the reading that is happening RIGHT NOW.
+     *
+     * The speed used to be read once, when a passage started playing. Changing it in settings while
+     * the voice was talking therefore did nothing until the next passage — he described it as
+     * responding "after a few sentences", which is exactly what that is. A control that only takes
+     * effect later is a control he cannot judge, because by the time it works he has forgotten what
+     * he changed it from.
+     *
+     * `playbackParams` on a playing MediaPlayer applies at once, so the setting is now what it looks
+     * like: a dial, not a preference for next time.
+     *
+     * The karaoke needs no adjustment. It reads `currentPosition`, which is a position in the media
+     * timeline and stays true whatever rate the media is playing at — the same reason the speed was
+     * removed from the ticker in the first place.
+     */
+    fun setSpeedNow(tenths: Int) {
+        val speed = tenths.coerceIn(5, 25) / 10f
+        val p = player ?: return
+        runCatching {
+            // Setting params on a paused player starts it on some versions of Android, so the
+            // paused state is restored immediately afterwards rather than trusted to survive.
+            val wasPlaying = p.isPlaying
+            p.playbackParams = p.playbackParams.setSpeed(speed)
+            if (!wasPlaying) p.pause()
+        }.onFailure { MaLog.add("read", "speed change refused: ${it.javaClass.simpleName}") }
+    }
+
     /** Unconditional. Used when he leaves, and by a press during loading. */
     fun stop() {
         stopPlayer()

@@ -248,7 +248,11 @@ def check_imports_resolve(path: Path, text: str) -> None:
         if not ln.startswith("import "):
             continue
         fq = ln[len("import "):].strip()
-        if fq.startswith(("java.", "kotlin.", "android.", "androidx.", "org.", "com.")) or "*" in fq:
+        # Only imports this repository could satisfy. Everything else comes from a dependency whose
+        # source is not here, and reporting those as unresolved is reporting that a library exists
+        # elsewhere — which is true and useless. `jetpref` and `kotlinx` sit outside `app/` and
+        # `lib/`, and the first version of this check called both of them broken.
+        if "*" in fq or not fq.startswith("dev.patrickgold.florisboard."):
             continue
         pkg, name = fq.rsplit(".", 1)
         hits = subprocess.run(

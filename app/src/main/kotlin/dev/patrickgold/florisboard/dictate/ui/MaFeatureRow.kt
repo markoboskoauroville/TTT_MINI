@@ -28,6 +28,7 @@ import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import android.widget.Toast
 import dev.patrickgold.florisboard.dictate.overlay.MaScreenTargets
 import androidx.compose.material.icons.filled.History
+import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
 import androidx.compose.foundation.horizontalScroll
@@ -437,6 +438,15 @@ fun MaFeatureRow(
         }
       }
 
+      // The dashboard, above the rows and below whatever is reading.
+      //
+      // Shown only while something is being read: it is a set of dials for a thing in motion, and a
+      // dashboard for silence would just be a settings screen in the wrong place. Closing itself
+      // when the reading stops also means he can never be left with a panel he has to dismiss.
+      if (maDashboardOpen && MaReader.currentIndex >= 0) {
+        MaReaderDashboard(onClose = { maDashboardOpen = false })
+      }
+
       rows.forEach { rowButtons ->
         Row(
             modifier = Modifier.fillMaxWidth().height(rowHeight),
@@ -722,7 +732,13 @@ fun MaFeatureRow(
                     modifier = keyMod,
                     context = context,
                     litColor = MaSand,
-                    onOpenSettings = { FlorisImeService.launchSettings("settings/dictate/reader") },
+                    // Long press opens the dashboard rather than the settings app.
+                    //
+                    // It used to leave the keyboard for the Reader screen, which meant walking away
+                    // from the thing being adjusted. The three dials he reaches for while listening
+                    // are one press away now and the reading keeps going underneath. Everything else
+                    // about the reader still lives in settings, reachable from there.
+                    onOpenSettings = { maDashboardOpen = !maDashboardOpen },
                     onMessage = { message ->
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     },
@@ -1298,5 +1314,14 @@ private fun MaWandBar(
  * ending, which are both moments when starting again is what he would want.
  */
 private var maBucketRank by mutableStateOf(0)
+
+/**
+ * Whether the reader dashboard is showing.
+ *
+ * File-level rather than remembered inside the row, for the same reason `maBucketRank` is: the row
+ * is recomposed constantly and rebuilt whenever the keyboard changes shape, and state remembered
+ * inside it would close the dashboard every time he switched view while it was open.
+ */
+private var maDashboardOpen by mutableStateOf(false)
 
 private val MaSand = Color(0xFFE8B15C)
