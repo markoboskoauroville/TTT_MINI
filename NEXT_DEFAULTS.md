@@ -4963,3 +4963,38 @@ bar, which is where the feature started.
 **A composition local whose default is `error()` is a dependency, not a convenience.** Grepping for
 what a composable *calls* found nothing; the dependency was one level down, in what the theme reads.
 When lifting a composable out of its home, check what its wrapper reads too.
+
+---
+
+# 129. Why the bar recorded but never appeared
+
+He asked the right question: **the hand-built version showed and the real one did not — what is
+different?** Comparing them found it in one line.
+
+| | views version (worked) | compose version (invisible) |
+|---|---|---|
+| window height | `WRAP_CONTENT` | `WRAP_CONTENT` |
+| **who decides the height** | **the LinearLayout, from its children** | **`DictateSmartbarUi`, via `fillMaxSize()`** |
+| children with a fixed size | yes — dot 10dp, meter 4dp, text | no — everything fills the parent |
+| **resulting height** | sum of the children | **zero** |
+| did it throw | no | no |
+| did recording work | yes | yes |
+
+`DictateSmartbarUi` sizes itself with `fillMaxSize()`, which is exactly right **inside the keyboard**:
+the smartbar slot has a fixed height and the bar fills it. My window is `WRAP_CONTENT`, so the
+parent's height is whatever the child asks for — and **a child asking to fill its parent, in a parent
+sized by its child, resolves to nothing.**
+
+The window was added. The composition ran. The recording worked. It was nought pixels tall.
+
+Fixed by wrapping it in a `Box` of `FlorisImeSizing.smartbarHeight` — the same number the keyboard
+gives it, so the bar is the size it is at home rather than a size invented here.
+
+## The pattern, twice in three builds
+
+`LocalWindowController` threw; this one was silent. Both are the same mistake: **a composable carries
+assumptions about its parent that are invisible in its own source.** The theme it is wrapped in, the
+locals it reads, the height it expects to be given.
+
+**When lifting a composable out of its home, the question is not what it calls — it is what it was
+being given.**

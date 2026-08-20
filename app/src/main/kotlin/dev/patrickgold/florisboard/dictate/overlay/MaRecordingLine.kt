@@ -10,6 +10,10 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
@@ -125,7 +129,22 @@ class MaRecordingLine(private val service: AccessibilityService) {
                         // controls, the same icons, the same meter, in the same theme. Anything that
                         // changes on the keyboard changes here, because it is the same code.
                         val state by DictateController.state.collectAsState()
-                        DictateSmartbarUi(state = state)
+                        // GIVE IT A HEIGHT. This is why the bar recorded but never appeared.
+                        //
+                        // `DictateSmartbarUi` sizes itself with `fillMaxSize()`, which is right
+                        // inside the keyboard: the smartbar slot there has a fixed height and the
+                        // bar fills it. This window is WRAP_CONTENT, so the parent's height is
+                        // whatever the child asks for — and a child asking to fill its parent, in a
+                        // parent sized by its child, resolves to **zero**.
+                        //
+                        // The window was added, the composition ran, the recording worked. It was
+                        // simply nought pixels tall. Nothing threw, so nothing said so.
+                        //
+                        // `smartbarHeight` is the same number the keyboard gives it, so the bar is
+                        // the size it is at home rather than a size invented here.
+                        Box(modifier = Modifier.height(FlorisImeSizing.smartbarHeight)) {
+                            DictateSmartbarUi(state = state)
+                        }
                     }
                     }
                 }
