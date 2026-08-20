@@ -5085,3 +5085,35 @@ single actions.
 
 At the top, in the header, red, and it asks first — everything else here can be undone or
 re-transcribed; this cannot, and it sits two taps from what he came to do.
+
+---
+
+# 133. Two real causes, after four cosmetic attempts
+
+He asked why this is going slowly. The answer is in this entry: **I changed the appearance four times
+without once checking what the components actually were.**
+
+## Delete kept leaving the screen because these were BUTTONS
+
+`MaHistoryAction` wrapped every label in `SnyggButton` — a Material button, with a **minimum width
+and its own internal padding.** Measured: the four labels as buttons need about **419dp** in a row
+about **360dp** wide. They never fitted, in any arrangement.
+
+I tried weights, then `SpaceBetween`, then bullets, then centring. **All four were arrangements, and
+no arrangement shrinks a child.** As clickable text the same four labels come to 300dp and fit with
+room over.
+
+## Delete all crashed because a dialog needs an Activity
+
+A Compose `AlertDialog` opens a real platform Dialog, and a dialog needs a window token from an
+Activity. **An input method has no Activity** — its window belongs to the system — so the first tap
+took the keyboard down.
+
+`MaDeleteChooser`, ten lines away, was already inline for exactly this reason. **I put a dialog next
+to a working example of why not to.**
+
+## The rule, since he asked
+
+**When a screen already solves a problem, copy that solution; do not reach for the standard
+component.** And when a fix does not work, the next attempt should change *kind*, not degree — four
+attempts at arranging a row that could not be arranged is three more than the evidence justified.

@@ -240,21 +240,39 @@ fun DictateHistoryLayout(
                 }
             }
         }
+        // Inline, NOT an AlertDialog. **This is what crashed.**
+        //
+        // A Compose `AlertDialog` opens a real platform Dialog, and a dialog needs a window token
+        // from an Activity. An input method has no Activity — its window belongs to the system —
+        // so the first tap on "Delete all" took the keyboard down with it.
+        //
+        // `MaDeleteChooser` beside it was already inline for exactly this reason. I added a dialog
+        // next to a working example of why not to. **When a screen already solves a problem, copy
+        // that, do not reach for the standard component.**
         if (confirmClearAll) {
-            AlertDialog(
-                onDismissRequest = { confirmClearAll = false },
-                title = { Text("Delete every recording?") },
-                text = { Text("Every transcript and every audio file in this list. This cannot be undone.") },
-                confirmButton = {
-                    TextButton(onClick = {
+            SnyggRow(
+                elementName = FlorisImeUi.MediaBottomRow.elementName,
+                modifier = Modifier.fillMaxWidth().padding(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                MaHistoryAction(
+                    label = "Delete everything",
+                    enabled = true,
+                    tint = MaDestructive,
+                    onClick = {
                         confirmClearAll = false
                         scope.launch { DictateHistoryStore.clearAll(context) }
-                    }) { Text("Delete all", color = MaDestructive) }
-                },
-                dismissButton = {
-                    TextButton(onClick = { confirmClearAll = false }) { Text("Cancel") }
-                },
-            )
+                    },
+                )
+                MaBullet(accent)
+                MaHistoryAction(
+                    label = "Cancel",
+                    enabled = true,
+                    tint = accent,
+                    onClick = { confirmClearAll = false },
+                )
+            }
         }
         pendingDelete?.let { target ->
             MaDeleteChooser(
@@ -520,11 +538,18 @@ private fun MaHistoryAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SnyggButton(
-        elementName = FlorisImeUi.MediaBottomRowButton.elementName,
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier,
+    // A clickable word, not a Button. **This is why Delete kept leaving the screen.**
+    //
+    // `SnyggButton` is a Material button: it carries a minimum width and its own internal padding,
+    // so four of them plus separators were far wider than the row whatever arrangement they were
+    // given. Every attempt to fix this by changing the ARRANGEMENT was treating a symptom — the
+    // children were simply too big, and no arrangement shrinks a child.
+    //
+    // A Text with its own padding is exactly as wide as its word.
+    Box(
+        modifier = modifier
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 6.dp),
     ) {
         Text(
             text = label,
