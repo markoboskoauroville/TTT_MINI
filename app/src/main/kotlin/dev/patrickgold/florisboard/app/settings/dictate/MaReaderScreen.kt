@@ -164,6 +164,33 @@ fun MaReaderScreen() = FlorisScreen {
             }
         }
 
+        // Text size, one number for both views.
+        val fontSp by prefs.dictate.maReaderFontSize.collectAsState()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Text size", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = "The same in the small box and full screen",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            TextButton(onClick = {
+                scope.launch { prefs.dictate.maReaderFontSize.set((fontSp - 1).coerceAtLeast(10)) }
+            }) { Text("\u2212", style = MaterialTheme.typography.titleMedium) }
+            Text(
+                text = "$fontSp",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 6.dp),
+            )
+            TextButton(onClick = {
+                scope.launch { prefs.dictate.maReaderFontSize.set((fontSp + 1).coerceAtMost(40)) }
+            }) { Text("+", style = MaterialTheme.typography.titleMedium) }
+        }
+
         // The five styles, which are five answers to one question: what does the word being spoken
         // look like. All of them leave the layout alone — that is why these five and not others.
         Text(

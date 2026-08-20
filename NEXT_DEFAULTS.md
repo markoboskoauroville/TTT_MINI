@@ -3933,3 +3933,53 @@ thumb.
 The style rules alone across four styles at three positions, and the layout check that found the
 karaoke bold. **Not tested: the phone** — whether 330dp covers the keys on his Nothing Phone 2a, and
 whether 460 characters is right for nine lines at 26sp.
+
+---
+
+# 102. Full screen means full screen, and the line comes to the eye
+
+Three corrections and one new thing, all from one message.
+
+## Full screen now hides everything
+
+It was a taller box with the keyboard still under it. While reading with the box expanded, the
+subtitle row is now the **only thing composed** — no rows, no keys, nothing beneath.
+
+**Gated on something actually being read**, so a preference can never leave the keyboard unusable:
+stop the reader and every key is back.
+
+Its height is `FlorisImeSizing.keyboardUiHeight()`, the height the keys would have taken, rather than
+a number of its own that would be wrong on the next phone. `weight(1f)` does not work here — the
+enclosing Column wraps its content, so a weight resolves to nothing.
+
+## The font stopped growing
+
+Full screen enlarged the type as well as the box, so one gesture changed two things and he could not
+have the whole page without large type he had not asked for. **Full screen shows MORE, not BIGGER.**
+
+Size is now `maReaderFontSize`, one number for both views, stepped in settings, 10–40. One word is the
+exception and scales from the same number — there is only ever one on screen, so it takes the room
+the others share.
+
+## The reader, as MA Reader does it
+
+Full screen no longer pages. **The whole passage is there, in short lines, and the line holding the
+spoken word is scrolled to the TOP.** His eye rests in one place and the sentences come up to meet
+it; everything below is what is coming, and he can glance at it without losing the place, because the
+place does not move. Lines already read are dimmed.
+
+**A "page" full screen is ONE line**, not three: it is the unit that jumps, and a three-line unit
+would jump three lines at a time and lose the steadiness that makes it readable. Scaled by the font,
+since larger type fits fewer letters across the same width.
+
+**`scrollToItem`, never `animateScrollToItem`.** He cannot watch animated scrolling, and a line
+sliding into position is precisely the thing that turns his eyes inside out.
+
+Verified: every word maps to the line that contains it, the scroll fires exactly once per line, and
+it is monotonic — it never scrolls back up.
+
+## Postponed, at his suggestion
+
+The Avid-style settings — a triangle beside each entry that opens it in place instead of pushing a
+new screen. He said postpone if it is too much for this pass, and it is: it touches all nineteen
+screens. Layer 2 in `MANTRA_MANIFEST/modules/design-language.md` §10 already describes the model.

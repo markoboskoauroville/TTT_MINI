@@ -10,6 +10,12 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.combinedClickable
@@ -79,6 +85,11 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val litBold by prefs.dictate.maReaderHighlightBold.collectAsState()
     val litUnderline by prefs.dictate.maReaderHighlightUnderline.collectAsState()
     val lit = if (litColour == "white") MaSubtitleWhite else MaSubtitleYellow
+    // One size, both views. Full screen shows MORE, not BIGGER — the two were tied together and he
+    // could not have the whole page without also having large type he had not asked for.
+    val fontSp by prefs.dictate.maReaderFontSize.collectAsState()
+    val fontSize = fontSp.coerceIn(10, 40).sp
+    val lineHeight = (fontSp.coerceIn(10, 40) * 1.35f).sp
 
     // Pages of a size that FITS, not sentences.
     //
@@ -91,7 +102,10 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // slideshow he asked for rather than a crawl.
     // Paged for the box it is actually in. A fullscreen box paged for three lines would show a
     // paragraph floating in an empty screen and turn a page every few seconds for no reason.
-    val perPage = if (full) FULLSCREEN_CHARS else PAGE_CHARS
+    // In the small box a page is three lines; full screen it is ONE line, because the full-screen
+    // reader scrolls line by line and a "page" there is the unit that jumps to the top. Scaled by
+    // the font, since a bigger type fits fewer letters across the same width.
+    val perPage = if (full) (LINE_CHARS * 17 / fontSp).coerceIn(14, 90) else PAGE_CHARS
     val pages = remember(words, perPage) { paginate(words.map { it.text }, perPage) }
     val page = remember(pages, index) { pages.firstOrNull { index in it.range } } ?: return
 
@@ -106,8 +120,11 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
             Text(
                 text = word,
                 color = lit,
-                fontSize = if (full) 64.sp else 34.sp,
-                lineHeight = if (full) 70.sp else 40.sp,
+                // One word is the exception that earns its size: there is only ever one on screen,
+                // so it takes the room the others share. Still tied to his setting rather than to
+                // whether the box is full.
+                fontSize = (fontSp * 2).coerceIn(20, 72).sp,
+                lineHeight = (fontSp * 2.2f).coerceIn(24f, 80f).sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -170,14 +187,91 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
         }
     }
 
+    if (full) {
+        // FULL SCREEN — the whole passage, with the line being read at the top.
+        //
+        // This is MA Reader's behaviour and it is the reason full screen is worth having at all. The
+        // text does not page: it is all there, in short lines, and the line holding the spoken word
+        // is scrolled to the TOP of the box. So his eye rests in one place while the sentences come
+        // up to meet it, and everything below that line is what is coming — which he can glance at
+        // without losing the place, because the place does not move.
+        //
+        // `scrollToItem` and not `animateScrollToItem`: he cannot watch animated scrolling, and a
+        // line that slides into position is exactly the thing that turns his eyes inside out.
+        val listState = rememberLazyListState()
+        val lineOf = remember(pages) {
+            IntArray(words.size).also { arr ->
+                pages.forEachIndexed { li, pg -> for (w in pg.range) if (w in arr.indices) arr[w] = li }
+            }
+        }
+        val line = lineOf.getOrElse(index) { 0 }
+        LaunchedEffect(line) { runCatching { listState.scrollToItem(line) } }
+
+        SubtitleBox(modifier, full) {
+            LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                itemsIndexed(pages) { li, pg ->
+                    Text(
+                        text = lineText(pg, index, style, lit, litBold, litUnderline),
+                        fontSize = fontSize,
+                        lineHeight = lineHeight,
+                        // Dimmed once it has been read, so the top of the box is always the live
+                        // line and what sits above it is visibly behind.
+                        color = if (li < line) MaSubtitleShadow else Color.Unspecified,
+                    )
+                }
+            }
+        }
+        return
+    }
+
     SubtitleBox(modifier, full) {
         Text(
             text = text,
-            fontSize = if (full) 26.sp else 17.sp,
-            lineHeight = if (full) 36.sp else 23.sp,
-            maxLines = if (full) 9 else 3,
+            fontSize = fontSize,
+            lineHeight = lineHeight,
+            maxLines = 3,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+/** One line of the full-screen reader, styled by whichever caption style is chosen. */
+private fun lineText(
+    page: Page,
+    index: Int,
+    style: String,
+    lit: Color,
+    litBold: Boolean,
+    litUnderline: Boolean,
+) = buildAnnotatedString {
+    page.words.forEachIndexed { i, w ->
+        if (i > 0) append(" ")
+        val here = page.range.first + i
+        val spoken = here < index
+        val current = here == index
+        val span = when (style) {
+            "typewriter" -> when {
+                current -> SpanStyle(color = lit)
+                spoken -> SpanStyle(color = MaSubtitleWhite)
+                else -> SpanStyle(color = Color.Transparent)
+            }
+            "karaoke" -> when {
+                current -> SpanStyle(color = MaSubtitleWhite)
+                spoken -> SpanStyle(color = MaSubtitleYellow)
+                else -> SpanStyle(color = MaSubtitleDim)
+            }
+            "spotlight" -> if (current) SpanStyle(color = lit) else SpanStyle(color = MaSubtitleShadow)
+            else -> if (current) {
+                SpanStyle(
+                    color = lit,
+                    fontWeight = if (litBold) FontWeight.Bold else null,
+                    textDecoration = if (litUnderline) TextDecoration.Underline else null,
+                )
+            } else {
+                SpanStyle(color = MaSubtitleWhite)
+            }
+        }
+        withStyle(span) { append(w) }
     }
 }
 
@@ -215,7 +309,9 @@ private fun SubtitleBox(
             .padding(horizontal = 10.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(MaSubtitleBackground)
-            .height(if (full) FULLSCREEN_HEIGHT else SUBTITLE_HEIGHT)
+            // Full screen takes whatever height the caller gave it — the keyboard's own — rather
+            // than a number of its own that would be wrong on the next phone.
+            .then(if (full) Modifier.fillMaxHeight() else Modifier.height(SUBTITLE_HEIGHT))
             .combinedClickable(
                 // The commonest thing he wants while listening is "not this bit". Reaching for the
                 // speaker key pauses; reaching here moves on.
@@ -271,15 +367,13 @@ private fun paginate(words: List<String>, perPage: Int): List<Page> {
 private const val PAGE_CHARS = 105
 
 /**
- * Roughly what nine lines hold at 26sp.
+ * Roughly what one line holds at 17sp on his phone.
  *
- * Deliberately a little under, like its small sibling: a page cut off by the ellipsis is a page
- * whose last words are never highlighted, which is worse than one that is not quite full.
+ * One line and not a page, because full screen scrolls line by line: this is the unit that jumps to
+ * the top, and a three-line unit would jump three lines at a time and lose the steadiness that makes
+ * it readable.
  */
-private const val FULLSCREEN_CHARS = 460
-
-/** Tall enough to cover the keys, so the passage is the only thing on screen. */
-private val FULLSCREEN_HEIGHT = 330.dp
+private const val LINE_CHARS = 34
 
 /**
  * Matching the composer he reads beside, so the two read as one interface.

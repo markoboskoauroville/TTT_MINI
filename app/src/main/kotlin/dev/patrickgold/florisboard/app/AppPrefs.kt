@@ -1229,6 +1229,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * differently while the words around it stay exactly where they were, because a caption
          * that re-flows as it reads is a caption the eye chases instead of reads.
          */
+        /**
+         * Subtitle text size in sp. His eyes, his number.
+         *
+         * The same size in the small box and full screen. Full screen used to enlarge it as well,
+         * which meant one gesture changed two things and he could not have the big view without the
+         * big type — see §102.
+         */
+        val maReaderFontSize = int(
+            key = "dictate__ma_reader_font_size",
+            default = 17,
+        )
+
         val maReaderStyle = string(
             key = "dictate__ma_reader_style",
             default = "highlight",

@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.dictate.gif.GifSearchPanel
 import dev.patrickgold.florisboard.dictate.ui.MaFeatureRow
+import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.ui.MaSubtitleRow
 import dev.patrickgold.florisboard.dictate.ui.MaExtraRow
 import dev.patrickgold.florisboard.dictate.ui.LegacyEditRow
@@ -150,7 +151,26 @@ fun TextInputLayout(
         // Draws nothing at all when nothing is being read, so it costs no space the rest of the
         // time. That is why it can sit in the layout unconditionally instead of being switched in
         // and out, which would make the keyboard change height mid-reading.
-        if (prefs.dictate.maReaderDisplay.collectAsState().value == "subtitle") {
+        val maReaderSubtitle = prefs.dictate.maReaderDisplay.collectAsState().value == "subtitle"
+        val maReaderFull by prefs.dictate.maReaderFullscreen.collectAsState()
+        // FULL SCREEN MEANS FULL SCREEN.
+        //
+        // While reading with the box expanded, the reader is the ONLY thing composed — no rows, no
+        // keys, nothing underneath. This is the rule from MA Reader: hide every child except the
+        // text, so that anything added to this keyboard later is hidden by default and has to argue
+        // its way back on. The version that named the things to hide is exactly how a player bar
+        // survived into full screen there.
+        //
+        // Gated on something actually being read, so the keyboard cannot be left unusable by a
+        // preference: stop the reader and every key is back.
+        val maReaderReading = MaReader.currentIndex >= 0
+        if (maReaderSubtitle && maReaderFull && maReaderReading) {
+            // The height the keys would have taken, plus the rows above them. `weight` is no use
+            // here: this Column wraps its content, so a weight of one resolves to nothing.
+            MaSubtitleRow(modifier = Modifier.height(FlorisImeSizing.keyboardUiHeight() + 96.dp))
+            return@Column
+        }
+        if (maReaderSubtitle) {
             MaSubtitleRow()
         }
         if (state.isActionsOverflowVisible) {
