@@ -4359,3 +4359,52 @@ always neutral, and an old coloured value falls back sanely rather than throwing
 Sections 10 to 13 of `MANTRA_MANIFEST/modules/design-language.md`: a dial is judged against what it
 is doing; a switcher is not an action and the face cannot say so; brightness is not colour; state and
 reality are two facts that will disagree.
+
+---
+
+# 112. Three integrity passes
+
+Asked for a check across everything, three times, each reading the last.
+
+## Pass 1 — structure, whole tree
+
+407 files swept for duplicate imports, doubled annotations, icons used without importing them,
+delegation without `getValue`, and Compose helpers without theirs.
+
+**Three hits, two false.** `SpaceBar` was inside a comment explaining why that icon is *not* used;
+the twelve "delegation without `getValue`" were custom non-Compose delegates in inherited
+FlorisBoard files.
+
+**One real:** `MaRowsScreen` had `@Composable` above a doc comment above the function. It compiles —
+the annotation still binds — but it is the exact shape that caused red build 209, where a second
+annotation hid behind a doc comment. Moved below its doc.
+
+## Pass 2 — do the parts agree
+
+Every enum entry has a branch in every screen that switches on it; every settings entry has both a
+route and an icon; every route object is registered in the nav graph; every `ma*` preference read
+anywhere exists in `AppPrefs`.
+
+**All clean — but the first run reported `MaSwitchboardOrder: 0 entries`**, which is not a pass, it is
+a check that never ran. Its enum is indented differently from the others, so the pattern missed it.
+Re-run with the right pattern: 12 entries, all covered, all preferences real.
+
+**A check that finds nothing and a check that runs nothing look identical from the outside.** Print
+the count, always.
+
+## Pass 3 — can a state machine reach a dead end
+
+Reader, volume keys and send arming, each walked exhaustively rather than sampled.
+
+- **Volume:** 1,000 hold lengths — 0 do both, 0 do nothing.
+- **Send:** no sequence produces a send that was not asked for; none leaves the arming set.
+- **Reader:** without the heal, **`SPEAKING` and `PAUSED` with no player are silent forever**. With
+  it, none.
+
+**And the reader test was wrong twice before it was right.** First it called pausing a live player a
+dead end. Then it reported AUDIO from a null player — modelling the very bug away. Only after
+modelling `start()` on nothing as *silence* did it reproduce the failure he actually had.
+
+**The rule: when a test says the bug does not exist, suspect the test.** It had already been fixed in
+the code, so the test agreeing was worthless — what proved it was the test failing on the old
+behaviour and passing on the new.

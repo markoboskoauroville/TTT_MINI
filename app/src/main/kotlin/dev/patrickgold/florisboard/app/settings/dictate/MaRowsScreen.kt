@@ -388,7 +388,6 @@ private fun MaRows.Button.title(macroSlots: List<MaMacroSlots.Slot>): String = w
  * kind with anything behind it to edit. The remove button is here rather than as a swipe: a swipe
  * on a row inside a list that also drags is the gesture collision this screen cannot afford.
  */
-@Composable
 /**
  * `internal` so the copy row editor can draw the same rows.
  *
@@ -396,6 +395,7 @@ private fun MaRows.Button.title(macroSlots: List<MaMacroSlots.Slot>): String = w
  * only way to guarantee that is for them to be the same function. A private one meant a second
  * implementation, which is a second place for them to drift apart.
  */
+@Composable
 internal fun MaRowKeyItem(
     position: Int,
     entry: MaRows.Entry,
