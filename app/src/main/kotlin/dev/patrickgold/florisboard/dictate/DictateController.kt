@@ -234,6 +234,19 @@ object DictateController {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+    /**
+     * Press Send once this dictation has landed in the field.
+     *
+     * Set by volume down while a recording is running, and consumed exactly once. The whole feature
+     * is one gesture: volume up to start, volume down to stop, transcribe and send, with nothing to
+     * wait for and nothing else to press.
+     *
+     * `@Volatile` because it is written from the key handler on the main thread and read from the
+     * transcription coroutine, and a stale read here would either drop the send or fire an old one.
+     */
+    @Volatile
+    var sendAfterCommit: Boolean = false
+
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state: StateFlow<UiState> = _state.asStateFlow()
 
@@ -866,6 +879,11 @@ object DictateController {
 
     /** Aborts an in-progress recording and returns to idle (cancel button / leaving the keyboard). */
     fun cancelRecording(keepBarForMs: Long = 0L) {
+        // A cancelled recording disarms the send. Otherwise the arming survives, and the NEXT
+        // dictation — an ordinary one, started with the mic key — would send itself. A stray send
+        // is worse than a missed one: it puts words in front of somebody.
+        sendAfterCommit = false
+
         maReleaseMic()
         pttStopPending = false
         // A discard in flight keeps its flag; any other teardown clears everything.
@@ -972,6 +990,10 @@ object DictateController {
      * outside the transcribing state, so a tap can never interrupt a rewording request.
      */
     fun cancelTranscription() {
+        // Same reason as cancelRecording: an abandoned transcription must not leave a send armed
+        // for whatever is dictated next.
+        sendAfterCommit = false
+
         if (_state.value !is UiState.Transcribing) return
         transcribeJob?.cancel()
         transcribeJob = null
@@ -1795,6 +1817,27 @@ object DictateController {
                 return
             }
         }
+        // Send, now that the words are in the field.
+        //
+        // Placed after BOTH delivery branches, not inside one of them. The realtime path commits
+        // through `commitDictationFinal` and never touches `committed`, so a send consumed inside
+        // the other branch would simply never fire for anyone using realtime — and it would fail
+        // silently, which is the worst way for this to be wrong.
+        //
+        // The ORDER is the feature. A send that fires before the text lands sends an empty message
+        // and nobody finds out until they read the other end. Everything above this line has
+        // already delivered the text; nothing below it does.
+        //
+        // Consumed unconditionally, so a send armed by one recording can never fire on the next.
+        if (sendAfterCommit) {
+            sendAfterCommit = false
+            if (outputText.isNotEmpty()) {
+                MaMagicTargets.pressSend()
+            } else {
+                MaLog.add("keys", "send skipped, there was nothing to send")
+            }
+        }
+
         // Re-insert safety net (issue #111) + lifetime stats (issue #142) + history log (issue #140).
         rememberLastDictation(outputText)
         if (capture?.isReplay != true) {

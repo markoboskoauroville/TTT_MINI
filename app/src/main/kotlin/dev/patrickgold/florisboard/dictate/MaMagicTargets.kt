@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate
 
+import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 /**
  * The search terms the magic button looks for, in the order it tries them.
  *
@@ -205,6 +207,30 @@ object MaMagicTargets {
                 (it.face.equals(wanted, ignoreCase = true) || it.term.equals(wanted, ignoreCase = true))
         }
         return hit?.term?.trim() ?: wanted
+    }
+
+    /**
+     * Presses whatever the volume-down term names. Returns what was pressed, or null.
+     *
+     * **One definition, three triggers.** Volume down as a tap presses it; volume down while
+     * recording presses it after the words have landed; the magic finger key on the row presses it
+     * too. The moment a second copy of this resolution exists, the three can disagree about what
+     * "send" means, and the one that disagrees will be the one used at four in the morning.
+     *
+     * Reads the preference at press time rather than being handed a term, so renaming a target in
+     * settings changes every trigger at once with nothing to restart.
+     */
+    fun pressSend(): String? {
+        val prefs by FlorisPreferenceStore
+        val stored = prefs.dictate.maVolumeDownTerm.get()
+        val targets = parse(prefs.dictate.maMagicTargets.get()).ifEmpty { defaults() }
+        val term = resolveTerm(targets, stored)
+        val serviceUp = DictateAccessibilityService.isRunning
+        MaLog.add("keys", "send: '$stored' -> '$term', service=$serviceUp")
+        if (term.isEmpty() || !serviceUp) return null
+        val pressed = DictateAccessibilityService.pressScreenTarget(listOf(term))
+        MaLog.add("keys", "pressed=${pressed ?: "nothing found"}")
+        return pressed
     }
 
     fun serialize(targets: List<Target>): String =

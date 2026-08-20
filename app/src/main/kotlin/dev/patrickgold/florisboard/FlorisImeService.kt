@@ -56,7 +56,6 @@ import dev.patrickgold.florisboard.dictate.MaLog
 import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.ime.text.keyboard.MaCursorPad
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
-import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -911,17 +910,23 @@ class FlorisImeService : LifecycleInputMethodService() {
                 DictateController.onMicClick(this)
             }
             KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                // Resolved through the magic finger's own list, never read straight from the
-                // preference, so this key and the send key on the row cannot disagree.
-                val stored = prefs.dictate.maVolumeDownTerm.get()
-                val targets = MaMagicTargets.parse(prefs.dictate.maMagicTargets.get())
-                    .ifEmpty { MaMagicTargets.defaults() }
-                val term = MaMagicTargets.resolveTerm(targets, stored)
-                val serviceUp = DictateAccessibilityService.isRunning
-                MaLog.add("keys", "volume down tap: '$stored' -> '$term', service=$serviceUp")
-                if (term.isNotEmpty() && serviceUp) {
-                    val pressed = DictateAccessibilityService.pressScreenTarget(listOf(term))
-                    MaLog.add("keys", "pressed=${pressed ?: "nothing found"}")
+                // Two jobs on one key, decided by whether a recording is running.
+                //
+                // **While recording** this is the whole gesture in one press: stop, transcribe, and
+                // send when the words have landed. Up to start, down to finish, nothing to wait for
+                // and nothing else to press.
+                //
+                // **Otherwise** it is what it always was: press the send target on screen.
+                //
+                // The send itself is not done here. It is armed and left to the transcription path,
+                // because the text has to be in the field first and only that path knows when it
+                // is. Doing it here would send an empty message.
+                if (DictateController.state.value is DictateController.UiState.Recording) {
+                    MaLog.add("keys", "volume down while recording: stop, transcribe, send")
+                    DictateController.sendAfterCommit = true
+                    DictateController.onMicClick(this)
+                } else {
+                    MaMagicTargets.pressSend()
                 }
             }
         }

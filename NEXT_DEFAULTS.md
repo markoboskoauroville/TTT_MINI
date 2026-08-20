@@ -3838,3 +3838,45 @@ second colour rather than the same colour marked a different way.
 
 Defaults are yellow, not bold, not underlined, which is exactly what it did before, so nobody's
 reading changes until they change it.
+
+---
+
+# 100. One gesture: up to record, down to send
+
+> *"I record up, I press down, it sends. No waiting, not many steps."*
+
+Volume down now does two jobs, decided by whether a recording is running.
+
+**While recording** it is the whole thing in one press: stop, transcribe, and press Send once the
+words have landed. **Otherwise** it is exactly what it always was — press the send target on screen —
+so nothing anybody relied on changed.
+
+## Three things that had to be right
+
+**The send is armed, not performed.** The key handler cannot send: the text is not in the field yet,
+and a send that fires first sends an empty message that nobody notices until they read the other end.
+So volume down sets `sendAfterCommit` and the transcription path fires it when the words are down.
+
+**It fires below BOTH delivery branches.** The realtime path commits through `commitDictationFinal`
+and never touches `committed`, so a send placed inside the other branch would simply never fire for
+anyone using realtime — and it would fail *silently*, which is the worst way for this to be wrong.
+
+**It is disarmed on every abandoned path** — `cancelRecording`, `cancelTranscription`, and an empty
+transcript. Otherwise the arming survives and the *next* ordinary dictation sends itself. **A stray
+send is worse than a missed one: it puts words in front of somebody.**
+
+## One definition, three triggers
+
+`MaMagicTargets.pressSend()` now owns resolving and pressing the send term, and the volume tap, the
+volume-while-recording path and the row's key all go through it. The moment a second copy exists the
+three can disagree about what "send" means, and the one that disagrees is the one used at four in the
+morning.
+
+## Tested
+
+Seven cases, 0 failures: the full gesture, the old idle behaviour, up-then-up not sending, a cancel
+followed by an ordinary dictation that must not self-send, an empty transcript, and two gestures in a
+row producing exactly two sends.
+
+**Not tested: the phone.** Whether the send lands reliably after the commit in a given app, and
+whether any app needs a moment between the text arriving and the button being pressed.
