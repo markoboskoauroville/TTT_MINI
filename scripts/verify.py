@@ -247,6 +247,8 @@ def check_symbols_resolve(path: Path, text: str) -> None:
     code = strip_code(text)
     code = "\n".join(ln for ln in code.splitlines() if not ln.startswith(("import ", "package ")))
     used = set(re.findall(r"\b([A-Z][A-Za-z0-9_]{2,})\b", code))
+    # Exact final segment, and that is the point: matching `SnyggBox` as an import of `Box` is how
+    # a missing import was reported as present. A suffix match is not a match.
     imported = {ln.rsplit(".", 1)[-1].strip() for ln in text.splitlines() if ln.startswith("import ")}
     declared = set(re.findall(r"\b(?:val|const val|fun|object|class|enum class|interface)\s+(\w+)", text))
 

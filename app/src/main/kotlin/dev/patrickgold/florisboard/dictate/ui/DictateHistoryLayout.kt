@@ -10,6 +10,7 @@
 
 package dev.patrickgold.florisboard.dictate.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import android.text.format.DateUtils
