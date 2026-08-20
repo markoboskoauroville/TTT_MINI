@@ -330,6 +330,7 @@ private fun FlorisScreenScope.content(
                 context, navController, requestNotification, requestMic,
                 isProviderConfigured, onSkipProvider, onPassFloatingButton, accounts,
                 hasAllFiles, onSkipAllFiles, hasAccessibility, onSkipAccessibility, scope,
+                { finishSetup() },
             ),
             footer = {
                 footer(context)
@@ -374,6 +375,15 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
     hasAccessibility: Boolean,
     onSkipAccessibility: () -> Unit,
     scope: CoroutineScope,
+    /**
+     * Ends setup: writes the flag and goes to Settings.
+     *
+     * Passed in rather than rebuilt here, because it is the same action the Skip link at the top
+     * performs and there must be exactly one definition of "setup is over" — two would eventually
+     * disagree about whether the flag was written, and a flag that is not written brings the whole
+     * wizard back on the next launch.
+     */
+    finishSetup: () -> Unit,
 ): List<FlorisStep> {
 
     // Sorts one file into every provider and stores the result. Returns the sentence the step shows,

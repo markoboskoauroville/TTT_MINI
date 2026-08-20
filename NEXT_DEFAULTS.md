@@ -4540,3 +4540,44 @@ long screen simply refused to read and filled the log with 400s that looked like
 
 Now 1,800, measured. **A cap invented rather than measured is wrong in one direction and silent
 about it.**
+
+---
+
+# 116. The dead end I built, and the character cap I invented
+
+## The wizard could not be finished
+
+Removing the seventh page moved Finish onto the accessibility step — **inside its `else` branch**. So
+anyone whose accessibility was already running, which is everyone after the first install, reached
+the last page and found a line of text and nothing to press. **A dead end at the end of the wizard.**
+
+And because finishing is what writes `isImeSetUp`, the flag was never written, so setup returned on
+every launch. One misplaced brace produced both complaints.
+
+**The rule: the way out of a screen must never be inside a branch.** A step can have nothing left to
+do; it can never have no way forward.
+
+`finishSetup` is one function now, passed into the steps rather than rebuilt inside them, because the
+Skip link at the top does the same thing and two definitions of "setup is over" would eventually
+disagree about whether the flag was written.
+
+## The other reason the wizard kept returning
+
+Inherited from upstream: if the notification permission had never been answered, the app set
+`isImeSetUp = false` on every launch. On a phone where that permission is simply never granted — his
+— that condition is true forever.
+
+**Setup reappearing is not a way to ask for a permission.** Once somebody has finished it, *finished
+is a fact, not a state to be revoked* by an unrelated toggle. Left as it was for a genuine first run,
+where the flag is already false and the line changes nothing.
+
+## Speechify refuses over ~2,000 characters
+
+From his log, 23 readings: **every passage of 1,906 characters or fewer spoke; every one of 2,110 or
+more came back `speak refused, http 400`.** No exceptions on either side.
+
+`MAX_CHARS` was 4,000 — a number I chose and never tested against the service — so long screens
+simply refused to read and the log filled with 400s that looked like a key problem.
+
+Now 1,800, below the largest measured success with room for the service to tighten. **A cap invented
+rather than measured is wrong in one direction and silent about it.**
