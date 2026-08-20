@@ -260,6 +260,32 @@ def check_imports_resolve(path: Path, text: str) -> None:
             fail(path.name, f"import does not resolve: {fq}")
 
 
+def check_compose_helpers(path: Path, text: str) -> None:
+    """
+    Red build: `remember` used with no import.
+
+    `check_symbols_resolve` only looks at capitalised names, because a regex cannot tell a lowercase
+    function call from a variable. But a short list of Compose helpers is used constantly, always
+    needs an import, and is easy to miss when a block is pasted from another file — so those are
+    checked by name.
+    """
+    helpers = [
+        "remember", "rememberCoroutineScope", "rememberLazyListState", "rememberScrollState",
+        "mutableStateOf", "mutableIntStateOf", "mutableFloatStateOf", "collectAsState",
+        "derivedStateOf", "produceState", "rememberUpdatedState",
+    ]
+    code = strip_code(text)
+    imports = {ln.rsplit(".", 1)[-1].strip() for ln in text.splitlines() if ln.startswith("import ")}
+    for h in helpers:
+        # A call, not a mention: followed by an opening bracket or brace.
+        # Not a declaration. A file may define its own `remember` — one here does — and a function
+        # is not a missing import just because it shares a name with a Compose helper.
+        if re.search(rf"\bfun {h}\b", code):
+            continue
+        if re.search(rf"(?<![.\w]){h}\s*[({{]", code) and h not in imports:
+            fail(path.name, f"`{h}` used without an import")
+
+
 def check_balance(path: Path, text: str) -> None:
     """The old check, kept: braces and parens against HEAD rather than against zero."""
     rel = path.relative_to(ROOT).as_posix()
@@ -330,6 +356,7 @@ def main() -> int:
         check_delegation_imports(path, text)
         check_preferences_exist(path, text)
         check_symbols_resolve(path, text)
+        check_compose_helpers(path, text)
         check_imports_resolve(path, text)
         check_balance(path, text)
     check_when_coverage()

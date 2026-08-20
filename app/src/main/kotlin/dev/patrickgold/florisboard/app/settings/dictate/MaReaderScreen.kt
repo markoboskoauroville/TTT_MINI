@@ -11,6 +11,7 @@
 package dev.patrickgold.florisboard.app.settings.dictate
 
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.Color
