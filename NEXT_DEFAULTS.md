@@ -3983,3 +3983,37 @@ it is monotonic — it never scrolls back up.
 The Avid-style settings — a triangle beside each entry that opens it in place instead of pushing a
 new screen. He said postpone if it is too much for this pass, and it is: it touches all nineteen
 screens. Layer 2 in `MANTRA_MANIFEST/modules/design-language.md` §10 already describes the model.
+
+---
+
+# 103. The switchboard becomes the whole remote
+
+Five switches became thirteen, in three groups, and every row carries the glyph the keyboard itself
+shows — the standing rule from `MANTRA_MANIFEST/modules/design-language.md` §4.
+
+**On the keyboard:** the keys, the number row, the feature row, the suggestion row.
+**The copy row:** on the keyboard, in dictation, the edit row, the buckets.
+**Pressing and speaking:** the magic finger row, the volume keys, the subtitle row, full screen.
+
+Grouped because thirteen switches in one list is a list, and three groups of four is a remote. He
+described it as a remote controller and that is the right word for what it should feel like.
+
+## The subtitle row is stored as a word, and still gets a switch
+
+`maReaderDisplay` holds `subtitle`, `spacebar` or `off` — three values, of which two are "shown". A
+switch is still the honest control: **he is asking for it or not asking for it, and *where* it
+appears is a choice for the Reader screen** where there is room to explain the difference. Switching
+it back on returns `subtitle` rather than whatever he last had, because what he last had was `off`.
+
+## Two entry points, not one clever function
+
+The first version took either a boolean or a string preference and branched. That would call
+`collectAsState` a **different number of times depending on which argument was given**, which is the
+kind of thing that works until it does not. There are two small composables over one shared row
+instead, so every pass reads its preference the same way.
+
+## Checked before building
+
+All eleven icons confirmed present in the artifact, and every preference named by a row confirmed to
+exist in `AppPrefs` — both by script rather than by eye. Those two are the cause of most red builds
+in this project.
