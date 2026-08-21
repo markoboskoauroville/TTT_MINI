@@ -10,6 +10,9 @@
 
 package dev.patrickgold.florisboard.dictate
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+
 /**
  * What C1 to C10 hold: copies caught in the order they were made, and then held still.
  *
@@ -44,6 +47,36 @@ object MaClipCapture {
 
     /** Ten buckets, matching the ten keys. Beyond the last key a copy would be unreachable. */
     const val CAPACITY = MaRows.CLIP_SLOTS
+
+    /**
+     * How long a bucket wears its tick after catching a copy: one minute.
+     *
+     * The tick Marko was watching belongs to the OTHER app — the copy button in a chat, which turns
+     * into a checkmark for well under a second and is drawn by that app, not by this one. Nothing
+     * here can make it stay. So this is our own answer to the same question, on our own key: after a
+     * copy lands, the bucket that took it is marked for a minute, which is long enough to put the
+     * phone down, pick it up and still see where the last one went.
+     *
+     * A minute rather than forever, because a mark that never clears stops meaning "just now" and
+     * starts meaning "at some point", and the question being answered is where the LAST one went.
+     */
+    const val FILL_MARK_MS = 60_000L
+
+    /**
+     * The bucket that last caught a copy and the moment it did, on the elapsed-real-time clock.
+     *
+     * Compose state rather than a plain field: the capture happens in the clipboard manager, with
+     * the keyboard already drawn, so the row has to be told rather than asked. A plain field would
+     * be written and nothing would redraw — which is the same shape as the wand bar bug.
+     *
+     * Not persisted. It says "just now", and "just now" does not survive a restart.
+     */
+    val lastFilled: MutableState<Pair<Int, Long>> = mutableStateOf(0 to 0L)
+
+    /** Records that [slot] just took a copy. Called by the capture, not by the keyboard. */
+    fun noteFilled(slot: Int) {
+        lastFilled.value = slot to android.os.SystemClock.elapsedRealtime()
+    }
 
     /** Ten buckets, all empty. */
     val Empty: List<String?> = List(CAPACITY) { null }

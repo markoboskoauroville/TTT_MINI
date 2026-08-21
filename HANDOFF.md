@@ -21,7 +21,20 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 261.** The last stretch, newest first:
+**Build 265.** The last stretch, newest first:
+
+- **The buckets have no switch.** They are live whenever C keys are on a row and dead when they are
+  not. `maBucketsEnabled` is gone: it defaulted OFF, so a fresh install drew grey C keys that caught
+  nothing, and the A key looked broken with them because a copied code block had nowhere to go.
+- **The bucket that catches a copy wears a tick for one minute.** `MaClipCapture.lastFilled`, set by
+  the capture, drawn by the key. The tick he was watching before belongs to the other app's copy
+  button and lasts under a second; nothing here can change that one.
+- **Permissions detection asks three sources and takes any yes** — `enabledInputMethodList`, the
+  Secure string, then `DEFAULT_INPUT_METHOD` — each wrapped separately. The Secure string alone
+  answered "not enabled" for a keyboard that was on. **Allow restricted settings** is inferred from
+  the accessibility service running, since it could not have been switched on through a closed gate.
+- **The recording readings start at the left and the size says MB**, one line, sized to content. A
+  weight gave it whatever the clock did not use, and at 15,0 MB that wrapped onto a second line.
 
 - **Defaults are his.** A fresh install ships his exported settings order, his feature row, number
   row on, edit strip off, buckets off, scroll pages 4. He reinstalls several times a day; a fresh

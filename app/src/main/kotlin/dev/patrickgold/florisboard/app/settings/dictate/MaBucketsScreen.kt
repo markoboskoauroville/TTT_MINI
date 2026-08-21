@@ -65,20 +65,18 @@ fun MaBucketsScreen() = FlorisScreen {
     content {
         val prefs by FlorisPreferenceStore
 
-        // The switch first, because it governs everything under it: tuning waits for a feature that
-
-        // is off is work nobody should be invited to do.
-
-        SwitchPreference(
-
-            prefs.dictate.maBucketsEnabled,
-
-            title = "Use the copy buckets",
-
-            summary = "Off, the C keys stay on the row but go grey, stop catching copies and stop " +
-
-                "turning red. Turn it back on and they carry on from empty.",
-
+        // The switch is gone, and this is the sentence that replaces it.
+        //
+        // It governed nothing worth governing: the buckets are live when C keys are on a row and
+        // dead when they are not, which is the same answer arrived at without a control that can be
+        // left in the wrong position.
+        Text(
+            text = "The buckets are on whenever C keys are on a row, and off when they are not. " +
+                "Put C1 on the feature row and the next copy goes into it; take every C key off " +
+                "and nothing is captured. There is no switch to find.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
 
         Spacer(Modifier.height(8.dp))

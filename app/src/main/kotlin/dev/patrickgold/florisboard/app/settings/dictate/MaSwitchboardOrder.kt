@@ -48,7 +48,7 @@ object MaSwitchboardOrder {
         // this same row, the other switched nothing at all. `parse` drops ids it does not know,
         // so an arrangement written before this loses them and keeps everything else.
         EDIT_ROW("edit_row"),
-        BUCKETS("buckets"),
+        // BUCKETS is gone: the C keys on the row are the switch. parse drops the stored id.
         MAGIC_ROW("magic_row"),
         SUBTITLE("subtitle"),
         FULLSCREEN("fullscreen"),

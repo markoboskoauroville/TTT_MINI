@@ -5661,3 +5661,109 @@ Fixed by gathering the parameter list until its parens balance. Verified by putt
 duplicate in — identical signature, same scope — and confirming it still goes red.
 
 **A checker that cries wolf is a checker that gets ignored**, and it had one chance to be believed.
+
+---
+
+# §147 — The buckets lose their switch, and three detections stop guessing
+
+Build 265. Four things he photographed on 21.8.2026, all of them the same shape underneath: a
+feature that was working exactly as written and reading, from the phone, as broken.
+
+## The buckets were off, and that is why A was off too
+
+`captureIntoClipSlots` opened with `if (!prefs.dictate.maBucketsEnabled.get()) return`, and that
+preference defaults to **false**. So on his phone the C keys were drawn on the row, dim, catching
+nothing — and the A key, which presses "copy code" on a code block and lets the ordinary clipboard
+capture put it away, had nowhere to put anything. He reported the A key as broken. It was not. The
+bucket behind it was closed.
+
+**The switch is gone, and presence on the row replaces it.** C keys on a row means the buckets are
+live; no C keys means there is nowhere for a copy to go, which the existing `visible` set already
+enforces without any preference at all — `capture` returns the buckets unchanged when the visible set
+has no free slot, and an empty set has no free slot.
+
+Why this is better than fixing the default: **a switch that can be left in the position where the
+feature looks broken is worth less than no switch.** The gesture that makes buckets wanted is putting
+a C key on the row, and that gesture can now do the whole job. Nothing to find in a settings list
+three screens away, and no state in which the keys are on the keyboard and inert.
+
+Removed with it: `maBucketsEnabled`, the switchboard entry `BUCKETS`, and the switch at the top of
+the Paste timing screen. `MaSwitchboardOrder.parse` drops the stored id, so his arrangement survives
+minus that row.
+
+**A1 fills C1, A2 fills C2, A3 fills C3** — and always did, by construction rather than by a rule
+written anywhere: A presses the *n*th code block's copy button, the copy reaches the clipboard, and
+capture pours it into the lowest empty visible bucket. Modelled in `scripts/test_buckets_and_
+permissions.py` and walked, along with the cases it must refuse.
+
+## The tick that vanishes belongs to somebody else
+
+He asked for the "copied" checkmark to stay a minute. That checkmark is drawn by the chat app on its
+own copy button, and nothing in this keyboard can hold it there — worth saying plainly rather than
+appearing to fix it.
+
+So the same question is answered on our own key. `MaClipCapture.lastFilled` records which bucket took
+the last copy and when; the C key wears a small tick for `FILL_MARK_MS`, one minute, and then stops.
+Compose state rather than a plain field, because the capture happens in the clipboard manager with
+the keyboard already drawn — a plain field would be written and nothing would redraw, which is the
+wand bar's old bug. A `LaunchedEffect` ticks once a second only while a mark is young, so the tick
+clears itself and costs nothing the rest of the day.
+
+The tick is a **shape**, not a colour: colour on that key already says whether the bucket is holding
+something, and a second meaning on the same channel would make neither readable. It is drawn over the
+key in a Box so the number does not move to make room for a mark that comes and goes.
+
+Which bucket is found by **diffing the two lists** rather than by having `capture` report it. capture
+stays a pure function over a list, and the difference between what was stored and what is stored now
+cannot disagree with what was actually written.
+
+## One source is not a detection
+
+"Enable the keyboard" said **not done** on a phone where the keyboard was enabled and in use. It
+asked one question — does `Settings.Secure.ENABLED_INPUT_METHODS` contain our package name — and that
+string is not reliably readable by an ordinary app on a modern Android. It comes back null, and a
+null contains nothing, so the answer was no.
+
+It asks three now and takes any yes: `InputMethodManager.enabledInputMethodList` first, since that is
+the public API for exactly this question; the Secure string second; `DEFAULT_INPUT_METHOD` third,
+because nothing can be the current keyboard without being enabled. **Each is wrapped on its own.**
+One `runCatching` around all three would have let the first failure discard the other two answers,
+which is the same fault in a different place.
+
+**Allow restricted settings** was hardcoded `false` and could never tick. Android exposes no flag for
+it, so it is now answered by its consequence: restricted settings is the gate that stops a sideloaded
+app's accessibility service being switched on at all, so an accessibility service that is *running*
+is proof the gate was opened. Not an assumption — a thing that could not otherwise have happened.
+Still false when accessibility is off, which is honest: the next step is the same either way.
+
+A row that is permanently outstanding on a screen whose whole job is to say what is left teaches him
+to ignore the numbers, and then the ones that mean something are ignored too.
+
+The API keys row below the steps is still deliberately never ticked. A key can be present and dead.
+The first version of the test could not tell that apart from the bug and would have had to be argued
+with; it now looks only inside `maPermissionSteps`.
+
+## The megabytes broke a line
+
+`"%.1f"` in a column sized by `Modifier.weight(1f)`. The clock takes what it takes and the size gets
+the remainder, so at 15,0 it was narrower than the text and wrapped onto a second line inside a strip
+one line tall. **A weight is a promise about width that a number cannot keep** — the same rule that
+clipped "Insert" to "Ins", in digits.
+
+The lamp, the clock and the size now start at the left edge, where the meter below them starts, and
+the single weight is at the *end* taking up what is left. The size says `MB`, `maxLines = 1`,
+`softWrap = false`, sized to its own content.
+
+The decimal separator stays the phone's own. `"%.1f"` gives 5,6 on his Croatian phone and that is
+correct there; forcing a full stop would make this keyboard the only thing on his screen writing
+numbers the other way.
+
+## Tested
+
+Test 1: 438 checks, 0 failed, including the capture rule modelled and walked in Python. Broken on
+purpose four ways and confirmed red, then green again. One of those sabotage runs made a check
+*throw* rather than fail — the count never printed and the exit code was right by accident — and that
+check is now guarded. A check that raises is not a check that fails.
+
+Not tested: nothing ran on a phone. The A key's press path through the accessibility service was not
+exercised, the three permission sources were not observed on his ROM, and the tick has not been seen.

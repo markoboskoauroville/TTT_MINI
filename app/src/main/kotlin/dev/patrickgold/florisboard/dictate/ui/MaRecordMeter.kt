@@ -199,7 +199,18 @@ private fun MaReadings(sending: Boolean, tint: Color) {
         // The dB number is gone. The bar underneath already says how loud, continuously and without
         // being read, which is what a meter is for; a number saying the same thing was one reading
         // too many on a strip this size and it was taking room from the one that matters.
-        Spacer(modifier = Modifier.weight(1f))
+        //
+        // EVERYTHING STARTS AT THE LEFT, WHERE THE METER STARTS.
+        //
+        // The readings used to be centred, with a weight on each side, and that is what broke the
+        // megabyte figure: the column left for it was whatever the clock did not use, and at 15,0 MB
+        // it was narrower than the text, so it wrapped onto a second line inside a strip one line
+        // tall. A weight is a promise about width that a number cannot keep, exactly as it is for a
+        // word.
+        //
+        // So the lamp, the clock and the size sit at the start, in that order, against the same edge
+        // the meter below them starts at, and one weight at the END takes up whatever is left. The
+        // room the readings need is now decided by the readings.
         // The red dot, immediately before the clock.
         //
         // Marko asked for it and the reason is the right one: a red circle has meant "recording" on
@@ -246,15 +257,26 @@ private fun MaReadings(sending: Boolean, tint: Color) {
             maxLines = 1,
         )
         Text(
-            // Three characters, always: a digit, a dot, a digit, in megabytes. Fixed width so the
-            // line does not jitter as it climbs.
-            text = if (sending) "" else "%.1f".format(bytes / 1_048_576.0),
+            // One digit, the separator, one digit, then MB. It was three bare characters and it did
+            // not say what they were: Marko had to guess that 5,6 meant megabytes, which is a
+            // reading nobody can use.
+            //
+            // The separator is the phone's, not a full stop forced on it. On his Croatian phone
+            // "%.1f" already gives 5,6 and that is correct there; hardcoding a dot would make the
+            // keyboard the only thing on the screen writing numbers the other way.
+            //
+            // maxLines and softWrap are the actual fix for the break he photographed. Sized to its
+            // own content now rather than to a share of the line, so there is nothing left to wrap.
+            text = if (sending) "" else "%.1f MB".format(bytes / 1_048_576.0),
             color = tint.copy(alpha = 0.75f),
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            textAlign = androidx.compose.ui.text.style.TextAlign.End,
-            modifier = Modifier.weight(1f).padding(start = 6.dp),
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(start = 6.dp),
         )
+        // The room left over, at the end, where it costs nothing.
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 

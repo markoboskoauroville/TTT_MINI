@@ -1354,44 +1354,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = true,
         )
 
-        /**
-         * How far the S key scrolls, in pages. Negative scrolls up.
-         *
-         * One number with a sign rather than a direction and a distance, so one key does both and
-         * the setting is a single stepper. Set on the key itself by long press: it is adjusted while
-         * looking at the page being scrolled, which is not a moment to go into settings for.
-         */
-        /**
-         * The three waits inside a bucket paste, in milliseconds.
-         *
-         * Split into three because they are three different waits, and the field that is too slow
-         * for one is often fine with the others. Each step is a round trip to another process, and
-         * firing the next before the last has landed acts on a selection that does not exist yet —
-         * which shows up as a key that pasted nothing, or worse, emptied the field and did not
-         * refill it.
-         *
-         * 200ms each is what works in most fields and is Marko's own number. Some apps need more,
-         * and there is no way to know which from here, so it is his to set rather than mine to
-         * guess.
-         *
-         * Zero is allowed. A field fast enough to need no wait should not be made to wait, and
-         * somebody tuning these downward should be able to reach the bottom.
-         */
-        /**
-         * Whether the copy buckets are working at all.
-         *
-         * Off, they stop capturing, stop turning red when full, and draw grey. The keys stay where
-         * they are rather than vanishing: they are part of an arrangement he built, and a row that
-         * rearranges itself when a feature is switched off is a row he has to relearn twice.
-         *
-         * This exists because the buckets are not always wanted and were never quiet about it. A
-         * feature that changes colour on the row while he is doing something else is asking for
-         * attention it has not earned.
-         */
-        val maBucketsEnabled = boolean(
-            key = "dictate__ma_buckets_enabled",
-            default = false,
-        )
+        // maBucketsEnabled is gone. The buckets are switched by whether C keys are on a row:
+        // present means live, absent means nothing to capture into. It defaulted OFF, which is
+        // how a fresh install shipped with grey C keys that caught nothing and an A key that
+        // appeared broken, with the cure three screens away in a list.
+        //
+        // Whatever the preference file already holds is left there, unread.
 
         val maClipDelaySelect = int(
             key = "dictate__ma_clip_delay_select",

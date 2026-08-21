@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.ClosedCaption
-import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.foundation.clickable
@@ -145,8 +144,6 @@ private fun MaSwitchRowFor(entry: MaSwitchboardOrder.Entry, lifted: Boolean) {
         // that key draws, so the row and the key are recognisable as one thing.
         MaSwitchboardOrder.Entry.EDIT_ROW ->
             MaSwitchRow("Copy row", Icons.Default.ContentPaste, prefs.dictate.maEditRow, Routes.Settings.MaCopyRow, modifier)
-        MaSwitchboardOrder.Entry.BUCKETS ->
-            MaSwitchRow("Copy buckets", Icons.Default.Inventory2, prefs.dictate.maBucketsEnabled, Routes.Settings.MaBuckets, modifier)
         MaSwitchboardOrder.Entry.MAGIC_ROW ->
             MaSwitchRow("Magic Finger row", Icons.Default.TouchApp, prefs.dictate.maMagicRowShown, Routes.Settings.MaMagic, modifier)
         MaSwitchboardOrder.Entry.FULLSCREEN ->

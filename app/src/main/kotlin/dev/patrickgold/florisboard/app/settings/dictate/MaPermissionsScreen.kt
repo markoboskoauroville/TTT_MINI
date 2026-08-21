@@ -22,6 +22,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -143,6 +144,35 @@ fun MaPermissionsScreen() = FlorisScreen {
     }
 }
 
+/**
+ * Whether this keyboard is enabled in the system, asked three ways.
+ *
+ * Any yes is a yes. The three are independent, and each is wrapped separately so a source that
+ * throws contributes nothing rather than sinking the other two.
+ */
+private fun maKeyboardEnabled(context: Context): Boolean {
+    val viaManager = runCatching {
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.enabledInputMethodList.any { it.packageName == context.packageName }
+    }.getOrDefault(false)
+    if (viaManager) return true
+
+    val viaSecure = runCatching {
+        Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ENABLED_INPUT_METHODS,
+        )?.contains(context.packageName) == true
+    }.getOrDefault(false)
+    if (viaSecure) return true
+
+    return runCatching {
+        Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.DEFAULT_INPUT_METHOD,
+        )?.contains(context.packageName) == true
+    }.getOrDefault(false)
+}
+
 /** One permission: what it is, whether it is granted, and where to go to grant it. */
 private class MaPermissionStep(
     val title: String,
@@ -172,12 +202,30 @@ private fun maPermissionSteps(context: Context): List<MaPermissionStep> {
         // differently — a manufacturer's ROM, a locked-down profile, a future API. **One screen that
         // cannot open is worse than one row that says the wrong thing**, and the safe default is the
         // one that leaves the step visible with the button that fixes it.
-        granted = runCatching {
-            Settings.Secure.getString(
-                context.contentResolver,
-                Settings.Secure.ENABLED_INPUT_METHODS,
-            )?.contains(context.packageName) == true
-        }.getOrDefault(false),
+        // THREE ANSWERS, AND ANY ONE OF THEM IS ENOUGH.
+        //
+        // This said "not enabled" on a phone where the keyboard was enabled, switched on, and being
+        // typed with — photographed on 21.8.2026 with the system list showing TTT mini on.
+        //
+        // It asked one question: does Settings.Secure.ENABLED_INPUT_METHODS contain our package
+        // name. That string is a system setting, and on a modern Android it is not reliably readable
+        // by an ordinary app — it comes back null or short, and a null contains nothing, so the
+        // check answers "no" for a keyboard that is on. **A single reading that can fail silently is
+        // not a detection, it is a guess with one source.**
+        //
+        // So it asks three different things and takes any yes:
+        //
+        //   1  InputMethodManager.enabledInputMethodList — the public API for exactly this
+        //      question, answered by the input method service itself rather than by a settings
+        //      string we are reading over its shoulder.
+        //   2  the Secure string, kept as a fallback for a ROM where the manager answers oddly.
+        //   3  DEFAULT_INPUT_METHOD — the keyboard currently in use. If it is ours it is enabled;
+        //      nothing can be the default without being enabled.
+        //
+        // Each is wrapped on its own, so one throwing does not take the other two with it. That was
+        // the second half of the bug: all three would have sat inside one runCatching and the first
+        // failure would have discarded the answers of the other two.
+        granted = maKeyboardEnabled(context),
         intent = { Intent(Settings.ACTION_INPUT_METHOD_SETTINGS) },
     )
 
@@ -196,10 +244,23 @@ private fun maPermissionSteps(context: Context): List<MaPermissionStep> {
     steps += MaPermissionStep(
         title = "Allow restricted settings",
         detail = "Three dots at the top right of App info. Skip if your phone does not offer it",
-        // Nothing can be read here: Android exposes no flag for it. Reported as not granted so it is
-        // never ticked off falsely — an unticked step he has already done costs a glance; a ticked
-        // one he has not done costs an afternoon.
-        granted = false,
+        // Android exposes no flag for this one, so it is answered by its CONSEQUENCE instead.
+        //
+        // Restricted settings is the gate that stops a sideloaded app's accessibility service from
+        // being switched on at all. So an accessibility service that is RUNNING is proof the gate was
+        // opened — not an assumption about it, a thing that could not have happened otherwise.
+        //
+        // Still false when accessibility is off, which is the honest answer: at that point the gate
+        // may or may not be open, and the step he has to do next is the same either way.
+        //
+        // Before this it was hardcoded false and the row never ticked, ever. That is worse than it
+        // sounds on a screen whose whole purpose is to say what is left to do: a step that is always
+        // outstanding teaches him to ignore the numbers, and then the ones that mean something are
+        // ignored too.
+        granted = runCatching {
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                DictateAccessibilityService.isRunning
+        }.getOrDefault(false),
         intent = ::appDetails,
     )
 

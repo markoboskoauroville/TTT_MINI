@@ -141,3 +141,4 @@ since been removed.
 - **§144** — A settings export is a secret file
 - **§145** — The pin comes off
 - **§146** — One copy row, for real this time
+- **§147** — The buckets lose their switch, and three detections stop guessing

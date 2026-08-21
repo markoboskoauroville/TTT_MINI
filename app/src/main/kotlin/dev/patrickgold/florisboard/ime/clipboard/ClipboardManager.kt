@@ -292,9 +292,22 @@ class ClipboardManager(
      * full. MaClipCapture holds the reasoning.
      */
     private suspend fun captureIntoClipSlots(clip: android.content.ClipData?) {
-        // Switched off means switched off: nothing is captured, so the buckets do not quietly fill
-        // in the background and present him with ten full keys when he turns them back on.
-        if (!prefs.dictate.maBucketsEnabled.get()) return
+        // NO SWITCH. The buckets are live whenever there are bucket keys on a row, and dead when
+        // there are not.
+        //
+        // `maBucketsEnabled` was checked here and it defaulted OFF, so a fresh install had C keys
+        // drawn grey on the row, catching nothing, with the switch that would wake them three
+        // screens away in a settings list. From the keyboard it looked like a broken feature rather
+        // than an unswitched one — and the A key looked broken with it, since A presses copy on a
+        // code block and the copy then had nowhere to go.
+        //
+        // The presence of the keys is a better switch than a switch. Taking every C key off the row
+        // stops the capture, because there is nowhere to put a copy; putting one back starts it, in
+        // the same gesture that made it wanted. Nothing to find, nothing to forget, and no state in
+        // which the keys are on the keyboard and inert.
+        //
+        // `visible` below is what enforces it: an empty set has no free bucket, so `capture` returns
+        // the buckets unchanged and nothing is stored.
         val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString() ?: return
         val current = MaClipCapture.parse(prefs.dictate.maClipCaptured.get())
         // Which buckets exist for this user, read fresh on every copy rather than cached. The row is
@@ -308,6 +321,12 @@ class ClipboardManager(
         // of it — including the keyboard's own row — for no change at all.
         if (next != current) {
             prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(next))
+            // Which bucket took it, so the key can wear a tick for a minute. Found by comparing
+            // rather than by asking capture to report it: capture is a pure function over a list and
+            // it stays one — the difference between two lists is the honest answer to "what
+            // changed", and it cannot disagree with what was actually stored.
+            val filled = next.indices.firstOrNull { next[it] != null && current.getOrNull(it) == null }
+            if (filled != null) MaClipCapture.noteFilled(filled + 1)
         }
     }
 

@@ -80,6 +80,7 @@ import dev.patrickgold.florisboard.dictate.MaMacroSlots
 import androidx.compose.foundation.layout.size
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.unit.Dp
@@ -232,7 +233,6 @@ fun MaFeatureRow(
 
     // What C1 to C10 currently hold, in the order they were copied.
     val spacerTenths by prefs.dictate.maSpacerTenths.collectAsState()
-    val bucketsOn by prefs.dictate.maBucketsEnabled.collectAsState()
     val clipDelaySelect by prefs.dictate.maClipDelaySelect.collectAsState()
     val clipDelayDelete by prefs.dictate.maClipDelayDelete.collectAsState()
     val clipDelayPaste by prefs.dictate.maClipDelayPaste.collectAsState()
@@ -294,6 +294,22 @@ fun MaFeatureRow(
     val langMode by prefs.dictate.maLanguageMode.collectAsState()
     val scrollPages by prefs.dictate.maScrollPages.collectAsState()
     var scrollMenu by remember { mutableStateOf(false) }
+
+    // The fill mark, and a clock that runs only while one is live.
+    //
+    // A minute is too long to leave to recomposition — nothing else would redraw the row in that
+    // time, so the tick would sit there until something unrelated happened to wake the keyboard.
+    // This ticks once a second while the mark is young and then stops, so the tick clears itself and
+    // costs nothing for the rest of the day.
+    val lastFill = MaClipCapture.lastFilled.value
+    var markNow by remember { mutableStateOf(0L) }
+    LaunchedEffect(lastFill) {
+        while (android.os.SystemClock.elapsedRealtime() - lastFill.second < MaClipCapture.FILL_MARK_MS) {
+            markNow = android.os.SystemClock.elapsedRealtime()
+            delay(1000L)
+        }
+        markNow = android.os.SystemClock.elapsedRealtime()
+    }
 
     // What the wand is doing, shown in a bar above the keys.
     //
@@ -519,9 +535,10 @@ fun MaFeatureRow(
             is MaRows.Button.Clip -> {
                 // The slot's own text, not the history's newest-first ordering. C4 is the fourth
                 // thing copied since the row was cleared and stays that until it is cleared again.
-                // Switched off, a bucket holds nothing as far as the key is concerned: it draws
-                // dim and a press does nothing, rather than pasting something from before.
-                val text = if (bucketsOn) MaClipCapture.at(capturedSlots, button.slot) else null
+                // No switch in front of it any more. A bucket on the row is a live bucket: what it
+                // holds is what it pastes, and the only reason it is empty is that nothing has been
+                // copied into it yet.
+                val text = MaClipCapture.at(capturedSlots, button.slot)
                 ThemedKey(
                     code = KeyCode.NOOP,
                     // The key shows only its number: ten text previews across a row would be a few
@@ -574,6 +591,19 @@ fun MaFeatureRow(
                         keyboardManager.activeState.imeUiMode = ImeUiMode.CLIPBOARD
                     },
                 ) { fg ->
+                  // The tick, for a minute after this bucket caught a copy.
+                  //
+                  // A shape, not a colour change: colour is the state channel and it is already
+                  // saying whether the bucket is holding something. This says something different —
+                  // *this* is the one that just took the last copy — and it is the answer he was
+                  // trying to read off another app's checkmark before it vanished.
+                  //
+                  // Over the key rather than beside the number, because the number is the thing
+                  // pressed from memory and must not move to make room for a mark that comes and
+                  // goes. Nothing in the layout shifts.
+                  val justFilled = button.slot == lastFill.first &&
+                      markNow - lastFill.second < MaClipCapture.FILL_MARK_MS
+                  Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = "C${button.slot}",
                         // Three states, read at a glance without pressing anything: dim means the
@@ -589,6 +619,16 @@ fun MaFeatureRow(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
+                    if (justFilled) {
+                        Text(
+                            text = "\u2713",
+                            color = onGreen,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.TopEnd),
+                        )
+                    }
+                  }
                 }
             }
 
