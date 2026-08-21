@@ -5992,3 +5992,29 @@ to be edited on every addition is a number that gets edited without being read.
 
 Not tested: nothing ran on a phone. The ring has not been seen next to the switcher rings, which is
 the one question that matters about it and the one only the screen can answer.
+
+## §150a — The red build, and the check it bought
+
+Build 268 went red. Sixteen unresolved references, and every one of them was a symbol my own edit had
+deleted.
+
+Two edits replaced a range by naming its two ends — *from this comment down to that `LaunchedEffect`*
+— and in both cases the second end sat further down the file than the thing being removed. The cuts
+took `autoRank`, `clipKeysPresent`, `learn`, `magicRowShown`, `magicAll` and `magicTargets` with
+them. **This is the failure the handoff already names: cutting code by eye fails, and the pattern is
+always that the second end was whatever came next in my head rather than what came next in the file.**
+
+Nothing in `verify.py` could see it. Braces balance perfectly when a whole declaration is removed;
+nothing is duplicated, no import is orphaned, the file is well formed. It is simply missing something
+the rest of it still uses.
+
+`check_removed_declarations` closes it: every `val`/`var` declared at HEAD, not declared now, whose
+name is still referenced. Proved against the red build itself rather than against a hypothetical —
+run over HEAD~1 against HEAD it names `clipKeysPresent`, `learn`, `magicRowShown` and `autoRank`,
+which is what CI said five minutes and one paid build later.
+
+The first version of it missed `autoRank`, because inside `MaClipCapture.kt` the reference is written
+`MaClipCapture.autoRank` and the check skipped anything with a dot — a rule added so that a
+declaration deliberately moved into an object would not report itself forever. It now treats a
+qualified reference as this file's business when the object is declared in this file, which is the
+distinction that was actually meant.

@@ -397,6 +397,50 @@ def check_balance(path: Path, text: str) -> None:
             fail(path.name, f"{label} unbalanced: {d_now} now, {d_was} at HEAD")
 
 
+def check_removed_declarations(path: Path, text: str) -> None:
+    """
+    RED BUILD 268, and it cost him one: a scripted range cut removed declarations still in use.
+
+    Two edits replaced a range by naming its two ends — "from this comment to that LaunchedEffect" —
+    and the second end was further down the file than the thing being removed. Six live declarations
+    went with it: `autoRank`, `clipKeysPresent`, `learn`, `magicRowShown`, `magicAll`, `magicTargets`.
+    Sixteen unresolved references, every one of them a symbol the cut had deleted.
+
+    This is the failure the handoff names — *cutting code by eye fails* — and none of the other
+    checks here could see it. Braces balance perfectly when a whole declaration is removed. Nothing
+    was duplicated, no import was orphaned, the file is well formed. It is simply missing something
+    the rest of it still uses.
+
+    So: every `val`/`var` declared at HEAD and not declared now, whose bare name is still referenced
+    in the file, is a cut that took too much.
+
+    Bare name only. `MaClipCapture.autoRank` is a qualified reference to somebody else's property and
+    is not this file's business — a local declaration deliberately moved into an object would
+    otherwise report itself forever.
+    """
+    rel = path.relative_to(ROOT).as_posix()
+    head = subprocess.run(
+        ["git", "-C", str(ROOT), "show", f"HEAD:{rel}"], capture_output=True, text=True
+    ).stdout
+    if not head:
+        return
+    declared = lambda t: set(re.findall(r"^\s*(?:private\s+|internal\s+)?(?:val|var)\s+(\w+)", t, re.M))
+    now = strip_code(text)
+    removed = declared(strip_code(head)) - declared(now)
+    # Objects declared in THIS file. A reference to `MaClipCapture.autoRank` inside MaClipCapture.kt
+    # is this file's business even though it is written with a dot, and skipping it is how the first
+    # version of this check reported three of the four names the red build actually failed on.
+    local_objects = set(re.findall(r"^\s*(?:private\s+|internal\s+)?object\s+(\w+)", now, re.M))
+    for name in sorted(removed):
+        bare = re.search(r"(?<![.\w])" + re.escape(name) + r"\b", now)
+        qualified = any(
+            re.search(r"(?<![.\w])" + re.escape(obj) + r"\." + re.escape(name) + r"\b", now)
+            for obj in local_objects
+        )
+        if bare or qualified:
+            fail(path.name, f"declaration of `{name}` was removed but it is still used")
+
+
 def check_when_coverage() -> None:
     """
     Red build: a new key added to the enum and one `when` never given its branch.
@@ -466,6 +510,7 @@ def main() -> int:
         check_compose_helpers(path, text)
         check_imports_resolve(path, text)
         check_balance(path, text)
+        check_removed_declarations(path, text)
     check_when_coverage()
     check_no_secrets()
 

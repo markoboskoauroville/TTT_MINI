@@ -300,6 +300,31 @@ fun MaFeatureRow(
     // to be seen; the ring on the key says the same thing for as long as it is true, so there is
     // nothing left to time, and the state that recorded which bucket filled last is gone with it.
 
+    // What the wand is doing, shown in a bar above the keys.
+    //
+    // Observed rather than read once when the keyboard is drawn. He presses the button in another
+    // app while the keyboard is still up, so nothing of ours is redrawn — which is exactly why the
+    // wand appeared to do nothing at all. The bar has to be told, not asked.
+    val magicRowShown by prefs.dictate.maMagicRowShown.collectAsState()
+    val learn by DictateAccessibilityService.learnState.collectAsState()
+
+    val magicAll = remember(magicRaw) {
+        MaMagicTargets.parse(magicRaw).ifEmpty { MaMagicTargets.defaults() }
+    }
+    val magicTargets = remember(magicRaw) {
+        // Ticked terms only, in the order the user dragged them into: the wand presses the first it
+        // finds, so the order is the user's answer to "which did you mean" on a screen with two.
+        MaMagicTargets.activeTerms(MaMagicTargets.parse(magicRaw))
+            .ifEmpty { MaMagicTargets.activeTerms(MaMagicTargets.defaults()) }
+    }
+    // Changing the default is not enough on its own. Anyone whose preferences already hold an
+    // explicit false — written by the old default, or by the FlorisBoard screen that still offers
+    // the switch — would keep an empty history and ten dead keys, and would have no way to guess
+    // that a clipboard setting three screens away is why. So when a C key is actually on a row,
+    // recording is switched on. The keys cannot work without it and nothing else here reads it.
+    val clipKeysPresent = remember(storedRows) {
+        storedRows.any { row -> row.entries.any { it.button is MaRows.Button.Clip } }
+    }
     LaunchedEffect(clipKeysPresent) {
         if (clipKeysPresent && !prefs.clipboard.historyEnabled.get()) {
             prefs.clipboard.historyEnabled.set(true)

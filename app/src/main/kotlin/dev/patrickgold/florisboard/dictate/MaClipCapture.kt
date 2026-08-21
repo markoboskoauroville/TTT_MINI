@@ -57,6 +57,18 @@ object MaClipCapture {
     // state. It wears a green ring while it is holding something. No clock, nothing to miss.
 
 
+    /**
+     * Where the A key is on the ladder: 0 is the newest code block on screen, 1 the one above it.
+     *
+     * It lives here rather than beside the key because undo has to put it back, and undo is handled
+     * in the keyboard manager where a private variable in a composable's file cannot be reached.
+     * The A key and the buckets are one mechanism — A presses a copy button and the capture files
+     * the result — so the ladder position belongs with the buckets it fills.
+     *
+     * Not persisted. It describes a conversation on screen right now.
+     */
+    var autoRank: Int by mutableStateOf(0)
+
     // lastFilled and noteFilled are gone too, with the tick they existed to place. They recorded
     // WHICH bucket had just taken a copy, and nothing needs to know that any more: the ring is on
     // every bucket that is holding something, not on the one that filled most recently. State that
