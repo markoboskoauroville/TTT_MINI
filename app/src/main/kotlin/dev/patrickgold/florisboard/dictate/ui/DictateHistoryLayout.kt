@@ -640,9 +640,14 @@ fun formatHistorySize(bytes: Long): String? = when {
 /**
  * The colour of a note that was never sent anywhere.
  *
- * A cool teal, deliberately not the app's amber and deliberately not red. Amber means "this is the
- * live one" everywhere else in this keyboard, and red means a fault — a note he dictated on purpose
- * is neither. It is simply a different kind of thing, and a different hue is the shortest way to say
- * so.
+ * A deeper gold, in the same family as the app's amber rather than opposite it.
+ *
+ * It was teal — a contrast colour, and he asked for harmony instead. He is right: this list is sand
+ * and amber on near-black, and a cyan line in it reads as an error or a link, which a note is
+ * neither. **A different SHADE of the same hue says "another kind of the same thing"; a different
+ * hue says "something else has gone on".**
+ *
+ * Darker than the accent so the two never compete: the amber marks what can be pressed, and this
+ * marks what was never sent.
  */
-private val MaNoteAccent = Color(0xFF6FE0EE)
+private val MaNoteAccent = Color(0xFFC9A227)

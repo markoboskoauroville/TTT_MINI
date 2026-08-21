@@ -5260,3 +5260,53 @@ information competing in one place.
 so the megabyte figure tucks under the clock — right for a small number beside a large one — but a
 lamp is not a number, and hanging it from the same line made it read as having slipped. **Only the
 dot was re-aligned; everything else kept its arrangement.**
+
+---
+
+# 137. The bar becomes the status bar, and the note finally shows
+
+## It replaces the status bar rather than sitting on it
+
+Exactly `status_bar_height` tall, opaque, at the top. **It occupies a strip that was never his**:
+nothing of the app moves, nothing of his is hidden, and the row he loses is one he was not reading.
+The old two-line bar covered the clock *and* took a band of the app underneath.
+
+**One line, so the meter stands up.** A horizontal meter needs a run of width and a line of its own;
+upright it needs the height it already has. Same numbers, same colours, same peak — and upright it
+fills from the **bottom**, because level rising is level going up, which is the one direction a meter
+is allowed to grow.
+
+Left to right: meter · dot · clock · — · bin · send · **ENG last**, because the language is the one
+thing here he changes rather than watches.
+
+Send still stops and transcribes. **The destination is decided by what is on screen, not by this
+being a different button** — with no field open it lands in the archive, and when he opens the
+keyboard mid-recording the keyboard's own bar picks it up, because both read one state.
+
+## Why the offline note never showed, three times
+
+`deliveredToField` was set in **one** of the two delivery branches. The realtime path left it at
+whatever the previous dictation happened to be, so a note dictated with no field open inherited a
+`true` from earlier and was filed as ordinary.
+
+**A flag written on one path and read on both is not a flag, it is a memory of somewhere else.**
+
+## The colour, harmonious
+
+Teal was a contrast colour and he asked for harmony. The list is sand and amber on near-black, and a
+cyan line in it reads as an error or a link — **a different SHADE of the same hue says "another kind
+of the same thing"; a different hue says "something else has gone wrong".**
+
+`#C9A227`, a deeper gold. Measured at **7.8:1** against the panel, comfortably past the 4.5:1 needed
+for body text, and darker than the accent so the two never compete: amber marks what can be pressed,
+this marks what was never sent.
+
+## The sweep, all three passes
+
+**Structure:** one hit, false — `SpaceBar` inside a comment explaining why that icon is not used.
+**Agreement:** 30 feature keys, 20 settings entries, 11 switchboard entries, 310 preferences, 15
+routes — **0 disagreements, and every count printed**, because a check reporting zero is a check that
+did not run.
+**Dead ends:** reader never silent from any state; volume 4,000 hold lengths with 0 doing both and 0
+doing nothing; send never fires unasked and never stays armed; offline classification correct on all
+four combinations; repair converges on the second pass.

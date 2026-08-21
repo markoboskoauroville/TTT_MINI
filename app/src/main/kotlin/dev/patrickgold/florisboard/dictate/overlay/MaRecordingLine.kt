@@ -85,85 +85,49 @@ class MaRecordingLine(private val service: AccessibilityService) {
         val d = service.resources.displayMetrics.density
         fun px(v: Int) = (d * v).toInt()
 
-        // A FRAME, so the clock is at the true centre of the SCREEN.
+        // THE HEIGHT OF THE STATUS BAR, so it replaces it rather than pushing anything down.
         //
-        // It was a row with weighted spacers, and that centres the middle group only when the things
-        // either side happen to be the same width — ENG plus a bin on the left against one send arrow
-        // on the right, which they are not. The numbers sat slightly off, and off-centre is the kind
-        // of wrong the eye reports without being able to name.
-        //
-        // A frame places each group against its own edge and the clock in the middle regardless of
-        // what the others weigh.
-        val frame = FrameLayout(service).apply {
-            // Fully opaque. Nothing of the status bar shows through: this sits at the top of the
-            // screen and a translucent strip over the clock and the battery is two layers of
-            // information competing in one place.
+        // It was a tall two-line bar over the top of the screen, which meant it covered the clock and
+        // the signal AND took a band of the app underneath. At exactly the status bar's height it
+        // occupies a strip that was never his to begin with: nothing of the app moves, nothing of his
+        // is hidden, and the row he loses is one he was not reading.
+        val statusBar = service.resources.getIdentifier("status_bar_height", "dimen", "android")
+            .takeIf { it > 0 }
+            ?.let { service.resources.getDimensionPixelSize(it) }
+            ?: px(28)
+
+        val row = LinearLayout(service).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            // Fully opaque, because it stands in for the status bar rather than floating over it.
             setBackgroundColor(0xFF000000.toInt())
-            setPadding(px(8), px(6), px(8), px(6))
+            setPadding(px(10), 0, px(10), 0)
         }
 
-        // LEFT — the language and the bin, in that order, as on the keyboard.
-        val left = LinearLayout(service).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        left.addView(
-            TextView(service).apply {
-                text = MaLanguage.badge()
-                setTextColor(MA_INK)
-                textSize = 15f
-                typeface = Typeface.DEFAULT_BOLD
-                setPadding(px(14), px(6), px(14), px(6))
-                setOnClickListener {
-                    MaLanguage.cycleMode(service)
-                    text = MaLanguage.badge()
-                }
-            },
-        )
-        left.addView(glyph("\uD83D\uDDD1", px(12)) { DictateController.cancelRecording() })
-        frame.addView(
-            left,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.START or Gravity.CENTER_VERTICAL,
-            ),
-        )
-
-        // CENTRE — the meter above, then the dot and the clock on one line.
+        // ONE LINE, and the meter turns on its side to fit.
         //
-        // The meter goes above because this bar lives at the top of the screen: putting it under the
-        // numbers pushes it toward the middle of his view, and a level he glances at belongs at the
-        // edge with everything else that is only glanced at.
-        val centre = LinearLayout(service).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-        }
-        centre.addView(
-            MaVuView(service),
-            LinearLayout.LayoutParams(px(170), px(4)).apply { bottomMargin = px(4) },
+        // A horizontal meter needs a run of width and a line of its own; upright it needs the height
+        // it already has. Same numbers, same colours, same peak — see MaVuView.
+        row.addView(
+            MaVuView(service, vertical = true),
+            LinearLayout.LayoutParams(px(5), statusBar - px(8)).apply { rightMargin = px(8) },
         )
-        val line = LinearLayout(service).apply {
-            orientation = LinearLayout.HORIZONTAL
-            // CENTER_VERTICAL, so the dot sits on the middle of the digits rather than on their
-            // baseline. It was aligned to the bottom of the row and read as having slipped.
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        line.addView(
+
+        row.addView(
             View(service).apply {
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
                     setColor(MA_REC_RED)
                 }
             },
-            LinearLayout.LayoutParams(px(11), px(11)).apply { rightMargin = px(10) },
+            LinearLayout.LayoutParams(px(8), px(8)).apply { rightMargin = px(8) },
         )
+
         val clock = TextView(service).apply {
             text = "0:00"
             setTextColor(0xFFFFFFFF.toInt())
-            textSize = 24f
-            // The same face the keyboard's clock uses, so the two are one design rather than two.
-            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            textSize = 13f
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             setOnClickListener {
                 runCatching {
                     (service.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
@@ -173,40 +137,42 @@ class MaRecordingLine(private val service: AccessibilityService) {
             }
         }
         timer = clock
-        line.addView(clock)
-        centre.addView(line)
-        frame.addView(
-            centre,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER,
-            ),
-        )
+        row.addView(clock)
 
-        // RIGHT — send, larger and amber.
-        //
-        // No cog: settings are not something he reaches for mid-recording, and removing it gives the
-        // send arrow the room to be the biggest control on the bar, which is what it deserves to be.
-        //
-        // Amber, and the same amber the meter uses, because on this bar send means **into the
-        // archive** rather than into a text field. The colour is the difference between the two
-        // recorders, and it is the only difference he needs to see.
-        frame.addView(
-            glyph("\u27A4", px(10)) { DictateController.onMicClick(service) }.apply {
-                textSize = 26f
-                setTextColor(MA_AMBER)
+        // Everything after this sits on the right.
+        row.addView(View(service), LinearLayout.LayoutParams(0, 1, 1f))
+
+        row.addView(glyph("\uD83D\uDDD1", px(8)) { DictateController.cancelRecording() }.apply {
+            textSize = 14f
+        })
+
+        // Send: stop, transcribe, and it lands in the archive because there is no field open. The
+        // same press the microphone key makes — the destination is decided by what is on screen, not
+        // by this button being a different button.
+        row.addView(glyph("\u27A4", px(8)) { DictateController.onMicClick(service) }.apply {
+            textSize = 17f
+            setTextColor(MA_AMBER)
+        })
+
+        // Language last, on the right, because it is the one thing here he changes rather than
+        // watches.
+        row.addView(
+            TextView(service).apply {
+                text = MaLanguage.badge()
+                setTextColor(MA_INK)
+                textSize = 13f
+                typeface = Typeface.DEFAULT_BOLD
+                setPadding(px(10), 0, 0, 0)
+                setOnClickListener {
+                    MaLanguage.cycleMode(service)
+                    text = MaLanguage.badge()
+                }
             },
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.END or Gravity.CENTER_VERTICAL,
-            ),
         )
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            statusBar,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
@@ -214,8 +180,8 @@ class MaRecordingLine(private val service: AccessibilityService) {
         ).apply { gravity = Gravity.TOP or Gravity.START }
 
         runCatching {
-            windowManager.addView(frame, params)
-            view = frame
+            windowManager.addView(row, params)
+            view = row
             added = true
             startTicking()
         }
@@ -289,7 +255,7 @@ class MaRecordingLine(private val service: AccessibilityService) {
  * at 0.6 dB per frame — slow enough to read, fast enough to follow a sentence — and it is what makes
  * the thing a meter rather than a light.
  */
-private class MaVuView(context: Context) : View(context) {
+private class MaVuView(context: Context, private val vertical: Boolean = false) : View(context) {
 
     private val bar = Paint(Paint.ANTI_ALIAS_FLAG)
     private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF2A2A2E.toInt() }
@@ -323,16 +289,28 @@ private class MaVuView(context: Context) : View(context) {
     override fun onDraw(canvas: Canvas) {
         val w = width.toFloat()
         val h = height.toFloat()
-        canvas.drawRoundRect(0f, 0f, w, h, h / 2, h / 2, track)
+        val r = if (vertical) w / 2 else h / 2
+        canvas.drawRoundRect(0f, 0f, w, h, r, r, track)
         val n = norm(smoothed)
         if (n > 0f) {
             bar.color = colourFor(smoothed)
-            canvas.drawRoundRect(0f, 0f, w * n, h, h / 2, h / 2, bar)
+            if (vertical) {
+                // Upright, it fills from the BOTTOM. Level rising is level going up — the one
+                // direction a meter is allowed to grow, and the same one every mixing desk uses.
+                canvas.drawRoundRect(0f, h - h * n, w, h, r, r, bar)
+            } else {
+                canvas.drawRoundRect(0f, 0f, w * n, h, r, r, bar)
+            }
         }
         val p = norm(peakDb)
         if (p > 0f) {
-            val x = (w * p).coerceIn(2f, w - 2f)
-            canvas.drawRect(x - 1.5f, 0f, x + 1.5f, h, peakPaint)
+            if (vertical) {
+                val y = (h - h * p).coerceIn(2f, h - 2f)
+                canvas.drawRect(0f, y - 1.5f, w, y + 1.5f, peakPaint)
+            } else {
+                val x = (w * p).coerceIn(2f, w - 2f)
+                canvas.drawRect(x - 1.5f, 0f, x + 1.5f, h, peakPaint)
+            }
         }
     }
 

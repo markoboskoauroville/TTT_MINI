@@ -1775,6 +1775,12 @@ object DictateController {
         // capitals, and flattening a prompt's answer would undo the very thing it was asked to do.
         val outputText = if (isPureTranscript) maApplyCase(mapped) else mapped
         if (finalizeViaComposing) {
+            // Realtime only runs while a field is open — it streams into one. So this path always
+            // delivered, and saying so explicitly is what makes the flag trustworthy: it was set in
+            // the other branch only, and left at its previous value here, so a realtime dictation
+            // inherited whatever the last one happened to be. **A flag written on one path and read
+            // on both is not a flag, it is a memory of somewhere else.**
+            deliveredToField = true
             // Realtime (#128): replace the live-streamed preview with the finished (reworded) result via the
             // minimal diff, then honor auto-enter — instead of committing on top of the preview.
             val outSink = sink(appContext)
