@@ -5511,3 +5511,26 @@ It was under the record row and switchable. Both are wrong: that view has no let
 select-all, paste, cut and the histories are most of what the screen is *for* — **a switch offering to
 remove them is offering to empty the screen** — and its place is where his thumb already is between
 speaking and pasting.
+
+---
+
+# 144. A settings export is a secret file
+
+He sent a `.jetpref` to set the shipped defaults from. It held **twenty-three key-shaped values** —
+his live AssemblyAI ring — inside a `provider_accounts` blob, among sixty ordinary preferences.
+
+**The secret was not the point of the file, which is exactly what makes it dangerous.** A key file
+announces itself. A settings export looks like configuration.
+
+What was actually done, and what should always be done: read in place, values taken by name, the
+accounts blob skipped, nothing copied into the working tree, nothing printed. Verified afterwards —
+no 32-hex value anywhere in the repo except one inherited FlorisBoard file from June, no `.jetpref`
+in any commit.
+
+**Take the values, never the file.** A shipped default is a number written into `AppPrefs`; the file
+it came from is not something this repository should ever have held.
+
+Written into `MANTRA_MANIFEST/modules/secrets.md` §2c and into the handoff, with the general rule
+underneath it: **anything he sends to configure something is a file about his setup, and a file about
+his setup contains whatever his setup contains.** Ask what is in it before deciding how to treat it,
+and assume the answer is "secrets".

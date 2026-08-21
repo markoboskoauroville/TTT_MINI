@@ -117,6 +117,10 @@ real.
 
 **He is paying for every build.** A red build costs him the same as a green one.
 
+**A settings export is a secret file.** A `.jetpref` he sends to set defaults from carries his API
+ring among ordinary preferences and does not announce it. Read it in place, take the values, never
+copy the file, never print it, say by name what was skipped, and shred it after. `SECRETS.md` §2c.
+
 **Keys and tokens follow `SECRETS.md`, without exception.** Extract by shape into
 `/home/claude/.secret`, never print, never commit, use by reference, and scan the staged diff for
 key shapes before every push. The vault does not survive a session — rebuild it from
