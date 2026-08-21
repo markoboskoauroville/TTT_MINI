@@ -108,20 +108,19 @@ object MaSettingsOrder {
             .mapNotNull { MaSettingsEntry.byId(it.trim()) }
             .distinct()
         val all = wanted + DEFAULT.filterNot { it in wanted }
-        // PERMISSIONS IS PINNED TO THE TOP.
+        // PERMISSIONS is first only because DEFAULT puts it first.
         //
-        // New entries are appended, which is the right rule — it is what stops a feature added next
-        // year being invisible to somebody whose arrangement predates it. But appending put this one
-        // at the very bottom of a long list, and this is the screen he goes to **when nothing else
-        // works**: the keyboard not enabled, the microphone refused, accessibility off. A repair
-        // tool at the end of the list is a repair tool he has to scroll to while it is broken.
+        // It was pinned here — forced to the top on every read whatever he had arranged. That is a
+        // different thing from a default and he was right to reject it: **a default is where
+        // something starts, a pin is a decision taken away from him.** This list is his, and the one
+        // entry he is not allowed to move would be the one that proves it is not.
         //
-        // Pinned rather than merely reordered once, so it stays at the top through any drag and any
-        // restored backup. It is the one entry whose position is not his to lose by accident.
-        // KEYS is dropped from the list wherever it appears: it is a section inside PERMISSIONS
-        // now, and an entry that opens the same screen from two places is two doors to one room.
-        val shown = all.filterNot { it == MaSettingsEntry.PERMISSIONS || it == MaSettingsEntry.KEYS }
-        return listOf(MaSettingsEntry.PERMISSIONS) + shown
+        // It still lands first on a fresh install, because it is first in DEFAULT and an empty
+        // stored order returns DEFAULT untouched. After that it is an entry like any other.
+        //
+        // KEYS stays filtered: it is a section inside PERMISSIONS now, and an entry that opens the
+        // same screen from two places is two doors to one room.
+        return all.filterNot { it == MaSettingsEntry.KEYS }
     }
 
     fun serialize(order: List<MaSettingsEntry>): String = order.joinToString(",") { it.id }
@@ -129,18 +128,7 @@ object MaSettingsOrder {
     /** Moves the entry at [from] to [to], shifting the rest. A move, not a swap. */
     fun move(order: List<MaSettingsEntry>, from: Int, to: Int): List<MaSettingsEntry> {
         if (from !in order.indices) return order
-        // PERMISSIONS DOES NOT MOVE, and nothing moves above it.
-        //
-        // `parse` already pins it first, so a drag that appeared to move it worked until the screen
-        // was reopened and then silently undid itself — **a control that accepts a gesture and then
-        // discards it is worse than one that refuses**, because it teaches him the setting does not
-        // stick rather than that it is fixed.
-        //
-        // It is fixed on purpose: it is the screen he opens when the keyboard, the microphone or
-        // accessibility is not working, and a repair tool he has to hunt for is one he is hunting
-        // for while things are broken.
-        if (order.getOrNull(from) == MaSettingsEntry.PERMISSIONS) return order
-        val target = to.coerceIn(1, order.size - 1)
+        val target = to.coerceIn(0, order.size - 1)
         if (from == target) return order
         val out = order.toMutableList()
         out.add(target, out.removeAt(from))

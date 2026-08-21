@@ -26,8 +26,9 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 - **Defaults are his.** A fresh install ships his exported settings order, his feature row, number
   row on, edit strip off, buckets off, scroll pages 4. He reinstalls several times a day; a fresh
   install should be the keyboard he uses, not a starting point.
-- **Permissions and API keys** is the first settings entry and **cannot be moved** — it is what he
-  opens when the keyboard, the microphone or accessibility is not working. Numbered in the order they
+- **Permissions and API keys** is the first settings entry **by default, and movable like any other**
+  — first in `DEFAULT`, never pinned. It is what he opens when the keyboard, the microphone or
+  accessibility is not working. Numbered in the order they
   must be granted, each row opening the page that grants it, rechecked on resume. Any error mentioning
   a permission, AudioRecord or accessibility opens it.
 - **The copy row is fixed** above the record button in the transcription view and is no longer a

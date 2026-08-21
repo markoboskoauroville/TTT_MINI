@@ -5534,3 +5534,27 @@ Written into `MANTRA_MANIFEST/modules/secrets.md` §2c and into the handoff, wit
 underneath it: **anything he sends to configure something is a file about his setup, and a file about
 his setup contains whatever his setup contains.** Ask what is in it before deciding how to treat it,
 and assume the answer is "secrets".
+
+---
+
+# 145. The pin comes off
+
+I pinned PERMISSIONS to the top — forced there on every read, and refused by `move`. He rejected it,
+and the distinction he drew is the right one:
+
+**A default is where something starts. A pin is a decision taken away from him.**
+
+This list is his. **The one entry he was not allowed to move would have been the one proving it is
+not his** — and the reason I gave (it is the screen he needs when things are broken) is an argument
+for putting it first, not for holding it there.
+
+It is first in `DEFAULT`, so a fresh install opens with it at the top. After that it is an entry like
+any other: drag it anywhere, and it stays where it is put.
+
+`parse` no longer reorders, `move` no longer refuses. Nine cases: first on a fresh install; moved to
+the middle and it stays; that order survives a reload; moved to the end and it stays; another entry
+can be dropped above it; and across four stored orders nothing is lost or duplicated, with `keys`
+still filtered out.
+
+**The lesson worth keeping:** when a rule protects him from himself, check that he asked to be
+protected. He did not, and the version that trusted him was both simpler and correct.
