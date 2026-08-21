@@ -5310,3 +5310,23 @@ did not run.
 **Dead ends:** reader never silent from any state; volume 4,000 hold lengths with 0 doing both and 0
 doing nothing; send never fires unasked and never stays armed; offline classification correct on all
 four combinations; repair converges on the second pass.
+
+---
+
+# 138. The notch
+
+He is right that an overlay cannot draw over Android's own status bar — that strip belongs to the
+system, and what my window took was the row *beneath* it. Moving the bar to the top therefore moved
+the problem: the app's own top-corner buttons were now the ones covered.
+
+**The window is only as wide as its contents and sits in the middle.**
+
+A window is either touchable or it is not — there is no per-region setting, and making the whole
+strip pass touches through would have taken the bin, the send and the language with it.
+
+So: **the corners are not click-through because they let touches pass. They are click-through because
+there is nothing there.** Like the notch on a phone — the middle is spoken for, the sides are his,
+and app buttons live in the corners.
+
+Which is also why the controls are now packed with no gaps between them: **every dp of width this
+takes is a dp of his screen that stops working.**

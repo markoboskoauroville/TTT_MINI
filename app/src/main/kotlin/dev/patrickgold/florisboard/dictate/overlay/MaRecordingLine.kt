@@ -101,7 +101,7 @@ class MaRecordingLine(private val service: AccessibilityService) {
             gravity = Gravity.CENTER_VERTICAL
             // Fully opaque, because it stands in for the status bar rather than floating over it.
             setBackgroundColor(0xFF000000.toInt())
-            setPadding(px(10), 0, px(10), 0)
+            setPadding(px(8), 0, px(8), 0)
         }
 
         // ONE LINE, and the meter turns on its side to fit.
@@ -139,17 +139,14 @@ class MaRecordingLine(private val service: AccessibilityService) {
         timer = clock
         row.addView(clock)
 
-        // Everything after this sits on the right.
-        row.addView(View(service), LinearLayout.LayoutParams(0, 1, 1f))
-
-        row.addView(glyph("\uD83D\uDDD1", px(8)) { DictateController.cancelRecording() }.apply {
+        row.addView(glyph("\uD83D\uDDD1", px(6)) { DictateController.cancelRecording() }.apply {
             textSize = 14f
         })
 
         // Send: stop, transcribe, and it lands in the archive because there is no field open. The
         // same press the microphone key makes — the destination is decided by what is on screen, not
         // by this button being a different button.
-        row.addView(glyph("\u27A4", px(8)) { DictateController.onMicClick(service) }.apply {
+        row.addView(glyph("\u27A4", px(6)) { DictateController.onMicClick(service) }.apply {
             textSize = 17f
             setTextColor(MA_AMBER)
         })
@@ -162,7 +159,7 @@ class MaRecordingLine(private val service: AccessibilityService) {
                 setTextColor(MA_INK)
                 textSize = 13f
                 typeface = Typeface.DEFAULT_BOLD
-                setPadding(px(10), 0, 0, 0)
+                setPadding(px(8), 0, px(2), 0)
                 setOnClickListener {
                     MaLanguage.cycleMode(service)
                     text = MaLanguage.badge()
@@ -170,14 +167,28 @@ class MaRecordingLine(private val service: AccessibilityService) {
             },
         )
 
+        // A NOTCH, not a bar. This is the click-through.
+        //
+        // The window was full width, so every pixel of that strip belonged to it and nothing beneath
+        // could be pressed — including the action buttons apps put in exactly those corners. Making
+        // the window *transparent to touch* would have solved that and lost the bin, the send and
+        // the language with it: a window is either touchable or it is not, and there is no per-region
+        // setting.
+        //
+        // So the window is only as wide as its contents and sits in the middle. **The corners are not
+        // click-through because they let touches pass — they are click-through because there is
+        // nothing there.** Like the notch on a phone: the middle is spoken for, the sides are his.
+        //
+        // Which is also why the controls are packed with no gaps: every dp of width this takes is a
+        // dp of his screen that stops working.
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
             statusBar,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
-        ).apply { gravity = Gravity.TOP or Gravity.START }
+        ).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL }
 
         runCatching {
             windowManager.addView(row, params)
