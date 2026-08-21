@@ -21,7 +21,16 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 267.** The last stretch, newest first:
+**Build 268.** The last stretch, newest first:
+
+- **A bucket holding something wears a green ring**, and it stays until the bucket is poured out.
+  It replaces the one-minute tick: a tick is an event and has to be caught, a ring is a state.
+  `ThemedKey` gained a `ring` colour for it — the switcher ring stays monochrome and means *kind*,
+  the coloured one means *state*. The confirmation inside the chat app cannot be held; this answers
+  the same question on our own row.
+- **Undo and Redo are keys** in the catalogue, under Editing, drawn through `LegacyActionKey` so
+  they are the same press as any other way of firing undo. **Redo covers the buckets too**, and its
+  rule is stricter than undo's: any change at all since the undo throws the redo away.
 
 - **The key picker is grouped by meaning**, nine sections from `MaFeatureGroup`, and the grouping is
   a property of the key rather than a `when` on the screen — so a new key cannot be added without

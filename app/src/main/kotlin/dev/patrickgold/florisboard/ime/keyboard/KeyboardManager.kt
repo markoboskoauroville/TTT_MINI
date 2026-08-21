@@ -1351,7 +1351,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.KANA_KATA -> handleKanaKata()
             KeyCode.KANA_HALF_KATA -> handleKanaHalfKata()
             KeyCode.LANGUAGE_SWITCH -> handleLanguageSwitch()
-            KeyCode.REDO -> editorInstance.performRedo()
+            // Redo, the mirror of the same rule. A bucket undo can be put back while nothing has
+            // happened since; anything at all throws the redo away, because restoring a state into a
+            // world that has moved on is how a bucket ends up holding what nobody put in it.
+            KeyCode.REDO -> {
+                val step = MaBucketUndo.takeRedo()
+                if (step == null) {
+                    editorInstance.performRedo()
+                } else {
+                    MaClipCapture.autoRank = step.rank
+                    scope.launch {
+                        prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(step.slots))
+                    }
+                }
+            }
             KeyCode.SETTINGS -> FlorisImeService.launchSettings()
             KeyCode.SHIFT -> handleShiftUp(data)
             KeyCode.SPACE -> handleSpace(data)
@@ -1391,14 +1404,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             // him, on the keyboard he just pressed. No message, because there is nothing a message
             // would add to watching it happen.
             KeyCode.UNDO -> {
-                val step = MaBucketUndo.takeIfNewest()
+                val now = MaClipCapture.parse(prefs.dictate.maClipCaptured.get())
+                val step = MaBucketUndo.takeIfNewest(now)
                 if (step == null) {
                     editorInstance.performUndo()
                 } else {
                     MaClipCapture.autoRank = step.rank
-                    // The one-minute tick goes with it. It says "this bucket just took a copy", and
-                    // after an undo that is no longer true of any bucket.
-                    MaClipCapture.lastFilled.value = 0 to 0L
                     scope.launch {
                         prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(step.slots))
                     }

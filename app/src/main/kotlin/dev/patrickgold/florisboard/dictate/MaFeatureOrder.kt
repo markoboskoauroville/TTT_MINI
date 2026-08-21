@@ -245,6 +245,21 @@ enum class MaFeatureKey(val id: String, val label: String) {
     ZONE_1("zone1", "n, the number row"),
     ZONE_2("zone2", "k, the keys"),
     ZONE_3("zone3", "c, the copy row"),
+    /**
+     * Undo and redo, as keys on the row.
+     *
+     * They were available only on the old edit strip, which is gone, and through a hardware Ctrl+Z
+     * nobody has on a phone. Marko asked for them here, and this is where they belong now that undo
+     * covers the buckets as well as the field: the key that reverses a wrongly collected code block
+     * should be reachable from the same row the A key is on, not from a keyboard shortcut.
+     *
+     * Both go through `KeyCode.UNDO` / `KeyCode.REDO` and the keyboard manager, so this key and any
+     * other way of firing undo are the same press — the rule that already binds the two sends
+     * together. Nothing about the bucket rule lives in the key.
+     */
+    UNDO("undo", "Undo"),
+    REDO("redo", "Redo"),
+
     ENTER("enter", "Enter");
 
     companion object {
@@ -462,6 +477,11 @@ val MaFeatureKey.group: MaFeatureGroup
         MaFeatureKey.ENTER,
         MaFeatureKey.SHIFT,
         MaFeatureKey.CHANGE_CASE,
+        // Editing rather than buckets, although undo reaches the buckets. The key is the general
+        // one — it reverses whatever happened last, in the field or in a bucket — and filing it
+        // under buckets would promise it only did the second.
+        MaFeatureKey.UNDO,
+        MaFeatureKey.REDO,
         -> MaFeatureGroup.EDITING
 
         MaFeatureKey.MIC,

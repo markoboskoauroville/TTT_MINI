@@ -326,12 +326,6 @@ class ClipboardManager(
             // the bucket.
             MaBucketUndo.push(current)
             prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(next))
-            // Which bucket took it, so the key can wear a tick for a minute. Found by comparing
-            // rather than by asking capture to report it: capture is a pure function over a list and
-            // it stays one — the difference between two lists is the honest answer to "what
-            // changed", and it cannot disagree with what was actually stored.
-            val filled = next.indices.firstOrNull { next[it] != null && current.getOrNull(it) == null }
-            if (filled != null) MaClipCapture.noteFilled(filled + 1)
         } else {
             // A copy that changed no bucket — a repeat, a blank, or every visible bucket full. An
             // arming left waiting here would be spent by an unrelated copy much later and rewind a

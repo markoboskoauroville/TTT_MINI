@@ -296,47 +296,10 @@ fun MaFeatureRow(
     val scrollPages by prefs.dictate.maScrollPages.collectAsState()
     var scrollMenu by remember { mutableStateOf(false) }
 
-    // The fill mark, and a clock that runs only while one is live.
-    //
-    // A minute is too long to leave to recomposition — nothing else would redraw the row in that
-    // time, so the tick would sit there until something unrelated happened to wake the keyboard.
-    // This ticks once a second while the mark is young and then stops, so the tick clears itself and
-    // costs nothing for the rest of the day.
-    val lastFill = MaClipCapture.lastFilled.value
-    var markNow by remember { mutableStateOf(0L) }
-    LaunchedEffect(lastFill) {
-        while (android.os.SystemClock.elapsedRealtime() - lastFill.second < MaClipCapture.FILL_MARK_MS) {
-            markNow = android.os.SystemClock.elapsedRealtime()
-            delay(1000L)
-        }
-        markNow = android.os.SystemClock.elapsedRealtime()
-    }
+    // The one-minute fill mark and its clock are gone. They existed to make a tick last long enough
+    // to be seen; the ring on the key says the same thing for as long as it is true, so there is
+    // nothing left to time, and the state that recorded which bucket filled last is gone with it.
 
-    // What the wand is doing, shown in a bar above the keys.
-    //
-    // Observed rather than read once when the keyboard is drawn. He presses the button in another
-    // app while the keyboard is still up, so nothing of ours is redrawn — which is exactly why the
-    // wand appeared to do nothing at all. The bar has to be told, not asked.
-    val magicRowShown by prefs.dictate.maMagicRowShown.collectAsState()
-    val learn by DictateAccessibilityService.learnState.collectAsState()
-
-    val magicAll = remember(magicRaw) {
-        MaMagicTargets.parse(magicRaw).ifEmpty { MaMagicTargets.defaults() }
-    }
-    val magicTargets = remember(magicRaw) {
-        // Ticked terms only, in the order the user dragged them into: the wand presses the first it
-        // finds, so the order is the user's answer to "which did you mean" on a screen with two.
-        MaMagicTargets.activeTerms(MaMagicTargets.parse(magicRaw))
-            .ifEmpty { MaMagicTargets.activeTerms(MaMagicTargets.defaults()) }
-    }
-    // Changing the default is not enough on its own. Anyone whose preferences already hold an
-    // explicit false — written by the old default, or by the FlorisBoard screen that still offers
-    // the switch — would keep an empty history and ten dead keys, and would have no way to guess
-    // that a clipboard setting three screens away is why. So when a C key is actually on a row,
-    // recording is switched on. The keys cannot work without it and nothing else here reads it.
-    val clipKeysPresent = remember(storedRows) {
-        storedRows.any { row -> row.entries.any { it.button is MaRows.Button.Clip } }
-    }
     LaunchedEffect(clipKeysPresent) {
         if (clipKeysPresent && !prefs.clipboard.historyEnabled.get()) {
             prefs.clipboard.historyEnabled.set(true)
@@ -542,6 +505,26 @@ fun MaFeatureRow(
                 val text = MaClipCapture.at(capturedSlots, button.slot)
                 ThemedKey(
                     code = KeyCode.NOOP,
+                    // THE GREEN RING: THIS BUCKET IS HOLDING SOMETHING, AND IT STAYS UNTIL IT IS NOT.
+                    //
+                    // It replaces the tick that appeared for a minute after a copy landed. Marko
+                    // asked for the change and the reasoning is sound: a tick is an EVENT and has
+                    // to be caught while it is on screen, and he had already asked once for it to
+                    // last longer. A ring is a STATE. It needs no clock, it cannot be missed by
+                    // looking away, and "until I empty the bucket" is exactly what `text != null`
+                    // already means.
+                    //
+                    // It is also the honest version of what he asked for next. The confirmation he
+                    // watches inside the chat belongs to that app's copy button and nothing here
+                    // can hold it there — but this answers the same question, on our own row, and
+                    // it does stay until the bucket is poured out.
+                    //
+                    // On the colour rule: the ring around a key already means "this is a switcher",
+                    // and that one is monochrome for the reason a row of tinted rings would read as
+                    // decoration. This is a colour, so the two channels stay separate — ink means
+                    // what kind of key, green means what state. If it reads as bolted on beside the
+                    // switcher keys, say so and it goes back to a mark inside the key.
+                    ring = if (text != null) onGreen else null,
                     // The key shows only its number: ten text previews across a row would be a few
                     // characters wide each and unreadable. What it holds is spoken instead, which is
                     // the only way to answer "what is on C4" without pasting it somewhere to find out.
@@ -592,19 +575,8 @@ fun MaFeatureRow(
                         keyboardManager.activeState.imeUiMode = ImeUiMode.CLIPBOARD
                     },
                 ) { fg ->
-                  // The tick, for a minute after this bucket caught a copy.
-                  //
-                  // A shape, not a colour change: colour is the state channel and it is already
-                  // saying whether the bucket is holding something. This says something different —
-                  // *this* is the one that just took the last copy — and it is the answer he was
-                  // trying to read off another app's checkmark before it vanished.
-                  //
-                  // Over the key rather than beside the number, because the number is the thing
-                  // pressed from memory and must not move to make room for a mark that comes and
-                  // goes. Nothing in the layout shifts.
-                  val justFilled = button.slot == lastFill.first &&
-                      markNow - lastFill.second < MaClipCapture.FILL_MARK_MS
-                  Box(contentAlignment = Alignment.Center) {
+                  // The tick is gone, and the one-minute clock with it. The ring above says the
+                  // same thing without a deadline.
                     Text(
                         text = "C${button.slot}",
                         // Three states, read at a glance without pressing anything: dim means the
@@ -620,22 +592,16 @@ fun MaFeatureRow(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
-                    if (justFilled) {
-                        Text(
-                            text = "\u2713",
-                            color = onGreen,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.align(Alignment.TopEnd),
-                        )
-                    }
-                  }
                 }
             }
 
             is MaRows.Button.Builtin -> when (button.key) {
                 MaFeatureKey.ALL_PASTE, MaFeatureKey.SELECT_ALL, MaFeatureKey.BACKSPACE,
-                MaFeatureKey.ALL_CLEAR, MaFeatureKey.SPACE -> {
+                MaFeatureKey.ALL_CLEAR, MaFeatureKey.SPACE,
+                // Undo and redo join them rather than being written again here. Both send
+                // KeyCode.UNDO and KeyCode.REDO through the keyboard manager, which is where the
+                // bucket rule lives, so this key and every other way of firing undo are one press.
+                MaFeatureKey.UNDO, MaFeatureKey.REDO -> {
                     // The five borrowed from the copy row, drawn by that row's own code rather than
                     // rebuilt here, so a fix to AP or to backspace lands in both places at once.
                     // Backspace and space are the two keys from the keyboard proper that nothing
@@ -651,6 +617,8 @@ fun MaFeatureRow(
                             MaFeatureKey.SELECT_ALL -> LegacyEditAction.SELECT_ALL
                             MaFeatureKey.ALL_CLEAR -> LegacyEditAction.ALL_CLEAR
                             MaFeatureKey.SPACE -> LegacyEditAction.SPACE
+                            MaFeatureKey.UNDO -> LegacyEditAction.UNDO
+                            MaFeatureKey.REDO -> LegacyEditAction.REDO
                             else -> LegacyEditAction.BACKSPACE
                         },
                         modifier = keyMod,

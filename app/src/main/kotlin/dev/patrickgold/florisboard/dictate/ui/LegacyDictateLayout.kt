@@ -422,6 +422,20 @@ internal fun ThemedKey(
     modifier: Modifier = Modifier,
     /** Draws the switcher ring. See [ThemedIconKey]. */
     switcher: Boolean = false,
+    /**
+     * A ring in a colour of its own, for a key whose state is worth seeing from across the row.
+     *
+     * Only the buckets use it. The switcher ring says what KIND of key this is and is monochrome for
+     * exactly that reason — a row of tinted rings would read as decoration. This one says what STATE
+     * the key is in, which is the job colour has everywhere else in the app, so it is a colour and
+     * the two cannot be confused: ink-coloured means "this switches something", green means "this
+     * bucket is holding something".
+     *
+     * Marko asked for the outline in place of the tick that used to appear for a minute after a
+     * copy landed. It is the better mark: a tick is an event and it has to be caught, while a ring
+     * is a state and it is simply there until the bucket is poured out.
+     */
+    ring: Color? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
     content: @Composable (foreground: Color) -> Unit,
@@ -444,10 +458,13 @@ internal fun ThemedKey(
             // After the background and on the same shape, so the ring sits on the key's own edge
             // rather than outside its margins or cutting across its corners.
             .then(
-                if (switcher) {
-                    Modifier.border(1.5.dp, MaSwitcherRing, LegacyKeyShape)
-                } else {
-                    Modifier
+                when {
+                    // The state ring wins if both are asked for. Nothing wears both today — no
+                    // bucket is a switcher — and if something ever does, what it is holding matters
+                    // more at a glance than what kind of key it is.
+                    ring != null -> Modifier.border(1.5.dp, ring, LegacyKeyShape)
+                    switcher -> Modifier.border(1.5.dp, MaSwitcherRing, LegacyKeyShape)
+                    else -> Modifier
                 },
             )
             .combinedClickable(

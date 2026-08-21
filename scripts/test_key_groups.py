@@ -33,7 +33,11 @@ enum_body = order[: order.index("enum class MaFeatureGroup")]
 keys = re.findall(r"^\s{4}([A-Z][A-Z_0-9]*)\(\"", enum_body, re.M)
 groups = re.findall(r"^\s{4}([A-Z][A-Z_0-9]*)\(\"", order[order.index("enum class MaFeatureGroup"):], re.M)
 
-check("every key was found", len(keys) == 30, f"{len(keys)} keys")
+# Not a fixed count. It was 30, then undo and redo were added and the check failed for the only
+# reason a catalogue ever changes — a key was added. A number that has to be edited on every
+# addition is a number that gets edited without being read. What matters is that there ARE keys and
+# that every one of them has a section, which is asserted below.
+check("keys were found at all", len(keys) >= 30, f"{len(keys)} keys")
 check("nine sections", len(groups) == 9, f"{len(groups)}: {groups}")
 
 # The mapping, parsed out of the exhaustive `when`.

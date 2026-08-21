@@ -10,7 +10,6 @@
 
 package dev.patrickgold.florisboard.dictate
 
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,47 +49,18 @@ object MaClipCapture {
     /** Ten buckets, matching the ten keys. Beyond the last key a copy would be unreachable. */
     const val CAPACITY = MaRows.CLIP_SLOTS
 
-    /**
-     * How long a bucket wears its tick after catching a copy: one minute.
-     *
-     * The tick Marko was watching belongs to the OTHER app — the copy button in a chat, which turns
-     * into a checkmark for well under a second and is drawn by that app, not by this one. Nothing
-     * here can make it stay. So this is our own answer to the same question, on our own key: after a
-     * copy lands, the bucket that took it is marked for a minute, which is long enough to put the
-     * phone down, pick it up and still see where the last one went.
-     *
-     * A minute rather than forever, because a mark that never clears stops meaning "just now" and
-     * starts meaning "at some point", and the question being answered is where the LAST one went.
-     */
-    const val FILL_MARK_MS = 60_000L
+    // FILL_MARK_MS is gone with the tick it timed.
+    //
+    // The tick appeared on a bucket for a minute after a copy landed, and Marko asked twice for it
+    // to last longer — the second time as "until I empty the bucket". At that point it is not a
+    // mark with a duration at all, it is the state of the bucket, and the key already knows that
+    // state. It wears a green ring while it is holding something. No clock, nothing to miss.
 
-    /**
-     * The bucket that last caught a copy and the moment it did, on the elapsed-real-time clock.
-     *
-     * Compose state rather than a plain field: the capture happens in the clipboard manager, with
-     * the keyboard already drawn, so the row has to be told rather than asked. A plain field would
-     * be written and nothing would redraw — which is the same shape as the wand bar bug.
-     *
-     * Not persisted. It says "just now", and "just now" does not survive a restart.
-     */
-    val lastFilled: MutableState<Pair<Int, Long>> = mutableStateOf(0 to 0L)
 
-    /**
-     * Where the A key is on the ladder: 0 is the newest code block on screen, 1 the one above it.
-     *
-     * It lives here rather than beside the key because undo has to put it back, and undo is handled
-     * in the keyboard manager where a private variable in a composable's file cannot be reached.
-     * The A key and the buckets are one mechanism — A presses a copy button and the capture files
-     * the result — so the ladder position belongs with the buckets it fills.
-     *
-     * Not persisted. It describes a conversation on screen right now.
-     */
-    var autoRank: Int by mutableStateOf(0)
-
-    /** Records that [slot] just took a copy. Called by the capture, not by the keyboard. */
-    fun noteFilled(slot: Int) {
-        lastFilled.value = slot to android.os.SystemClock.elapsedRealtime()
-    }
+    // lastFilled and noteFilled are gone too, with the tick they existed to place. They recorded
+    // WHICH bucket had just taken a copy, and nothing needs to know that any more: the ring is on
+    // every bucket that is holding something, not on the one that filled most recently. State that
+    // nothing reads is state that drifts, so it goes rather than waiting for a use.
 
     /** Ten buckets, all empty. */
     val Empty: List<String?> = List(CAPACITY) { null }
@@ -253,6 +223,14 @@ object MaBucketUndo {
 
     private val stack = ArrayDeque<Step>()
 
+    /**
+     * What undo has taken off, waiting to be put back.
+     *
+     * Cleared by every new bucket change: a redo only means something while the world it would be
+     * returned into is the one it left. `push` empties it, which is where that rule lives.
+     */
+    private val redoStack = ArrayDeque<Step>()
+
     private var lastTextAtMs = 0L
 
     /**
@@ -290,6 +268,10 @@ object MaBucketUndo {
         armed = null
         stack.addLast(step.copy(atMs = android.os.SystemClock.elapsedRealtime()))
         while (stack.size > DEPTH) stack.removeFirst()
+        // A new change makes every pending redo meaningless. Keeping them would let a redo put a
+        // bucket back over something collected since, which is a bucket holding what nobody put in
+        // it — the exact failure the whole bucket design exists to avoid.
+        redoStack.clear()
     }
 
     /** Consumes an arming without recording anything, when a copy changed no bucket at all. */
@@ -306,12 +288,39 @@ object MaBucketUndo {
      * The step to reverse, or null when the field should have the key instead.
      *
      * Removes it, so pressing undo repeatedly walks back through the bucket changes and then falls
-     * through to the field once they run out.
+     * through to the field once they run out. What is removed goes onto the redo stack.
+     *
+     * [nowSlots] is what the buckets hold at this moment, so redo has somewhere to return to.
      */
-    fun takeIfNewest(): Step? {
+    fun takeIfNewest(nowSlots: List<String?>): Step? {
         val step = stack.lastOrNull() ?: return null
         if (step.atMs < lastTextAtMs) return null
         stack.removeLast()
+        redoStack.addLast(Step(nowSlots, MaClipCapture.autoRank, android.os.SystemClock.elapsedRealtime()))
+        while (redoStack.size > DEPTH) redoStack.removeFirst()
+        return step
+    }
+
+    /**
+     * Redo, the other half of the same key pair.
+     *
+     * Marko asked for undo and redo as keys on the row, and a redo that reversed text but not
+     * buckets would be the asymmetry that makes a pair of keys untrustworthy: undo the collection,
+     * press redo, and get half of it back.
+     *
+     * The rule is the mirror of undo's and just as plain: **a redo is available only while nothing
+     * has happened since the undo.** Anything at all — a copy, another A press, a word typed —
+     * throws the redo stack away, because at that point the state redo would return to is not a
+     * state that follows from what is on screen now.
+     *
+     * That is stricter than undo's rule, and deliberately. Undo reverses a thing that definitely
+     * happened; redo restores a thing that was already decided against, and restoring it into a
+     * changed world is how a bucket ends up holding something nobody put there.
+     */
+    fun takeRedo(): Step? {
+        val step = redoStack.lastOrNull() ?: return null
+        if (step.atMs < lastTextAtMs) return null
+        redoStack.removeLast()
         return step
     }
 }

@@ -5924,3 +5924,71 @@ moving A into Settings and confirmed red.
 
 Not tested: nothing ran on a phone. The picker has not been seen with nine headings in it, and how it
 scrolls with them is a thing only the screen can answer.
+
+---
+
+# §150 — The bucket wears a ring, and undo gets its pair of keys
+
+Build 268. Three things, all from one message about the automatic buckets.
+
+## The tick becomes a ring
+
+He asked for the checkmark to be a green outline instead, and then for the confirmation to last until
+the bucket is emptied. Those are the same request twice, and the second one is what settles the
+design: **a mark that should last until a state ends is not a mark, it is the state.**
+
+So the tick is gone, the one-minute clock with it, and a bucket holding something wears a green ring
+for exactly as long as it is holding something. `text != null` already meant that; nothing new is
+tracked. A tick is an event and has to be caught while it is on screen — he had already asked once
+for it to last longer, which was the sign the shape was wrong rather than the duration.
+
+`MaClipCapture.lastFilled` and `noteFilled` went with it. They recorded WHICH bucket filled most
+recently, and nothing needs to know that now the ring is on all of them. State nothing reads is state
+that drifts.
+
+**The colour rule, and the tension in it.** A ring around a key already means "this is a switcher",
+and that one is monochrome precisely so a row of tinted rings does not read as decoration. This is a
+second ring in a colour. They stay separate because the channels are different — ink says what KIND
+of key, green says what STATE it is in — and no bucket is a switcher, so nothing wears both. If it
+reads as bolted on beside the zone keys, that is his call and it goes back to a mark inside the key.
+Recorded here because the border-as-state question was argued and reversed once before, on 19.8.2026,
+and this is a deliberate exception to it rather than a forgotten rule.
+
+**What is still not possible:** the confirmation inside the chat. That checkmark belongs to the other
+app's copy button and no keyboard can hold it there. Said plainly rather than fixed quietly.
+
+## Undo and Redo as keys
+
+They existed only on the old edit strip, which is gone, and through a Ctrl+Z nobody has on a phone.
+Added to the catalogue under **Editing** — not under Buckets, although undo reaches the buckets,
+because the key is the general one and filing it there would promise it only did the second thing.
+
+Drawn through `LegacyActionKey`, so the key on the row and every other way of firing undo are one
+press. Nothing about the bucket rule lives in the key.
+
+## Redo reaches the buckets, under a stricter rule
+
+A redo that reversed text but not buckets is the asymmetry that makes a pair of keys untrustworthy:
+undo the collection, press redo, get half of it back.
+
+Undo's rule is "newer than the last text". Redo's is tighter: **a redo survives only while nothing at
+all has happened since the undo.** Any bucket change clears the stack, and text since the undo
+disqualifies it by the same clock undo uses.
+
+Deliberately stricter, and the reason is worth keeping: undo reverses something that definitely
+happened, while redo restores something already decided against. Restoring it into a world that has
+moved on is how a bucket ends up holding what nobody put in it — which is the failure the whole
+bucket design exists to prevent.
+
+## Tested
+
+Test 1: 3,804 checks, 0 failed, all 625 four-action sequences walked with undo AND redo asserted
+after each — **always one**, **never both**, for both keys, or they are not a pair. Broken on purpose
+two ways, at the redo rule and at the ring, and confirmed red.
+
+One check was loosened rather than updated: `test_key_groups.py` asserted exactly thirty keys and
+failed for the only reason a catalogue ever changes, which is that a key was added. A number that has
+to be edited on every addition is a number that gets edited without being read.
+
+Not tested: nothing ran on a phone. The ring has not been seen next to the switcher rings, which is
+the one question that matters about it and the one only the screen can answer.

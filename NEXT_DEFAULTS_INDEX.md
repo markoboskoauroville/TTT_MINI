@@ -144,3 +144,4 @@ since been removed.
 - **§147** — The buckets lose their switch, and three detections stop guessing
 - **§148** — Undo reaches the buckets
 - **§149** — The key picker, grouped by meaning
+- **§150** — The bucket wears a ring, and undo gets its pair of keys

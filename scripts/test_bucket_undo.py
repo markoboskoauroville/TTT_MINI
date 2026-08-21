@@ -42,6 +42,7 @@ class World:
         self.slots = [None] * CAPACITY
         self.rank = 0
         self.stack = []
+        self.redo_stack = []
         self.armed = None
         self.last_text = 0
         self.clock = 0
@@ -63,6 +64,7 @@ class World:
             self.stack.append((step[0], step[1], self.tick()))
             if len(self.stack) > 20:
                 self.stack.pop(0)
+            self.redo_stack.clear()
             self.slots = after
         else:
             self.armed = None
@@ -78,6 +80,7 @@ class World:
 
     def bin(self):
         self.stack.append((list(self.slots), self.rank, self.tick()))
+        self.redo_stack.clear()
         self.slots = [None] * CAPACITY
         self.rank = 0
 
@@ -96,12 +99,22 @@ class World:
     def undo(self):
         if self.stack and self.stack[-1][2] >= self.last_text:
             slots, rank, _ = self.stack.pop()
+            self.redo_stack.append((list(self.slots), self.rank, self.tick()))
             self.slots = list(slots)
             self.rank = rank
             return "buckets"
         self.field_undone += 1
         if self.field:
             self.field.pop()
+        return "field"
+
+    def redo(self):
+        if self.redo_stack and self.redo_stack[-1][2] >= self.last_text:
+            slots, rank, _ = self.redo_stack.pop()
+            self.slots = list(slots)
+            self.rank = rank
+            return "buckets"
+        self.field.append("redone")
         return "field"
 
     @staticmethod
@@ -186,6 +199,40 @@ w.a_key("same text")  # a repeat: captures nothing
 check("a repeated block changes no bucket", w.slots[1] is None)
 check("and leaves nothing armed", w.armed is None, "an arming would be spent by a later copy")
 
+# ---------------------------------------------------------------- redo, the mirror
+w = World()
+w.a_key("block one")
+w.a_key("block two")
+check("undo takes the second block off", w.undo() == "buckets" and w.slots[1] is None)
+check("redo puts it back", w.redo() == "buckets" and w.slots[1] == "block two", str(w.slots[:3]))
+check("and the ladder with it", w.rank == 2, f"rank {w.rank}")
+check("nothing left to redo", w.redo() == "field")
+
+# A change since the undo throws the redo away. Restoring a state into a world that has moved on is
+# how a bucket ends up holding something nobody put there.
+w = World()
+w.a_key("block one")
+w.undo()
+w.copy("something else")
+check("a new copy clears the redo", w.redo() == "field", "a stale redo survived")
+check("and the new copy is untouched", w.slots[0] == "something else", str(w.slots[:2]))
+
+# Text since the undo does the same, by the same clock undo uses.
+w = World()
+w.copy("collected")
+w.undo()
+w.type_text("hello")
+check("text since the undo clears it too", w.redo() == "field")
+
+# The bin, undone and redone.
+w = World()
+for n in range(1, 4):
+    w.copy(f"text {n}")
+w.bin()
+w.undo()
+check("undo un-bins", w.slots[0] == "text 1")
+check("redo re-bins", w.redo() == "buckets" and all(s is None for s in w.slots), str(w.slots[:4]))
+
 # ---------------------------------------------------------------- walked, not sampled
 #
 # Every sequence of four actions drawn from the five kinds. After each, undo once and assert the two
@@ -217,6 +264,17 @@ for seq in itertools.product(kinds, repeat=4):
         check(f"{seq}: field undo leaves the buckets alone", w.slots == slots_before, "buckets moved too")
     # The ladder never points past what the buckets could hold, or below zero.
     check(f"{seq}: the ladder stays sane", 0 <= w.rank <= 20, f"rank {w.rank}")
+    # Redo, same two invariants. ALWAYS ONE and NEVER BOTH hold for it as well, or the pair of keys
+    # is not a pair.
+    slots_mid, field_mid = list(w.slots), list(w.field)
+    where_r = w.redo()
+    check(f"{seq}: redo resolves", where_r in ("buckets", "field"))
+    if where_r == "buckets":
+        check(f"{seq}: bucket redo leaves the field alone", w.field == field_mid, "text moved too")
+    else:
+        check(f"{seq}: field redo leaves the buckets alone", w.slots == slots_mid, "buckets moved too")
+    # And a redo never invents a bucket: everything it restores was in a bucket at some point.
+    check(f"{seq}: redo invents nothing", all(s is None or isinstance(s, str) for s in w.slots))
 
 # ---------------------------------------------------------------- the wiring
 def code(path: Path) -> str:
@@ -226,7 +284,17 @@ def code(path: Path) -> str:
 
 
 km = code(SRC / "ime/keyboard/KeyboardManager.kt")
-check("the undo key asks the buckets first", "MaBucketUndo.takeIfNewest()" in km, "undo never reaches them")
+check("the undo key asks the buckets first", "MaBucketUndo.takeIfNewest(" in km, "undo never reaches them")
+check("the redo key asks them too", "MaBucketUndo.takeRedo()" in km, "redo would be half a key")
+check("and still falls through to the field on redo", "editorInstance.performRedo()" in km, "text redo was lost")
+
+order = code(SRC / "dictate/MaFeatureOrder.kt")
+check("undo is a key you can put on a row", 'UNDO("undo"' in order, "not in the catalogue")
+check("redo is a key you can put on a row", 'REDO("redo"' in order, "not in the catalogue")
+
+capture_src = code(SRC / "dictate/MaClipCapture.kt")
+check("a new change clears the redo stack", "redoStack.clear()" in capture_src, "a stale redo can survive")
+check("the tick and its clock are gone", "FILL_MARK_MS" not in capture_src, "the timed mark is still there")
 check("and still falls through to the field", "editorInstance.performUndo()" in km, "text undo was lost")
 
 ed = code(SRC / "ime/editor/EditorInstance.kt")
@@ -241,6 +309,8 @@ check("the A key arms before pressing", "MaBucketUndo.armAuto(capturedSlots)" in
 check("a miss disarms", "MaBucketUndo.disarm()" in row, "an arming is left waiting")
 check("the bin records what it throws away", "MaBucketUndo.push(capturedSlots)" in row, "the bin is final")
 check("the ladder lives with the buckets", "maBucketRank" not in row, "the rank is still private to the row")
+check("the bucket wears a ring", "ring = if (text != null) onGreen else null" in row, "no ring on the key")
+check("the timed tick is gone from the row", "justFilled" not in row, "the one-minute mark survives")
 
 print(f"bucket undo, test 1: {checks} checks, {len(failures)} failed ({walked} sequences walked)")
 for f in failures:

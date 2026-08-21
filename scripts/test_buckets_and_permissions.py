@@ -84,14 +84,16 @@ check("the tick lands on the bucket that changed", filled == 1, f"got {filled}")
 # ---------------------------------------------------------------- the wiring
 clipmgr = code(SRC / "ime/clipboard/ClipboardManager.kt")
 check("capture is not gated on a preference", "maBucketsEnabled" not in clipmgr, "the switch is still in the path")
-check("the fill is recorded", "MaClipCapture.noteFilled" in clipmgr, "nothing sets the tick")
+# The fill mark is gone: the ring is on every bucket that holds something, not on the one that
+# filled most recently, so nothing needs to record which that was.
+check("no fill mark is recorded", "noteFilled" not in clipmgr, "dead state still being written")
 
 row = code(SRC / "dictate/ui/MaFeatureRow.kt")
 check("the C key reads no switch", "bucketsOn" not in row, "the key still consults a preference")
-check("the C key wears the tick", "FILL_MARK_MS" in row, "the mark is never drawn")
+check("the C key wears the ring", "ring = if (text != null) onGreen else null" in row, "no mark at all")
 
 capture_kt = code(SRC / "dictate/MaClipCapture.kt")
-check("the mark lasts a minute", "FILL_MARK_MS = 60_000L" in capture_kt, "wrong duration")
+check("no clock is left over", "FILL_MARK_MS" not in capture_kt, "the timed mark survives")
 
 prefs = code(SRC / "app/AppPrefs.kt")
 check("maBucketsEnabled is gone", "maBucketsEnabled" not in prefs, "still declared")
