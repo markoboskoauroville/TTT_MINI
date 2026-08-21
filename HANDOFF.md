@@ -21,7 +21,13 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 266.** The last stretch, newest first:
+**Build 267.** The last stretch, newest first:
+
+- **The key picker is grouped by meaning**, nine sections from `MaFeatureGroup`, and the grouping is
+  a property of the key rather than a `when` on the screen — so a new key cannot be added without
+  saying what it is for. **A is in the buckets section**, with C1 to C10 and the bin, in lifecycle
+  order: A fills, the buckets hold, the bin empties. The old "Keys" catch-all held twenty-six
+  unrelated things in the order they happened to be written.
 
 - **Undo covers the buckets.** `MaBucketUndo` holds twenty steps. The undo key reverses the newest
   bucket change when it is newer than the last text this keyboard wrote, and otherwise goes to the

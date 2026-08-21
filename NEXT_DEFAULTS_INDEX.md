@@ -143,3 +143,4 @@ since been removed.
 - **§146** — One copy row, for real this time
 - **§147** — The buckets lose their switch, and three detections stop guessing
 - **§148** — Undo reaches the buckets
+- **§149** — The key picker, grouped by meaning

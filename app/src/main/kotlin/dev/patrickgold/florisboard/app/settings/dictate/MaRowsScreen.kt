@@ -628,22 +628,22 @@ internal fun MaKeyPicker(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 8.dp),
                 ) {
-                    // Grouped by what a key is for rather than by which kind it is in the model.
-                    // The clear key is a Builtin and belongs beside the buckets it empties: a
-                    // heading is a promise about what is underneath it, and somebody looking for
-                    // the way to empty the buckets looks under the buckets.
-                    val sections = MaRows.catalogue().groupBy { button ->
-                        when {
-                            button is MaRows.Button.Clip -> "Copy buckets, C1 to C10"
-                            button is MaRows.Button.Builtin &&
-                                button.key == MaFeatureKey.CLIP_CLEAR -> "Copy buckets, C1 to C10"
-                            button is MaRows.Button.Macro -> "Your macros, M1 to M10"
-                            else -> "Keys"
-                        }
-                    }
-                    sections.forEach { (heading, buttons) ->
+                    // Grouped by what a key is FOR, and the grouping lives in the model rather than
+                    // here.
+                    //
+                    // This was three headings, and the third was "Keys" — twenty-six unrelated
+                    // things in whatever order the enum happened to declare them, which is to say
+                    // in the order they were written over eight months. A heading is a promise
+                    // about what is underneath it, and that one promised nothing.
+                    //
+                    // Nine sections now, from `MaFeatureGroup`, and a key cannot be added to the app
+                    // without saying which it belongs to: the `when` that answers is exhaustive, so
+                    // the compiler asks the question at the moment somebody knows the answer. That
+                    // is the whole reason it is not a `when` written on this screen.
+                    val sections = MaRows.catalogueGrouped()
+                    sections.forEach { (group, buttons) ->
                         Text(
-                            text = heading,
+                            text = group.heading,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 8.dp, top = 16.dp, bottom = 4.dp),

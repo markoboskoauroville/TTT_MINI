@@ -411,7 +411,18 @@ def check_when_coverage() -> None:
         ef = SRC / "dev/patrickgold/florisboard" / enum_file
         if not ef.exists():
             continue
-        entries = set(re.findall(r"^\s{4}([A-Z][A-Z_0-9]*)\(\"", ef.read_text(), re.M))
+        # Only the FIRST enum in the file. MaFeatureOrder.kt now declares two — MaFeatureKey and
+        # the MaFeatureGroup that says what each key is for — and this pattern read both, then
+        # demanded that MaFeatureRow carry a branch for CLIPBOARD and BUCKETS. It switches on
+        # MaFeatureKey and always did.
+        #
+        # The keys are the thing that must be covered everywhere, and they are declared first, so
+        # the text is cut at the next `enum class` and the entries read from what is above it.
+        enum_text = ef.read_text()
+        first_end = enum_text.find("enum class", enum_text.find("enum class") + 1)
+        if first_end > 0:
+            enum_text = enum_text[:first_end]
+        entries = set(re.findall(r"^\s{4}([A-Z][A-Z_0-9]*)\(\"", enum_text, re.M))
         if not entries:
             continue
         for u in users:

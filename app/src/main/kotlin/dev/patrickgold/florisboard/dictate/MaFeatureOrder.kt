@@ -398,3 +398,97 @@ object MaFeatureOrder {
         return out
     }
 }
+
+/**
+ * What a key is FOR, which is how the picker is arranged.
+ *
+ * ### Why the model holds this and not the screen
+ *
+ * The picker used to group with a `when` written inside itself: three headings, one of them "Keys",
+ * holding twenty-six unrelated things in the order the enum happened to declare them. A key added
+ * to the app landed in that bucket silently and stayed there.
+ *
+ * Here it is a property of the key, so **a new key cannot be added without saying what it is for** —
+ * the `when` below is exhaustive and the compiler refuses anything else. That is the good kind of
+ * failure: it happens at the moment the key is written, by the person who knows the answer.
+ *
+ * ### The declaration order IS the order of the sections
+ *
+ * Reading down the screen: what he does constantly, then the buckets, then the text, then dictating,
+ * then reading, then getting about, then the keyboard's own shape, then the things touched once.
+ */
+enum class MaFeatureGroup(val heading: String) {
+    CLIPBOARD("Clipboard"),
+
+    /**
+     * The buckets, and the two keys that fill and empty them.
+     *
+     * Marko asked for this by name: **A belongs with the buckets, because A is the bucket system.**
+     * It presses a code block's copy button and the capture files the result into the next free
+     * bucket — one mechanism in two halves, and the halves were in different sections of the list.
+     * Somebody looking for the way to collect code blocks looks under the buckets, and the bin that
+     * empties them is on the same reasoning.
+     */
+    BUCKETS("Copy buckets, C1 to C10"),
+    EDITING("Editing the text"),
+    DICTATION("Dictation"),
+    READING("Reading aloud"),
+    MOVING("Getting about"),
+    KEYBOARD("The keyboard itself"),
+    TOOLS("Settings and diagnosis"),
+    MACROS("Your macros, M1 to M10"),
+}
+
+/** What this key is for. Exhaustive on purpose: a new key must choose a section. */
+val MaFeatureKey.group: MaFeatureGroup
+    get() = when (this) {
+        MaFeatureKey.PASTE,
+        MaFeatureKey.COPY,
+        MaFeatureKey.CUT,
+        MaFeatureKey.CLIP_HISTORY,
+        // AP and AC replace the whole field from the clipboard, or empty it. They are clipboard
+        // work, not editing: both are about what is being carried between two places.
+        MaFeatureKey.ALL_PASTE,
+        MaFeatureKey.ALL_CLEAR,
+        -> MaFeatureGroup.CLIPBOARD
+
+        MaFeatureKey.AUTO_BUCKET,
+        MaFeatureKey.CLIP_CLEAR,
+        -> MaFeatureGroup.BUCKETS
+
+        MaFeatureKey.SELECT_ALL,
+        MaFeatureKey.BACKSPACE,
+        MaFeatureKey.SPACE,
+        MaFeatureKey.ENTER,
+        MaFeatureKey.SHIFT,
+        MaFeatureKey.CHANGE_CASE,
+        -> MaFeatureGroup.EDITING
+
+        MaFeatureKey.MIC,
+        MaFeatureKey.LANGUAGE,
+        MaFeatureKey.HISTORY,
+        -> MaFeatureGroup.DICTATION
+
+        MaFeatureKey.READER,
+        MaFeatureKey.SUBTITLE,
+        -> MaFeatureGroup.READING
+
+        MaFeatureKey.APP_SWITCH,
+        MaFeatureKey.NEXT_FIELD,
+        MaFeatureKey.SCROLL,
+        -> MaFeatureGroup.MOVING
+
+        // The shape of the keyboard rather than anything typed with it: which zones show, whether it
+        // stays up, and the gap that spaces a row out.
+        MaFeatureKey.ZONE_1,
+        MaFeatureKey.ZONE_2,
+        MaFeatureKey.ZONE_3,
+        MaFeatureKey.SWITCHBOARD,
+        MaFeatureKey.PIN,
+        MaFeatureKey.SPACER,
+        -> MaFeatureGroup.KEYBOARD
+
+        MaFeatureKey.SETTINGS,
+        MaFeatureKey.DUMP,
+        -> MaFeatureGroup.TOOLS
+    }

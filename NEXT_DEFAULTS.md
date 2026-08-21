@@ -5855,3 +5855,72 @@ ways, at the wiring and at the rule, and confirmed red.
 
 Not tested: nothing ran on a phone. Whether the field actually honours Ctrl+Z is the field's
 business and always was.
+
+---
+
+# §149 — The key picker, grouped by meaning
+
+Build 267. He asked for two things in one sentence: put the A key with the buckets, since A *is* the
+bucket system, and then look at the whole picker and group it properly.
+
+## What it was
+
+Three headings. Two of them real — the buckets and the macros — and a third called **"Keys"**
+holding twenty-six unrelated things in `MaFeatureKey` declaration order, which is to say in the order
+they were written over eight months. Enter beside the screen dump, the reader beside shift.
+
+A heading is a promise about what is underneath it. That one promised nothing, and the list under it
+could only be read, never scanned — which on a picker is the difference between finding a key and
+hunting for it.
+
+## The grouping is a property of the key
+
+`MaFeatureGroup` lives in `MaFeatureOrder.kt` beside the keys, and `MaFeatureKey.group` is an
+exhaustive `when`. So **a key cannot be added to this app without saying what it is for**: the
+compiler asks, at the moment it is written, of the person who knows the answer.
+
+Written as a `when` on the screen it would have had an `else`, and an `else` is where a new key goes
+to be forgotten. That is exactly how twenty-six of them ended up under "Keys".
+
+Nine sections, in the order they are read down the screen: Clipboard · Copy buckets · Editing the
+text · Dictation · Reading aloud · Getting about · The keyboard itself · Settings and diagnosis ·
+Your macros.
+
+## A belongs with the buckets
+
+His point and it is right: A presses a code block's copy button and the capture files the result into
+the next free bucket. One mechanism in two halves, and the halves were in different sections. Somebody
+looking for the way to collect code blocks looks under the buckets, so that is where it is, with the
+bin that empties them.
+
+**Within the section the order is the lifecycle**: A fills, C1 to C10 hold, the bin empties.
+Catalogue order would have put A and the bin together above all ten, because both are `Builtin` and
+the `Clip` entries come after — the shape of the model showing through as an arrangement, which is
+the thing a grouped list exists to stop.
+
+## Two false positives in verify.py, both fixed rather than argued with
+
+`check_when_coverage` read **every** enum in `MaFeatureOrder.kt` and then demanded that
+`MaFeatureRow` carry a branch for `CLIPBOARD` and `BUCKETS`. It switches on `MaFeatureKey` and always
+did. It reads only the first enum in the file now — the keys, which are the thing that must be
+covered everywhere, and which are declared first.
+
+And a check in the new test fired on the comment explaining why the old heading was removed. Comments
+are stripped before that check now. **A check that reads its own documentation is a check that
+reports itself.**
+
+## Still open, and not touched: two keys with one face
+
+`SCROLL` draws **S** and `SUBTITLE` draws **S**. Same glyph, different jobs, sitting in one list — the
+fault the design language names directly, and the picker cannot fix it, because the picker's rule is
+to show the glyph the keyboard actually draws. The fix belongs on the keyboard and it is his call
+which one changes. Left alone rather than quietly changed.
+
+## Tested
+
+Test 1: 58 checks, 0 failed. Every key parsed out of the source and asserted to have exactly one
+section, every section asserted to have keys, and the bucket order walked. Broken on purpose by
+moving A into Settings and confirmed red.
+
+Not tested: nothing ran on a phone. The picker has not been seen with nine headings in it, and how it
+scrolls with them is a thing only the screen can answer.

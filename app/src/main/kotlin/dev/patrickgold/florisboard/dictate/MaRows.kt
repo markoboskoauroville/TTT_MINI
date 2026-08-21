@@ -241,6 +241,41 @@ object MaRows {
             (1..CLIP_SLOTS).map { Button.Clip(it) } +
             (1..MACRO_SLOTS).map { Button.Macro(it) }
 
+    /** Which section of the picker a button belongs to. */
+    fun groupOf(button: Button): MaFeatureGroup = when (button) {
+        is Button.Builtin -> button.key.group
+        // The buckets are the section, so the buckets are in it.
+        is Button.Clip -> MaFeatureGroup.BUCKETS
+        is Button.Macro -> MaFeatureGroup.MACROS
+    }
+
+    /**
+     * The catalogue as sections, in the order they are read down the screen.
+     *
+     * Empty sections are left out rather than drawn as a heading with nothing under it, which is
+     * what would happen to Macros if the slots ever stopped being offered.
+     *
+     * **Within the buckets, the order is the lifecycle**: A fills them, C1 to C10 hold, the bin
+     * empties. Catalogue order would have put A and the bin together above all ten, since both are
+     * Builtins and the Clips come after — an accident of the model showing through as an
+     * arrangement, which is exactly what a grouped list is supposed to stop.
+     */
+    fun catalogueGrouped(): List<Pair<MaFeatureGroup, List<Button>>> {
+        val all = catalogue()
+        return MaFeatureGroup.entries.mapNotNull { group ->
+            val buttons = all.filter { groupOf(it) == group }.sortedBy { bucketOrder(it) }
+            if (buttons.isEmpty()) null else group to buttons
+        }
+    }
+
+    /** A fills, the buckets hold, the bin empties. Everything else keeps catalogue order. */
+    private fun bucketOrder(button: Button): Int = when {
+        button is Button.Builtin && button.key == MaFeatureKey.AUTO_BUCKET -> 0
+        button is Button.Clip -> button.slot
+        button is Button.Builtin && button.key == MaFeatureKey.CLIP_CLEAR -> CLIP_SLOTS + 1
+        else -> 0
+    }
+
     fun serialize(rows: List<Row>): String =
         rows.joinToString(ROW_SEP.toString()) { row ->
             val flag = if (row.enabled) "1" else "0"
