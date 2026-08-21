@@ -1,8 +1,8 @@
 # Archive index
 
-Every numbered section in `NEXT_DEFAULTS.md`, so a decision can be found without reading 4,000
-lines. The file is a log: **later sections override earlier ones**, and several early entries
-describe features that have since been removed.
+Every numbered section in `NEXT_DEFAULTS.md`, so a decision can be found without reading it end to
+end. **Later sections override earlier ones**, and several early entries describe features that have
+since been removed.
 
 - **§9** — The Switchboard, three fixes
 - **§10** — Switching between keyboard views, properly
@@ -99,3 +99,42 @@ describe features that have since been removed.
 - **§104** — The housekeeping: every red build becomes a check
 - **§105** — The controller starts coming apart, at the only seam that is free
 - **§106** — The documents get their own housekeeping
+- **§107** — The Black Void, and full screen that actually is
+- **§108** — A void that is actually the screen, and the colour wheel
+- **§109** — The dashboard, live speed, and swatches
+- **§110** — Switchers get a ring, the switchboard gets his order, and the volume keys say why
+- **§111** — The reader that went dead, and brightness instead of colour
+- **§112** — Three integrity passes
+- **§113** — Swatches as asked, effects not voices, and the volume keys prove themselves
+- **§114** — The seventh setup page is gone
+- **§115** — A key that copies the screen
+- **§116** — The dead end at the end of setup, and why the wizard kept coming back
+- **§116** — The dead end I built, and the character cap I invented
+- **§117** — The volume keys, rewritten, with no way to switch them off
+- **§118** — The reader becomes the thing the keys serve
+- **§119** — Down is forward, and back is one step
+- **§120** — Which key is speaking, in the corner
+- **§121** — A line that says it is listening
+- **§122** — The strip says what it is, and the history badge answers again
+- **§123** — The language badge moves onto the recording it describes
+- **§124** — The badge appears, the words are whole, and the header balances
+- **§125** — The VU meter, from the module rather than from scratch
+- **§126** — The overlay hosts the real bar
+- **§127** — The offline note
+- **§128** — The crash I shipped in 239
+- **§129** — Why the bar recorded but never appeared
+- **§130** — Reverted to the version that works
+- **§131** — The badge becomes a switch, and the note carries its own colour
+- **§132** — Bullets, and Delete all at the top
+- **§133** — Two real causes, after four cosmetic attempts
+- **§133** — EN in the circle, and the deletes tested properly
+- **§134** — A row that lost its audio now says so
+- **§135** — The bar moves to the top, and the finger learns to tap
+- **§136** — The helper bar's looks, and nothing else
+- **§137** — The bar becomes the status bar, and the note finally shows
+- **§138** — The notch
+- **§139** — One copy row, and a beat before Send
+- **§140** — Permissions, numbered, and warnings that open the fix
+- **§141** — The permissions screen, fixed
+- **§142** — Permissions and API keys, one entry
+- **§143** — His settings become the defaults

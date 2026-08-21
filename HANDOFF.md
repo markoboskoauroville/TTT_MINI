@@ -1,6 +1,6 @@
 # TTT mini — where things stand
 
-Last updated at **build 254**. Read this first. Read `NEXT_DEFAULTS.md` only when you need the
+Last updated at **build 260**. Read this first. Read `NEXT_DEFAULTS.md` only when you need the
 reasoning behind one particular decision — it is a 4,000-line log, not a briefing.
 
 ## What to read, and in what order
@@ -21,8 +21,18 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 254.** The last stretch, newest first:
+**Build 260.** The last stretch, newest first:
 
+- **Defaults are his.** A fresh install ships his exported settings order, his feature row, number
+  row on, edit strip off, buckets off, scroll pages 4. He reinstalls several times a day; a fresh
+  install should be the keyboard he uses, not a starting point.
+- **Permissions and API keys** is the first settings entry and **cannot be moved** — it is what he
+  opens when the keyboard, the microphone or accessibility is not working. Numbered in the order they
+  must be granted, each row opening the page that grants it, rechecked on resume. Any error mentioning
+  a permission, AudioRecord or accessibility opens it.
+- **The copy row is fixed** above the record button in the transcription view and is no longer a
+  setting. The old edit strip is gone from that view — there were two clipboard rows, in different
+  orders, obeying different settings.
 - **The recording notch.** While recording with the keyboard down, a strip the height of the status
   bar sits at the top of the screen: upright VU meter, red dot, clock, bin, send, ENG. It is only as
   wide as its contents, so the corners of the screen are still his — a window is touchable or it is
@@ -43,8 +53,9 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 - **Avid-style settings** — a triangle beside each entry opening it in place rather than pushing a
   screen. Postponed by Marko himself; it touches all nineteen screens.
-- **A transcription-view settings screen**, owning the arrangement of the row shown while dictating.
-  He asked for it; only the existing `LegacyActionRowSetting` needs rehousing.
+- **A transcription-view settings screen**, owning what that view shows. Note that the copy row's
+  position and presence are now fixed by design and must NOT become settings there — he was explicit.
+  `LegacyActionRowSetting` is the piece that needs rehousing.
 - **The rest of the controller split.** History is the obvious next block and is NOT free: it reads
   `_state`, `transcribe` and the output sink. A seam that requires widening visibility is not a seam.
 - **Key modules** — five of about twenty keys extracted into `MaKeyModules.kt`.
