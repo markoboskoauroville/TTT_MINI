@@ -1,27 +1,80 @@
 # TTT mini — where things stand
 
-Last updated at **build 214**. Read this first. Read `NEXT_DEFAULTS.md` only when you need the
+Last updated at **build 254**. Read this first. Read `NEXT_DEFAULTS.md` only when you need the
 reasoning behind one particular decision — it is a 4,000-line log, not a briefing.
+
+## What to read, and in what order
+
+1. **This file.** Everything still true about this project.
+2. **`MANTRA_MANIFEST`** (`markoboskoauroville/MANTRA_MANIFEST`) — the principles that hold across all
+   his apps: the four tests, secrets, the design language, the key ring. Start at its `START_HERE.md`,
+   which says which of its files this project needs and which to skip.
+3. **`VOLUME_KEYS.md`** before touching the volume keys. It is a contract, not a description: if the
+   code differs from it, the code is wrong.
+4. **`SECRETS.md`** before touching a key file. Note §2a — a redaction built from known key shapes
+   fails *open* on a format it has not seen, and that leaked a key.
+5. **`NEXT_DEFAULTS.md`** only to look one decision up. It is an archive of 130+ entries; several
+   early ones describe features that have since been removed, and later entries override earlier.
+   `NEXT_DEFAULTS_INDEX.md` lists them all so it can be searched without being read.
+
+**Run `python3 scripts/verify.py` before every push.** Details below.
 
 ## Where it is now
 
-**Build 214.** The last stretch, newest first: the controller split began (`MaProviders.kt`); a
-pre-push verifier (`scripts/verify.py`) that turns every red build this project has had into a check;
-the switchboard expanded to thirteen switches in three groups; five caption styles and a full-screen
-reader that scrolls the spoken line to the top; volume down while recording now stops, transcribes
-and presses Send in one gesture; named prompt instances for Ctrl+P and Ctrl+F; the copy row as its
-own arrangeable row; settings backup with dated restore; Groq and automatic language detection
-removed entirely.
+**Build 254.** The last stretch, newest first:
+
+- **The recording notch.** While recording with the keyboard down, a strip the height of the status
+  bar sits at the top of the screen: upright VU meter, red dot, clock, bin, send, ENG. It is only as
+  wide as its contents, so the corners of the screen are still his — a window is touchable or it is
+  not, and the notch shape is what buys click-through without losing the controls.
+- **The offline note.** A dictation that lands with no text field open is stored as its own kind of
+  entry: its own source, a title written by the model, and deeper gold text in the history.
+- **History**: `Insert · [ENG] · Re-Transcribe · Delete`, joined by bullets. The badge is a **switch**
+  and Re-Transcribe is the **action** — two steps. Delete all in the header. All deletes on IO and
+  wrapped. Rows whose audio file has vanished repair themselves on opening.
+- **Volume keys rewritten** as `MaVolumeKeys`, specified in `VOLUME_KEYS.md`, **with no setting** —
+  see the rule below. While reading, the taps drive the reader instead: down is next, up is previous.
+- **The reader**: Black Void, five caption styles, full screen that survives notifications, a
+  dashboard on long press, live speed, and the key ring resuming from the last good key.
+- **Magic finger** falls back to a dispatched tap when `ACTION_CLICK` is refused (Compose apps).
+- **`scripts/verify.py`** — every red build this project has had, as a check that runs in a second.
 
 **Open, designed, not built:**
 
 - **Avid-style settings** — a triangle beside each entry opening it in place rather than pushing a
   screen. Postponed by Marko himself; it touches all nineteen screens.
+- **A transcription-view settings screen**, owning the arrangement of the row shown while dictating.
+  He asked for it; only the existing `LegacyActionRowSetting` needs rehousing.
 - **The rest of the controller split.** History is the obvious next block and is NOT free: it reads
   `_state`, `transcribe` and the output sink. A seam that requires widening visibility is not a seam.
 - **Key modules** — five of about twenty keys extracted into `MaKeyModules.kt`.
 - **Offline retry** with a manual resend in the status line.
 - **An English base dictionary**, twin of the Croatian one.
+
+## Rules learned the hard way in this stretch
+
+**Never add a setting that can silently disable something he relies on.** The volume keys had one. It
+defaulted on, sat in a list of thirteen draggable switches, and one stray touch turned it off in
+silence. He lost days believing the feature had been deleted and I spent three rounds reading a
+handler that was correct. **A control that can quietly switch off the thing somebody uses most is a
+trapdoor, not a feature.**
+
+**A composable carries assumptions about its parent that are invisible in its own source.** Hosting
+the keyboard's recording bar in an overlay failed twice: `LocalWindowController`'s default is a hard
+`error()`, and `fillMaxSize()` inside a `WRAP_CONTENT` window resolves to **zero height** — the second
+one silently. **When lifting a composable out of its home, ask what it was being GIVEN, not what it
+calls.** After three attempts the overlay went back to plain Views, and that was the right trade: a
+duplicated thing that works beats a shared thing that does not.
+
+**A flag written on one path and read on both is not a flag.** `deliveredToField` was set in one of
+two delivery branches, so offline notes inherited the previous dictation's answer. This is why the
+note colour "did not work" three times.
+
+**Weights are promises about width that words cannot keep.** Four labels at a quarter each clipped to
+"Ins" and "Del" and squeezed a badge out of existence. Size to content; join with separators.
+
+**After removing anything from a row, look at the row.** Balance breaks silently and it breaks in
+whatever was left behind.
 
 ## What this app is
 
@@ -170,9 +223,12 @@ tree before writing.
   twice — once from the word to the picture, again from the picture to the key. It also catches a
   whole class of mistake, because a row whose glyph is wrong is visible the moment the screen opens.
 - **Roles are wired, not chosen.** `MaRoles` decides: AssemblyAI transcribes, Anthropic rewords and
-  proofreads, Groq detects language. The call path resolves through it at the moment of use, so a
-  stale stored id cannot survive. Give a new provider a role there; never give the user a chip.
-  Capability is not the same as job — Groq can transcribe and must not.
+  proofreads, Speechify speaks. The call path resolves through it at the moment of use, so a stale
+  stored id cannot survive. Give a new provider a role there; never give the user a chip. Capability
+  is not the same as job.
+  **Groq is gone**, and with it automatic language detection: the language is chosen by hand, on the
+  badge. A detector that is confidently wrong returns fluent text in the other language, which is
+  worse than an error.
 - **Anthropic is no longer slated for removal.** Ctrl+P and Ctrl+F depend on it. Gemini is
   unregistered (§31); a stored Gemini key is hidden, not erased.
 - **A preset absent from `ProviderRegistry.presets` does not exist.** `byId` returns null and key
@@ -208,7 +264,9 @@ Groq and Grok cost a whole exchange before that was written down.
   round on 19.8.2026 and reversed the same day: a ring on three keys in a row where nothing else has
   one is the thing the eye lands on, and it reads as a patch rather than as emphasis. Colour is the
   app's state channel everywhere else; keep it the only one.
-- **A key on the row carries a drawn shape, not a bare letter.** Every neighbour has a silhouette,
-  and a loose letter among them looks unfinished. The zone keys are a letter inside a keyboard
-  outline (`MaZoneGlyph`) for this reason. If the frame crowds the letter, take detail out of the
-  frame — the spacebar line went for exactly this — rather than taking the frame away.
+- **A key on the row carries a drawn shape from the icon set, not a bare letter and not a hand-drawn
+  one.** The zone keys were letters, then a hand-drawn keyboard outline with a letter inside, and he
+  called both amateurish — correctly: every neighbour is a glyph from one set, and a shape drawn by
+  hand beside them reads as a patch however carefully proportioned. They are `Numbers`, `Keyboard`
+  and `ContentPaste` now. **If the set has nothing for a key, that is a reason to reconsider the key,
+  not to draw one.**
