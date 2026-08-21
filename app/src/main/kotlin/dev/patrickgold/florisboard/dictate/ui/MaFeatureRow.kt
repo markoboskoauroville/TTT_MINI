@@ -94,6 +94,7 @@ import dev.patrickgold.florisboard.dictate.MaFeatureOrder
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import androidx.compose.runtime.LaunchedEffect
 import dev.patrickgold.florisboard.ime.ImeUiMode
+import dev.patrickgold.florisboard.dictate.MaBucketUndo
 import dev.patrickgold.florisboard.dictate.MaClipCapture
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaSettingsResume
@@ -714,7 +715,11 @@ fun MaFeatureRow(
                         // — so the next press collected something from far above and dropped it in
                         // bucket one. The bin is the reset for both, which is what he expects and
                         // saves a second control nobody would remember.
-                        maBucketRank = 0
+                        // Recorded before it is thrown away, so undo brings all ten back. The bin
+                        // is the one press here that can lose a morning's collecting, and it is one
+                        // key away from the buckets themselves.
+                        MaBucketUndo.push(capturedSlots)
+                        MaClipCapture.autoRank = 0
                         scope.launch { prefs.dictate.maClipCaptured.set("") }
                     }
                 }
@@ -844,26 +849,30 @@ fun MaFeatureRow(
                     // Without it he would be pressing blind and, on a mistake, would have no way to
                     // know he was collecting from last month.
                     ThemedTextKey(
-                        label = "A${maBucketRank + 1}",
+                        label = "A${MaClipCapture.autoRank + 1}",
                         modifier = keyMod,
                         tint = null,
                         onLongClick = {
-                            maBucketRank = 0
+                            MaClipCapture.autoRank = 0
                             Toast.makeText(context, "Back to the last code block", Toast.LENGTH_SHORT).show()
                         },
                     ) {
                         if (!DictateAccessibilityService.isRunning) {
                             maOpenAccessibilitySettings(context)
                         } else {
+                            // Armed with the state as it is NOW, before the ladder moves and before
+                            // the copy reaches the clipboard. The capture that follows uses this
+                            // rather than reading a rank that has already advanced.
+                            MaBucketUndo.armAuto(capturedSlots)
                             val hit = DictateAccessibilityService.pressScreenTargetAt(
                                 listOf("copy code"),
-                                maBucketRank,
+                                MaClipCapture.autoRank,
                             )
                             if (hit != null) {
                                 // Only advance on a press that landed. A rank that ran past the end
                                 // would otherwise keep climbing while nothing happened, and the
                                 // number on the key would stop meaning anything.
-                                maBucketRank++
+                                MaClipCapture.autoRank++
                                 // Then bring the NEXT block up into view.
                                 //
                                 // Two things at once, and they are the same action. The list
@@ -879,9 +888,11 @@ fun MaFeatureRow(
                                 // in memory when he started.
                                 DictateAccessibilityService.revealScreenTargetAt(
                                     listOf("copy code"),
-                                    maBucketRank,
+                                    MaClipCapture.autoRank,
                                 )
                             } else {
+                                // Nothing was pressed, so nothing will arrive to consume the arming.
+                                MaBucketUndo.disarm()
                                 Toast.makeText(
                                     context,
                                     "No more code blocks — hold to start again",
@@ -1429,12 +1440,13 @@ private fun MaWandBar(
  * from last week would point somewhere meaningless. Reset by a long press, and by the process
  * ending, which are both moments when starting again is what he would want.
  */
-private var maBucketRank by mutableStateOf(0)
+// MaClipCapture.autoRank now lives in MaClipCapture as `autoRank`, because undo has to put it back and undo
+// is handled in the keyboard manager, which cannot reach a private variable in this file.
 
 /**
  * Whether the reader dashboard is showing.
  *
- * File-level rather than remembered inside the row, for the same reason `maBucketRank` is: the row
+ * File-level rather than remembered inside the row, for the same reason `MaClipCapture.autoRank` is: the row
  * is recomposed constantly and rebuilt whenever the keyboard changes shape, and state remembered
  * inside it would close the dashboard every time he switched view while it was open.
  */

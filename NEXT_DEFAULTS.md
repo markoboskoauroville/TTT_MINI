@@ -5767,3 +5767,91 @@ check is now guarded. A check that raises is not a check that fails.
 
 Not tested: nothing ran on a phone. The A key's press path through the accessibility service was not
 exercised, the three permission sources were not observed on his ROM, and the tick has not been seen.
+
+---
+
+# §148 — Undo reaches the buckets
+
+Build 266. He asked for Ctrl+Z to cover the buckets: a code block collected from the wrong place
+should be undoable rather than requiring the bin and a fresh start on the ladder.
+
+## The rule, and why it is a rule about order
+
+Undo reverses the last thing that happened. That is what it means everywhere, so it is the rule
+here too and nothing cleverer:
+
+> **If the newest bucket change is newer than the last text this keyboard wrote, undo reverses it.
+> Otherwise the key does exactly what it did before.**
+
+This is ORDER, not timing. It does not depend on how long ago anything happened or how long the key
+is held; the same sequence of actions always gives the same answer. The thing `VOLUME_KEYS.md`
+forbids is a key whose meaning changes with the duration of the press — a key that has to be
+predicted. A key that undoes whatever you did last does not have to be predicted, because you were
+there.
+
+Every text commit passes through `EditorInstance.commitText`, so that one place stamps the clock.
+Typed, dictated and pasted all hand the key back to the field, with no list of call sites to keep
+current.
+
+## What is not undoable, on purpose
+
+**Pouring a bucket into a field.** That press does two things — fills the field, empties the bucket
+— and undoing only the second leaves the text in the document AND back in the bucket. The paste
+stamps the text clock on its way out, so undo after it goes to the field, where the visible half of
+the action is.
+
+## What the walk found
+
+The first draft's comment said the bucket change was still reachable on a second press. The walked
+test failed on exactly that, and the code was right: **once text is the newest thing the key stays
+with the field.** It has to. The field keeps a multi-level undo history this keyboard cannot see, so
+a second press that jumped back to the buckets would undo a collected block for somebody who was
+still undoing sentences.
+
+The comment was corrected rather than the code. A comment is not evidence, and a comment that
+overstates what a rule does is the same failure as the spacebar mark that existed only in a comment.
+
+## The arming, and why not a time window
+
+The A key advances the ladder the moment its press lands, while the copy reaches the clipboard a
+moment later through the system. A step recorded at capture time would therefore hold a rank that had
+already moved on, and undo would put the ladder back one rung short.
+
+So the A key **arms** the step before it presses — the slots and the rank as they were — and the next
+capture uses that instead of reading the rank itself. A flag consumed by the next event is exact; a
+window measured in milliseconds is a guess that is usually right, and "usually right" on a ladder
+means collecting from the wrong place on the day it is wrong.
+
+The arming is dropped on a press that did not land, and dropped by any copy that changed no bucket —
+a repeat, a blank, a full row — so it can never be spent by an unrelated copy much later.
+
+`maBucketRank` moved out of `MaFeatureRow` into `MaClipCapture.autoRank`, because undo is handled in
+`KeyboardManager` and a private variable in a composable's file cannot be reached from there. The A
+key and the buckets are one mechanism anyway.
+
+## verify.py: a check that had to be argued with
+
+`check_delegation_imports` failed `EditorInstance.kt` the moment a one-line change brought that file
+into the checked set. Its delegations are `by FlorisPreferenceStore` and `by context.appContext()` —
+custom delegates that carry their own `getValue` and need no import. The file has compiled green for
+months.
+
+The check asked whether the file contained any `by` at all and whether the word "compose" appeared
+anywhere in it. It looks for the Compose right-hand sides now — `remember`, `mutableStateOf`,
+`collectAsState`, and the rest — which is what every red build it exists for actually was.
+
+**A false positive is not free.** It has to be argued with every time, and a check that is argued
+with stops being read, at which point the real hits arrive in the same voice as the false ones.
+Proven still to catch the real thing by deleting `getValue` from `MaClipCapture.kt` and watching it
+go red.
+
+## Tested
+
+Test 1: 1,912 checks, 0 failed, including all 625 four-action sequences drawn from copy, A, bin,
+type and paste. Two invariants asserted after every one of them, in the shape the volume keys use:
+**always one** — undo either reverses a bucket change or hands the key to the field, never neither —
+and **never both** — it touches the buckets or the field, not both at once. Broken on purpose two
+ways, at the wiring and at the rule, and confirmed red.
+
+Not tested: nothing ran on a phone. Whether the field actually honours Ctrl+Z is the field's
+business and always was.

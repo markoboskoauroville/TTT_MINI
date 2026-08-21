@@ -24,6 +24,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import dev.patrickgold.florisboard.dictate.DictateController
+import dev.patrickgold.florisboard.dictate.MaBucketUndo
+import dev.patrickgold.florisboard.dictate.MaClipCapture
 import dev.patrickgold.florisboard.dictate.MaFlow
 import dev.patrickgold.florisboard.dictate.MaProofread
 import dev.patrickgold.florisboard.FlorisImeService
@@ -1369,7 +1371,39 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 activeState.isActionsEditorVisible = !activeState.isActionsEditorVisible
             }
             KeyCode.TOGGLE_INCOGNITO_MODE -> scope.launch { handleToggleIncognitoMode() }
-            KeyCode.UNDO -> editorInstance.performUndo()
+            // UNDO REVERSES THE LAST THING THAT HAPPENED, AND THE BUCKETS COUNT AS THINGS.
+            //
+            // The buckets are this keyboard's own state, not the field's, so Ctrl+Z never reached
+            // them: a code block collected from the wrong place could only be cleared by emptying
+            // every bucket and starting the ladder again.
+            //
+            // The rule is order, not timing. If the newest bucket change is newer than the last
+            // text this keyboard wrote, it is the thing being undone; otherwise the key does exactly
+            // what it did before and the field decides.
+            //
+            // Repeated presses walk back through the bucket changes made SINCE the last text, and
+            // then hand the key to the field. Once text is the newest thing the key stays with the
+            // field, because the field's own undo history is invisible from here and a press that
+            // jumped back to the buckets would undo a collected block for somebody who was still
+            // undoing sentences.
+            //
+            // The feedback is the row itself: the bucket that had a copy goes dim again, in front of
+            // him, on the keyboard he just pressed. No message, because there is nothing a message
+            // would add to watching it happen.
+            KeyCode.UNDO -> {
+                val step = MaBucketUndo.takeIfNewest()
+                if (step == null) {
+                    editorInstance.performUndo()
+                } else {
+                    MaClipCapture.autoRank = step.rank
+                    // The one-minute tick goes with it. It says "this bucket just took a copy", and
+                    // after an undo that is no longer true of any bucket.
+                    MaClipCapture.lastFilled.value = 0 to 0L
+                    scope.launch {
+                        prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(step.slots))
+                    }
+                }
+            }
             KeyCode.VIEW_CHARACTERS -> activeState.keyboardMode = KeyboardMode.CHARACTERS
             KeyCode.VIEW_NUMERIC -> activeState.keyboardMode = KeyboardMode.NUMERIC
             KeyCode.VIEW_NUMERIC_ADVANCED -> activeState.keyboardMode = KeyboardMode.NUMERIC_ADVANCED

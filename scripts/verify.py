@@ -216,14 +216,37 @@ def check_delegation_imports(path: Path, text: str) -> None:
     """
     code = strip_code(text)
     imports = {ln.strip() for ln in text.splitlines() if ln.startswith("import ")}
-    has_val_by = re.search(r"\bval\s+\w+\s+by\s+", code)
-    has_var_by = re.search(r"\bvar\s+\w+\s+by\s+", code)
-    if has_val_by or has_var_by:
-        if "import androidx.compose.runtime.getValue" not in imports and "compose" in code:
-            fail(path.name, "uses `by` delegation but does not import getValue")
-    if has_var_by:
-        if "import androidx.compose.runtime.setValue" not in imports and "mutableStateOf" in code:
-            fail(path.name, "uses `var ... by mutableStateOf` but does not import setValue")
+    # Only COMPOSE delegation, named by its right-hand side.
+    #
+    # This asked whether the file had any `by` at all and whether the word "compose" appeared
+    # anywhere in it, and on 21.8.2026 it failed EditorInstance.kt — a file whose delegations are
+    # `by FlorisPreferenceStore` and `by context.appContext()`, custom delegates that carry their own
+    # getValue and need no import. That file has compiled green for months. It only fired because a
+    # one-line change brought the file into the set this checks.
+    #
+    # A false positive is not free. It has to be argued with every time, and a check that is argued
+    # with is a check that stops being read — which is worse than not having it, because the real
+    # hits arrive with the same voice as the false ones.
+    #
+    # The red builds this exists for were all Compose: `by remember`, `by mutableStateOf`,
+    # `by collectAsState`. Those are what it looks for now.
+    compose_delegation = re.search(
+        r"\b(?:val|var)\s+\w+(?:\s*:\s*[\w<>?., ]+)?\s+by\s+"
+        r"(?:remember|mutableStateOf|mutableIntStateOf|mutableLongStateOf|mutableFloatStateOf|"
+        r"derivedStateOf|animate\w*AsState|\w[\w.]*\.collectAsState)",
+        code,
+    )
+    if compose_delegation and "import androidx.compose.runtime.getValue" not in imports:
+        fail(path.name, "uses Compose `by` delegation but does not import getValue")
+    # setValue, the same way: a `var` delegated to Compose state, not any `var` in a file that
+    # happens to contain the word.
+    compose_var = re.search(
+        r"\bvar\s+\w+(?:\s*:\s*[\w<>?., ]+)?\s+by\s+"
+        r"(?:remember|mutableStateOf|mutableIntStateOf|mutableLongStateOf|mutableFloatStateOf)",
+        code,
+    )
+    if compose_var and "import androidx.compose.runtime.setValue" not in imports:
+        fail(path.name, "uses Compose `var ... by` delegation but does not import setValue")
 
 
 def check_preferences_exist(path: Path, text: str) -> None:

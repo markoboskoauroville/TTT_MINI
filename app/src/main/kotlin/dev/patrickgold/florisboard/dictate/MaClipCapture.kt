@@ -11,6 +11,8 @@
 package dev.patrickgold.florisboard.dictate
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 
 /**
@@ -72,6 +74,18 @@ object MaClipCapture {
      * Not persisted. It says "just now", and "just now" does not survive a restart.
      */
     val lastFilled: MutableState<Pair<Int, Long>> = mutableStateOf(0 to 0L)
+
+    /**
+     * Where the A key is on the ladder: 0 is the newest code block on screen, 1 the one above it.
+     *
+     * It lives here rather than beside the key because undo has to put it back, and undo is handled
+     * in the keyboard manager where a private variable in a composable's file cannot be reached.
+     * The A key and the buckets are one mechanism — A presses a copy button and the capture files
+     * the result — so the ladder position belongs with the buckets it fills.
+     *
+     * Not persisted. It describes a conversation on screen right now.
+     */
+    var autoRank: Int by mutableStateOf(0)
 
     /** Records that [slot] just took a copy. Called by the capture, not by the keyboard. */
     fun noteFilled(slot: Int) {
@@ -173,5 +187,131 @@ object MaClipCapture {
             val short = text.replace('\n', ' ').trim().take(60)
             if (text.length > 60) "Copy bucket $slot, $short\u2026" else "Copy bucket $slot, $short"
         }
+    }
+}
+
+
+/**
+ * Undo, for the buckets.
+ *
+ * ### Why the buckets need their own undo
+ *
+ * Ctrl+Z sends a key event to the field and the field decides what to do with it. The buckets are
+ * not in a field — they are this keyboard's own state — so nothing the editor undoes ever touches
+ * them. A code block collected from the wrong place used to be unrecoverable except by emptying
+ * every bucket and starting the ladder again.
+ *
+ * ### How one key means both
+ *
+ * Undo reverses the last thing that happened. That is what it has always meant, so the rule is that
+ * and nothing cleverer: **if the newest bucket change is newer than the last text this keyboard
+ * wrote, undo puts the buckets back; otherwise the key does exactly what it did before.**
+ *
+ * This is a rule about ORDER, not about timing. It does not matter how long ago either happened or
+ * how long the key is held — the same sequence of actions always gives the same answer. A key whose
+ * meaning depends on how long you press it has to be predicted; a key that undoes whatever you did
+ * last does not.
+ *
+ * Every text commit passes through `EditorInstance.commitText`, which stamps the clock here. So
+ * typing, dictating or pasting all hand the undo key back to the field, in one place, with no list
+ * of call sites to keep current.
+ *
+ * ### What is undoable, and what is deliberately not
+ *
+ * A capture and the bin are undoable: both change what the buckets hold and nothing else.
+ *
+ * **Pouring a bucket into a field is not**, and that is a decision rather than an omission. That
+ * press did two things — filled the field and emptied the bucket — and undoing only the second would
+ * leave the text in the document AND back in the bucket, which is a state he never asked for. The
+ * paste stamped the text clock on its way through, so undo after a paste goes to the field, where
+ * the visible half of that action lives.
+ *
+ * ### Once text is the newest thing, undo stays with the field
+ *
+ * This is worth stating because it is easy to assume the opposite. After any text is written, the
+ * undo key belongs to the field until a bucket changes again — it does not walk back into the
+ * buckets once the field runs out, because we cannot tell when the field has run out. The field
+ * keeps its own multi-level history that this keyboard cannot see, so a second press that jumped to
+ * the buckets would pull a collected block out from under somebody who was still undoing sentences.
+ *
+ * A first draft of this file claimed in a comment that the buckets were still reachable underneath.
+ * They are not, the walked test caught it, and the rule is the better of the two: **undo is for what
+ * you just did.** A copy taken from the wrong place is undone before typing resumes, which is the
+ * moment it is noticed anyway.
+ */
+object MaBucketUndo {
+
+    /** One reversible change: what the buckets held, and where the ladder was, before it. */
+    data class Step(val slots: List<String?>, val rank: Int, val atMs: Long)
+
+    /**
+     * Twenty deep. Deeper costs nothing in memory but stops meaning anything: past twenty presses
+     * nobody remembers the state being returned to, and an undo that lands somewhere unrecognisable
+     * is worse than a stop.
+     */
+    private const val DEPTH = 20
+
+    private val stack = ArrayDeque<Step>()
+
+    private var lastTextAtMs = 0L
+
+    /**
+     * A step armed by the A key BEFORE it presses anything.
+     *
+     * The A key advances the ladder as soon as its press lands, while the copy reaches the clipboard
+     * a moment later through the system. So by the time the capture records a step, the rank has
+     * already moved on and a step recorded there would put the ladder back one rung short.
+     *
+     * Arming solves it without a timer: the A key hands over the state as it was before the press,
+     * and the next capture uses that instead of reading the rank itself. **A flag consumed by the
+     * next event is exact; a window measured in milliseconds is a guess that is usually right.**
+     */
+    private var armed: Step? = null
+
+    /** Called by the A key before it presses a copy button. */
+    fun armAuto(slots: List<String?>) {
+        armed = Step(slots, MaClipCapture.autoRank, android.os.SystemClock.elapsedRealtime())
+    }
+
+    /** Called when the A key's press did not land, so nothing will arrive to consume the arming. */
+    fun disarm() {
+        armed = null
+    }
+
+    /**
+     * Records the state before a change.
+     *
+     * Consumes an arming if one is waiting, whether or not this call pushes anything — an armed step
+     * that nobody used would otherwise be spent by an unrelated copy much later, rewinding a ladder
+     * that had moved on for its own reasons.
+     */
+    fun push(slots: List<String?>) {
+        val step = armed ?: Step(slots, MaClipCapture.autoRank, android.os.SystemClock.elapsedRealtime())
+        armed = null
+        stack.addLast(step.copy(atMs = android.os.SystemClock.elapsedRealtime()))
+        while (stack.size > DEPTH) stack.removeFirst()
+    }
+
+    /** Consumes an arming without recording anything, when a copy changed no bucket at all. */
+    fun dropArming() {
+        armed = null
+    }
+
+    /** Stamped by every text commit, so undo knows which happened last. */
+    fun noteText() {
+        lastTextAtMs = android.os.SystemClock.elapsedRealtime()
+    }
+
+    /**
+     * The step to reverse, or null when the field should have the key instead.
+     *
+     * Removes it, so pressing undo repeatedly walks back through the bucket changes and then falls
+     * through to the field once they run out.
+     */
+    fun takeIfNewest(): Step? {
+        val step = stack.lastOrNull() ?: return null
+        if (step.atMs < lastTextAtMs) return null
+        stack.removeLast()
+        return step
     }
 }

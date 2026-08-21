@@ -21,7 +21,15 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 265.** The last stretch, newest first:
+**Build 266.** The last stretch, newest first:
+
+- **Undo covers the buckets.** `MaBucketUndo` holds twenty steps. The undo key reverses the newest
+  bucket change when it is newer than the last text this keyboard wrote, and otherwise goes to the
+  field exactly as before. A capture and the bin are undoable; **pouring a bucket into a field is
+  not**, because that press also filled the field and undoing half of it is a state nobody asked
+  for. Once text is the newest thing the key stays with the field — the field's own history is
+  invisible from here. The A key arms the step *before* it presses, so undo rewinds the ladder too.
+  `maBucketRank` moved to `MaClipCapture.autoRank` to make that reachable.
 
 - **The buckets have no switch.** They are live whenever C keys are on a row and dead when they are
   not. `maBucketsEnabled` is gone: it defaulted OFF, so a fresh install drew grey C keys that caught

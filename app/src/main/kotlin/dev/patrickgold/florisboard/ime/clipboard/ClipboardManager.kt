@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
+import dev.patrickgold.florisboard.dictate.MaBucketUndo
 import dev.patrickgold.florisboard.dictate.MaClipCapture
 import dev.patrickgold.florisboard.dictate.MaRows
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
@@ -320,6 +321,10 @@ class ClipboardManager(
         // there was nothing to record, and writing the preference anyway would wake every collector
         // of it — including the keyboard's own row — for no change at all.
         if (next != current) {
+            // Before the write, so undo has the state to return to. It consumes the A key's arming
+            // if one is waiting, which is how an automatic collection rewinds the ladder as well as
+            // the bucket.
+            MaBucketUndo.push(current)
             prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(next))
             // Which bucket took it, so the key can wear a tick for a minute. Found by comparing
             // rather than by asking capture to report it: capture is a pure function over a list and
@@ -327,6 +332,11 @@ class ClipboardManager(
             // changed", and it cannot disagree with what was actually stored.
             val filled = next.indices.firstOrNull { next[it] != null && current.getOrNull(it) == null }
             if (filled != null) MaClipCapture.noteFilled(filled + 1)
+        } else {
+            // A copy that changed no bucket — a repeat, a blank, or every visible bucket full. An
+            // arming left waiting here would be spent by an unrelated copy much later and rewind a
+            // ladder that had moved on since.
+            MaBucketUndo.dropArming()
         }
     }
 

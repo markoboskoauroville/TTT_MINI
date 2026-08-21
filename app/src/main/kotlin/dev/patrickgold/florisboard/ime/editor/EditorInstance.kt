@@ -38,6 +38,7 @@ import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.text.composing.Appender
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
+import dev.patrickgold.florisboard.dictate.MaBucketUndo
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -236,6 +237,11 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         // personal model can watch without being wired into a dozen call sites. It only observes;
         // the commit itself is unaffected and nothing is written to disk on this thread.
         MaNgram.onCommit(text, keyboardManager.activeState.isIncognitoMode)
+        // The same one place tells the bucket undo that text has just been written, so the undo key
+        // knows whether the newest thing to reverse is in the field or in the buckets. Typed,
+        // dictated and pasted all pass here, which is why there is no list of call sites to keep up
+        // to date.
+        MaBucketUndo.noteText()
         val isPhantomSpaceActive = phantomSpace.determine(text)
         autoSpace.setInactive()
         phantomSpace.setInactive()
