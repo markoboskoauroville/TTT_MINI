@@ -248,6 +248,13 @@ object DictateController {
     var sendAfterCommit: Boolean = false
 
     /**
+     * How long to wait after the words land before pressing Send on screen.
+     *
+     * See the note at the call site: the pause is for the *other* app, not for this one.
+     */
+    private const val SEND_SETTLE_MS = 333L
+
+    /**
      * Whether the last dictation actually reached a field.
      *
      * Set by the commit, read when the history entry is built. The realtime path delivers through a
@@ -1832,6 +1839,19 @@ object DictateController {
         if (sendAfterCommit) {
             sendAfterCommit = false
             if (outputText.isNotEmpty()) {
+                // A beat before pressing. 333 ms, his number.
+                //
+                // Committing the text and pressing Send are two events in another app's life, and
+                // that app needs a moment between them. Claude accepts the press immediately;
+                // Gemini sometimes does not — its send button enables itself once the field reports
+                // content, and a press that lands in the same frame as the text arrives at a button
+                // that is still disabled. Nothing throws. The message simply sits there.
+                //
+                // **The delay is not a fix for a race in this app; it is politeness toward one in
+                // theirs**, and there is nothing here that can observe the other side becoming
+                // ready. A third of a second is under the threshold where he would call it slow and
+                // well over the frame or two the other app needs.
+                delay(SEND_SETTLE_MS)
                 MaMagicTargets.pressSend()
             } else {
                 MaLog.add("keys", "send skipped, there was nothing to send")

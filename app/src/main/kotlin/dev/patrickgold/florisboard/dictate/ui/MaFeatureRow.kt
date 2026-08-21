@@ -252,8 +252,20 @@ fun MaFeatureRow(
     // transcription view has no letters and the clipboard is its whole job, while the typing
     // keyboard already carries three feature rows. He may want it in one, the other, or both.
     val onKeyboard by prefs.dictate.maCopyRowOnKeyboard.collectAsState()
-    val onTranscribe by prefs.dictate.maCopyRowOnDictate.collectAsState()
-    val wanted = if (copyRowOnly) onTranscribe else onKeyboard
+    // IN THE TRANSCRIPTION VIEW IT IS ALWAYS THERE. Not a switch.
+    //
+    // That view had two clipboard rows: the old edit strip at the top and this one underneath, in
+    // different orders, obeying different settings, and neither aware of the other. He could not
+    // tell which one his arrangement applied to because the answer was "one of them".
+    //
+    // This row is the master — it is the one the editor arranges — so it takes the old strip's place
+    // at the top and the strip is gone. **Two controls for one job is not a choice, it is a bug with
+    // an options screen.**
+    //
+    // Always on there because the transcription view has no letters and the clipboard is its whole
+    // job: a switch offering to remove the only row on the screen is offering to break it. On the
+    // typing keyboard it stays a switch, where it is one row among several.
+    val wanted = if (copyRowOnly) true else onKeyboard
     val rows = when {
         copyRowOnly -> if (wanted && copyButtons.isNotEmpty()) listOf(copyButtons) else emptyList()
         wanted && copyButtons.isNotEmpty() -> MaRows.visibleRows(storedRows) + listOf(copyButtons)

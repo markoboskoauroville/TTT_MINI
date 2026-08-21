@@ -342,14 +342,19 @@ fun LegacyDictateLayout(
                 // row switches this row, and a switch that works in one view and not the other is a
                 // switch that looks broken from whichever view it was pressed in. Same row, same
                 // code, same switch.
-                val maZoneEditRow by prefs.dictate.maEditRow.collectAsState()
-                if (maZoneEditRow) {
-                    LegacyEditRow(
-                        keyboardManager = keyboardManager,
-                        onEmoji = { keyboardManager.activeState.imeUiMode = ImeUiMode.MEDIA },
-                        onNumbers = { overlay = LegacyOverlay.NUMBERS },
-                    )
-                }
+                // THE OLD EDIT STRIP IS GONE FROM THIS VIEW.
+                //
+                // There were two clipboard rows here — this one and the arrangeable copy row below
+                // it — in different orders, obeying different settings, neither aware of the other.
+                // He could not tell which one his arrangement applied to, because the answer was
+                // "one of them".
+                //
+                // The copy row is the master: it is the one the editor arranges, so it takes this
+                // position and this strip is removed. **Two controls for one job is not a choice, it
+                // is a bug with an options screen.**
+                //
+                // The strip still exists on the typing keyboard, where it is not duplicated and
+                // where `maEditRow` still switches it.
 
                 // Row 3: the record row.
                 LegacyRecordRow(

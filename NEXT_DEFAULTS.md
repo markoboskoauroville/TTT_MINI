@@ -5330,3 +5330,34 @@ and app buttons live in the corners.
 
 Which is also why the controls are now packed with no gaps between them: **every dp of width this
 takes is a dp of his screen that stops working.**
+
+---
+
+# 139. One copy row, and a beat before Send
+
+## The clash
+
+The transcription view had **two clipboard rows**: the old edit strip at the top and the arrangeable
+copy row below it — different orders, different settings, neither aware of the other. He could not
+tell which one his arrangement applied to, because the answer was "one of them".
+
+**Two controls for one job is not a choice, it is a bug with an options screen.**
+
+The copy row is the master — it is the one the editor arranges — so it **takes the strip's position at
+the top** and the strip is removed from that view. The strip stays on the typing keyboard, where it is
+not duplicated and `maEditRow` still switches it.
+
+**In the transcription view the copy row is always on**, not a switch: that view has no letters and
+the clipboard is its whole job, so a switch offering to remove the only row on the screen is offering
+to break it. On the typing keyboard it stays switchable, where it is one row among several.
+
+## 333 ms before pressing Send
+
+The gesture works every time in Claude and sometimes in Gemini. **The delay is not for a race in this
+app — it is politeness toward one in theirs.** Gemini's send button enables itself once the field
+reports content, and a press landing in the same frame as the text arrives at a button that is still
+disabled. Nothing throws; the message just sits there.
+
+Nothing here can observe the other side becoming ready, so a wait is the only instrument available. A
+third of a second is under the threshold where he would call it slow and well over the frame or two
+the other app needs.
