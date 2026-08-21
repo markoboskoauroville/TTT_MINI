@@ -85,24 +85,22 @@ fun MaCopyRowScreen() = FlorisScreen {
         }
 
         Text(
-            text = "One row of clipboard keys. Tick where it should appear \u2014 it can be on both.",
+            text = "One row of clipboard keys, on both keyboards. " +
+                "The copy-row key on the feature row takes it off the typing keyboard; " +
+                "in the transcription view it is always there.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
 
-        // Where it appears, as two independent switches rather than one either/or.
+        // The two placement ticks are gone.
         //
-        // It is the same row drawn in two places, not two rows to keep in step — so both, one or
-        // neither are all sensible answers and none of them needs a second copy of anything.
-        val onKeyboard by prefs.dictate.maCopyRowOnKeyboard.collectAsState()
-        val onDictate by prefs.dictate.maCopyRowOnDictate.collectAsState()
-        SurfaceTick("On the typing keyboard", onKeyboard) {
-            scope.launch { prefs.dictate.maCopyRowOnKeyboard.set(it) }
-        }
-        SurfaceTick("In the transcription view", onDictate) {
-            scope.launch { prefs.dictate.maCopyRowOnDictate.set(it) }
-        }
+        // "On the typing keyboard" was a second switch for a row the feature row's copy-row key
+        // already switches, three screens away from the key, and the two did not agree: the key
+        // switched the old strip while this tick switched an appended copy of the real row. "In the
+        // transcription view" switched nothing at all — that view is fixed by design.
+        //
+        // One row, one switch, and the switch is the key he presses.
 
         Spacer(Modifier.height(12.dp))
 
@@ -186,20 +184,5 @@ fun MaCopyRowScreen() = FlorisScreen {
  */
 private val MaCopyRowAccent = Color(0xFF3A2A16)
 
-/** One "where does it appear" tick. Two of them, and they are independent. */
-@Composable
-private fun SurfaceTick(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(checked = checked, onCheckedChange = onChange)
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(start = 8.dp),
-        )
-    }
-}
+// SurfaceTick is gone with the two placement ticks it drew. The copy row appears in both views
+// and its only switch is the copy-row key on the feature row.

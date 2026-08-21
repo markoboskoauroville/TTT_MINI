@@ -41,8 +41,12 @@ object MaSwitchboardOrder {
         NUMBER_ROW("number_row"),
         FEATURE_ROW("feature_row"),
         SUGGESTIONS("suggestions"),
-        COPY_KEYBOARD("copy_keyboard"),
-        COPY_DICTATION("copy_dictation"),
+        // The copy row on the typing keyboard. Its id stays "edit_row" because that is what is
+        // already stored in his arrangement, and an id is a name in a file, not a label.
+        //
+        // COPY_KEYBOARD and COPY_DICTATION are gone: one switched a second, appended copy of
+        // this same row, the other switched nothing at all. `parse` drops ids it does not know,
+        // so an arrangement written before this loses them and keeps everything else.
         EDIT_ROW("edit_row"),
         BUCKETS("buckets"),
         MAGIC_ROW("magic_row"),

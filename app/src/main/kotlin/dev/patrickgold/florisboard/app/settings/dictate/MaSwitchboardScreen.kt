@@ -16,7 +16,6 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.foundation.clickable
@@ -30,7 +29,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.Spellcheck
@@ -143,12 +141,10 @@ private fun MaSwitchRowFor(entry: MaSwitchboardOrder.Entry, lifted: Boolean) {
             MaSwitchRow("Feature row", Icons.Default.DragHandle, prefs.dictate.maFeatureRowShown, Routes.Settings.MaFeatureRow, modifier)
         MaSwitchboardOrder.Entry.SUGGESTIONS ->
             MaSwitchRow("Suggestion row", Icons.Default.Spellcheck, prefs.suggestion.enabled, Routes.Settings.MaPredictions, modifier)
-        MaSwitchboardOrder.Entry.COPY_KEYBOARD ->
-            MaSwitchRow("Copy row here", Icons.Default.ContentPaste, prefs.dictate.maCopyRowOnKeyboard, Routes.Settings.MaCopyRow, modifier)
-        MaSwitchboardOrder.Entry.COPY_DICTATION ->
-            MaSwitchRow("Copy row in dictation", Icons.Default.ContentPasteGo, prefs.dictate.maCopyRowOnDictate, Routes.Settings.MaCopyRow, modifier)
+        // The copy row, and the same switch key 3 presses on the feature row. The glyph is the one
+        // that key draws, so the row and the key are recognisable as one thing.
         MaSwitchboardOrder.Entry.EDIT_ROW ->
-            MaSwitchRow("Edit row", Icons.Default.ContentCut, prefs.dictate.maEditRow, null, modifier)
+            MaSwitchRow("Copy row", Icons.Default.ContentPaste, prefs.dictate.maEditRow, Routes.Settings.MaCopyRow, modifier)
         MaSwitchboardOrder.Entry.BUCKETS ->
             MaSwitchRow("Copy buckets", Icons.Default.Inventory2, prefs.dictate.maBucketsEnabled, Routes.Settings.MaBuckets, modifier)
         MaSwitchboardOrder.Entry.MAGIC_ROW ->

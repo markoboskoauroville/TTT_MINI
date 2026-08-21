@@ -1,6 +1,6 @@
 # TTT mini — where things stand
 
-Last updated at **build 260**. Read this first. Read `NEXT_DEFAULTS.md` only when you need the
+Last updated at **build 261**. Read this first. Read `NEXT_DEFAULTS.md` only when you need the
 reasoning behind one particular decision — it is a 4,000-line log, not a briefing.
 
 ## What to read, and in what order
@@ -21,7 +21,7 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 260.** The last stretch, newest first:
+**Build 261.** The last stretch, newest first:
 
 - **Defaults are his.** A fresh install ships his exported settings order, his feature row, number
   row on, edit strip off, buckets off, scroll pages 4. He reinstalls several times a day; a fresh
@@ -31,9 +31,14 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
   accessibility is not working. Numbered in the order they
   must be granted, each row opening the page that grants it, rechecked on resume. Any error mentioning
   a permission, AudioRecord or accessibility opens it.
-- **The copy row is fixed** above the record button in the transcription view and is no longer a
-  setting. The old edit strip is gone from that view — there were two clipboard rows, in different
-  orders, obeying different settings.
+- **One copy row in the whole app**, drawn by `MaFeatureRow(copyRowOnly = true)` and by nothing else.
+  Both views ask the same composable for the same preference, so arranging it once arranges it in both
+  places. In the transcription view it is fixed above the record button and is not a setting; on the
+  typing keyboard `maEditRow` switches it — the copy-row key on the feature row, key 3.
+  The keyboard used to draw `LegacyEditRow` here instead, from a different preference and a different
+  key set, while two comments claimed both views drew one row. That is why the two rows ended in
+  different keys (§146). `LegacyEditRow`, `LegacyActionRowSetting`, `maCopyRowOnKeyboard` and
+  `maCopyRowOnDictate` are all gone with it.
 - **The recording notch.** While recording with the keyboard down, a strip the height of the status
   bar sits at the top of the screen: upright VU meter, red dot, clock, bin, send, ENG. It is only as
   wide as its contents, so the corners of the screen are still his — a window is touchable or it is
@@ -56,7 +61,7 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
   screen. Postponed by Marko himself; it touches all nineteen screens.
 - **A transcription-view settings screen**, owning what that view shows. Note that the copy row's
   position and presence are now fixed by design and must NOT become settings there — he was explicit.
-  `LegacyActionRowSetting` is the piece that needs rehousing.
+  `LegacyActionRowSetting` no longer needs rehousing: it is deleted, along with the row it arranged.
 - **The rest of the controller split.** History is the obvious next block and is NOT free: it reads
   `_state`, `transcribe` and the output sink. A seam that requires widening visibility is not a seam.
 - **Key modules** — five of about twenty keys extracted into `MaKeyModules.kt`.
@@ -64,6 +69,13 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 - **An English base dictionary**, twin of the Croatian one.
 
 ## Rules learned the hard way in this stretch
+
+**Two rows with one name are two rows, whatever the comment says.** The copy row existed twice for
+several builds — `maCopyRow` drawn by `MaFeatureRow` in one view, `legacyActionRow` drawn by
+`LegacyEditRow` in the other — while the comment at each call site said both views drew the identical
+row from identical code. He spotted it from two screenshots and named the wrong cause; the real one
+was worse. **Before believing that two surfaces share a component, check which preference each one
+reads**, and if a comment is the only evidence, it is not evidence.
 
 **Never add a setting that can silently disable something he relies on.** The volume keys had one. It
 defaulted on, sat in a list of thirteen draggable switches, and one stray touch turned it off in

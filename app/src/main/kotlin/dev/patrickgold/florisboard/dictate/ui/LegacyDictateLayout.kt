@@ -500,54 +500,17 @@ internal fun ThemedIconKey(
 }
 
 
-/**
- * Editing-action row. The buttons are user-configurable (issue #183/#194): the ordered set comes from
- * [dev.patrickgold.florisboard.app.AppPrefs.Dictate.legacyActionRow] and is arranged in Settings. The
- * default row is select-all · undo · redo · cut · copy · paste · emoji · numbers, but any of the actions
- * in [LegacyEditAction] (also language, history, reinsert, GIF) can be placed here.
- *
- * Marko: internal rather than private, because the keyboard view now draws this same row. It is the
- * same row and not a second one built to look like it, so the two can never drift apart and there is
- * only one place to arrange it. [onEmoji] and [onNumbers] default to the keyboard view's meaning of
- * those two actions, which is what lets it be called with no arguments from there.
- */
-@Composable
-internal fun LegacyEditRow(
-    keyboardManager: KeyboardManager,
-    onEmoji: () -> Unit = { keyboardManager.activeState.imeUiMode = ImeUiMode.MEDIA },
-    onNumbers: () -> Unit = { keyboardManager.activeState.keyboardMode = KeyboardMode.NUMERIC_ADVANCED },
-) {
-    val context = LocalContext.current
-    val prefs by FlorisPreferenceStore
-    val editorInstance by context.editorInstance()
-    val content by editorInstance.activeContentFlow.collectAsState()
-    val hasSelection = content.selection.isSelectionMode
-
-    val actionRaw by prefs.dictate.legacyActionRow.collectAsState()
-    val actions = remember(actionRaw) { LegacyEditAction.parse(actionRaw) }
-    if (actions.isEmpty()) return
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(EditRowHeight),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val keyMod = Modifier.weight(1f).fillMaxHeight()
-        actions.forEachIndexed { index, action ->
-            key(index, action) {
-                LegacyActionKey(
-                    action = action,
-                    modifier = keyMod,
-                    keyboardManager = keyboardManager,
-                    hasSelection = hasSelection,
-                    onEmoji = onEmoji,
-                    onNumbers = onNumbers,
-                )
-            }
-        }
-    }
-}
+// LegacyEditRow is gone.
+//
+// It drew `legacyActionRow` — the LegacyEditAction key set — as a row above the number row on the
+// typing keyboard, and it was described in two files as being the same row the transcription view
+// draws. It was not. That view draws `maCopyRow` from the MaFeatureKey set, which is why the two
+// rows ended in different keys while both were called the copy row.
+//
+// The typing keyboard draws the real copy row now, from MaFeatureRow, switched by `maEditRow`.
+//
+// LegacyActionKey and the LegacyEditAction enum stay: the feature row draws AP, AC, select-all and
+// backspace through them, and those are the same keys from the same code, not copies.
 
 /**
  * Renders a single [LegacyEditAction] as a themed key with the right icon and behaviour.

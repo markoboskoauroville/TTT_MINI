@@ -1164,17 +1164,15 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * thing on screen — the spacebar version borrows a key that only exists while the letters
          * are shown, and vanishes with them.
          */
-        /** Whether the copy row appears on the typing keyboard. */
-        val maCopyRowOnKeyboard = boolean(
-            key = "dictate__ma_copy_row_on_keyboard",
-            default = false,
-        )
-
-        /** Whether the copy row appears in the transcription view. */
-        val maCopyRowOnDictate = boolean(
-            key = "dictate__ma_copy_row_on_dictate",
-            default = true,
-        )
+        // maCopyRowOnKeyboard and maCopyRowOnDictate are gone.
+        //
+        // The first switched a second, appended copy of the copy row onto the typing keyboard while
+        // `maEditRow` switched a different row entirely; the second switched nothing, because the
+        // transcription view is fixed by design. The copy row now has one switch, `maEditRow`, and
+        // it is the one the copy-row key on the feature row presses.
+        //
+        // Removing a declaration leaves whatever these hold in his preference file untouched and
+        // unread, which is the harmless direction: nothing looks for them.
 
         /**
          * The copy row, stored apart from the three feature rows.

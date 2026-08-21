@@ -445,7 +445,10 @@ fun DictateLayoutScreen() = FlorisScreen {
                     entry(key = 2, label = stringRes(R.string.dictate__legacy_prompt_rows_two))
                 },
             )
-            LegacyActionRowSetting()
+            // LegacyActionRowSetting is gone. It arranged `legacyActionRow`, the strip that used to
+            // sit above the number row, and that strip is gone: the typing keyboard draws the real
+            // copy row now. An editor for a row that appears nowhere is a control that does nothing,
+            // which is worse than a missing one.
             EnterLongPressCharsSetting()
             MaNumericSecondarySetting()
             MaNgramSetting()

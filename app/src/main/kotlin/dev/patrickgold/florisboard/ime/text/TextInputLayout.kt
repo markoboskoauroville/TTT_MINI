@@ -40,7 +40,6 @@ import dev.patrickgold.florisboard.dictate.ui.MaFeatureRow
 import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.ui.MaSubtitleRow
 import dev.patrickgold.florisboard.dictate.ui.MaExtraRow
-import dev.patrickgold.florisboard.dictate.ui.LegacyEditRow
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardEditorPanel
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSearchPanel
 import dev.patrickgold.florisboard.ime.ImeUiMode
@@ -148,13 +147,39 @@ fun TextInputLayout(
         // job inside the one editor that arranges everything else. It kept drawing its default
         // preset because it needs no switch of its own: an empty bar draws nothing, and nobody had
         // emptied it, so a bar nobody had chosen appeared above the keyboard.
-        // The copy and paste row (Marko), the same one the transcribe view draws, in the space the
-        // macro bar fix freed in build 88. Both views now show the identical row from the identical
-        // code, so arranging it in Settings arranges it everywhere and the two cannot drift apart.
+        // The copy row, in the space the macro bar fix freed in build 88.
+        //
+        // This slot used to hold `LegacyEditRow`, and the comment here claimed it was the same row
+        // the transcription view draws. It was not, and it never had been: that row read
+        // `legacyActionRow` from the `LegacyEditAction` vocabulary, while the transcription view
+        // read `maCopyRow` from `MaFeatureKey`. Two preferences, two key sets, two editors, one
+        // name — which is why the two rows ended in different keys, an AC in one and the view-swap
+        // microphone in the other, while both were described as one row. **A comment is not
+        // evidence.**
+        //
+        // It is the real copy row now, from the same composable and the same preference as the
+        // transcription view, so arranging it once arranges it in both places and they cannot drift
+        // again.
+        //
+        // `maEditRow` still switches it — the copy-row key on the feature row, key 3, the one he
+        // already presses — so the switch keeps its meaning and its key. In the transcription view
+        // there is no switch at all.
+        //
+        // `drawChrome = false` because the keyboard already draws a full `MaFeatureRow` at the
+        // bottom, and the wand bar, the magic row and the reader dashboard belong to that one.
         if (!state.isActionsOverflowVisible) {
             val maEditRowEnabled by prefs.dictate.maEditRow.collectAsState()
             if (maEditRowEnabled) {
-                LegacyEditRow(keyboardManager = keyboardManager)
+                MaFeatureRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    // The same height as the feature rows below and as the Smartbar above, because
+                    // it is now a row of the same keys drawn by the same code. The strip it
+                    // replaces had a height of its own, 46dp, which was a third measurement on a
+                    // keyboard that only ever needed one.
+                    rowHeight = FlorisImeSizing.smartbarHeight,
+                    copyRowOnly = true,
+                    drawChrome = false,
+                )
             }
         }
         // The number row stands on its own, like the feature rows do.

@@ -111,6 +111,24 @@ def check_import_order(path: Path, text: str) -> None:
             return
 
 
+def signature(lines: list[str], start: int) -> str:
+    """The parameter list of the declaration at [start], however many lines it is spread over.
+
+    Stops at the line where the parens balance, and returns "" for a property, which has none.
+    """
+    if "(" not in lines[start]:
+        return ""
+    depth = 0
+    collected: list[str] = []
+    for line in lines[start:]:
+        collected.append(line)
+        depth += line.count("(") - line.count(")")
+        if depth <= 0:
+            break
+    joined = " ".join(collected)
+    return " ".join(joined.split("(", 1)[1].rsplit(")", 1)[0].split())
+
+
 def check_duplicate_declarations(path: Path, text: str) -> None:
     """
     Red build: the same preference declared twice, fifteen lines apart — 'conflicting declarations'.
@@ -134,14 +152,21 @@ def check_duplicate_declarations(path: Path, text: str) -> None:
         r"(?:va[lr]|fun) (\w+)\s*[:=(]"
     )
 
-    for line in code.splitlines():
+    lines = code.splitlines()
+    for index, line in enumerate(lines):
         m = decl.match(line)
         if m:
             # Keyed by name AND the parameter list, because Kotlin allows overloads: `fun clear()`
             # and `fun clear(mode: Mode)` are two functions, not a mistake. Comparing names alone
             # raised seventy complaints about code that has compiled for years.
-            sig = line.split("(", 1)[1] if "(" in line else ""
-            key = (tuple(scope), m.group(1), sig.strip())
+            #
+            # The parameter list is gathered across lines until its parens balance. Reading only the
+            # declaring line made every WRAPPED signature look like `sig = ""`, so two real overloads
+            # written one parameter per line — the ordinary Compose style — collided with each other.
+            # `MaSwitchRow(Boolean pref)` and `MaSwitchRow(String pref, on, off)` were reported as one
+            # name declared twice on 21.8.2026, in a file that had compiled for months. A checker that
+            # cries wolf is a checker that gets ignored.
+            key = (tuple(scope), m.group(1), signature(lines, index))
             if key in seen:
                 fail(path.name, f"declared twice in the same scope: {m.group(1)}")
             seen.add(key)

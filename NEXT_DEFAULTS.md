@@ -5558,3 +5558,106 @@ still filtered out.
 
 **The lesson worth keeping:** when a rule protects him from himself, check that he asked to be
 protected. He did not, and the version that trusted him was both simpler and correct.
+
+---
+
+# 146. One copy row, for real this time
+
+## What §139 left behind
+
+§139 unified the transcription view and said the strip could stay on the typing keyboard, "where it
+is not duplicated". That sentence was true of the screen and false of the app. It left **two rows
+that were both called the copy row**:
+
+| | transcription view | typing keyboard |
+|---|---|---|
+| composable | `MaFeatureRow(copyRowOnly = true)` | `LegacyEditRow` |
+| preference | `maCopyRow` | `legacyActionRow` |
+| key set | `MaFeatureKey` | `LegacyEditAction` |
+| editor | Copy row screen | `LegacyActionRowSetting` |
+
+Marko sent two screenshots and said: both come from one source of truth, yet the last button differs,
+so delete whatever makes it differ. The last key on the keyboard was `LegacyEditAction.KEYBOARD`,
+which draws a **microphone** in the typing view because it means "swap views" — a key that does not
+exist in the other row's vocabulary at all. The fourth and sixth keys differed for the same reason.
+
+**He was right about the symptom and the cause was worse than the one he named.** They were never one
+source. And the comment above the call site said, in as many words, that both views drew the identical
+row from identical code. **A comment is not evidence** — the same lesson the spacebar mark taught,
+paid for a second time in the same file.
+
+## What it is now
+
+One row, one preference, one composable, one editor.
+
+- The typing keyboard draws `MaFeatureRow(copyRowOnly = true)` in the slot the strip had.
+- `maEditRow` still switches it there — **the copy-row key on the feature row, key 3, the key he
+  already presses.** Not a new switch and not a settings-screen tick three rooms away.
+- The transcription view is unchanged: always on, no switch, by §139.
+- `LegacyEditRow` is deleted. `LegacyActionKey` and the `LegacyEditAction` enum stay, because the
+  feature row draws AP, AC, select-all and backspace through them — the same keys from the same code.
+- `LegacyActionRowSetting` is deleted. It arranged a row that now appears nowhere, and **an editor for
+  a row that does not exist is a control that does nothing**, which this project has repeatedly found
+  to be worse than a missing one.
+
+## The two switches that were not switches
+
+`maCopyRowOnKeyboard` switched an **appended second copy** of the real copy row onto the keyboard,
+while `maEditRow` switched the strip. So the keyboard had two clipboard rows available under two
+switches, and the tick labelled "on the typing keyboard" did not control the row that was on the
+typing keyboard.
+
+`maCopyRowOnDictate` controlled **nothing at all**. Nothing read it after §139 made that view fixed.
+It sat in the switchboard and on the copy row screen looking like a working control.
+
+Both preferences are gone, both ticks are gone, and `COPY_KEYBOARD` / `COPY_DICTATION` are gone from
+the switchboard. `MaSwitchboardOrder.parse` drops ids it does not recognise, so an arrangement written
+before this loses those two and keeps everything else — no migration needed, by that design. The
+remaining entry keeps the id `edit_row` (an id is a name in a file, not a label) and is now called
+**Copy row**, with `ContentPaste`, the glyph key 3 draws.
+
+## `drawChrome`
+
+The keyboard now hosts **two** `MaFeatureRow` instances: the feature rows at the bottom and the copy
+row at the top. `maDashboardOpen` is file-level state and `maMagicRowShown` is a preference, so both
+instances would have drawn the wand bar, the magic row and the reader dashboard — two of each,
+stacked. The second instance passes `drawChrome = false`.
+
+The scroll stepper is deliberately **not** gated: `scrollMenu` is local to each instance, so it opens
+over the row whose key was actually held.
+
+## Rejected
+
+**Putting the copy row at the bottom of the keyboard** by leaving the append path in and pointing key
+3 at it. It would have been a smaller diff and it moves a row he did not ask to move.
+
+**Keeping the two preferences as deprecated.** A preference nothing reads is indistinguishable from
+one that is broken, and this whole entry exists because of controls that looked like they worked.
+
+## Tested
+
+`scripts/test_copy_row.py`, 838 checks, Test 1, no build required: one reader of `maCopyRow`, both
+views calling the same composable with `copyRowOnly`, no surviving `LegacyEditRow` caller, no appended
+second copy, no reader of either dead preference, the keyboard switched by `maEditRow` and the
+transcription view switched by nothing, chrome gated. Made to fail on purpose twice — the appended row
+grown back, and `drawChrome = true` — and it went red for each.
+
+**Not tested:** anything visual. Heights, balance and the row's position on the real keyboard are code
+inspection only until it is on his phone.
+
+## The check that cried wolf
+
+`verify.py` reported `MaSwitchRow` "declared twice in the same scope" in a file that has compiled for
+months. It was a **false positive**, and confirmed against the source before anything was changed:
+`MaSwitchRow(pref: PreferenceData<Boolean>, …)` and `MaSwitchRow(stringPref: PreferenceData<String>,
+onValue, offValue, …)` are legal overloads.
+
+The check already keyed on the parameter list for exactly this reason — but it read only the declaring
+line, so every **wrapped** signature, which is every Compose signature in this project, hashed as the
+empty string and collided with its own overload. It only fired now because the file had never been in
+a diff since the check was written.
+
+Fixed by gathering the parameter list until its parens balance. Verified by putting a genuine
+duplicate in — identical signature, same scope — and confirming it still goes red.
+
+**A checker that cries wolf is a checker that gets ignored**, and it had one chance to be believed.

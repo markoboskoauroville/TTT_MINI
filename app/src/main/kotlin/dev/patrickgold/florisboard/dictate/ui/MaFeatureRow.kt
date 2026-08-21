@@ -167,6 +167,18 @@ fun MaFeatureRow(
      * chooses which rows, not which implementation.
      */
     copyRowOnly: Boolean = false,
+    /**
+     * Draw the things that sit ABOVE the rows: the wand bar, the magic row, the reader dashboard.
+     *
+     * True everywhere except the typing keyboard's copy row, which is a second instance of this
+     * composable on a screen that already has one. `maDashboardOpen` is file-level state and
+     * `maMagicRowShown` is a preference, so both instances would draw them and the keyboard would
+     * show two wand bars, two magic rows and two dashboards stacked on each other.
+     *
+     * The scroll stepper is deliberately NOT gated: it hangs off `scrollMenu`, which is local to
+     * each instance, so it opens over the row whose key was actually held.
+     */
+    drawChrome: Boolean = true,
 ) {
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
@@ -244,32 +256,30 @@ fun MaFeatureRow(
     // visibleRows yields List<List<Button>>, so the copy row contributes its BUTTONS — appending
     // its entries would have been a type error hiding behind a plausible name.
     val copyButtons = if (copyRow.enabled) copyRow.visibleButtons else emptyList()
+
+    // ONE COPY ROW IN THE WHOLE APP, AND THIS IS IT.
+    //
+    // It is drawn by `copyRowOnly = true` and by nothing else. Both views ask for it that way, so
+    // both get the same buttons in the same order from the same preference, and the only difference
+    // between them is *whether* it is asked for:
+    //
+    //   transcription view — always. Not a switch. That view has no letter keys and the clipboard is
+    //                        its whole job, so a switch offering to remove it offers to empty the
+    //                        screen.
+    //   typing keyboard    — `maEditRow`, the copy-row key on the feature row. One row, one switch,
+    //                        and it is the key he already presses.
+    //
+    // There used to be a second way in: the copy row appended to the feature rows here, behind
+    // `maCopyRowOnKeyboard`. That is gone. A row with two ways of appearing and two switches is two
+    // rows wearing one name, and it is how the keyboard ended up showing a copy row that did not
+    // match the one in the transcription view.
+    //
     // visibleRows yields List<List<Button>>, so the copy row contributes its BUTTONS — appending
     // its entries would have been a type error hiding behind a plausible name.
-    // Where the copy row is allowed to appear, asked of the surface drawing it.
-    //
-    // Two switches rather than one, because the two surfaces are genuinely different rooms: the
-    // transcription view has no letters and the clipboard is its whole job, while the typing
-    // keyboard already carries three feature rows. He may want it in one, the other, or both.
-    val onKeyboard by prefs.dictate.maCopyRowOnKeyboard.collectAsState()
-    // IN THE TRANSCRIPTION VIEW IT IS ALWAYS THERE. Not a switch.
-    //
-    // That view had two clipboard rows: the old edit strip at the top and this one underneath, in
-    // different orders, obeying different settings, and neither aware of the other. He could not
-    // tell which one his arrangement applied to because the answer was "one of them".
-    //
-    // This row is the master — it is the one the editor arranges — so it takes the old strip's place
-    // at the top and the strip is gone. **Two controls for one job is not a choice, it is a bug with
-    // an options screen.**
-    //
-    // Always on there because the transcription view has no letters and the clipboard is its whole
-    // job: a switch offering to remove the only row on the screen is offering to break it. On the
-    // typing keyboard it stays a switch, where it is one row among several.
-    val wanted = if (copyRowOnly) true else onKeyboard
-    val rows = when {
-        copyRowOnly -> if (wanted && copyButtons.isNotEmpty()) listOf(copyButtons) else emptyList()
-        wanted && copyButtons.isNotEmpty() -> MaRows.visibleRows(storedRows) + listOf(copyButtons)
-        else -> MaRows.visibleRows(storedRows)
+    val rows = if (copyRowOnly) {
+        if (copyButtons.isNotEmpty()) listOf(copyButtons) else emptyList()
+    } else {
+        MaRows.visibleRows(storedRows)
     }
     // The buckets this user actually has, and whether they are all holding something. Derived from
     // the same rows the keyboard is drawing, so the answer here and the answer the capture uses
@@ -323,7 +333,7 @@ fun MaFeatureRow(
       // button, and then asking before storing what it caught: he presses the thing, and the
       // keyboard asks whether that was the one. Before this the wand did its work in silence, which
       // is indistinguishable from doing nothing.
-      MaWandBar(
+      if (drawChrome) MaWandBar(
           state = learn,
           onCopyDump = {
               // Onto the clipboard, which is where it has to go: it is far too long to read on a
@@ -354,7 +364,7 @@ fun MaFeatureRow(
       // Drawn above the feature rows, so it sits furthest from the typing. It is pressed
       // deliberately — send this, generate that — rather than reached for mid-sentence the way
       // backspace is.
-      if (magicRowShown) {
+      if (drawChrome && magicRowShown) {
         val magicKeys = remember(magicRaw) {
           MaMagicTargets.parse(magicRaw).filter { it.enabled }
         }
@@ -456,7 +466,7 @@ fun MaFeatureRow(
       // Shown only while something is being read: it is a set of dials for a thing in motion, and a
       // dashboard for silence would just be a settings screen in the wrong place. Closing itself
       // when the reading stops also means he can never be left with a panel he has to dismiss.
-      if (maDashboardOpen && MaReader.currentIndex >= 0) {
+      if (drawChrome && maDashboardOpen && MaReader.currentIndex >= 0) {
         MaReaderDashboard(onClose = { maDashboardOpen = false })
       }
 

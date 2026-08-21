@@ -138,3 +138,6 @@ since been removed.
 - **§141** — The permissions screen, fixed
 - **§142** — Permissions and API keys, one entry
 - **§143** — His settings become the defaults
+- **§144** — A settings export is a secret file
+- **§145** — The pin comes off
+- **§146** — One copy row, for real this time
