@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import android.graphics.Path
+import android.accessibilityservice.GestureDescription
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -590,7 +592,7 @@ object MaScreenTargets {
     fun pressMatch(service: AccessibilityService, targets: List<String>, rank: Int): String? {
         for (root in appWindowRoots(service)) {
             try {
-                val hit = findIn(root, targets, rank)
+                val hit = findIn(service, root, targets, rank)
                 if (hit != null) return hit
             } finally {
                 runCatching { root.recycle() }
@@ -619,7 +621,7 @@ object MaScreenTargets {
     fun revealMatch(service: AccessibilityService, targets: List<String>, rank: Int): Boolean {
         for (root in appWindowRoots(service)) {
             try {
-                if (findIn(root, targets, rank, clickIt = false) != null) return true
+                if (findIn(service, root, targets, rank, clickIt = false) != null) return true
             } finally {
                 runCatching { root.recycle() }
             }
@@ -653,6 +655,7 @@ object MaScreenTargets {
     }
 
     private fun findIn(
+        service: AccessibilityService,
         root: AccessibilityNodeInfo,
         targets: List<String>,
         rank: Int = 0,
@@ -714,7 +717,26 @@ object MaScreenTargets {
                 }
                 pressed = if (clickIt) {
                     // The ordinary path: bring it into the frame, then press it.
-                    if (target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) best.second else null
+                    //
+                    // If ACTION_CLICK is refused, tap the pixels instead. Compose builds its
+                    // accessibility nodes by hand, and a node that reports `isClickable` does not
+                    // always accept the action — Gemini's send button is one: the tree shows a
+                    // clickable View wrapping a "Send" label, the walk finds it, and the action
+                    // returns false with nothing happening.
+                    //
+                    // A dispatched tap at the centre of its bounds is what a finger does, and it
+                    // works on anything that is genuinely on screen. Second, not first: ACTION_CLICK
+                    // is precise, survives an element moving between the look and the press, and
+                    // does not care what is drawn on top. **The gesture is the fallback because it
+                    // is the blunter instrument, not because it is worse.**
+                    if (target.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                        best.second
+                    } else if (tapNode(service, target)) {
+                        MaLog.add("keys", "click refused, tapped '${best.second}' instead")
+                        best.second
+                    } else {
+                        null
+                    }
                 } else {
                     // Reveal only. The scroll above has already happened; this reports that the
                     // match exists and was brought into view, without touching it.
@@ -853,4 +875,24 @@ object MaScreenTargets {
             }
         }
     }
+}
+
+/**
+ * Taps the centre of a node's bounds, as a finger would.
+ *
+ * The last resort when a node claims to be clickable and then refuses the click. Fifty milliseconds
+ * down and up at the middle of what is on screen: long enough to register everywhere, short enough
+ * that nothing reads it as a long press.
+ *
+ * Returns whether the gesture was accepted for dispatch, not whether the app did anything with it —
+ * nothing can tell us that, and a tap on the right pixels is the whole of what a finger promises.
+ */
+private fun tapNode(service: AccessibilityService, node: AccessibilityNodeInfo): Boolean {
+    val bounds = Rect()
+    node.getBoundsInScreen(bounds)
+    if (bounds.isEmpty) return false
+    val path = Path().apply { moveTo(bounds.exactCenterX(), bounds.exactCenterY()) }
+    val stroke = GestureDescription.StrokeDescription(path, 0L, 50L)
+    val gesture = GestureDescription.Builder().addStroke(stroke).build()
+    return runCatching { service.dispatchGesture(gesture, null, null) }.getOrDefault(false)
 }

@@ -170,7 +170,15 @@ class MaRecordingLine(private val service: AccessibilityService) {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
-        ).apply { gravity = Gravity.BOTTOM or Gravity.START }
+            // AT THE TOP, not the bottom.
+            //
+            // At the bottom it sat over the navigation bar, so while recording he could not go back
+            // or switch apps — and switching apps mid-recording is exactly what he does. **An
+            // indicator that traps you is worse than no indicator.**
+            //
+            // The top is free: this appears only when the keyboard is down, so nothing of his own is
+            // up there, and the status bar is the one strip Android will still draw over.
+        ).apply { gravity = Gravity.TOP or Gravity.START }
 
         runCatching {
             windowManager.addView(row, params)

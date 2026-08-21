@@ -5195,3 +5195,34 @@ It says nothing when nothing was wrong, which is every ordinary open.
 Seven cases: no repairs when every file is present, exactly one when one is missing, **the second
 pass doing nothing** (the convergence property), all-missing then stable, rows without audio skipped,
 a throwing check leaving the row intact, and the transcript surviving in every case. 0 failures.
+
+---
+
+# 135. The bar moves to the top, and the finger learns to tap
+
+## The bar was trapping him
+
+At the bottom it sat over the navigation bar, so while recording he could not go back or switch
+apps — and **switching apps mid-recording is exactly what he does.** An indicator that traps you is
+worse than no indicator.
+
+It is at the top now. That strip is free: the bar only appears when the keyboard is down, so nothing
+of his is up there.
+
+## Gemini's send button, and why ACTION_CLICK was not enough
+
+His dump shows the tree is fine — a clickable `View` wrapping a `Send` label, one hop up from the
+match. The finder found it. **The press was refused.**
+
+Compose builds its accessibility nodes by hand, and a node that reports `isClickable` does not always
+accept `ACTION_CLICK`. The action returns false and nothing happens, which from outside is a magic
+finger that does not work in that app.
+
+**A dispatched tap at the centre of the bounds is the fallback** — fifty milliseconds down and up,
+which is what a finger does and works on anything genuinely on screen.
+
+**Second, not first.** `ACTION_CLICK` is precise, survives an element moving between the look and the
+press, and does not care what is drawn on top. **The gesture is the fallback because it is the
+blunter instrument, not because it is worse.**
+
+It logs when it falls back, so the next time an app needs it there is a record rather than a guess.
