@@ -215,7 +215,14 @@ private fun MaReadings(sending: Boolean, tint: Color) {
         // steady lamp has to get right, or it is lying for as long as the pause lasts.
         Box(
             modifier = Modifier
-                .padding(end = 8.dp, bottom = 6.dp)
+                // Centred on the digits, not sitting on their baseline.
+                //
+                // The row is bottom-aligned so the megabyte figure tucks under the clock, which is
+                // right for a small number beside a large one — but the lamp is not a number, and
+                // hanging it from the same line made it read as having slipped. Only the dot is
+                // re-aligned; everything else keeps the arrangement it had.
+                .align(Alignment.CenterVertically)
+                .padding(end = 8.dp)
                 .size(11.dp)
                 .background(
                     // recording?.paused is the honest signal here rather than the meter's own

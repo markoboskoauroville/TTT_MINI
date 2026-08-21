@@ -5226,3 +5226,37 @@ press, and does not care what is drawn on top. **The gesture is the fallback bec
 blunter instrument, not because it is worse.**
 
 It logs when it falls back, so the next time an app needs it there is a record rather than a guess.
+
+---
+
+# 136. The helper bar's looks, and nothing else
+
+**Look only. No engine.** Every action on the bar is the same call it was — cancel, mic, cycle
+language, show keyboard — and the tests from earlier still describe it. He asked for that explicitly
+and he was right to: the last time I changed how it worked it broke in a thousand pieces.
+
+## What changed
+
+**A frame, not a weighted row**, so the clock is at the true centre of the *screen*. Weighted spacers
+centre the middle group only when the things either side weigh the same — ENG plus a bin against one
+arrow, which they do not — so the numbers sat slightly off. **Off-centre is the kind of wrong the eye
+reports without being able to name.**
+
+**The meter moved above the clock.** This bar lives at the top of the screen; putting the level under
+the numbers pushes it toward the middle of his view, and something glanced at belongs at the edge
+with everything else that is only glanced at.
+
+**No cog.** Settings are not reached for mid-recording, and its room went to the send arrow, now the
+biggest control on the bar.
+
+**Send is amber** — the same amber as the meter's headroom. On this bar send means *into the archive*
+rather than into a text field, and the colour is the only difference between the two recorders he
+needs to see.
+
+**Fully opaque black.** It sits over the status bar, and a translucent strip there is two layers of
+information competing in one place.
+
+**The dot is centred on the digits**, in both bars. In the keyboard's meter the row is bottom-aligned
+so the megabyte figure tucks under the clock — right for a small number beside a large one — but a
+lamp is not a number, and hanging it from the same line made it read as having slipped. **Only the
+dot was re-aligned; everything else kept its arrangement.**

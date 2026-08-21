@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.overlay
 
+import android.widget.FrameLayout
+import android.graphics.Typeface
 import android.graphics.Paint
 import android.graphics.Canvas
 import dev.patrickgold.florisboard.dictate.MaLanguage
@@ -83,53 +85,85 @@ class MaRecordingLine(private val service: AccessibilityService) {
         val d = service.resources.displayMetrics.density
         fun px(v: Int) = (d * v).toInt()
 
-        val row = LinearLayout(service).apply {
+        // A FRAME, so the clock is at the true centre of the SCREEN.
+        //
+        // It was a row with weighted spacers, and that centres the middle group only when the things
+        // either side happen to be the same width — ENG plus a bin on the left against one send arrow
+        // on the right, which they are not. The numbers sat slightly off, and off-centre is the kind
+        // of wrong the eye reports without being able to name.
+        //
+        // A frame places each group against its own edge and the clock in the middle regardless of
+        // what the others weigh.
+        val frame = FrameLayout(service).apply {
+            // Fully opaque. Nothing of the status bar shows through: this sits at the top of the
+            // screen and a translucent strip over the clock and the battery is two layers of
+            // information competing in one place.
+            setBackgroundColor(0xFF000000.toInt())
+            setPadding(px(8), px(6), px(8), px(6))
+        }
+
+        // LEFT — the language and the bin, in that order, as on the keyboard.
+        val left = LinearLayout(service).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setBackgroundColor(0xF20B0D10.toInt())
-            setPadding(px(10), px(8), px(10), px(8))
         }
-
-        // ENG / HR — the same badge, doing the same thing, so switching language does not require
-        // the keyboard he does not have open.
-        val lang = TextView(service).apply {
-            text = MaLanguage.badge()
-            setTextColor(0xFFF2DDB4.toInt())
-            textSize = 14f
-            setPadding(px(14), px(6), px(14), px(6))
-            setOnClickListener {
-                MaLanguage.cycleMode(service)
+        left.addView(
+            TextView(service).apply {
                 text = MaLanguage.badge()
-            }
-        }
-        row.addView(lang)
-
-        // The bin: throw this recording away. Present because the moment he realises he did not mean
-        // to start is exactly the moment the keyboard is not up.
-        row.addView(
-            glyph("\uD83D\uDDD1", px(14)) { DictateController.cancelRecording() },
+                setTextColor(MA_INK)
+                textSize = 15f
+                typeface = Typeface.DEFAULT_BOLD
+                setPadding(px(14), px(6), px(14), px(6))
+                setOnClickListener {
+                    MaLanguage.cycleMode(service)
+                    text = MaLanguage.badge()
+                }
+            },
+        )
+        left.addView(glyph("\uD83D\uDDD1", px(12)) { DictateController.cancelRecording() })
+        frame.addView(
+            left,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.START or Gravity.CENTER_VERTICAL,
+            ),
         )
 
-        val spacerL = View(service)
-        row.addView(spacerL, LinearLayout.LayoutParams(0, 1, 1f))
-
-        // The red dot and the clock, together, because they are one statement.
-        row.addView(
+        // CENTRE — the meter above, then the dot and the clock on one line.
+        //
+        // The meter goes above because this bar lives at the top of the screen: putting it under the
+        // numbers pushes it toward the middle of his view, and a level he glances at belongs at the
+        // edge with everything else that is only glanced at.
+        val centre = LinearLayout(service).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+        centre.addView(
+            MaVuView(service),
+            LinearLayout.LayoutParams(px(170), px(4)).apply { bottomMargin = px(4) },
+        )
+        val line = LinearLayout(service).apply {
+            orientation = LinearLayout.HORIZONTAL
+            // CENTER_VERTICAL, so the dot sits on the middle of the digits rather than on their
+            // baseline. It was aligned to the bottom of the row and read as having slipped.
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        line.addView(
             View(service).apply {
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
-                    setColor(0xFFEF4444.toInt())
+                    setColor(MA_REC_RED)
                 }
             },
-            LinearLayout.LayoutParams(px(10), px(10)),
+            LinearLayout.LayoutParams(px(11), px(11)).apply { rightMargin = px(10) },
         )
         val clock = TextView(service).apply {
             text = "0:00"
             setTextColor(0xFFFFFFFF.toInt())
-            textSize = 22f
-            setPadding(px(10), 0, 0, 0)
-            // TAPPING THE NUMBERS BRINGS THE KEYBOARD UP. His instruction, and the right target: the
-            // clock is the biggest thing on the bar and the one the eye is already on.
+            textSize = 24f
+            // The same face the keyboard's clock uses, so the two are one design rather than two.
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
             setOnClickListener {
                 runCatching {
                     (service.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
@@ -139,50 +173,49 @@ class MaRecordingLine(private val service: AccessibilityService) {
             }
         }
         timer = clock
-        // The clock and the meter as one column, which is how the keyboard's bar arranges them: the
-        // numbers with the level directly beneath, not two separate things sharing a row.
-        row.addView(
-            LinearLayout(service).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                addView(clock)
-                addView(
-                    MaVuView(service),
-                    LinearLayout.LayoutParams(px(150), px(4)).apply { topMargin = px(3) },
-                )
-            },
+        line.addView(clock)
+        centre.addView(line)
+        frame.addView(
+            centre,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER,
+            ),
         )
 
-        val spacerR = View(service)
-        row.addView(spacerR, LinearLayout.LayoutParams(0, 1, 1f))
-
-        // Send: stop and transcribe. The same press the microphone key makes.
-        row.addView(
-            glyph("\u27A4", px(14)) { DictateController.onMicClick(service) },
+        // RIGHT — send, larger and amber.
+        //
+        // No cog: settings are not something he reaches for mid-recording, and removing it gives the
+        // send arrow the room to be the biggest control on the bar, which is what it deserves to be.
+        //
+        // Amber, and the same amber the meter uses, because on this bar send means **into the
+        // archive** rather than into a text field. The colour is the difference between the two
+        // recorders, and it is the only difference he needs to see.
+        frame.addView(
+            glyph("\u27A4", px(10)) { DictateController.onMicClick(service) }.apply {
+                textSize = 26f
+                setTextColor(MA_AMBER)
+            },
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.END or Gravity.CENTER_VERTICAL,
+            ),
         )
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            // Touchable, because every glyph on it is a control. Never focusable: it must not take
-            // the cursor from the field he is dictating into.
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
-            // AT THE TOP, not the bottom.
-            //
-            // At the bottom it sat over the navigation bar, so while recording he could not go back
-            // or switch apps — and switching apps mid-recording is exactly what he does. **An
-            // indicator that traps you is worse than no indicator.**
-            //
-            // The top is free: this appears only when the keyboard is down, so nothing of his own is
-            // up there, and the status bar is the one strip Android will still draw over.
         ).apply { gravity = Gravity.TOP or Gravity.START }
 
         runCatching {
-            windowManager.addView(row, params)
-            view = row
+            windowManager.addView(frame, params)
+            view = frame
             added = true
             startTicking()
         }
@@ -323,3 +356,12 @@ private class MaVuView(context: Context) : View(context) {
         }
     }
 }
+
+/** The sand this app writes in. */
+private const val MA_INK = 0xFFF2DDB4.toInt()
+
+/** The amber of the meter's headroom, reused on send so the two agree. */
+private const val MA_AMBER = 0xFFF0883E.toInt()
+
+/** Recording red, the same one the keyboard's dot uses. */
+private const val MA_REC_RED = 0xFFEF4444.toInt()
