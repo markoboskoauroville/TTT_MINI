@@ -356,6 +356,18 @@ fun LegacyDictateLayout(
                 // The strip still exists on the typing keyboard, where it is not duplicated and
                 // where `maEditRow` still switches it.
 
+                // ABOVE THE RECORD ROW, ALWAYS, AND NOT A SETTING.
+                //
+                // It used to sit under the record row and it used to be switchable. Both are now
+                // fixed: this view has no letter keys, so select-all, paste, cut and the two
+                // histories are most of what the screen is FOR — a switch offering to remove them
+                // is offering to empty the screen.
+                //
+                // Directly under the language badge and directly above the record button, because
+                // that is where his thumb already is between speaking and pasting.
+                //
+                // Same composable as the feature row, so a key behaves identically in both places.
+                MaFeatureRow(rowHeight = SideRowHeight, copyRowOnly = true)
                 // Row 3: the record row.
                 LegacyRecordRow(
                     modifier = Modifier.fillMaxWidth().height(SideRowHeight),
@@ -372,30 +384,6 @@ fun LegacyDictateLayout(
 
                 // The arrow strip was here, removed with the one in the keyboard view.
 
-                // Row 6: the feature row, along the very bottom. Ten keys, everything the app can
-                // do, reachable without a trip to the settings application first.
-                //
-                // Last on purpose. It is reference rather than rhythm: reached deliberately, a few
-                // times a session, unlike the arrows and the space bar which are used inside every
-                // sentence. Putting it under those keeps the keys the hand uses constantly where
-                // the hand already expects them, and it collapses from its own left-hand key when
-                // the height is wanted back.
-                // Collapsed means gone, not blank. The whole point of folding it is to get the
-                // height back, so it must not leave an empty row behind holding the space it was
-                // asked to give up. The way to bring it back lives in the arrow strip above, which
-                // is always there.
-                // The feature row is not drawn here, and that is the fix for a screen Marko could
-                // not read. It gave him a second gear beside the one this view already has, a mic
-                // that opens the view he is already in, and a zone key that folds a keyboard which
-                // is not on screen. Three keys that either repeated something or did nothing.
-                //
-                // The COPY ROW, and only the copy row.
-                //
-                // The three feature rows still belong to the typing keyboard. This one belongs
-                // here: the view has no letter keys, and select-all, paste, cut and the two
-                // histories are most of what this screen is for. Same composable as the feature
-                // row, so a key behaves identically in both places.
-                MaFeatureRow(rowHeight = SideRowHeight, copyRowOnly = true)
             }
         }
 

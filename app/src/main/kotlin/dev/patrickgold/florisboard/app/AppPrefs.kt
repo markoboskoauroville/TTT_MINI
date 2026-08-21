@@ -818,7 +818,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val maExtraRow = boolean(
             key = "dictate__ma_extra_row",
-            default = false,
+            default = true,
         )
         /** "digits", "diacritics", "symbols", "arrows" or "editing". */
         val maExtraRowMode = string(
@@ -843,7 +843,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // transcribe view worth using and the keyboard view had no equivalent worth keeping.
         val maEditRow = boolean(
             key = "dictate__ma_edit_row",
-            default = true,
+            default = false,
         )
         // The feature row at the very bottom. Collapsible from its own left-hand key, and remembered,
         // because a row folded away should stay folded until it is asked back rather than returning
@@ -880,7 +880,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         /** The Mantra settings list order, as comma separated ids. See MaSettingsOrder. */
         val maSettingsOrder = string(
             key = "dictate__ma_settings_order",
-            default = "",
+            default =
+                // His own order, exported 21.8.2026. Shipping it means a fresh install already
+                // looks like the keyboard he uses, rather than like a starting point he has to
+                // rebuild every time he reinstalls — which he does several times a day.
+                "permissions,settings_order,feature_row,switchboard,magic,recording,history," +
+                    "buckets,mappings,output,recovered,vocabulary,predictions,voice_commands," +
+                    "shortcuts,prompts,voice_format,reader,copy_row,profiles",
         )
         // Zone two: the keyboard itself, everything from the number row down to the bottom row,
         // switched as one from the feature row. Zone one is the edit strip and rides on maEditRow,
@@ -955,7 +961,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
         val maRows = string(
             key = "dictate__ma_rows",
-            default = "",
+            default =
+                // The row he actually uses, exported 21.8.2026: the three zone keys, the mic, the
+                // reader, the switchboard and settings.
+                "1\u001Cb\u001Dzone1\u001D1\u001Fb\u001Dzone2\u001D1\u001Fb\u001Dzone3\u001D1\u001Fb\u001Dmic\u001D1\u001Fb\u001Dreader\u001D1\u001Fb\u001Dswitchboard\u001D1\u001Fb\u001Dsettings\u001D1\u001E0\u001C\u001E0\u001C",
         )
 
         /**
@@ -1383,7 +1392,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          */
         val maBucketsEnabled = boolean(
             key = "dictate__ma_buckets_enabled",
-            default = true,
+            default = false,
         )
 
         val maClipDelaySelect = int(
@@ -1413,7 +1422,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
         val maScrollPages = int(
             key = "dictate__ma_scroll_pages",
-            default = 1,
+            default = 4,
         )
 
         val maClipCaptured = string(

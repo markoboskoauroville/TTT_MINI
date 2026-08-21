@@ -5471,3 +5471,43 @@ opens the same screen from two places is two doors to one room.**
 Tested against five stored orders — fresh, an old one that lists `keys`, one with it dragged to the
 middle, one listing it twice, one with an unknown id: permissions first every time, `keys` never
 shown, every other entry present exactly once.
+
+---
+
+# 143. His settings become the defaults
+
+He sent his exported `.jetpref`. **It contained his live AssemblyAI ring — 23 key-shaped values — so
+none of it was copied verbatim.** The preferences were read, the accounts blob was skipped, and no
+key was printed at any point. See `SECRETS.md` §2a.
+
+The non-secret ones are now what ships:
+
+| | was | now |
+|---|---|---|
+| number row on the feature row | off | **on** |
+| edit strip | on | **off** |
+| copy buckets | on | **off** |
+| scroll pages | 1 | **4** |
+| keyboard number row | on | **off** |
+| settings order | alphabetical default | **his** |
+| feature row arrangement | default | **his** — zone keys, mic, reader, switchboard, settings |
+
+**A fresh install should look like the keyboard he uses**, not like a starting point he rebuilds every
+time — and he reinstalls several times a day.
+
+## Permissions cannot be moved
+
+`parse` already pinned it first, so a drag appeared to work and then silently undid itself on reopen.
+**A control that accepts a gesture and then discards it is worse than one that refuses**, because it
+teaches him the setting does not stick rather than that it is fixed.
+
+`move` now refuses to move it and refuses to drop anything above it. Four cases tested.
+
+## The copy row's position is fixed
+
+Above the record button, below the language badge, in the transcription view, **and not a setting**.
+
+It was under the record row and switchable. Both are wrong: that view has no letter keys, so
+select-all, paste, cut and the histories are most of what the screen is *for* — **a switch offering to
+remove them is offering to empty the screen** — and its place is where his thumb already is between
+speaking and pasting.

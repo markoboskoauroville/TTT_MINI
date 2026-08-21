@@ -129,7 +129,18 @@ object MaSettingsOrder {
     /** Moves the entry at [from] to [to], shifting the rest. A move, not a swap. */
     fun move(order: List<MaSettingsEntry>, from: Int, to: Int): List<MaSettingsEntry> {
         if (from !in order.indices) return order
-        val target = to.coerceIn(0, order.size - 1)
+        // PERMISSIONS DOES NOT MOVE, and nothing moves above it.
+        //
+        // `parse` already pins it first, so a drag that appeared to move it worked until the screen
+        // was reopened and then silently undid itself — **a control that accepts a gesture and then
+        // discards it is worse than one that refuses**, because it teaches him the setting does not
+        // stick rather than that it is fixed.
+        //
+        // It is fixed on purpose: it is the screen he opens when the keyboard, the microphone or
+        // accessibility is not working, and a repair tool he has to hunt for is one he is hunting
+        // for while things are broken.
+        if (order.getOrNull(from) == MaSettingsEntry.PERMISSIONS) return order
+        val target = to.coerceIn(1, order.size - 1)
         if (from == target) return order
         val out = order.toMutableList()
         out.add(target, out.removeAt(from))
