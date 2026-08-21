@@ -6018,3 +6018,89 @@ The first version of it missed `autoRank`, because inside `MaClipCapture.kt` the
 declaration deliberately moved into an object would not report itself forever. It now treats a
 qualified reference as this file's business when the object is declared in this file, which is the
 distinction that was actually meant.
+
+---
+
+# §151 — A takes what you are looking at
+
+Build 270. He took the automatic bucket into real use and found the flaw in its rule, which is the
+only place that kind of flaw can be found.
+
+## The ladder was answering the wrong question
+
+A walked the whole document by a counter: press for the newest code block, press again for the one
+above it, and the face showed how far up it had climbed. His words: *"It's not linear as I was
+thinking it's going to be."* He scrolls up, takes a block, scrolls down, takes another, comes back to
+a screen he has already collected from.
+
+A counter answers **how many have I taken**. The question he is actually asking is **this one, the
+one on my screen**. So the frame is the whole world now: what is not on screen does not exist to this
+key, and scrolling is how he chooses. `autoRank` is gone, the face says `A`, and `Step.rank` went
+with it — undo has nothing to rewind but the buckets.
+
+**Lowest first, then upward.** The same rule the rest of the app uses for a chat, where the lowest is
+the newest. It also answers his question about two blocks competing: they do compete, it is common,
+and no question needs asking — press twice and you have both, bottom then top. A dialog mid-collection
+would cost more than the ambiguity does.
+
+**A block already in a bucket is skipped**, not taken again, and the key moves to the next one up.
+Only when every block in view is already held does it say so. That is the message he asked for after
+copying the same thing twice on a screen he had scrolled back to.
+
+**How "already copied" is known.** Not by reading the block before pressing — that text is not
+available until the copy button has been pressed. The press happens, the capture refuses a duplicate,
+and the buckets come back unchanged. Unchanged IS the answer, and it costs one press. Full buckets
+and a held block are two different messages, because one of them is a thing he has to act on.
+
+## The visibility filter, which is a feature exactly once
+
+Every other `isVisibleToUser` filter in `MaScreenTargets` was a bug: it made TAB refuse the fields
+hardest to reach, and it quietly crippled the magic finger for months, because **off screen is a
+reason to scroll to something, not a reason to decide it does not exist.**
+
+Here the frame is the question, so the filter is the feature. `visibleOnly` defaults to false and
+only the A key passes true. It checks bounds against the display as well as `isVisibleToUser`, since
+a node just past the fold can still answer true and a node of no size answers true while occupying
+nothing.
+
+## verify.py could not see most of that file
+
+While working on it, a deliberate duplicate function was added to `MaScreenTargets.kt` to prove a
+check still fired. It did not fire. `strip_code` was keeping **68 of 963 lines**.
+
+The cause: `append('"')`. A Kotlin char literal holding a double quote, which the scanner did not
+know about at all — so that quote opened a string that never closed and swallowed the rest of the
+file. Every check that reads stripped code had been passing on nothing there, silently, for as long
+as the file has existed, and saying "nothing to report".
+
+**This is the exact failure the manifest names**: a check that finds nothing and a check that runs
+nothing look identical from outside. Char literals and raw strings are handled now, and the file
+strips to 697 lines. Found by accident, which is the uncomfortable part — the sabotage was aimed at
+something else entirely.
+
+Two other false positives fixed the same day rather than argued with: `check_duplicate_declarations`
+treated `val foregroundPackage` and `fun foregroundPackage()` as one name declared twice, when Kotlin
+keeps properties and functions in separate namespaces; the kind is part of the key now.
+
+## The list he asked about, and what it needs first
+
+He asked whether the boxes could be listed — title above the block plus a few words from it — for him
+to pick from, as a lab feature. **It is the right idea and I have not built it**, because it depends
+on something unmeasured: whether the code block's own text and the heading above it are readable in
+the accessibility tree of that app at all. Building a picker on a guess about that would be building
+the screen before knowing there is anything to put in it.
+
+The long press is the first honest step: it counts what is in the frame and how many buckets are
+free. The next step is a screen dump from a real chat — the DUMP key exists for exactly this — and
+then the picker can be built against what is actually there.
+
+## Tested
+
+Test 1: 3,097 checks, 0 failed, including 1,024 walked sequences of four screens drawn from a page of
+five blocks with a two-block frame — his non-linear movement, modelled. The invariant asserted after
+every one: **no block is ever in two buckets.** Broken on purpose three ways — highest-first,
+no-skip, and wrong wiring — and confirmed red with 464 failures.
+
+Not tested: nothing ran on a phone. The 350ms wait between the press and reading the buckets is
+reasoned from the 150ms the snippet key uses, not measured. Whether `isVisibleToUser` behaves in that
+chat app's hierarchy is unmeasured. Both are Test 2 and both are his to find.

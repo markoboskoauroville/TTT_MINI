@@ -145,3 +145,4 @@ since been removed.
 - **§148** — Undo reaches the buckets
 - **§149** — The key picker, grouped by meaning
 - **§150** — The bucket wears a ring, and undo gets its pair of keys
+- **§151** — A takes what you are looking at

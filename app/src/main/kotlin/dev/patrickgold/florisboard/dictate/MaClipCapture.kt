@@ -10,9 +10,6 @@
 
 package dev.patrickgold.florisboard.dictate
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 
 /**
  * What C1 to C10 hold: copies caught in the order they were made, and then held still.
@@ -57,17 +54,8 @@ object MaClipCapture {
     // state. It wears a green ring while it is holding something. No clock, nothing to miss.
 
 
-    /**
-     * Where the A key is on the ladder: 0 is the newest code block on screen, 1 the one above it.
-     *
-     * It lives here rather than beside the key because undo has to put it back, and undo is handled
-     * in the keyboard manager where a private variable in a composable's file cannot be reached.
-     * The A key and the buckets are one mechanism — A presses a copy button and the capture files
-     * the result — so the ladder position belongs with the buckets it fills.
-     *
-     * Not persisted. It describes a conversation on screen right now.
-     */
-    var autoRank: Int by mutableStateOf(0)
+    // autoRank is gone with the ladder it counted. The A key reads what is in the frame, so there
+    // is no position to store, to rewind, or to disagree with the screen.
 
     // lastFilled and noteFilled are gone too, with the tick they existed to place. They recorded
     // WHICH bucket had just taken a copy, and nothing needs to know that any more: the ring is on
@@ -224,7 +212,7 @@ object MaClipCapture {
 object MaBucketUndo {
 
     /** One reversible change: what the buckets held, and where the ladder was, before it. */
-    data class Step(val slots: List<String?>, val rank: Int, val atMs: Long)
+    data class Step(val slots: List<String?>, val atMs: Long)
 
     /**
      * Twenty deep. Deeper costs nothing in memory but stops meaning anything: past twenty presses
@@ -260,7 +248,7 @@ object MaBucketUndo {
 
     /** Called by the A key before it presses a copy button. */
     fun armAuto(slots: List<String?>) {
-        armed = Step(slots, MaClipCapture.autoRank, android.os.SystemClock.elapsedRealtime())
+        armed = Step(slots, android.os.SystemClock.elapsedRealtime())
     }
 
     /** Called when the A key's press did not land, so nothing will arrive to consume the arming. */
@@ -276,7 +264,7 @@ object MaBucketUndo {
      * that had moved on for its own reasons.
      */
     fun push(slots: List<String?>) {
-        val step = armed ?: Step(slots, MaClipCapture.autoRank, android.os.SystemClock.elapsedRealtime())
+        val step = armed ?: Step(slots, android.os.SystemClock.elapsedRealtime())
         armed = null
         stack.addLast(step.copy(atMs = android.os.SystemClock.elapsedRealtime()))
         while (stack.size > DEPTH) stack.removeFirst()
@@ -308,7 +296,7 @@ object MaBucketUndo {
         val step = stack.lastOrNull() ?: return null
         if (step.atMs < lastTextAtMs) return null
         stack.removeLast()
-        redoStack.addLast(Step(nowSlots, MaClipCapture.autoRank, android.os.SystemClock.elapsedRealtime()))
+        redoStack.addLast(Step(nowSlots, android.os.SystemClock.elapsedRealtime()))
         while (redoStack.size > DEPTH) redoStack.removeFirst()
         return step
     }

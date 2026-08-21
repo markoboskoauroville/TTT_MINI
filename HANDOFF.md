@@ -21,7 +21,18 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 268.** The last stretch, newest first:
+**Build 270.** The last stretch, newest first:
+
+- **A takes the code block you are looking at.** The ladder is gone — `autoRank`, the A1/A2/A3 face,
+  the long-press reset, `Step.rank`. The key sees only what is in the frame, tries the **lowest
+  first** and works upward, skips a block already in a bucket, and says which bucket took it. When
+  every block on screen is already held it says that instead. Collecting is not linear: he scrolls
+  up, takes one, scrolls down, takes another, and a counter was answering a question he had stopped
+  asking. Long press reports what is on screen and how many buckets are free.
+- **`verify.py`'s `strip_code` could not see 900 of MaScreenTargets.kt's 963 lines.** A Kotlin char
+  literal holding a double quote — `append('"')` — opened a string that never closed, so every check
+  reading stripped code had been passing on nothing there. Char literals and raw strings are handled
+  now. **Print the count; a check that runs nothing looks exactly like a check that finds nothing.**
 
 - **A bucket holding something wears a green ring**, and it stays until the bucket is poured out.
   It replaces the one-minute tick: a tick is an event and has to be caught, a ring is a state.

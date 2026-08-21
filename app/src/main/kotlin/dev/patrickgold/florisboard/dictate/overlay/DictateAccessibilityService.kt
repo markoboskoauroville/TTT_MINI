@@ -888,6 +888,24 @@ class DictateAccessibilityService : AccessibilityService() {
             return MaScreenTargets.pressMatch(ims, targets, rank)
         }
 
+        /**
+         * Presses the match [rank] places up from the bottom-most **of what is on screen**.
+         *
+         * The automatic bucket's whole world. Rank 0 is the lowest code block in the frame, rank 1
+         * the one above it, and null means there is no such block in view — not that the document
+         * has run out.
+         */
+        fun pressScreenTargetInView(targets: List<String>, rank: Int): String? {
+            val ims = instance ?: return null
+            return MaScreenTargets.pressMatch(ims, targets, rank, visibleOnly = true)
+        }
+
+        /** How many matches are in the frame right now. */
+        fun countScreenTargetsInView(targets: List<String>): Int {
+            val ims = instance ?: return 0
+            return MaScreenTargets.countMatchesInView(ims, targets)
+        }
+
         /** Scrolls the match at [rank] into view without pressing it. */
         fun revealScreenTargetAt(targets: List<String>, rank: Int): Boolean {
             val ims = instance ?: return false

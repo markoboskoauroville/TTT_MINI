@@ -699,20 +699,10 @@ fun MaFeatureRow(
                         // nothing to answer.
                         tint = if (filled == 0) MaDimmed else null,
                         ) {
-                        // Emptying the buckets restarts the automatic bucket too.
-                        //
-                        // They are one mechanism: A-bucket presses copy buttons and the capture
-                        // files each copy into the next free slot. Clearing the slots without
-                        // clearing the rank left the two halves disagreeing — the buckets ready for
-                        // the newest code block, the ladder still pointing eight blocks up the page
-                        // — so the next press collected something from far above and dropped it in
-                        // bucket one. The bin is the reset for both, which is what he expects and
-                        // saves a second control nobody would remember.
                         // Recorded before it is thrown away, so undo brings all ten back. The bin
                         // is the one press here that can lose a morning's collecting, and it is one
                         // key away from the buckets themselves.
                         MaBucketUndo.push(capturedSlots)
-                        MaClipCapture.autoRank = 0
                         scope.launch { prefs.dictate.maClipCaptured.set("") }
                     }
                 }
@@ -836,61 +826,138 @@ fun MaFeatureRow(
                 )
 
                 MaFeatureKey.AUTO_BUCKET -> {
-                    // The face carries the count, because the count is the only thing about this
-                    // key that cannot be guessed by looking at the screen. "A1" means the next
-                    // press takes the last code block; "A3" means it takes the third one up.
-                    // Without it he would be pressing blind and, on a mistake, would have no way to
-                    // know he was collecting from last month.
+                    // A: TAKE THE CODE BLOCK YOU ARE LOOKING AT.
+                    //
+                    // It used to walk the whole document by a counter — press once for the newest
+                    // block, again for the one above it, and so on up the page, with the key's face
+                    // showing how far up it had climbed. Marko took it out into real use and found
+                    // the flaw himself: **collecting is not linear.** He scrolls up, takes a block,
+                    // scrolls down, takes another. A counter answers "how many have I taken", and
+                    // the question he is actually asking is "this one, the one on my screen".
+                    //
+                    // So the frame is the whole world now. What is not on screen does not exist to
+                    // this key, and scrolling is how he chooses. The ladder is gone, and the face
+                    // says A rather than A1, because there is no longer a position to report.
+                    //
+                    // With several blocks in view it takes the LOWEST first and works upward. That
+                    // is the same rule the rest of the app uses for a chat — the lowest is the
+                    // newest — and it means two blocks in the frame need no question asked: press
+                    // twice and you have both, bottom then top.
+                    //
+                    // A block already in a bucket is skipped rather than taken again, and the key
+                    // moves to the next one up. Only when every block in view is already held does
+                    // it say so, which is the message he asked for after copying the same thing
+                    // twice on a screen he had scrolled back to.
                     ThemedTextKey(
-                        label = "A${MaClipCapture.autoRank + 1}",
+                        label = "A",
                         modifier = keyMod,
                         tint = null,
                         onLongClick = {
-                            MaClipCapture.autoRank = 0
-                            Toast.makeText(context, "Back to the last code block", Toast.LENGTH_SHORT).show()
+                            // What is on this screen, before touching anything. The seed of the
+                            // list he asked for: this counts, it does not yet name them.
+                            scope.launch {
+                                if (!DictateAccessibilityService.isRunning) {
+                                    maOpenAccessibilitySettings(context)
+                                    return@launch
+                                }
+                                val here = DictateAccessibilityService
+                                    .countScreenTargetsInView(listOf("copy code"))
+                                val free = visibleClipSlots.count {
+                                    MaClipCapture.at(capturedSlots, it) == null
+                                }
+                                Toast.makeText(
+                                    context,
+                                    if (here == 0) {
+                                        "No code block on this screen"
+                                    } else {
+                                        "$here code block(s) on screen, $free bucket(s) free"
+                                    },
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         },
                     ) {
                         if (!DictateAccessibilityService.isRunning) {
                             maOpenAccessibilitySettings(context)
                         } else {
-                            // Armed with the state as it is NOW, before the ladder moves and before
-                            // the copy reaches the clipboard. The capture that follows uses this
-                            // rather than reading a rank that has already advanced.
-                            MaBucketUndo.armAuto(capturedSlots)
-                            val hit = DictateAccessibilityService.pressScreenTargetAt(
-                                listOf("copy code"),
-                                MaClipCapture.autoRank,
-                            )
-                            if (hit != null) {
-                                // Only advance on a press that landed. A rank that ran past the end
-                                // would otherwise keep climbing while nothing happened, and the
-                                // number on the key would stop meaning anything.
-                                MaClipCapture.autoRank++
-                                // Then bring the NEXT block up into view.
-                                //
-                                // Two things at once, and they are the same action. The list
-                                // scrolls to show the block he is about to collect, which pushes
-                                // the one he just collected down to the bottom of the screen — so
-                                // the last thing copied is the last thing visible, and he can read
-                                // down the page to check the buckets instead of counting.
-                                //
-                                // And it is what makes a long chat reachable. Rows far from the
-                                // viewport do not exist until something scrolls near them, so
-                                // revealing the next block is what causes the ones above it to be
-                                // built. Without this the ladder stops at whatever happened to be
-                                // in memory when he started.
-                                DictateAccessibilityService.revealScreenTargetAt(
-                                    listOf("copy code"),
-                                    MaClipCapture.autoRank,
-                                )
-                            } else {
-                                // Nothing was pressed, so nothing will arrive to consume the arming.
-                                MaBucketUndo.disarm()
-                                Toast.makeText(
-                                    context,
-                                    "No more code blocks — hold to start again",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                            scope.launch {
+                                val inView = DictateAccessibilityService
+                                    .countScreenTargetsInView(listOf("copy code"))
+                                if (inView == 0) {
+                                    Toast.makeText(
+                                        context,
+                                        "No code block on this screen",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                    return@launch
+                                }
+                                var landed = false
+                                var alreadyHeld = 0
+                                // Lowest first, then upward. Every rank in the frame is tried, so a
+                                // block already in a bucket costs one press and not a dead key.
+                                for (rank in 0 until inView) {
+                                    val before = MaClipCapture.parse(
+                                        prefs.dictate.maClipCaptured.get(),
+                                    )
+                                    // Armed before the press, as ever, so undo has the state from
+                                    // before this whole attempt rather than from between two of
+                                    // its presses.
+                                    MaBucketUndo.armAuto(before)
+                                    val hit = DictateAccessibilityService
+                                        .pressScreenTargetInView(listOf("copy code"), rank)
+                                    if (hit == null) {
+                                        MaBucketUndo.disarm()
+                                        break
+                                    }
+                                    // The copy travels through the system clipboard and the capture
+                                    // rides on that, so the answer is not readable in the same
+                                    // breath. Measured rather than assumed: the same 150ms the
+                                    // snippet key waits, with room for a slower app.
+                                    delay(350L)
+                                    val after = MaClipCapture.parse(
+                                        prefs.dictate.maClipCaptured.get(),
+                                    )
+                                    if (after != before) {
+                                        landed = true
+                                        val slot = after.indices.firstOrNull {
+                                            after[it] != null && before.getOrNull(it) == null
+                                        }
+                                        Toast.makeText(
+                                            context,
+                                            if (slot != null) {
+                                                "Code block \u2192 C${slot + 1}"
+                                            } else {
+                                                "Copied"
+                                            },
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                        break
+                                    }
+                                    // Nothing changed. Either this block is already in a bucket, or
+                                    // every bucket is full — two different messages, and the
+                                    // difference is worth getting right because one of them is a
+                                    // thing he must do something about.
+                                    alreadyHeld++
+                                }
+                                if (!landed) {
+                                    val full = visibleClipSlots.isNotEmpty() &&
+                                        visibleClipSlots.all {
+                                            MaClipCapture.at(capturedSlots, it) != null
+                                        }
+                                    val held = clipboardManager.primaryClip?.text?.toString()
+                                        ?.let { MaClipCapture.slotFor(capturedSlots, it) }
+                                    Toast.makeText(
+                                        context,
+                                        when {
+                                            full -> "Every bucket is full \u2014 empty them with the bin"
+                                            held != null -> "Already copied \u2014 this block is in C$held"
+                                            alreadyHeld > 0 ->
+                                                "Every code block on this screen is already in a bucket"
+                                            else -> "Nothing was copied"
+                                        },
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
                             }
                         }
                     }
@@ -1433,13 +1500,13 @@ private fun MaWandBar(
  * from last week would point somewhere meaningless. Reset by a long press, and by the process
  * ending, which are both moments when starting again is what he would want.
  */
-// MaClipCapture.autoRank now lives in MaClipCapture as `autoRank`, because undo has to put it back and undo
+// The A key's ladder is gone entirely — it reads what is in the frame instead of counting.
 // is handled in the keyboard manager, which cannot reach a private variable in this file.
 
 /**
  * Whether the reader dashboard is showing.
  *
- * File-level rather than remembered inside the row, for the same reason `MaClipCapture.autoRank` is: the row
+ * File-level rather than remembered inside the row, as the ladder position once was: the row
  * is recomposed constantly and rebuilt whenever the keyboard changes shape, and state remembered
  * inside it would close the dashboard every time he switched view while it was open.
  */

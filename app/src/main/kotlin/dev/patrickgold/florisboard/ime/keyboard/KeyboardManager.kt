@@ -1359,7 +1359,6 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 if (step == null) {
                     editorInstance.performRedo()
                 } else {
-                    MaClipCapture.autoRank = step.rank
                     scope.launch {
                         prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(step.slots))
                     }
@@ -1409,7 +1408,6 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 if (step == null) {
                     editorInstance.performUndo()
                 } else {
-                    MaClipCapture.autoRank = step.rank
                     scope.launch {
                         prefs.dictate.maClipCaptured.set(MaClipCapture.serialize(step.slots))
                     }

@@ -136,13 +136,10 @@ w = World()
 w.a_key("block one")
 w.a_key("block two")
 check("A twice fills C1 and C2", w.slots[:2] == ["block one", "block two"], str(w.slots[:3]))
-check("the ladder is at A3", w.rank == 2, f"rank {w.rank}")
 check("undo goes to the buckets", w.undo() == "buckets")
 check("C2 is empty again", w.slots[1] is None, str(w.slots[:3]))
-check("the ladder is back at A2", w.rank == 1, f"rank {w.rank}")
 check("undo again", w.undo() == "buckets")
 check("C1 is empty again", w.slots[0] is None, str(w.slots[:3]))
-check("the ladder is back at A1", w.rank == 0, f"rank {w.rank}")
 check("undo falls through when the buckets run out", w.undo() == "field")
 
 # ---------------------------------------------------------------- text wins when text is last
@@ -172,10 +169,8 @@ before_bin = list(w.slots)
 before_rank = w.rank
 w.bin()
 check("the bin empties everything", all(s is None for s in w.slots))
-check("the bin resets the ladder", w.rank == 0)
 check("undo un-bins", w.undo() == "buckets")
 check("all five come back", w.slots == before_bin, str(w.slots[:6]))
-check("and the ladder comes back with them", w.rank == before_rank)
 
 # ---------------------------------------------------------------- pouring is not undone
 w = World()
@@ -205,7 +200,6 @@ w.a_key("block one")
 w.a_key("block two")
 check("undo takes the second block off", w.undo() == "buckets" and w.slots[1] is None)
 check("redo puts it back", w.redo() == "buckets" and w.slots[1] == "block two", str(w.slots[:3]))
-check("and the ladder with it", w.rank == 2, f"rank {w.rank}")
 check("nothing left to redo", w.redo() == "field")
 
 # A change since the undo throws the redo away. Restoring a state into a world that has moved on is
@@ -263,7 +257,6 @@ for seq in itertools.product(kinds, repeat=4):
     else:
         check(f"{seq}: field undo leaves the buckets alone", w.slots == slots_before, "buckets moved too")
     # The ladder never points past what the buckets could hold, or below zero.
-    check(f"{seq}: the ladder stays sane", 0 <= w.rank <= 20, f"rank {w.rank}")
     # Redo, same two invariants. ALWAYS ONE and NEVER BOTH hold for it as well, or the pair of keys
     # is not a pair.
     slots_mid, field_mid = list(w.slots), list(w.field)
@@ -305,10 +298,14 @@ check("a capture records a step", "MaBucketUndo.push(current)" in cm, "captures 
 check("a copy that changes nothing drops the arming", "MaBucketUndo.dropArming()" in cm, "a stale arming survives")
 
 row = code(SRC / "dictate/ui/MaFeatureRow.kt")
-check("the A key arms before pressing", "MaBucketUndo.armAuto(capturedSlots)" in row, "the ladder cannot be rewound")
+check("the A key arms before pressing", "MaBucketUndo.armAuto(before)" in row, "undo cannot see before the press")
 check("a miss disarms", "MaBucketUndo.disarm()" in row, "an arming is left waiting")
 check("the bin records what it throws away", "MaBucketUndo.push(capturedSlots)" in row, "the bin is final")
-check("the ladder lives with the buckets", "maBucketRank" not in row, "the rank is still private to the row")
+# The ladder is gone from the app, so it is gone from here. It counted how far up the page the A
+# key had climbed, and the key reads the frame now.
+check("no ladder is left in the row", "maBucketRank" not in row and "autoRank" not in row, "the counter survives")
+check("A reads what is in view", "pressScreenTargetInView" in row, "still walking the document")
+check("A counts what is in view", "countScreenTargetsInView" in row, "cannot know when to stop")
 check("the bucket wears a ring", "ring = if (text != null) onGreen else null" in row, "no ring on the key")
 check("the timed tick is gone from the row", "justFilled" not in row, "the one-minute mark survives")
 

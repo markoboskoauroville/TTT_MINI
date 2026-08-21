@@ -76,7 +76,34 @@ def strip_code(text: str) -> str:
             while i < n and text[i] != "\n":
                 i += 1
             continue
+        # CHARACTER LITERALS, BEFORE STRINGS.
+        #
+        # A Kotlin char literal can hold a double quote — `append('"')` — and this scanner did not
+        # know about char literals at all, so that quote opened a string that never closed. Found on
+        # 21.8.2026 in MaScreenTargets.kt: of its 963 lines, **68 survived stripping**. Every check
+        # that reads stripped code had been running on nothing there, silently, and reporting
+        # "nothing to report" for a file it could not see.
+        #
+        # That is the failure the manifest names: a check that finds nothing and a check that runs
+        # nothing look identical from outside. This one had looked identical for as long as the file
+        # has existed.
+        if text[i] == "'":
+            i += 1
+            while i < n and text[i] != "'":
+                if text[i] == "\\":
+                    i += 1
+                i += 1
+            i += 1
+            continue
         if text[i] == '"':
+            # Raw strings first: inside `\"\"\"…\"\"\"` a lone quote is ordinary text and a backslash
+            # escapes nothing, so the ordinary rules would end the string in the wrong place.
+            if text.startswith('\"\"\"', i):
+                i += 3
+                while i < n and not text.startswith('\"\"\"', i):
+                    i += 1
+                i += 3
+                continue
             i += 1
             while i < n and text[i] != '"':
                 if text[i] == "\\":
@@ -149,7 +176,7 @@ def check_duplicate_declarations(path: Path, text: str) -> None:
     # nothing calls yet sits there silently until an edit wakes it up.
     decl = re.compile(
         r"^\s*(?:private |internal |public |@Volatile |const |lateinit |suspend |inline )*"
-        r"(?:va[lr]|fun) (\w+)\s*[:=(]"
+        r"(va[lr]|fun) (\w+)\s*[:=(]"
     )
 
     lines = code.splitlines()
@@ -166,9 +193,16 @@ def check_duplicate_declarations(path: Path, text: str) -> None:
             # `MaSwitchRow(Boolean pref)` and `MaSwitchRow(String pref, on, off)` were reported as one
             # name declared twice on 21.8.2026, in a file that had compiled for months. A checker that
             # cries wolf is a checker that gets ignored.
-            key = (tuple(scope), m.group(1), signature(lines, index))
+            # The KIND is part of the key too. Kotlin keeps properties and functions in separate
+            # namespaces, so `val foregroundPackage: StateFlow<String?>` and
+            # `fun foregroundPackage(): String?` are two different members of one companion object
+            # and have compiled together for months. Both take no parameters, so comparing name and
+            # signature alone called them a conflict — reported on 21.8.2026 the moment an unrelated
+            # edit brought that file into the checked set.
+            kind = "fun" if m.group(1) == "fun" else "prop"
+            key = (tuple(scope), kind, m.group(2), signature(lines, index))
             if key in seen:
-                fail(path.name, f"declared twice in the same scope: {m.group(1)}")
+                fail(path.name, f"declared twice in the same scope: {m.group(2)}")
             seen.add(key)
         for ch in line:
             if ch == "{":

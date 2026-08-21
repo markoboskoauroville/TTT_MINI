@@ -589,10 +589,15 @@ object MaScreenTargets {
      * Returns null when there is no match that far up, which is how the caller learns it has reached
      * the top of what the screen currently holds.
      */
-    fun pressMatch(service: AccessibilityService, targets: List<String>, rank: Int): String? {
+    fun pressMatch(
+        service: AccessibilityService,
+        targets: List<String>,
+        rank: Int,
+        visibleOnly: Boolean = false,
+    ): String? {
         for (root in appWindowRoots(service)) {
             try {
-                val hit = findIn(service, root, targets, rank)
+                val hit = findIn(service, root, targets, rank, visibleOnly = visibleOnly)
                 if (hit != null) return hit
             } finally {
                 runCatching { root.recycle() }
@@ -641,6 +646,44 @@ object MaScreenTargets {
      * it. That matters for `Add URL`: the dialog and the page beneath it are both present, and the
      * button worth pressing is the one the user can see.
      */
+
+    /**
+     * How many matches are on the screen right now.
+     *
+     * Counted rather than pressed, so the key can say "three code blocks in view" before touching
+     * anything, and so a loop over them knows where to stop.
+     */
+    fun countMatchesInView(service: AccessibilityService, targets: List<String>): Int {
+        for (root in appWindowRoots(service)) {
+            try {
+                val found = mutableListOf<Pair<AccessibilityNodeInfo, String>>()
+                collect(root, targets, found, 0)
+                val onScreen = found.count { (node, _) -> isOnScreen(service, node) }
+                if (onScreen > 0) return onScreen
+            } finally {
+                runCatching { root.recycle() }
+            }
+        }
+        return 0
+    }
+
+    /**
+     * Whether this node is inside the frame, and not a zero-sized one.
+     *
+     * `isVisibleToUser` alone is not enough: a node scrolled just past the fold can still answer
+     * true in some hierarchies, and a node of no size answers true while occupying nothing. The
+     * bounds have to intersect the display as well, which is the check that matches what he can
+     * point at.
+     */
+    private fun isOnScreen(service: AccessibilityService, node: AccessibilityNodeInfo): Boolean {
+        if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) return false
+        val r = Rect().also { runCatching { node.getBoundsInScreen(it) } }
+        if (r.width() <= 0 || r.height() <= 0) return false
+        val metrics = service.resources.displayMetrics
+        val screen = Rect(0, 0, metrics.widthPixels, metrics.heightPixels)
+        return Rect.intersects(screen, r)
+    }
+
     private fun appWindowRoots(service: AccessibilityService): List<AccessibilityNodeInfo> {
         val own = service.packageName
         val windows = runCatching { service.windows }.getOrNull().orEmpty()
@@ -660,9 +703,27 @@ object MaScreenTargets {
         targets: List<String>,
         rank: Int = 0,
         clickIt: Boolean = true,
+        /**
+         * Only what is on the screen right now.
+         *
+         * **This is the one place a visibility filter is the feature rather than caution.** Every
+         * other filter of this kind in this file was a bug — `isVisibleToUser` was added to the field
+         * walk as a safety check and made TAB refuse exactly the fields hardest to reach, and the
+         * same filter quietly crippled the magic finger for months, because off screen is a reason
+         * to scroll to something and not a reason to decide it does not exist.
+         *
+         * The automatic bucket is different, and Marko is the one who found out why: collecting is
+         * not linear. He scrolls up, takes a block, scrolls down, takes another. A key that walked
+         * the whole document by a counter was answering a question he had stopped asking. **What he
+         * means by "this one" is what he is looking at**, so here the frame is the question.
+         */
+        visibleOnly: Boolean = false,
     ): String? {
         val found = mutableListOf<Pair<AccessibilityNodeInfo, String>>()
         collect(root, targets, found, 0)
+        if (visibleOnly) {
+            found.retainAll { (node, _) -> isOnScreen(service, node) }
+        }
         if (found.isEmpty()) return null
 
         // Bottom-most wins, and now that means the LAST one rather than the last one on screen.
