@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Spellcheck
@@ -77,6 +78,9 @@ val MaSettingsEntry.icon: ImageVector
         // same icon as Recording rather than a new one hunted for in the artifact: this file's own
         // note about Reorder is the reason to reuse an icon proven to resolve.
         MaSettingsEntry.VOICE_COMMANDS -> Icons.Default.Mic
+        // Shield, not Lock: `Icons.Default.Lock` is absent from the icon artifact this project
+        // builds against, and a missing icon is a red build rather than a blank space.
+        MaSettingsEntry.PERMISSIONS -> Icons.Default.Shield
         MaSettingsEntry.SHORTCUTS -> Icons.Default.Keyboard
         // Spellcheck, already imported and proven in this file. A prompt is an instruction
         // about how text should read, which is the nearest thing to it in the set, and this file's
@@ -114,6 +118,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.FEATURE_ROW -> Routes.Settings.MaFeatureRow
         MaSettingsEntry.MAGIC -> Routes.Settings.MaMagic
         MaSettingsEntry.VOICE_COMMANDS -> Routes.Settings.MaVoiceCommands
+        MaSettingsEntry.PERMISSIONS -> Routes.Settings.MaPermissions
         MaSettingsEntry.SHORTCUTS -> Routes.Settings.MaShortcuts
         MaSettingsEntry.PROMPTS -> Routes.Settings.MaPrompts
         MaSettingsEntry.VOICE_FORMAT -> Routes.Settings.MaVoiceFormat

@@ -5361,3 +5361,46 @@ disabled. Nothing throws; the message just sits there.
 Nothing here can observe the other side becoming ready, so a wait is the only instrument available. A
 third of a second is under the threshold where he would call it slow and well over the frame or two
 the other app needs.
+
+---
+
+# 140. Permissions, numbered, and warnings that open the fix
+
+## A screen of its own, first in the settings
+
+Permissions were spread across a wizard he sees once and a scatter of errors he sees when something
+has already failed. Reinstalling — several times a day — meant hunting them one at a time from
+different starting points.
+
+**Numbered, because the order is not arbitrary.** Restricted settings must be allowed before
+accessibility can be switched on; the microphone is useless without the keyboard enabled. A list in
+execution order is one he can work down without thinking, which is the point of gathering it.
+
+**Each row says whether it is granted and opens the exact page that grants it.** A permission screen
+that only names permissions is a worse version of the system settings — the value is entirely in
+those two things.
+
+**It rechecks on resume.** A grant happens in another app, so this screen is always holding a stale
+answer after a trip out. Without the recheck a granted permission keeps reading as missing until the
+screen is closed and reopened, which looks like the grant not having worked.
+
+**"Allow restricted settings" reports as never granted**, because Android exposes no flag for it. An
+unticked step he has already done costs a glance; a ticked one he has not done costs an afternoon.
+
+## The warning is the door
+
+`grant the microphone permission` said what was wrong and left him to find where — from a keyboard,
+which cannot show a permission dialog, so the answer was always several screens away.
+
+**An error that names a fix and does not offer it is only half an error message.** Any failure
+mentioning a permission, AudioRecord or accessibility now opens the Permissions screen.
+
+Matched on the message text rather than an error kind, because these arrive from the recorder, the
+service and the system, and none of them share an enum. **Wrong in the harmless direction**: a false
+positive opens a useful screen, a false negative leaves the banner as it was.
+
+## Caught before building
+
+`Icons.Default.Lock` is **absent** from the icon artifact this project builds against — a missing
+icon is a red build, not a blank space. Shield instead. And `FlorisImeService` was used in the
+smartbar without being imported.

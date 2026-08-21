@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DataUsage
+import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.dictate.MaSettingsResume
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.animation.core.Animatable
@@ -643,7 +644,20 @@ private fun RowScope.ErrorContent(state: DictateController.UiState.Error) {
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(8.dp))
                 .then(
-                    if (hasDetail) {
+                    // A WARNING ABOUT A PERMISSION OPENS THE PLACE THAT GRANTS IT.
+                    //
+                    // "grant the microphone permission" told him what was wrong and left him to find
+                    // where — from a keyboard, which cannot show a permission dialog, so the answer
+                    // was always several screens away in the system settings.
+                    //
+                    // **An error that names a fix and does not offer it is only half an error
+                    // message.** These now open the Permissions screen, which is the numbered list
+                    // of every grant this keyboard needs.
+                    if (maIsPermissionError(state)) {
+                        Modifier.clickable {
+                            FlorisImeService.launchSettings("settings/dictate/permissions")
+                        }
+                    } else if (hasDetail) {
                         Modifier.clickable { detailOpen = true }
                     } else {
                         Modifier
@@ -994,4 +1008,20 @@ private fun MaRecordingScope(paused: Boolean, frozen: Boolean, elapsedMs: Long) 
         // overlapping on a bar this narrow is what put 0:51 on top of 0:51 in the same place.
         MaScopeCanvas(active = !still, tint = MaInk)
     }
+}
+
+/**
+ * Whether this failure is something a permission would fix.
+ *
+ * Matched on the message rather than on a kind, because these arrive from several places — the
+ * recorder's own `error()`, the accessibility service, the system — and none of them share an enum.
+ * Matching text is fragile in general; here the alternative is threading a new kind through four
+ * layers to answer a question the sentence already answers.
+ *
+ * Wrong in the harmless direction: a false positive opens a useful screen, a false negative leaves
+ * the banner exactly as it was.
+ */
+private fun maIsPermissionError(state: DictateController.UiState.Error): Boolean {
+    val text = (state.message + " " + state.detail.orEmpty()).lowercase()
+    return "permission" in text || "audiorecord" in text || "accessibility" in text
 }
