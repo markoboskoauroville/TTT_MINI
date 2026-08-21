@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.app.settings.dictate
 
+import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.app.LocalNavController
 import androidx.lifecycle.LifecycleOwner
 import androidx.compose.runtime.DisposableEffect
 import android.Manifest
@@ -84,6 +86,7 @@ fun MaPermissionsScreen() = FlorisScreen {
 
     content {
         val context = LocalContext.current
+        val navController = LocalNavController.current
         val lifecycleOwner = LocalLifecycleOwner.current
         // Bumped on every resume; the checks below read it so they re-run.
         var generation by remember { mutableIntStateOf(0) }
@@ -108,6 +111,33 @@ fun MaPermissionsScreen() = FlorisScreen {
                 onClick = { runCatching { context.startActivity(step.intent()) } },
             )
         }
+
+        Spacer(Modifier.height(20.dp))
+
+        // API KEYS, in the same place.
+        //
+        // A permission and a key are the same kind of thing from where he stands: something the app
+        // needs granted before it can do its job, and something he has to go and set up after a
+        // reinstall. **They failed together and they were fixed in two different places.**
+        //
+        // The keys screen stays its own screen — it is long, it holds the ring, the tester and the
+        // importer — but it is reached from here, and it is no longer a separate entry in the
+        // settings list. One door to one room.
+        Text(
+            text = "Keys",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+        )
+        MaPermissionRow(
+            number = steps.size + 1,
+            title = "API keys",
+            detail = "Import, test and manage every key",
+            // Never ticked: this one is not a yes-or-no. A key can be present and dead, or present
+            // for one provider and missing for another, and a tick claiming "done" would be the kind
+            // of false reassurance that costs an afternoon.
+            granted = false,
+            onClick = { navController.navigate(Routes.Settings.DictateKeys) },
+        )
 
         Spacer(Modifier.height(24.dp))
     }

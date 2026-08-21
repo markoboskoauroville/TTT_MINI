@@ -22,7 +22,7 @@ package dev.patrickgold.florisboard.app.settings
  * reachable key screen is a keyboard that cannot be fixed from inside itself.
  */
 enum class MaSettingsEntry(val id: String, val title: String, val summary: String?) {
-    PERMISSIONS("permissions", "Permissions", "Everything the keyboard needs, in order"),
+    PERMISSIONS("permissions", "Permissions and API keys", "Everything the keyboard needs to work"),
     SWITCHBOARD("switchboard", "Switchboard", "Every row the keyboard can show, in one place"),
     FEATURE_ROW("feature_row", "Feature row", "Three rows of keys, drag them into the order you want"),
     MAGIC("magic", "Magic finger", "What it presses on screen, and which it tries first"),
@@ -33,6 +33,13 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     READER("reader", "Reader", "The voice that reads the screen aloud"),
     COPY_ROW("copy_row", "Copy row", "The clipboard row, shown in the transcription view"),
     PROFILES("profiles", "Profiles", "Whole configurations, saved by name and swapped in one tap"),
+    /**
+     * Gone from the list; it lives inside PERMISSIONS now.
+     *
+     * Kept as an entry so a stored order containing "keys" still parses — `byId` returning null for
+     * it would be harmless, but leaving the id known means an old arrangement is read exactly as it
+     * was written rather than silently repaired.
+     */
     KEYS("keys", "API keys", "Import, test and manage every key"),
     VOCABULARY("vocabulary", "Learn my words", "Teach the keyboard the names you dictate"),
     BUCKETS("buckets", "Paste timing", "How long each step waits, for the buckets, AP and AC"),
@@ -77,7 +84,6 @@ object MaSettingsOrder {
         MaSettingsEntry.COPY_ROW,
         MaSettingsEntry.PROFILES,
         MaSettingsEntry.FEATURE_ROW,
-        MaSettingsEntry.KEYS,
         MaSettingsEntry.RECORDING,
         MaSettingsEntry.MAPPINGS,
         MaSettingsEntry.OUTPUT,
@@ -112,7 +118,10 @@ object MaSettingsOrder {
         //
         // Pinned rather than merely reordered once, so it stays at the top through any drag and any
         // restored backup. It is the one entry whose position is not his to lose by accident.
-        return listOf(MaSettingsEntry.PERMISSIONS) + all.filterNot { it == MaSettingsEntry.PERMISSIONS }
+        // KEYS is dropped from the list wherever it appears: it is a section inside PERMISSIONS
+        // now, and an entry that opens the same screen from two places is two doors to one room.
+        val shown = all.filterNot { it == MaSettingsEntry.PERMISSIONS || it == MaSettingsEntry.KEYS }
+        return listOf(MaSettingsEntry.PERMISSIONS) + shown
     }
 
     fun serialize(order: List<MaSettingsEntry>): String = order.joinToString(",") { it.id }

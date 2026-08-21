@@ -5441,3 +5441,33 @@ one he has to scroll to while the thing is broken.
 Pinned rather than reordered once, so it survives any drag and any restored backup. Tested against
 five stored orders — empty, an old order without it, one where he dragged it to the middle, one with
 an unknown id, one with it stored last: first every time, every entry present exactly once.
+
+---
+
+# 142. Permissions and API keys, one entry
+
+**A permission and a key are the same kind of thing from where he stands:** something that must be
+granted before the app can do its job, and something he has to set up again after a reinstall. They
+fail together and they were fixed in two different places.
+
+First entry in the settings, **"Permissions and API keys"** — the numbered grants, then a Keys
+section that opens the key manager.
+
+**The keys screen stays its own screen.** It is long: the ring, the tester, the importer. Nesting its
+body inside another screen would mean unpicking four hundred lines to gain nothing he can see.
+**Merging the entry is what he asked for; merging the implementation would have been me hearing a
+different request.**
+
+**Its row is never ticked**, and that is deliberate. A key is not a yes-or-no — it can be present and
+dead, or present for one provider and missing for another. A tick claiming "done" is the kind of
+false reassurance that costs an afternoon.
+
+## The old entry is kept, and hidden
+
+`KEYS` still exists in the enum so a stored order containing `keys` parses exactly as written rather
+than being silently repaired. It is filtered out of the list wherever it appears: **an entry that
+opens the same screen from two places is two doors to one room.**
+
+Tested against five stored orders — fresh, an old one that lists `keys`, one with it dragged to the
+middle, one listing it twice, one with an unknown id: permissions first every time, `keys` never
+shown, every other entry present exactly once.
