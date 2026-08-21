@@ -101,7 +101,18 @@ object MaSettingsOrder {
             .split(',')
             .mapNotNull { MaSettingsEntry.byId(it.trim()) }
             .distinct()
-        return wanted + DEFAULT.filterNot { it in wanted }
+        val all = wanted + DEFAULT.filterNot { it in wanted }
+        // PERMISSIONS IS PINNED TO THE TOP.
+        //
+        // New entries are appended, which is the right rule — it is what stops a feature added next
+        // year being invisible to somebody whose arrangement predates it. But appending put this one
+        // at the very bottom of a long list, and this is the screen he goes to **when nothing else
+        // works**: the keyboard not enabled, the microphone refused, accessibility off. A repair
+        // tool at the end of the list is a repair tool he has to scroll to while it is broken.
+        //
+        // Pinned rather than merely reordered once, so it stays at the top through any drag and any
+        // restored backup. It is the one entry whose position is not his to lose by accident.
+        return listOf(MaSettingsEntry.PERMISSIONS) + all.filterNot { it == MaSettingsEntry.PERMISSIONS }
     }
 
     fun serialize(order: List<MaSettingsEntry>): String = order.joinToString(",") { it.id }

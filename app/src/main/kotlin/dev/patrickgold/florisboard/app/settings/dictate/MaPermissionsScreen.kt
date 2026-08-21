@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.app.settings.dictate
 
+import androidx.lifecycle.LifecycleOwner
+import androidx.compose.runtime.DisposableEffect
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -32,7 +34,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -86,7 +87,7 @@ fun MaPermissionsScreen() = FlorisScreen {
         val lifecycleOwner = LocalLifecycleOwner.current
         // Bumped on every resume; the checks below read it so they re-run.
         var generation by remember { mutableIntStateOf(0) }
-        DisposableEffectOnResume(lifecycleOwner) { generation++ }
+        OnResume(lifecycleOwner) { generation++ }
 
         Text(
             text = "In this order. Each one opens the page that grants it.",
@@ -95,7 +96,9 @@ fun MaPermissionsScreen() = FlorisScreen {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
 
-        val steps = remember(generation) { maPermissionSteps(context) }
+        val steps = remember(generation) {
+            runCatching { maPermissionSteps(context) }.getOrDefault(emptyList())
+        }
         steps.forEachIndexed { i, step ->
             MaPermissionRow(
                 number = i + 1,
@@ -133,18 +136,28 @@ private fun maPermissionSteps(context: Context): List<MaPermissionStep> {
     steps += MaPermissionStep(
         title = "Enable the keyboard",
         detail = "Turn TTT mini on in the list of input methods",
-        granted = Settings.Secure.getString(
-            context.contentResolver,
-            Settings.Secure.ENABLED_INPUT_METHODS,
-        )?.contains(context.packageName) == true,
+        // Every `granted` below is wrapped, and every one defaults to "not granted".
+        //
+        // These are queries into the system, and any of them can throw on a phone that answers
+        // differently — a manufacturer's ROM, a locked-down profile, a future API. **One screen that
+        // cannot open is worse than one row that says the wrong thing**, and the safe default is the
+        // one that leaves the step visible with the button that fixes it.
+        granted = runCatching {
+            Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ENABLED_INPUT_METHODS,
+            )?.contains(context.packageName) == true
+        }.getOrDefault(false),
         intent = { Intent(Settings.ACTION_INPUT_METHOD_SETTINGS) },
     )
 
     steps += MaPermissionStep(
         title = "Microphone",
         detail = "Without it nothing can be recorded",
-        granted = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
-            PackageManager.PERMISSION_GRANTED,
+        granted = runCatching {
+            context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+        }.getOrDefault(false),
         // The app-details page rather than a request dialog: an input method cannot show a runtime
         // permission prompt, and a page that is always reachable beats a dialog that sometimes is.
         intent = ::appDetails,
@@ -163,7 +176,7 @@ private fun maPermissionSteps(context: Context): List<MaPermissionStep> {
     steps += MaPermissionStep(
         title = "Accessibility service",
         detail = "The magic finger, the reader and the recording bar all need it",
-        granted = DictateAccessibilityService.isRunning,
+        granted = runCatching { DictateAccessibilityService.isRunning }.getOrDefault(false),
         intent = { Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS) },
     )
 
@@ -171,7 +184,7 @@ private fun maPermissionSteps(context: Context): List<MaPermissionStep> {
         steps += MaPermissionStep(
             title = "All files access",
             detail = "Only for importing keys and audio from storage",
-            granted = Environment.isExternalStorageManager(),
+            granted = runCatching { Environment.isExternalStorageManager() }.getOrDefault(false),
             intent = { Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION) },
         )
     }
@@ -180,8 +193,10 @@ private fun maPermissionSteps(context: Context): List<MaPermissionStep> {
         steps += MaPermissionStep(
             title = "Notifications",
             detail = "So a long transcription can say when it is done",
-            granted = context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED,
+            granted = runCatching {
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                    PackageManager.PERMISSION_GRANTED
+            }.getOrDefault(false),
             intent = ::appDetails,
         )
     }
@@ -235,20 +250,21 @@ private fun MaPermissionRow(
 /**
  * Runs [onResume] every time the screen comes back to the front.
  *
- * A permission is granted in another app, so this screen is looking at a stale answer the moment he
- * leaves it. Without this, a granted permission keeps showing as missing until the screen is closed
- * and reopened — which reads as the grant not having worked.
+ * A permission is granted in another app, so this screen holds a stale answer the moment he leaves
+ * it. Without this, a permission he has just granted keeps reading as missing until the screen is
+ * closed and reopened — which looks like the grant not having worked.
+ *
+ * `DisposableEffect`, not `LaunchedEffect`: an observer added and never removed outlives the screen
+ * and fires against a composition that is gone. The first version did exactly that.
  */
 @Composable
-private fun DisposableEffectOnResume(
-    owner: androidx.lifecycle.LifecycleOwner,
-    onResume: () -> Unit,
-) {
-    LaunchedEffect(owner) {
+private fun OnResume(owner: LifecycleOwner, onResume: () -> Unit) {
+    DisposableEffect(owner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) onResume()
         }
         owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
     }
 }
 

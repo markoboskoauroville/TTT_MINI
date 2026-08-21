@@ -5404,3 +5404,40 @@ positive opens a useful screen, a false negative leaves the banner as it was.
 `Icons.Default.Lock` is **absent** from the icon artifact this project builds against — a missing
 icon is a red build, not a blank space. Shield instead. And `FlorisImeService` was used in the
 smartbar without being imported.
+
+---
+
+# 141. The permissions screen, fixed
+
+Two bugs, both mine, both shipped in 257.
+
+## The crash
+
+I used `androidx.compose.ui.platform.LocalLifecycleOwner`. **Every other screen in this project uses
+`androidx.lifecycle.compose.LocalLifecycleOwner`** — the Compose one is deprecated and throws where
+the lifecycle one resolves. It compiled, so nothing said a word until the screen was opened.
+
+**The project already had the right pattern in `DictateFloatingButtonScreen` and I wrote a new one
+instead.** When a screen needs to do something another screen already does, copy that screen.
+
+And the observer was added inside `LaunchedEffect` and never removed — it outlived the screen and
+fired against a composition that was gone. `DisposableEffect` with `onDispose` now, as the working
+screen does.
+
+## Every query is wrapped
+
+Seven `runCatching`s, each defaulting to **not granted**. These are queries into the system and any
+of them can throw on a ROM that answers differently. **One screen that cannot open is worse than one
+row that says the wrong thing**, and the safe default leaves the step visible with the button that
+fixes it.
+
+## Permissions is pinned to the top
+
+Appending new entries is the right rule — it is what stops a feature added next year being invisible
+to somebody whose arrangement predates it. But it put this one at the bottom of a long list, and
+**this is the screen he reaches for when nothing else works**. A repair tool at the end of the list is
+one he has to scroll to while the thing is broken.
+
+Pinned rather than reordered once, so it survives any drag and any restored backup. Tested against
+five stored orders — empty, an old order without it, one where he dragged it to the middle, one with
+an unknown id, one with it stored last: first every time, every entry present exactly once.
