@@ -528,6 +528,26 @@ def check_nullable_args(path: Path, text: str) -> None:
             fail(path.name, f"`{m.group(1)} = null` but {owner} declares it non-null")
 
 
+# check_property_call was written here and DELETED before it ever shipped.
+#
+# Build 276 went red on `locale.displayLanguage` where `displayLanguage()` is a function — one
+# character, five minutes of CI, one paid build. The obvious guard is to collect the repo's function
+# names and flag any `.name` used without parentheses.
+#
+# Swept over the whole app it produced **434 hits**, essentially all of them correct code: a name
+# that is a function in one file is a property on a library type in another, and this script cannot
+# see library signatures to tell them apart.
+#
+# A check with 434 false positives is not a weak check, it is a harmful one. It would have to be
+# argued with on every file, and a check that is argued with stops being read — at which point the
+# real hits arrive in the same voice as the noise. The same reasoning that narrowed the delegation
+# check and the duplicate-declaration check applies here, and here it ends in deletion rather than
+# narrowing, because there is nothing left to narrow it BY.
+#
+# This gap stays open. Kotlin catches it instantly and CI reports it in five minutes; that is the
+# cost, and it is smaller than the cost of a script nobody believes.
+
+
 def check_when_coverage() -> None:
     """
     Red build: a new key added to the enum and one `when` never given its branch.

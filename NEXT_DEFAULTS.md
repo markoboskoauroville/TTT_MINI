@@ -6427,3 +6427,28 @@ on correct code is the fastest way to teach somebody to stop reading it.**
 
 Not tested: no model has been called. How good the five words are, and whether one press is fast
 enough to be worth pressing, are Test 2 and his.
+
+## §156a — Red on one character, and a check that was deleted rather than shipped
+
+Build 276 went red on `locale.displayLanguage` where `displayLanguage()` is a function. One
+character. Kotlin says so instantly; CI took five minutes and one paid build to say the same thing.
+
+The obvious guard is to collect the repo's function names and flag any `.name` used without
+parentheses. I wrote it. Swept over the whole app it produced **434 hits**, essentially all of them
+correct code — a name that is a function in one file is a property on a library type in another, and
+`verify.py` cannot see library signatures to tell them apart.
+
+**A check with 434 false positives is not a weak check, it is a harmful one.** It would have to be
+argued with on every file, and a check that is argued with stops being read, at which point the real
+hits arrive in the same voice as the noise. So it was deleted before shipping, and the reasoning is
+written where the function would have been.
+
+The same reasoning narrowed the delegation check and the duplicate-declaration check earlier today.
+Here there was nothing left to narrow it *by*, so the gap stays open: Kotlin catches this instantly
+and CI reports it in five minutes. That is the cost, and it is smaller than the cost of a script
+nobody believes.
+
+Also worth recording, because it wasted a step: sabotaging the fix to prove a check fires does not
+work when HEAD already contains the bug — reverting to the broken line made the file identical to
+HEAD, so `verify.py` saw no changed files at all and reported nothing. **When the last commit is the
+red one, sabotage tests nothing.** Sweep instead.

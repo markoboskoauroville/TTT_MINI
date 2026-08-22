@@ -273,7 +273,7 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                             MaAiPredict.prompt(
                                 before = before,
                                 current = current,
-                                language = subtypeManager.activeSubtype.primaryLocale.displayLanguage,
+                                language = subtypeManager.activeSubtype.primaryLocale.displayLanguage(),
                             ),
                         )
                         MaAiPredict.busy.value = false
