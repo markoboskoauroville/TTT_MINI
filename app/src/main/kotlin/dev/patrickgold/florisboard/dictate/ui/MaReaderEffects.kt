@@ -27,5 +27,8 @@ object MaReaderEffects {
         Effect("karaoke", "Karaoke"),
         Effect("spotlight", "Spotlight"),
         Effect("void", "Void"),
+        // Last, because it is the furthest from a subtitle: it does not mark text at all, it turns
+        // the keyboard into the display.
+        Effect("anagram", "Anagram"),
     )
 }

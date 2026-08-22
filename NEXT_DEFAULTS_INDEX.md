@@ -153,3 +153,4 @@ since been removed.
 - **§156** — The AI key on the prediction row
 - **§157** — Two n-grams, one per language, never touching
 - **§158** — Three small things the row was missing
+- **§158** — Anagram: the keyboard spells what is being read

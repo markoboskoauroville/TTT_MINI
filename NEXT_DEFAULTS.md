@@ -6580,3 +6580,59 @@ picker back under the keyboard — and confirmed red with six failures.
 Not tested: nothing ran on a phone. Whether a 3dp bar and a five-character clock fit legibly on one
 key beside the dot is the question this build turns on, and only the screen answers it. If it is
 cramped, the clock is the part to drop first: the recording bar already carries it.
+
+---
+
+# §158 — Anagram: the keyboard spells what is being read
+
+Build 281. His words: *the letters will jump around the keyboard to form this word — it will look
+like the keyboard became alive and is producing the letters back to the user.*
+
+## What is actually moving, said plainly
+
+Not the keys. The key grid is measured and laid out by the layout engine every frame, and a key
+cannot be re-parented mid-frame without fighting it for control of its own position.
+
+So `MaAnagramOverlay` draws a **tracing** of the grid across the key area, with a scrim underneath
+that dims the real keyboard, and the letters that fly are drawn copies leaving from exactly where the
+real ones sit. He sees the keyboard come alive; what is really happening is that a faithful tracing
+of it does.
+
+Worth stating rather than glossing, because the difference shows in one place: while the effect runs
+the keys underneath are not pressable. Correct here — he is listening, not typing — but a consequence
+rather than a design.
+
+The scrim is 0.88 alpha, not opaque. A trace of the real keyboard underneath is what makes it read as
+the keyboard coming alive rather than as a black panel with letters on it.
+
+## Three things the geometry has to get right
+
+**The rows are centred on each other.** The middle row has nine keys and the bottom seven; dividing
+by a fixed ten would leave every row further left than the keys it is tracing, and the illusion dies
+the moment a letter takes off from beside its own key rather than from it.
+
+**QWERTZ or QWERTY by the language badge.** They differ in one swap, Y and Z. Getting it backwards
+sends a letter across the whole keyboard to the wrong key — **and it is completely invisible while
+testing in English.** The same badge already moves the subtype, so the tracing matches the keys
+underneath in both languages.
+
+**Accented letters arrive rather than being dropped.** Č, ć, š, ž and đ have no key of their own. A
+plan that only included letters it could find a key for would have the keyboard spell *itanje* while
+the voice says *čitanje* — the effect quietly lying about the word. They fade in where they land,
+with no flight, and the word is always complete.
+
+## Tested
+
+Test 1: 79 checks, 0 failed — every letter of the alphabet has a key, rows centred on one another,
+the Y/Z swap both ways round with all twenty-four other letters asserted identical, words from one
+letter to twenty landing in order, on one line, inside the screen, and five Croatian words keeping
+every character. Broken on purpose three ways — keyless letters dropped, rows left-aligned, one
+layout for both languages — and confirmed red with twelve failures.
+
+**One of those sabotages made the test THROW rather than fail**, on an unguarded `plan(...)[1]`, and
+the count never printed. That is the second time today; it is now written in the file as a rule
+rather than patched as a bug. *A check that raises is not a check that fails.*
+
+Not tested: nothing ran on a phone, and this is the most visual thing in the app. Whether 260ms per
+flight reads as alive or as frantic, whether the letters are legible at 22sp over a dimmed keyboard,
+and whether it keeps up with Speechify at his reading speed are all Test 2 and all his.

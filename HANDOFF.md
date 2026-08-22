@@ -21,7 +21,15 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 279.** The last stretch, newest first:
+**Build 281.** The last stretch, newest first:
+
+- **Anagram, the sixth reading effect.** The keyboard becomes the display: the keys dim and the
+  word's letters fly from their own keys to the middle and spell it out with the voice. `MaAnagram`
+  holds the geometry, pure and walked in `scripts/test_anagram.py`; `MaAnagramOverlay` traces the
+  key grid rather than moving real keys, because a key cannot be re-parented mid-frame. QWERTZ or
+  QWERTY by the language badge — the Y/Z swap is invisible in English and sends a letter across the
+  whole keyboard when it is wrong. Croatian accented letters have no key and **arrive in place
+  rather than being dropped**, or the keyboard would spell a different word than the voice says.
 
 - **The Add keys screen sits above the keyboard** (`imePadding`) and has **Add beside Cancel** in
   the top bar with a count. Searching used to leave a ticked box with no reachable way to accept it.
