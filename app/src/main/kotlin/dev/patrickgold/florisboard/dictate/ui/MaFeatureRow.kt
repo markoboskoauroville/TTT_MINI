@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Layers
@@ -1212,6 +1213,69 @@ fun MaFeatureRow(
                             imageVector = Icons.Default.ContentPaste,
                             contentDescription = null,
                             tint = if (zone3) onGreen else fg,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+
+                MaFeatureKey.VOLUME_KEYS -> {
+                    // Volume keys on or off, and the ONLY control for it.
+                    //
+                    // VOLUME_KEYS.md forbids a setting for this, and the reason it gives is exact:
+                    // a switch buried among thirteen draggable ones was brushed off, silently, and
+                    // cost him days. That failure was not "a switch existed" — it was **a switch he
+                    // could not see, in a place he was not looking.**
+                    //
+                    // This is the opposite of that in every respect. It is on the row he is already
+                    // looking at, it is not in any list, it shows its own state, and it only exists
+                    // if he chose to put it there. Green means the keys are live and doing what the
+                    // contract says; plain means they are the volume and nothing else.
+                    //
+                    // Not a `switcher`: that ring is monochrome and means "this changes what the
+                    // keyboard shows", and this changes what a hardware key does. The green state
+                    // ring is the other channel, and the buckets already wear it.
+                    val volumeLive by prefs.dictate.maVolumeKeysLive.collectAsState()
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        // The green ring, the same one the buckets wear, and for the same reason.
+                        //
+                        // He asked for one visual language across the app rather than two, and that
+                        // is worth more than any individual choice here: a ring in this green now
+                        // means one thing wherever it appears — this is on, this is holding
+                        // something — and a mark that means one thing is read without being learned.
+                        // A tint on a glyph in one place and a ring in another is two dialects for
+                        // one idea.
+                        ring = if (volumeLive) onGreen else null,
+                        onClick = {
+                            scope.launch { prefs.dictate.maVolumeKeysLive.set(!volumeLive) }
+                            // Said out loud as well as shown. The keys themselves cannot report
+                            // being switched off — a dead key looks exactly like a broken one, which
+                            // is the whole history of this feature.
+                            Toast.makeText(
+                                context,
+                                if (volumeLive) {
+                                    "Volume keys off \u2014 volume only"
+                                } else {
+                                    "Volume keys on \u2014 record and read"
+                                },
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        },
+                    ) { fg ->
+                        Icon(
+                            // ONE GLYPH, ALWAYS. The ring says the state; the picture says which key
+                            // this is.
+                            //
+                            // A first version swapped in a crossed-out speaker when the keys were
+                            // off and tinted the glyph green when they were on — three channels
+                            // saying one thing. With the ring carrying it, the shape holds still:
+                            // **shape is identity.** A key whose face changes is a key he has to
+                            // re-find, and on a row pressed from memory that costs more than the
+                            // crossed speaker was worth.
+                            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = null,
+                            tint = fg,
                             modifier = Modifier.size(24.dp),
                         )
                     }

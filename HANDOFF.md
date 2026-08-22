@@ -21,7 +21,17 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 271.** The last stretch, newest first:
+**Build 272.** The last stretch, newest first:
+
+- **The volume keys can be switched off, by one key on the row and nothing else.** `VOLUME_KEYS`,
+  wearing the same green ring as a full bucket. `VOLUME_KEYS.md` is amended rather than contradicted:
+  the old "no setting" rule was protecting against an *invisible* switch in a draggable list, and
+  `scripts/test_volume_switch.py` enforces that only `AppPrefs`, `MaVolumeKeys` and `MaFeatureRow`
+  may name `maVolumeKeysLive`. Both `onDown` and `onUp` are gated, or a press given to the system on
+  the way down would act on release.
+- **Power + Volume Up is not possible for any app.** Android never delivers the power key to apps or
+  to accessibility services; it is handled in the system policy layer, which is also why the
+  screenshot chord belongs to the system and not to whatever is on screen.
 
 - **The recording readings are centred as a group**, by `Arrangement.Center` and not by weights.
   Weights are what centred them originally and what made the size wrap; the arrangement measures

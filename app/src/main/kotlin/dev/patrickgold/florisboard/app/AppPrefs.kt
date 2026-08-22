@@ -1361,6 +1361,19 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         //
         // Whatever the preference file already holds is left there, unread.
 
+        /**
+         * Whether the volume keys drive recording and reading, or are just the volume.
+         *
+         * Changed ONLY by the volume-keys key on the feature row — deliberately not in the
+         * switchboard, not on a settings screen, and not in the gestures list. See MaVolumeKeys.live
+         * and VOLUME_KEYS.md: the switch that failed before failed because it was invisible and
+         * sat among a dozen others that had just become draggable.
+         */
+        val maVolumeKeysLive = boolean(
+            key = "dictate__ma_volume_keys_live",
+            default = true,
+        )
+
         val maClipDelaySelect = int(
             key = "dictate__ma_clip_delay_select",
             default = 0,

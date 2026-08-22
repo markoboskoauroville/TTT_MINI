@@ -257,6 +257,15 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * other way of firing undo are the same press — the rule that already binds the two sends
      * together. Nothing about the bucket rule lives in the key.
      */
+    /**
+     * Volume keys on or off, as a key on the row.
+     *
+     * The one control for `maVolumeKeysLive`. Green while the keys are live, plain while they are
+     * not, so the state he can otherwise only discover by pressing a volume key is on the row in
+     * front of him.
+     */
+    VOLUME_KEYS("volume_keys", "Volume keys"),
+
     UNDO("undo", "Undo"),
     REDO("redo", "Redo"),
 
@@ -487,6 +496,9 @@ val MaFeatureKey.group: MaFeatureGroup
         MaFeatureKey.MIC,
         MaFeatureKey.LANGUAGE,
         MaFeatureKey.HISTORY,
+        // Dictation rather than "the keyboard itself": what it governs is whether the volume keys
+        // start and stop recordings, which is a dictation question wearing a hardware button.
+        MaFeatureKey.VOLUME_KEYS,
         -> MaFeatureGroup.DICTATION
 
         MaFeatureKey.READER,

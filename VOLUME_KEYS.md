@@ -8,19 +8,47 @@ else.
 
 ---
 
-## There is no setting
+## There is one switch, and it is a key on the row
 
-**The volume keys cannot be switched off.** There is no preference, no switch in the switchboard, no
-entry in the gestures screen. They are live whenever the keyboard is on screen.
+**Amended 22.8.2026, at his request, after two builds of thinking about how.**
 
-There was a setting, and it is why this was dead for five builds. It defaulted on, it sat in a list of
-thirteen switches that had just become draggable, and one stray touch turned it off silently. He lost
-days believing the feature had been deleted; three rounds were spent reading a handler that was
-correct the whole time.
+The volume keys can be switched off, by **one control only**: the `VOLUME_KEYS` key on the feature
+row, backed by `maVolumeKeysLive`. It wears the **green ring** — the same mark the buckets wear when they are holding something, so
+one ring in one green means one thing everywhere in this app. Ringed means live and doing everything
+below; plain means the volume keys are just the volume. The glyph never changes: shape is identity,
+the ring is state.
 
-**A control that can silently disable the thing somebody uses most is not a feature, it is a
-trapdoor.** Do not add it back. If some future person cannot bear the keys being taken, the answer is
-to make the *keyboard* not take them when it is not on screen — which is already the behaviour.
+There is still **no switch in the switchboard, no settings screen entry, and no gestures list entry**,
+and there must not be. This is the part of the old rule that was load-bearing.
+
+### What the old rule was actually protecting
+
+There was a setting once, and it is why this was dead for five builds. It defaulted on, it sat in a
+list of thirteen switches that had just become draggable, and one stray touch turned it off silently.
+He lost days believing the feature had been deleted; three rounds were spent reading a handler that
+was correct the whole time.
+
+Read again, the failure was not *that a switch existed*. It was that **the switch was invisible, in a
+place he was not looking, among a dozen others he was dragging.** A control that can silently disable
+the thing somebody uses most is a trapdoor. A control that is on the row in front of him, that shows
+its own state, that he had to place there himself, and that says out loud what it just did, is not.
+
+So the rule that replaces "no setting" is stricter and more useful:
+
+> **The only control is the key. If this state ever becomes reachable from a list of switches, the
+> trapdoor is back.**
+
+`scripts/test_volume_switch.py` enforces it: exactly three files may name `maVolumeKeysLive` —
+`AppPrefs`, `MaVolumeKeys`, `MaFeatureRow` — and the switchboard may not.
+
+### When it is off
+
+Both `onDown` and `onUp` return false, so the system sees an ordinary volume key with its own bar.
+**Both halves must agree**: a press handed to the system on the way down and taken here on release
+would start a recording after a volume change, which is the "never both" invariant broken in the
+worst direction.
+
+The two invariants below are re-walked in both states across the whole range of hold lengths.
 
 ---
 

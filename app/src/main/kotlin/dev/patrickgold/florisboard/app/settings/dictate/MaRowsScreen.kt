@@ -519,6 +519,8 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.KeyboardCapslock, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CHANGE_CASE -> letters("Aa")
             // The same two arrows LegacyEditAction draws, since that is what the key on the row is.
+            MaFeatureKey.VOLUME_KEYS ->
+                Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.UNDO ->
                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.REDO ->

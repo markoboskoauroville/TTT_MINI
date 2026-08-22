@@ -6137,3 +6137,72 @@ confirmed red.
 
 Not tested: nothing ran on a phone. Whether the centred group looks right against the meter beneath
 it is the only question here and it is his.
+
+---
+
+# §153 — The volume keys get a switch, and it is a key
+
+Build 272. Two requests in one message, and the first one cannot be built.
+
+## Power + Volume Up: no
+
+He asked for the toggle to be a hardware chord, reasoning that Power + Volume **Down** is already the
+screenshot so Power + Volume **Up** is free. The reasoning is sound and the conclusion is not
+available: **Android never delivers the power key to an app.** It is consumed in the system policy
+layer, above everything an ordinary process or even an accessibility service can see — which is the
+same reason the screenshot chord belongs to the system rather than to whatever is on screen. There is
+no permission that changes this and no accessibility flag that opens it.
+
+Said plainly rather than approximated. A chord that fires "sometimes, on some ROMs" would be worse
+than no chord, because he would stop trusting the toggle without knowing why.
+
+## The switch is a key, and `VOLUME_KEYS.md` is amended
+
+That document says: no preference, no switch in the switchboard, no gestures entry, **do not add it
+back**. It is a contract, so the honest move is to amend it in the open rather than to quietly write
+code that contradicts it.
+
+Read again, the failure it was protecting against was not *that a switch existed*. It was that the
+switch was **invisible, in a place he was not looking, among a dozen others he was dragging**. One
+stray touch, five dead builds, days lost believing the feature had been deleted.
+
+So the rule that replaces "no setting" is narrower and stronger:
+
+> **The only control is the key on the row. If this state ever becomes reachable from a list of
+> switches, the trapdoor is back.**
+
+`scripts/test_volume_switch.py` enforces it by name: exactly three files may mention
+`maVolumeKeysLive` — `AppPrefs`, `MaVolumeKeys`, `MaFeatureRow` — and the switchboard may not. A rule
+in prose is a hope; a rule with a test is a rule.
+
+Persisted, deliberately. A state that resets itself on restart is a control that lies — he would
+switch the keys off for a film and find them live again at the next text field with no press of his
+to explain it.
+
+## Both halves, or neither
+
+`onDown` and `onUp` both consult the gate. Gating only the press would hand the key to the system on
+the way down and still act on release: a volume change **and** a recording, which is the "never both"
+invariant broken in the worst direction. The walked test covers both states across the whole range of
+hold lengths, and confirms red when either half is left ungated.
+
+## One visual language
+
+He asked for the green ring, the same one a bucket wears when it is holding something, and he is
+right that the consistency is worth more than any individual choice: a ring in this green now means
+one thing wherever it appears, and a mark that means one thing is read without being learned.
+
+A first version also swapped the glyph to a crossed-out speaker and tinted it green — three channels
+saying one thing. With the ring carrying the state the shape holds still. **Shape is identity.** A
+key whose face changes is a key he has to re-find, and on a row pressed from memory that costs more
+than the crossed speaker was worth.
+
+## Tested
+
+Test 1: 2,192 checks, 0 failed, 968 walked presses — both keys, both states, reading and not, every
+hold length from 0 to 1200 ms in 10 ms steps. **Never both** and **always one** asserted at every one
+of them, which is what that contract asks for and the reason the switch could be added at all. Broken
+on purpose twice — one half of the gate, and the ring removed — and confirmed red both times.
+
+Not tested: nothing ran on a phone. Whether the ring reads clearly on a key holding an icon rather
+than a two-character label is a question only the screen answers.

@@ -11,6 +11,7 @@
 package dev.patrickgold.florisboard.dictate
 
 import android.content.Context
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import android.media.AudioManager
 import android.view.KeyEvent
 import kotlinx.coroutines.CoroutineScope
@@ -86,12 +87,56 @@ object MaVolumeKeys {
         keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
 
     /**
+     * Whether this module is taking the volume keys at all.
+     *
+     * ### This is the setting VOLUME_KEYS.md forbids, and it is here on purpose
+     *
+     * That document says plainly: there is no preference, do not add one back. It says so because a
+     * switch buried in a draggable list of thirteen was turned off by one stray touch, silently, and
+     * cost him days believing the feature had been deleted while three rounds were spent reading a
+     * handler that was correct the whole time.
+     *
+     * He has asked for it back, and the reason is real: the keys are live whenever the keyboard is
+     * up, and sometimes he wants the volume to be the volume. So the rule that matters is not "no
+     * switch" — it is **the thing that failed was a switch he could not see.** That is what this
+     * avoids:
+     *
+     *  - **The key on the row is the only control.** No switchboard entry, no settings screen, no
+     *    gestures list. It cannot be brushed while dragging something else, because it is not in a
+     *    list of switches.
+     *  - **It shows its own state, on the row, in front of him.** Green means the keys are live.
+     *    The old switch's fatal property was that nothing on screen changed when it flipped.
+     *  - **It only exists if he puts it there.** A key that is not on his row cannot turn anything
+     *    off.
+     *
+     * Persisted, deliberately. A state that resets itself when the keyboard restarts is a control
+     * that lies — he would switch the keys off for a film and find them live again at the next text
+     * field, with no press of his to explain it.
+     *
+     * Read fresh on every press rather than cached. This is read a few times a second at most, and a
+     * cached copy is how a toggle comes to disagree with the key that draws it.
+     */
+    private fun live(): Boolean {
+        val prefs by FlorisPreferenceStore
+        return prefs.dictate.maVolumeKeysLive.get()
+    }
+
+    /**
      * A volume key going down. Returns true when this module has taken the key.
      *
      * Nothing happens on the way down except starting the clock — see the note on release above.
      */
     fun onDown(context: Context, keyCode: Int, event: KeyEvent?): Boolean {
         if (!isVolume(keyCode)) return false
+        // Switched off, this module is not here. Returning false hands the key straight to the
+        // system, which is the ordinary volume with the system's own bar — so the two invariants
+        // still hold: never both, and always one.
+        //
+        // Logged, because the whole point of the log line is to answer "why did nothing happen".
+        if (!live()) {
+            MaLog.add("vol", "${name(keyCode)} \u2014 keys switched off, system volume")
+            return false
+        }
         MaLog.add("vol", "${name(keyCode)} down")
         // The system repeats a held key on its own clock. Only the first press opens a hold; the
         // repeats are swallowed, because the repeating is done here.
@@ -127,6 +172,9 @@ object MaVolumeKeys {
      */
     fun onUp(context: Context, keyCode: Int): Boolean {
         if (!isVolume(keyCode)) return false
+        // The same answer on the way up. Both halves have to agree, or a press that went to the
+        // system on the way down would come back here and start a recording on release.
+        if (!live()) return false
         holdJob?.cancel()
         holdJob = null
         if (didRepeat) {
