@@ -6836,3 +6836,60 @@ A parameter declares a name as much as a val does, and the check now knows it.
 Not tested: nothing ran on a phone. The one number worth measuring is whether a chunk ever arrives
 late enough to leave a gap — the design says it cannot after the first few, and only his network can
 confirm it.
+
+---
+
+# §159 — The window stops blinking, and a mode that never moves the line
+
+Build 286.
+
+## The blink
+
+`if (index < 0) return`, and a doc comment defending it: *between sentences and while idle it draws
+nothing at all — not an empty bar. A band of blank space that appears and disappears is more
+distracting than the words it was meant to carry.*
+
+**The reasoning was right and the rule built from it was wrong.** The distracting thing was never the
+blank bar; it was the appearing and disappearing. The rule was safe while the whole passage arrived
+as one file, because there was no moment mid-passage without a current word. Chunked fetching created
+exactly that moment — between one chunk ending and the next starting — and the box vanished and came
+back several times a reading. He called it blinking.
+
+Now only IDLE hides the window. LOADING, SPEAKING and PAUSED all keep it, and a missing page draws an
+empty box rather than returning. **Empty and still beats full and flickering**, which is what the old
+comment was reaching for and stated backwards.
+
+Worth noting for the next one of these: the comment was not wrong when it was written. It became
+wrong when something underneath it changed. A rule that names the thing it is protecting against —
+*appearing and disappearing* — can be re-read against new circumstances; a rule that only states what
+to do cannot.
+
+## Top line
+
+The seventh effect. The sentence being read sits at the top edge, always, and what has not been said
+yet sits under it, dimmed to scenery.
+
+Every other style centres the reading in a page and moves a mark through it, so the eye tracks a
+highlight down a block and comes back up for the next one. **This one never asks the eye to come
+back.** For a page of text and a moving mark the hunt is the work, and he is dyslexic — the hunt is
+the part that costs him. The line is in the same place every time and only the text underneath moves.
+
+What has been read is dropped rather than greyed above. Keeping it would put finished text where the
+eye lands first and push the live sentence back into the middle, which is the arrangement this exists
+to leave behind.
+
+## verify.py earned its newest check immediately
+
+`check_layout_imports`, added one build ago after the third red build from a missing Compose import,
+caught `Spacer` in this very change — before the push, in the second it took to run. That is the
+whole argument for the closed-list approach: it was measured to zero false positives, so when it
+speaks it is believed and acted on rather than argued with.
+
+## Tested
+
+Test 1: 7,926 checks, 0 failed. Three new: only idle hides the window, no bare index guard survives,
+a missing page draws an empty box. Broken on purpose by restoring the old guard and the old return,
+and confirmed red on all three. Every other suite green.
+
+Not tested: nothing ran on a phone. Whether the window is genuinely still across a chunk boundary is
+the one question that matters and only his eye answers it.

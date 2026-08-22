@@ -21,7 +21,13 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 285.** The last stretch, newest first:
+**Build 286.** The last stretch, newest first:
+
+- **The reading window no longer blinks.** It stays for as long as the reader is anything but idle
+  and draws empty when there is nothing to show. Chunked fetching exposed the old rule — a moment
+  with no current word between chunks made the whole box vanish and return, several times a passage.
+- **Top line**, a seventh effect: the sentence being read is pinned to the top edge with what is
+  coming underneath, so the eye never travels back up for the next one.
 
 - **Reading starts after one sentence, not after the whole screen.** `MaReadChunks` cuts the passage
   into chunks that grow — 1, 2, 4, 8, 16 — and each is synthesised while the previous one plays.

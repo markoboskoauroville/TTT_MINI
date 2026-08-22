@@ -157,3 +157,4 @@ since been removed.
 - **§158a** — Red on an import that blamed something else
 - **§158** — Matrix, four gestures, and four ways to stop
 - **§159** — The reading starts at once
+- **§159** — The window stops blinking, and a mode that never moves the line

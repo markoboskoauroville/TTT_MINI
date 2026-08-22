@@ -86,6 +86,24 @@ check("its file is gone", not (SRC / "dictate/ui/MaAnagram.kt").exists(), "still
 # It was in the list for one commit with nothing rendering it: picking it would have shown the plain
 # highlight and looked like a setting that does nothing. **A style in the menu and no branch drawing
 # it is worse than an absent feature** — the absent one is honest.
+# ---------------------------------------------------------------- the window does not blink
+#
+# Chunked fetching made this visible: between one chunk ending and the next starting there is a
+# moment with no current word, and the whole box used to vanish and come back. Several times a
+# passage. **The distracting thing was never the empty bar, it was the appearing and disappearing.**
+check("only idle hides the window", "MaReader.state == MaReader.State.IDLE) return" in caption,
+      "still leaves on a missing index, which is a blink")
+check("no bare index guard survives", "if (index < 0) return" not in caption, "the old blink is back")
+check("a missing page draws an empty box", "SubtitleBox(modifier = modifier, full = full) { }" in caption,
+      "returns instead, and the box disappears mid-passage")
+
+# ---------------------------------------------------------------- top line
+effects_src = code(SRC / "dictate/ui/MaReaderEffects.kt")
+check("top line is offered", 'Effect("top"' in effects_src, "not in the list")
+check("and something draws it", 'style == "top"' in caption, "offered but never drawn")
+check("the read sentence is at the top", "words.drop(index + 1)" in caption,
+      "what is coming is not what is shown below")
+
 check("matrix has a branch that draws it", 'style == "matrix"' in caption, "offered but never drawn")
 check("it uses the shared window", "SubtitleBox(modifier = modifier, full = full)" in caption,
       "a second kind of window means a second copy of every gesture")

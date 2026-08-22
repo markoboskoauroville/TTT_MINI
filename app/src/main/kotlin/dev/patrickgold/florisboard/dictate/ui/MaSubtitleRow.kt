@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.MaSpeechify
@@ -73,16 +74,26 @@ import dev.patrickgold.florisboard.dictate.MaSpeechify
  * worse than not having it. A sentence is the unit the ear already works in: it arrives, it is
  * read, the next one replaces it.
  *
- * ### Nothing when nothing is being read
+ * ### The window is pinned while the reader is alive, and empty is fine
  *
- * Between sentences and while idle it draws nothing at all — not an empty bar. A band of blank
- * space that appears and disappears is more distracting than the words it was meant to carry.
+ * It used to draw nothing whenever there was no word to show, on the reasoning that a band of blank
+ * space appearing and disappearing is more distracting than the words it carries. **That reasoning
+ * was right and the rule built from it was wrong**, and chunked fetching exposed it: between one
+ * chunk finishing and the next starting there is a moment with no current word, so the whole box
+ * vanished and came back — several times per passage. He called it blinking, which is exactly what
+ * it was.
+ *
+ * The distracting thing was never the blank bar. It was the APPEARING AND DISAPPEARING. So the box
+ * now stays for as long as the reader is anything but idle, and shows nothing in it when there is
+ * nothing to show. Empty and still beats full and flickering.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val index = MaReader.currentIndex
-    if (index < 0) return
+    // Idle is the only reason to disappear. LOADING, SPEAKING and PAUSED all keep the window, so
+    // the gap between two chunks is a still box rather than a hole in the layout.
+    if (MaReader.state == MaReader.State.IDLE) return
     // The joined timeline, not the last chunk fetched.
     //
     // MaSpeechify.lastWords now holds whichever chunk came back most recently — which, while chunk
@@ -127,7 +138,13 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // the font, since a bigger type fits fewer letters across the same width.
     val perPage = if (full) (LINE_CHARS * 17 / fontSp).coerceIn(14, 90) else PAGE_CHARS
     val pages = remember(words, perPage) { paginate(words.map { it.text }, perPage) }
-    val page = remember(pages, index) { pages.firstOrNull { index in it.range } } ?: return
+    // No page yet — the first chunk is still coming, or one has just ended. The box is drawn empty
+    // and keeps its place. Returning here is what made it blink.
+    val page = remember(pages, index) { pages.firstOrNull { index in it.range } }
+    if (page == null) {
+        SubtitleBox(modifier = modifier, full = full) { }
+        return
+    }
 
     // THE BLACK VOID.
     //
@@ -139,6 +156,49 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // nothing to skip ahead to, and no line to lose — the word arrives, is read, and is replaced.
     //
     // Long press collapses it back to the small subtitle box, the same gesture that opened it.
+    // TOP LINE. The sentence being read is pushed to the top, and what is coming sits under it.
+    //
+    // The other styles centre the reading in a page and move a mark through it, so the eye tracks a
+    // highlight down a block and back up again for the next one. This one never asks the eye to
+    // come back: the current sentence is always at the top edge, in the reading colour, and the
+    // text below it is what has not been said yet.
+    //
+    // **The eye stops hunting.** For a page of text and a moving mark the hunt is the work, and he
+    // is dyslexic — the hunt is the part that costs him. The line he wants is in the same place
+    // every time, and the only thing that moves is the text underneath.
+    //
+    // Behind, not above: what has already been read is dropped rather than greyed. Keeping it would
+    // put the finished text where the eye lands first and the live sentence in the middle again,
+    // which is the arrangement this exists to leave behind.
+    if (style == "top") {
+        val here = words.getOrNull(index)?.text.orEmpty()
+        val ahead = words.drop(index + 1).take(40).joinToString(" ") { it.text }
+        SubtitleBox(modifier = modifier, full = full) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = here,
+                    color = lit,
+                    fontSize = fontSize,
+                    lineHeight = lineHeight,
+                    fontWeight = if (litBold) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 2,
+                )
+                if (ahead.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        // Dim, and dim enough to be scenery. It is there so the top line has
+                        // somewhere to have come from, not to be read ahead of the voice.
+                        text = ahead,
+                        color = MaSubtitleWhite.copy(alpha = 0.38f),
+                        fontSize = fontSize,
+                        lineHeight = lineHeight,
+                    )
+                }
+            }
+        }
+        return
+    }
+
     // MATRIX. The word resolves out of falling noise, in the box the void uses.
     //
     // It shares the void's frame deliberately: black, full width, one word, and the same long press

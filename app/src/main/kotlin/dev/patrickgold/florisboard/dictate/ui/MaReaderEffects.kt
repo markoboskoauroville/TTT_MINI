@@ -27,6 +27,10 @@ object MaReaderEffects {
         Effect("karaoke", "Karaoke"),
         Effect("spotlight", "Spotlight"),
         Effect("void", "Void"),
+        // The reading pinned to the top edge, with what is coming underneath. Beside the others
+        // because it is still a caption; different from all of them because nothing moves except
+        // the text, and the line he is listening to never leaves the same spot.
+        Effect("top", "Top line"),
         // Last, because it is the furthest from a subtitle: it does not mark a word in a page, it
         // resolves one out of noise.
         //
