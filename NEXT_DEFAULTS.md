@@ -6288,3 +6288,71 @@ left alone, because this file cannot see those signatures and a check that guess
 gets ignored.
 
 Proved by putting the null back and watching it name the line, the argument and the function.
+
+---
+
+# §155 — Finding a key by typing what it does
+
+Build 275. Forty-six keys in nine sections is past the number anybody reads, and he asked for a
+filter that does not require him to know the app's word for a thing.
+
+## Three layers, cheapest first
+
+1. **Literal.** Every word he typed must appear in the label, the section heading, the letters on the
+   face or the id. Every word rather than any word: adding a word is how somebody narrows a list, and
+   a search that widened would be answering the opposite of what the typing meant. A hit in the label
+   sorts above a hit in a description, so "copy" finds the Copy bucket before the six keys whose
+   descriptions mention copying.
+2. **What he has meant before.** Every pick made while a query is showing stores the pair. "sound
+   off" reaches the volume key on the second try, forever. A prefix of a remembered query finds it
+   too, so it fires while he is still typing — but not from one letter, because too many things start
+   with one letter to be a name.
+3. **A model**, marked `(AI)`.
+
+## The memory is not a spell-checker, and that is the point
+
+He is dyslexic and dictates in two languages. A corrector would try to turn his word into the app's
+word, which is the wrong direction. **His word is not a mistake; it is what that key is called in his
+head.** So nothing is corrected — the pair is stored and his word becomes a real name for that key,
+as good as the printed one and better for him.
+
+Keyed on the id, not the label: the app's labels have changed twice already and a memory keyed on
+them would forget everything he taught it the next time a word was improved. Folded through the same
+accent-stripping the search uses, or "čisti" typed two ways would be two names for one key and
+neither would fire reliably.
+
+The cap drops the **least used**, not the oldest. Dropping by age would keep throwing away the habit
+and keeping the accident.
+
+## The model, and the three conditions on it
+
+Only when both offline layers are empty, only after 700ms of quiet, only for three characters or
+more. Asking per keystroke would spend his credit on the way to a word that was going to match
+anyway.
+
+It goes through `requestRewordRaw` rather than opening a second path to the same providers: the key
+ring, the roll to the next key when one is refused, the proxy and the certificate setting are all
+already there and already tested. **A second HTTP path is a second set of bugs.** `cheapest = true`
+pins the preset's default model, which is the mini/flash/haiku one for every provider in the
+registry — the cheapest possible *with the key he already has*, rather than demanding a particular
+provider for one suggestion in a settings screen.
+
+It is asked for **one id from a list it was given**, and an answer naming anything else is discarded.
+A model that cannot invent an id cannot mislead him about what this keyboard has. Failure is silent:
+no network, no key, a refusal all mean the same thing to him, which is that no suggestion came, and
+the list is still there.
+
+**Marked `(AI)` because it is a guess.** A guess that looked like a match would teach him to trust
+the next one the same way. And picking it teaches the memory exactly as any other pick does — which
+is the whole design: **layer three is a teacher for layer two, not a dependency.** The more he uses
+it, the less it is needed.
+
+## Tested
+
+Test 1: 38 checks, 0 failed, all three layers ported and walked — folding, accents, narrowing,
+ranking, the prefix rule, the cap dropping the least used, and every condition under which a model is
+and is not asked. Broken on purpose two ways — asking on every query, and letting a second word widen
+the search — and confirmed red on both.
+
+Not tested: no model was actually called. The prompt has never been sent, so how good the suggestion
+is remains unmeasured, and it is the one thing only real use answers.

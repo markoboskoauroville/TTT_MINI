@@ -3532,10 +3532,31 @@ object DictateController {
         }
     }
 
+    /**
+     * One cheap question, for the key picker's `(AI)` suggestion.
+     *
+     * Goes through `requestRewordRaw` rather than opening a second path to the same providers: the
+     * key ring, the roll to the next key when one is refused, the proxy and the certificate setting
+     * are all already there and all already tested. **A second HTTP path is a second set of bugs.**
+     *
+     * `cheapest = true` pins the provider preset's default model, which is the mini/flash/haiku one
+     * for every provider in the registry. He asked for the cheapest possible and this is the
+     * cheapest possible *with the key he already has*, which is better than demanding a particular
+     * provider for one suggestion in a settings screen.
+     *
+     * Returns null rather than throwing. Nothing here is worth an error on a picker: no network, no
+     * key, a refusal — all of them mean the same thing to him, which is that the suggestion did not
+     * come, and the list he was already looking at is still there.
+     */
+    suspend fun askCheapModel(prompt: String): String? = runCatching {
+        requestRewordRaw(prompt, cheapest = true)
+    }.getOrNull()
+
     private suspend fun requestRewordRaw(
         userContent: String,
         reasoning: DictateReasoningEffort? = null,
         reasoningCustom: String? = null,
+        cheapest: Boolean = false,
     ): String {
         val account = MaProviders.rewordingAccount()
         // Blank rewording key falls back to the transcription account's key (legacy "reuse" behavior).
@@ -3548,7 +3569,14 @@ object DictateController {
             throw DictateApiException(DictateApiException.Kind.INVALID_API_KEY, "No API key set")
         }
         val preset = MaProviders.presetFor(account)
-        val model = account.chatModel.ifBlank { preset.defaultChatModel ?: "gpt-4o-mini" }
+        val model = if (cheapest) {
+            // The preset default is the cheap one for every provider in the registry — haiku, mini,
+            // flash. His chosen chat model may be an expensive one and a picker suggestion is not
+            // worth it.
+            preset.defaultChatModel ?: account.chatModel.ifBlank { "gpt-4o-mini" }
+        } else {
+            account.chatModel.ifBlank { preset.defaultChatModel ?: "gpt-4o-mini" }
+        }
         // Built per key inside the ring walk below, because the key is what it is built with. Kept as
         // a lambda rather than a value so a roll to the next key really does mean a new client.
         val clientFor: (String) -> OpenAiCompatibleClient = { key ->

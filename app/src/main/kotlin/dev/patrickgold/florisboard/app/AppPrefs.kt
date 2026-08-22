@@ -1374,6 +1374,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = true,
         )
 
+        /**
+         * What he calls each key, learned from what he typed before picking it.
+         *
+         * Written only by the key picker, read only by it. See MaKeySearch: this is the layer that
+         * makes the model unnecessary over time rather than a permanent dependency.
+         */
+        val maKeySearchMemory = string(
+            key = "dictate__ma_key_search_memory",
+            default = "",
+        )
+
         val maClipDelaySelect = int(
             key = "dictate__ma_clip_delay_select",
             default = 0,

@@ -21,7 +21,15 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 273.** The last stretch, newest first:
+**Build 275.** The last stretch, newest first:
+
+- **The Add keys screen has a search, in three layers.** `MaKeySearch`: literal match on label,
+  section, face and id; then what he has meant before, learned every time he picks a key with a
+  query showing (`maKeySearchMemory`); then a model, only when both are empty, after 700ms of quiet,
+  for queries of three characters or more, pinned to the provider's cheapest model and reusing the
+  key ring through `DictateController.askCheapModel`. The guess is marked **(AI)**, and picking it
+  teaches the memory like any other pick, **so the third layer works itself out of a job.** The whole
+  rule is pure Kotlin and walked in `scripts/test_key_search.py`.
 
 - **Send and Record are keys on the feature row**, both under Dictation. Send goes through
   `MaMagicTargets.pressSend()`, so it uses his configured term and cannot drift from what volume-down

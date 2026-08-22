@@ -93,6 +93,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaCommandPalette
+import dev.patrickgold.florisboard.dictate.MaKeySearch
+import dev.patrickgold.florisboard.dictate.DictateController
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.LaunchedEffect
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import dev.patrickgold.florisboard.dictate.ui.MaRecordRed
 import dev.patrickgold.florisboard.dictate.MaMacroSlots
@@ -376,6 +380,33 @@ fun MaRowsScreen() = FlorisScreen {
 }
 
 /** What a button is called in the editor's list. */
+/**
+ * The id the search memory stores, stable across renames.
+ *
+ * Not the label: he will rename nothing, but the app's labels have changed twice already, and a
+ * memory keyed on a label would forget everything he taught it the next time a word was improved.
+ */
+private fun MaRows.Button.searchId(): String = when (this) {
+    is MaRows.Button.Builtin -> key.id
+    is MaRows.Button.Clip -> "clip:$slot"
+    is MaRows.Button.Macro -> "macro:$slot"
+}
+
+/** This button as something findable: its name, its section, and whatever is written on its face. */
+private fun MaRows.Button.searchEntry(macroSlots: List<MaMacroSlots.Slot>): MaKeySearch.Entry =
+    MaKeySearch.Entry(
+        id = searchId(),
+        label = title(macroSlots),
+        // The section heading goes into the description, so typing "clipboard" finds everything in
+        // the clipboard section even when the word is on none of the labels.
+        description = MaRows.groupOf(this).heading,
+        letters = when (this) {
+            is MaRows.Button.Builtin -> key.label
+            is MaRows.Button.Clip -> "C$slot"
+            is MaRows.Button.Macro -> "M$slot"
+        },
+    )
+
 private fun MaRows.Button.title(macroSlots: List<MaMacroSlots.Slot>): String = when (this) {
     is MaRows.Button.Builtin -> key.label
     // "C1, newest copy" was left over from when these were a window onto the history. C1 has not
@@ -648,6 +679,53 @@ internal fun MaKeyPicker(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
 
+                // ---------------------------------------------------------------- the search
+                //
+                // Forty-six keys is past the number anybody reads. Typing what he wants is faster
+                // than finding it in nine sections, and it does not have to be the app's word for
+                // it — see MaKeySearch, which matches literally first, then on what he has meant
+                // before, and only then asks a model.
+                val prefs by FlorisPreferenceStore
+                val scope = rememberCoroutineScope()
+                var query by remember { mutableStateOf("") }
+                val memory by prefs.dictate.maKeySearchMemory.collectAsState()
+                var suggestion by remember { mutableStateOf<MaKeySearch.Entry?>(null) }
+                var asking by remember { mutableStateOf(false) }
+
+                val allEntries = remember(macroSlots) {
+                    MaRows.catalogue().associateBy({ it.searchEntry(macroSlots) }, { it })
+                }
+                val result = remember(query, memory, allEntries) {
+                    MaKeySearch.resolve(query, allEntries.keys.toList(), memory)
+                }
+
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it; suggestion = null },
+                    singleLine = true,
+                    label = { Text("Find a key") },
+                    placeholder = { Text("what it does, in your words") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+
+                // The model is asked only when both offline layers are empty, only after he has
+                // stopped typing, and only for a query long enough to mean something. Asking on
+                // every keystroke would spend his credit on the way to a word that was going to
+                // match anyway.
+                LaunchedEffect(query, result.aiWanted) {
+                    suggestion = null
+                    if (!result.aiWanted || query.trim().length < 3) return@LaunchedEffect
+                    delay(700L)
+                    asking = true
+                    val reply = DictateController.askCheapModel(
+                        MaKeySearch.prompt(query, allEntries.keys.toList()),
+                    )
+                    asking = false
+                    suggestion = reply?.let { MaKeySearch.readAnswer(it, allEntries.keys.toList()) }
+                }
+
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -656,6 +734,18 @@ internal fun MaKeyPicker(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 8.dp),
                 ) {
+                    if (result.entries.isEmpty()) {
+                        Text(
+                            text = when {
+                                asking -> "Nothing matched \u2014 asking\u2026"
+                                suggestion != null -> "Nothing matched. Did you mean:"
+                                else -> "Nothing matched."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 8.dp, top = 16.dp, bottom = 4.dp),
+                        )
+                    }
                     // Grouped by what a key is FOR, and the grouping lives in the model rather than
                     // here.
                     //
@@ -668,7 +758,22 @@ internal fun MaKeyPicker(
                     // without saying which it belongs to: the `when` that answers is exhaustive, so
                     // the compiler asks the question at the moment somebody knows the answer. That
                     // is the whole reason it is not a `when` written on this screen.
-                    val sections = MaRows.catalogueGrouped()
+                    // The suggestion, when the model named one. Marked (AI) because it is a GUESS,
+                    // and a guess that looked like a match would teach him to trust the next one
+                    // the same way. It is added to the list rather than replacing it, and picking
+                    // it teaches the memory exactly as any other pick does — which is how the third
+                    // layer makes itself unnecessary.
+                    val aiHit = suggestion
+                    val sections = if (MaKeySearch.fold(query).isBlank()) {
+                        MaRows.catalogueGrouped()
+                    } else {
+                        val wanted = (result.entries + listOfNotNull(aiHit)).toSet()
+                        MaRows.catalogueGrouped()
+                            .map { (group, buttons) ->
+                                group to buttons.filter { b -> b.searchEntry(macroSlots) in wanted }
+                            }
+                            .filter { it.second.isNotEmpty() }
+                    }
                     sections.forEach { (group, buttons) ->
                         Text(
                             text = group.heading,
@@ -688,7 +793,26 @@ internal fun MaKeyPicker(
                                             .weight(1f)
                                             .heightIn(min = 52.dp)
                                             .clickable {
-                                                if (ticked) chosen.remove(button) else chosen.add(button)
+                                                if (ticked) {
+                                                    chosen.remove(button)
+                                                } else {
+                                                    chosen.add(button)
+                                                    // Learned on the pick, not on the Add, because
+                                                    // the query is what was on screen at the moment
+                                                    // he recognised the key. By the time Add is
+                                                    // pressed he may have searched three more
+                                                    // times.
+                                                    val q = query
+                                                    if (q.isNotBlank()) {
+                                                        scope.launch {
+                                                            prefs.dictate.maKeySearchMemory.set(
+                                                                MaKeySearch.learn(
+                                                                    memory, q, button.searchId(),
+                                                                ),
+                                                            )
+                                                        }
+                                                    }
+                                                }
                                             }
                                             .padding(end = 4.dp),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -704,7 +828,12 @@ internal fun MaKeyPicker(
                                         MaButtonGlyph(button, macroSlots)
                                         Spacer(Modifier.width(6.dp))
                                         Text(
-                                            text = button.title(macroSlots),
+                                            text = button.title(macroSlots) +
+                                                if (aiHit != null && button.searchEntry(macroSlots) == aiHit) {
+                                                    " (AI)"
+                                                } else {
+                                                    ""
+                                                },
                                             style = MaterialTheme.typography.bodyMedium,
                                             maxLines = 2,
                                             modifier = Modifier.weight(1f),
