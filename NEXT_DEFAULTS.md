@@ -6518,3 +6518,65 @@ confirmed red with 648 failures.
 Not tested: nothing ran on a phone. The migration in particular is reasoned, not observed: whether
 the history holds enough entries to rebuild a useful Croatian model is something only his phone can
 say. If it comes back thin, the model is not broken — it is young, and it fills again as he writes.
+
+---
+
+# §158 — Three small things the row was missing
+
+Build 279.
+
+## Add was behind the keyboard
+
+The moment the picker grew a search field it grew a keyboard, and the keyboard covered the Add button
+at the bottom of the screen. Searching for a key left him with a ticked box, no visible way to accept
+it and no visible way out — which is what his screenshot shows.
+
+**Two fixes, and they are not duplicates of each other.** `imePadding()` is the actual bug: the
+column now ends where the keyboard begins instead of underneath it. **Add beside Cancel** in the top
+bar is the answer to what he asked for — both answers in one place, reachable without dismissing the
+keyboard first, which is the state he is in while searching. It carries the count, because "Add"
+alone gives no way to notice a tick that went astray two columns from where he was looking.
+
+The bottom button stays. It is the primary target when the keyboard is down, and it is the one his
+thumb already knows.
+
+## The record key gets a meter and a clock
+
+A vertical level meter on the left, the lamp in the middle, the elapsed time on the right. Time only,
+as he asked — the megabytes live on the recording bar where there is room.
+
+Both read **exactly the sources the recording bar reads**: `DictateController.audioLevel` and the
+same `startedAtMs`/`accumulatedMs` arithmetic. Two ways of counting the same seconds would drift, and
+a key and a bar disagreeing about how long a recording is would be worse than neither showing it.
+
+**Only while recording.** Idle, the key is the red dot alone: a meter reading nothing and a clock
+reading 0:00 are two more things saying "not recording" that the dot already says, and they would
+take room from the one thing on the key that has to be found by touch.
+
+**The meter is on the dB curve, not the raw level**, and the test asserts why: a linear bar sits at a
+tenth of its height for an ordinary voice and only wakes up for a shout. Floored at a visible sliver,
+so silence reads as "recording, hearing nothing" rather than as an empty slot.
+
+## Send goes dim when there is nothing to send
+
+`MaMagicTargets.sendVisible()` looks without pressing, using the same resolved term `pressSend` uses —
+so the key cannot be lit for one button and press another.
+
+**Polled every two seconds, not watched.** The accessibility service reports window changes, and the
+case that matters is "the Send button became available inside a window that was already there", which
+is exactly what happens when he finishes dictating. The loop lives and dies with the key: no key on
+the row, nobody's view tree being walked.
+
+**Dim, never hidden.** A key that disappears takes its neighbours' positions with it, and this row is
+pressed from memory. Nothing may move because of something happening in another app.
+
+## Tested
+
+Test 1: 25 checks, 0 failed — the meter curve walked for monotonicity across 500 points and asserted
+to put ordinary speech well up the bar, the clock formatted from zero to over an hour, and the wiring
+of all three changes. Broken on purpose three ways — a linear meter, the send key always lit, the
+picker back under the keyboard — and confirmed red with six failures.
+
+Not tested: nothing ran on a phone. Whether a 3dp bar and a five-character clock fit legibly on one
+key beside the dot is the question this build turns on, and only the screen answers it. If it is
+cramped, the clock is the part to drop first: the recording bar already carries it.

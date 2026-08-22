@@ -51,6 +51,8 @@ import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Layers
@@ -1221,6 +1223,27 @@ fun MaFeatureRow(
                 }
 
                 MaFeatureKey.SEND -> {
+                    // Lit only when there is a Send button on the screen.
+                    //
+                    // He asked for this and the reason is the one that keeps coming back: a key that
+                    // looks alive and does nothing is indistinguishable from a broken key. Dim, it
+                    // says "not here" before the press rather than after it.
+                    //
+                    // Polled rather than watched, because the accessibility service reports window
+                    // changes and not "the Send button appeared inside a window that was already
+                    // there" — which is what happens when he finishes dictating and the app enables
+                    // its own button. Two seconds costs nothing and is quick enough that the key is
+                    // right by the time his thumb arrives.
+                    //
+                    // The loop lives and dies with the key: no key on the row, nobody's view tree
+                    // being walked.
+                    var sendHere by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) {
+                        while (true) {
+                            sendHere = runCatching { MaMagicTargets.sendVisible() }.getOrDefault(false)
+                            delay(2000L)
+                        }
+                    }
                     // Send, and the same send volume-down makes.
                     //
                     // `MaMagicTargets.pressSend()` rather than a press of anything named "Send":
@@ -1238,6 +1261,10 @@ fun MaFeatureRow(
                         // row has to be announceable. He uses a screen reader some of the time and a
                         // key that reads as nothing is a key he cannot find.
                         contentDescription = "Send",
+                        // Dim rather than hidden. A key that disappears takes its neighbours' places
+                        // with it, and this row is pressed from memory — the positions must not move
+                        // because of something happening in another app.
+                        tint = if (sendHere) null else MaSand.copy(alpha = 0.3f),
                         modifier = keyMod,
                     ) {
                         if (!DictateAccessibilityService.isRunning) {
@@ -1261,8 +1288,29 @@ fun MaFeatureRow(
                     // only route to the transcribe view. That still holds and this does not break
                     // it: MIC keeps the view, and this is a route that takes nothing away. He asked
                     // for it, and a hand already on the row should not have to find a hardware key.
-                    val recording = DictateController.state.collectAsState().value is
+                    val rec = DictateController.state.collectAsState().value as?
                         DictateController.UiState.Recording
+                    val recording = rec != null
+
+                    // The level and the clock, from exactly the sources the recording bar reads, so
+                    // the key and the bar can never disagree about what is happening.
+                    val level by DictateController.audioLevel.collectAsState()
+                    var elapsedMs by remember { mutableLongStateOf(0L) }
+                    LaunchedEffect(rec?.startedAtMs, rec?.accumulatedMs, rec?.paused) {
+                        val r = rec
+                        if (r == null) {
+                            elapsedMs = 0L
+                            return@LaunchedEffect
+                        }
+                        while (true) {
+                            elapsedMs = if (r.paused) {
+                                r.accumulatedMs
+                            } else {
+                                r.accumulatedMs + (android.os.SystemClock.elapsedRealtime() - r.startedAtMs)
+                            }
+                            delay(200L)
+                        }
+                    }
                     ThemedKey(
                         code = KeyCode.NOOP,
                         modifier = keyMod,
@@ -1279,11 +1327,57 @@ fun MaFeatureRow(
                         // While recording it grows and takes the ring, which is the app's one way of
                         // saying a thing is live. The dot does not change colour, because the colour
                         // is its name.
-                        Box(
-                            modifier = Modifier
-                                .size(if (recording) 18.dp else 14.dp)
-                                .background(MaRecordRed, CircleShape),
-                        )
+                        // A meter on the left, the lamp in the middle, the clock on the right.
+                        //
+                        // Only while recording. Idle, the key is the red dot alone: a meter reading
+                        // nothing and a clock reading 0:00 are two more things saying "not
+                        // recording" that the dot already says, and they would take room from the
+                        // one thing on this key that has to be found by touch.
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxHeight(),
+                        ) {
+                            if (recording) {
+                                // Vertical, filling from the bottom, which is the direction every
+                                // level meter ever built has moved. Not animated between values: at
+                                // this size a smoothed bar lags the voice enough to look like it is
+                                // metering somebody else.
+                                Box(
+                                    modifier = Modifier
+                                        .width(3.dp)
+                                        .fillMaxHeight(0.55f)
+                                        .background(MaSand.copy(alpha = 0.18f), RoundedCornerShape(2.dp)),
+                                    contentAlignment = Alignment.BottomCenter,
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(3.dp)
+                                            .fillMaxHeight(maLevelToBar(level))
+                                            .background(MaRecordRed, RoundedCornerShape(2.dp)),
+                                    )
+                                }
+                                Spacer(Modifier.width(4.dp))
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(if (recording) 12.dp else 14.dp)
+                                    .background(MaRecordRed, CircleShape),
+                            )
+                            if (recording) {
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    // Time only, as he asked. The megabytes live on the recording
+                                    // bar where there is room for them; here there is one key.
+                                    text = "%d:%02d".format(elapsedMs / 60000, (elapsedMs / 1000) % 60),
+                                    color = MaSand,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -1646,3 +1740,19 @@ private fun MaWandBar(
 private var maDashboardOpen by mutableStateOf(false)
 
 private val MaSand = Color(0xFFE8B15C)
+
+/**
+ * The audio level as a fraction of the meter's height.
+ *
+ * The same dB curve the recording bar uses rather than the raw amplitude: a linear bar on a raw
+ * level sits near the floor for ordinary speech and only moves when something is shouted — a meter
+ * that is technically correct and useless for seeing whether a voice is being heard at all.
+ *
+ * Floored at a visible sliver, so silence reads as "recording, hearing nothing" rather than as an
+ * empty slot where a meter should be.
+ */
+private fun maLevelToBar(level: Float): Float {
+    val v = kotlin.math.abs(level).coerceAtLeast(1e-6f)
+    val db = (20.0 * kotlin.math.log10(v.toDouble())).toFloat()
+    return ((db + 48f) / 48f).coerceIn(0.06f, 1f)
+}

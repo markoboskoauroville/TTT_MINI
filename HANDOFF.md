@@ -21,7 +21,15 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 278.** The last stretch, newest first:
+**Build 279.** The last stretch, newest first:
+
+- **The Add keys screen sits above the keyboard** (`imePadding`) and has **Add beside Cancel** in
+  the top bar with a count. Searching used to leave a ticked box with no reachable way to accept it.
+- **The record key wears a vertical level meter on the left and the elapsed time on the right**,
+  only while recording, from the same `audioLevel` and the same clock the recording bar reads.
+- **The send key is dim when there is no Send button on the screen.** `MaMagicTargets.sendVisible()`
+  looks without pressing, polled every two seconds only while the key is on a row. Dim rather than
+  hidden, or the keys beside it would move.
 
 - **The personal n-gram is two models, one per language, and they never meet.** `MaNgram` keys on
   `MaLanguage.active()` — the EN/HR badge — for learning, predicting, saving and forgetting. The old

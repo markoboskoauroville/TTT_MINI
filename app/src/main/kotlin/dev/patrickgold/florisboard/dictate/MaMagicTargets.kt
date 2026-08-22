@@ -220,6 +220,25 @@ object MaMagicTargets {
      * Reads the preference at press time rather than being handed a term, so renaming a target in
      * settings changes every trigger at once with nothing to restart.
      */
+    /**
+     * Is there a Send button on the screen right now?
+     *
+     * Looks without pressing, so the key on the row can grey itself out when there is nothing to
+     * press. A key that looks alive and does nothing is the failure this whole app keeps meeting;
+     * this is the cheapest possible cure for one instance of it.
+     *
+     * The same term `pressSend` uses, resolved the same way, so the key cannot be lit for one button
+     * and press another.
+     */
+    fun sendVisible(): Boolean {
+        val prefs by FlorisPreferenceStore
+        val stored = prefs.dictate.maVolumeDownTerm.get()
+        val targets = parse(prefs.dictate.maMagicTargets.get()).ifEmpty { defaults() }
+        val term = resolveTerm(targets, stored)
+        if (term.isEmpty() || !DictateAccessibilityService.isRunning) return false
+        return DictateAccessibilityService.countScreenTargetsInView(listOf(term)) > 0
+    }
+
     fun pressSend(): String? {
         val prefs by FlorisPreferenceStore
         val stored = prefs.dictate.maVolumeDownTerm.get()

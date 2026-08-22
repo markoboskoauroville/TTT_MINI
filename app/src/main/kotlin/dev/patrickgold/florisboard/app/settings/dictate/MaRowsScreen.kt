@@ -87,6 +87,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.Button
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.window.Dialog
@@ -657,8 +658,14 @@ internal fun MaKeyPicker(
         // The default dialog width is a fraction of the screen. This one is the screen.
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
+        // ABOVE THE KEYBOARD.
+        //
+        // The moment this screen grew a search field it grew a keyboard, and the keyboard covered
+        // the Add button at the bottom — so searching for a key left him with a ticked box and no
+        // visible way to accept it or to leave. `imePadding` is the fix: the column ends where the
+        // keyboard begins instead of underneath it.
         Surface(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().imePadding()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -671,6 +678,19 @@ internal fun MaKeyPicker(
                         modifier = Modifier.weight(1f),
                     )
                     TextButton(onClick = onDismiss) { Text("Cancel") }
+                    // Add, beside Cancel, so both answers live in one place and neither can be
+                    // hidden by anything. It is the one reachable without dismissing the keyboard
+                    // first, which is the state he is in while searching — the bottom Add was behind
+                    // the keyboard the moment this screen grew a search field.
+                    //
+                    // It carries the count, because "Add" alone gives him no way to notice that a
+                    // tick went astray two columns from where he was looking.
+                    TextButton(
+                        onClick = { onAdd(chosen.toList()) },
+                        enabled = chosen.isNotEmpty(),
+                    ) {
+                        Text(if (chosen.isEmpty()) "Add" else "Add ${chosen.size}")
+                    }
                 }
                 Text(
                     text = "Tick as many as you like, then add them all at once.",
