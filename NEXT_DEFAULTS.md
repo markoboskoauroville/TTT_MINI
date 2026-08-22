@@ -6452,3 +6452,69 @@ Also worth recording, because it wasted a step: sabotaging the fix to prove a ch
 work when HEAD already contains the bug — reverting to the broken line made the file identical to
 HEAD, so `verify.py` saw no changed files at all and reported nothing. **When the last commit is the
 red one, sabotage tests nothing.** Sweep instead.
+
+---
+
+# §157 — Two n-grams, one per language, never touching
+
+Build 278. He asked, after the last build's finding, for the personal model to be split: *English
+n-gram and Croatian n-gram, isolated pools. I can mix it manually in the middle of my text if I want
+— one sentence in English, switch, another in Croatian, and the algorithm corrects and finishes.*
+
+## What was wrong
+
+One model for everything he wrote. It learned both languages into the same counts and offered
+whichever was commoner, so typing Croatian produced English words with a matching prefix and the
+reverse. The EN/HR badge already moved the transcription language, the keyboard subtype and the
+shipped dictionary — **the personal model was the only part still deaf to it**, and every AI word he
+accepted went into the same undivided store.
+
+## Isolated, not weighted
+
+`MaNgram` keeps a model per language and keys on `MaLanguage.active()` for learning, predicting,
+saving and forgetting.
+
+A shared model with a language column would have been the smaller change and the wrong one: one
+language's counts would still decide the ranking of the other's. **That is the same failure wearing a
+schema.**
+
+Predict reads the active model only, never the other to fill an empty row. An English word offered
+while writing Croatian is not a weaker suggestion, it is a wrong one.
+
+**The language is captured at the commit, not inside the coroutine.** He presses the badge
+mid-sentence; a sentence belongs to the language it was written in, not to the one showing when the
+save happens to run.
+
+Forgetting clears both. "Forget what you have learned", asked while writing English, cannot leave the
+Croatian model standing — he would watch the count go to zero and still be offered his own words the
+moment he pressed the badge.
+
+## The mixed file could be thrown away, and that is not a loss
+
+Nothing in `ma_ngram.tsv` records which language each count came from, and guessing per word is
+exactly the mixing being ended. So it is deleted once, `maNgramBackfilled` is reset, and both models
+are rebuilt from the dictation history — **which has carried a language per entry all along.** The
+evidence for the split was already on disk; only the model was not using it.
+
+## The AI half
+
+The row now asks by the **badge** rather than by the keyboard subtype. The two are linked today, but
+the badge is the control he presses and the thing the model is split by, so the whole prediction
+stack reads one source.
+
+The prompt names the language three times and forbids the other outright. That is not clumsiness:
+the text before the cursor is frequently in the *other* language — a sentence in English, the badge,
+a sentence in Croatian — and a model shown mostly English and asked for "the next word" answers in
+English however the header is worded. **One mention loses to the evidence in the middle.**
+
+## Tested
+
+Test 1: 785 checks, 0 failed, including 384 walked turns — every order of six language-alternating
+sentences, asserting after each that neither model has ever seen the other's words. Also that counts
+do not leak, that switching the badge alone learns nothing, and that forgetting clears both. Broken
+on purpose two ways — the models made to share a store, and predict pointed at the wrong model — and
+confirmed red with 648 failures.
+
+Not tested: nothing ran on a phone. The migration in particular is reasoned, not observed: whether
+the history holds enough entries to rebuild a useful Croatian model is something only his phone can
+say. If it comes back thin, the model is not broken — it is young, and it fills again as he writes.

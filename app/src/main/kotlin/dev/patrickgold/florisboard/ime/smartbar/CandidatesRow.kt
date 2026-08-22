@@ -58,6 +58,7 @@ import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggColumn
 import org.florisboard.lib.snygg.ui.SnyggIcon
+import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.nlp.MaAiPredict
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.dictate.DictateController
@@ -273,7 +274,11 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                             MaAiPredict.prompt(
                                 before = before,
                                 current = current,
-                                language = subtypeManager.activeSubtype.primaryLocale.displayLanguage(),
+                                // The badge, not the subtype. The two are linked today — the EN/HR
+                                // key moves the subtype as well — but the badge is the control he
+                                // presses and the one the personal model is now split by, so it is
+                                // the single source the whole prediction stack reads.
+                                language = if (MaLanguage.active() == MaLanguage.HR) "Croatian" else "English",
                             ),
                         )
                         MaAiPredict.busy.value = false

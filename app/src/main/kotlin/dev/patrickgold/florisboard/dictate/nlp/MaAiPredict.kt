@@ -70,8 +70,18 @@ object MaAiPredict {
      * and completes the sentence instead of the word.
      */
     fun prompt(before: String, current: String, language: String): String = buildString {
-        append("You are a phone keyboard's word prediction. Language: ").append(language).append(".\n")
-        append("Give the ").append(WANTED).append(" most likely words, one per line, nothing else.\n")
+        // The language is stated three times, and that is not clumsiness.
+        //
+        // The text before the cursor is often in the other language — he writes a sentence in
+        // English, presses the badge, and starts one in Croatian — and a model shown mostly English
+        // and asked for "the next word" answers in English however the header is worded. Saying it
+        // once at the top loses to the evidence in the middle. **Nothing is mixed: the badge decides,
+        // and mixing is his to do by hand, one sentence at a time.**
+        append("You are a phone keyboard's word prediction for ").append(language).append(".\n")
+        append("EVERY answer must be a ").append(language)
+            .append(" word. Never answer in another language, even if the text so far is in one.\n")
+        append("Give the ").append(WANTED).append(" most likely ").append(language)
+            .append(" words, one per line, nothing else.\n")
         append("No numbering, no punctuation, no explanation.\n\n")
         append("Text so far: ").append(before.takeLast(300).ifBlank { "(nothing yet)" }).append('\n')
         if (current.isNotBlank()) {

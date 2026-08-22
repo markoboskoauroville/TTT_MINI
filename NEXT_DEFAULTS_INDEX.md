@@ -151,3 +151,4 @@ since been removed.
 - **§154** — Send and Record become keys
 - **§155** — Finding a key by typing what it does
 - **§156** — The AI key on the prediction row
+- **§157** — Two n-grams, one per language, never touching

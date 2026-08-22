@@ -21,7 +21,14 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 276.** The last stretch, newest first:
+**Build 278.** The last stretch, newest first:
+
+- **The personal n-gram is two models, one per language, and they never meet.** `MaNgram` keys on
+  `MaLanguage.active()` — the EN/HR badge — for learning, predicting, saving and forgetting. The old
+  mixed `ma_ngram.tsv` is deleted once and both models are rebuilt from the dictation history, which
+  records a language per entry. The AI key follows the badge too and its prompt names the language
+  three times and forbids the other, because the text before the cursor is often in the other
+  language and one mention loses to that evidence.
 
 - **An AI key at the end of the prediction row.** Pressed, it asks the cheap model for five words
   and they replace the row; pressed again, the ordinary guesses come back. **Whichever word he picks

@@ -39,10 +39,44 @@ object MaNgram {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    val model = MaNgramModel()
+    /**
+     * ONE MODEL PER LANGUAGE, AND THEY NEVER MEET.
+     *
+     * There was one model for everything he wrote. It learned Croatian and English into the same
+     * counts and offered whichever was commoner, so typing Croatian produced English words with a
+     * matching prefix and the reverse — and every AI word he accepted went into the same undivided
+     * store.
+     *
+     * The EN/HR key already moves the transcription language, the keyboard subtype and the shipped
+     * dictionary. **It moves the personal model now too, and that was the only part still deaf to
+     * it.** What he wants is exactly this: a sentence in English, the badge, a sentence in Croatian,
+     * and each one finished from words of its own language.
+     *
+     * Isolated, not weighted. A shared model with a language column would still let one language's
+     * counts decide the ranking of the other's, which is the same failure wearing a schema.
+     */
+    private val models = mutableMapOf<String, MaNgramModel>()
 
-    @Volatile
-    private var file: File? = null
+    private val files = mutableMapOf<String, File>()
+
+    private val modelsLock = Any()
+
+    /** The language being written right now: the badge, which is the one control he touches. */
+    private fun active(): String = MaLanguage.active()
+
+    private fun modelFor(language: String): MaNgramModel = synchronized(modelsLock) {
+        models.getOrPut(language) { MaNgramModel() }
+    }
+
+    /**
+     * The model for the language being written.
+     *
+     * Kept as a property because the settings screen reads `MaNgram.model.vocabularySize` to report
+     * how much has been learned. It now reports the ACTIVE language's model, which is the honest
+     * answer to "how many words does it know" asked while writing in one of them.
+     */
+    val model: MaNgramModel
+        get() = modelFor(active())
 
     @Volatile
     private var loaded = false
@@ -69,9 +103,30 @@ object MaNgram {
         appContext = context.applicationContext
         if (loaded) return
         loaded = true
-        val target = File(context.filesDir, FILE_NAME)
-        file = target
-        scope.launch { model.load(target) }
+        // Both, at startup, rather than the active one on demand. He switches language mid-sentence
+        // and a load on first use would put a disk read in the middle of typing.
+        for (language in LANGUAGES) {
+            val target = File(context.filesDir, "ma_ngram_$language.tsv")
+            synchronized(modelsLock) { files[language] = target }
+            scope.launch { modelFor(language).load(target) }
+        }
+        // The old single mixed file, removed once.
+        //
+        // It cannot be split: nothing in it records which language each count came from, and
+        // guessing per word is exactly the mixing this change exists to end. It is deleted and the
+        // backfill below rebuilds both models from the dictation history, which DOES carry a
+        // language per entry. Nothing of value is lost that the history cannot give back.
+        scope.launch {
+            runCatching {
+                val legacy = File(context.filesDir, LEGACY_FILE_NAME)
+                if (legacy.exists()) {
+                    legacy.delete()
+                    val prefs by FlorisPreferenceStore
+                    prefs.dictate.maNgramBackfilled.set(false)
+                    MaLog.add("ngram", "mixed model removed; rebuilding one per language")
+                }
+            }
+        }
     }
 
     /**
@@ -138,8 +193,12 @@ object MaNgram {
         val prefs by FlorisPreferenceStore
         if (!prefs.dictate.maNgramEnabled.get()) return
         if (text.length > MAX_LEARN_LENGTH) return
+        // The language at the moment of writing, captured here rather than inside the coroutine: he
+        // may press the badge between the commit and the save, and the sentence belongs to the
+        // language it was written in.
+        val language = active()
         scope.launch {
-            model.learn(text)
+            modelFor(language).learn(text)
             scheduleSave()
         }
     }
@@ -181,13 +240,21 @@ object MaNgram {
                 for (entry in entries) {
                     val text = entry.text
                     if (text.isBlank() || text.length > MAX_LEARN_LENGTH) continue
-                    model.learn(text)
+                    // Routed by the language the entry was DICTATED in, which the history has
+                    // recorded all along. This is why the mixed file could be thrown away without
+                    // losing anything: the evidence for the split was already on disk.
+                    val language = if (entry.language.substringBefore('-').lowercase() == MaLanguage.HR) {
+                        MaLanguage.HR
+                    } else {
+                        MaLanguage.EN
+                    }
+                    modelFor(language).learn(text)
                     learned++
                 }
                 prefs.dictate.maNgramBackfilled.set(true)
                 if (learned > 0) {
                     scheduleSave()
-                    MaLog.add("ngram", "learned $learned past dictations, ${model.totalWords} words known")
+                    MaLog.add("ngram", "learned $learned past dictations into ${LANGUAGES.size} models")
                 }
             }.onFailure { MaLog.add("ngram", "backfill failed: ${it.message}") }
         }
@@ -226,9 +293,12 @@ object MaNgram {
         // complete words before the cursor, and it would otherwise count the half-typed word as the
         // previous one — predicting what follows `other` while he is still writing `other`.
         val context = if (derived) textBeforeCursor.dropLast(trailing.length) else textBeforeCursor
-        val personal = if (model.totalWords >= MIN_WORDS_BEFORE_PREDICTING) {
-            val (two, one) = model.contextOf(context)
-            model.predict(previousTwo = two, previousOne = one, prefix = word)
+        // Only this language's model. Never the other one, not even to fill an empty row: an English
+        // word offered while writing Croatian is not a weaker suggestion, it is a wrong one.
+        val active = modelFor(active())
+        val personal = if (active.totalWords >= MIN_WORDS_BEFORE_PREDICTING) {
+            val (two, one) = active.contextOf(context)
+            active.predict(previousTwo = two, previousOne = one, prefix = word)
         } else {
             emptyList()
         }
@@ -267,8 +337,14 @@ object MaNgram {
         saveJob?.cancel()
         saveJob = scope.launch {
             delay(SAVE_DELAY_MS)
-            model.prune()
-            file?.let { model.save(it) }
+            // Every model, not the active one. He switches language mid-sentence, so the one that
+            // just learned something may not be the one in front of him by the time this runs.
+            for (language in LANGUAGES) {
+                val m = modelFor(language)
+                if (!m.isDirty) continue
+                m.prune()
+                synchronized(modelsLock) { files[language] }?.let { m.save(it) }
+            }
         }
     }
 
@@ -276,8 +352,9 @@ object MaNgram {
     fun flush() {
         saveJob?.cancel()
         scope.launch {
-            if (model.isDirty) {
-                file?.let { model.save(it) }
+            for (language in LANGUAGES) {
+                val m = modelFor(language)
+                if (m.isDirty) synchronized(modelsLock) { files[language] }?.let { m.save(it) }
             }
         }
     }
@@ -285,12 +362,21 @@ object MaNgram {
     /** Forgets everything and removes the file. */
     fun forgetEverything() {
         scope.launch {
-            model.clear()
-            file?.delete()
+            // Everything means everything. "Forget what you have learned" asked while writing
+            // English cannot sensibly leave the Croatian model standing — he would clear it, see the
+            // count go to zero, and still be offered his own words the moment he pressed the badge.
+            for (language in LANGUAGES) {
+                modelFor(language).clear()
+                synchronized(modelsLock) { files[language] }?.delete()
+            }
         }
     }
 
-    private const val FILE_NAME = "ma_ngram.tsv"
+    /** The two, and the only two. The badge has two states and so has this. */
+    private val LANGUAGES = listOf(MaLanguage.EN, MaLanguage.HR)
+
+    /** The single mixed model, deleted on the first run after the split. */
+    private const val LEGACY_FILE_NAME = "ma_ngram.tsv"
 
     /** Long enough to batch a sentence, short enough to lose little if the process is killed. */
     private const val SAVE_DELAY_MS = 4_000L
