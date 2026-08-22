@@ -62,21 +62,33 @@ The two invariants below are re-walked in both states across the whole range of 
 | **Volume DOWN**, quick tap | not recording | press Send on screen |
 | **Either**, held | any | the real system volume, repeating, with the system's own bar |
 
-### While something is being read, the taps drive the reading
+### While something is being read, these keys do nothing at all
 
-| Press | What happens |
+**Amended 22.8.2026, at his request.** They used to drive the reading — down for next sentence, up
+for previous. That is gone. While a reading is in progress `onDown` and `onUp` return false, the
+system hears the keys, and **they change the volume of the voice he is listening to.**
+
+Which is the thing anybody actually wants from a hardware key during playback, and the one thing the
+old mapping made impossible. Deleting a feature gave him a better one for nothing.
+
+The reading is steered by **gestures on the window it is displayed in**, which is where his hand
+already is:
+
+| Gesture on the reading window | What happens |
 |---|---|
-| **Volume DOWN**, quick tap | **next** sentence |
-| **Volume UP**, quick tap | **previous** sentence |
-| **Either**, held | still the real volume |
+| swipe **left or right** | kill it: the voice stops, the window closes, a transcription in flight is cancelled |
+| swipe **down** | next sentence |
+| swipe **up** | previous sentence |
+| **pinch** | full screen, or back to the subtitle box |
 
-**Down goes forward.** The text moves down the screen as it is read, so down is where the next
-sentence is, and every scroll on the phone already trains the hand that way. Mapping up to "next"
-because up is bigger would impose a rule from arithmetic on a rule from movement.
+**Down still goes forward**, and for the reason it always did: the text moves down the screen as it
+is read, so down is where the next sentence is, and every scroll on the phone trains the hand that
+way. The rule outlived the keys it was written for.
 
-**Nobody dictates into a screen they are listening to.** So while a reading is in progress a tap
-means skip, not record. The keys are not remapped by a setting; they follow what is on screen, and a
-control that means the obvious thing for the situation in front of him needs no mode and no memory.
+**Both sides kill, and that is deliberate.** The gesture is reached for in one situation — something
+is running that he wants gone — and usually without looking. A kill that works from one side only is
+a kill he has to aim, and a mis-aimed kill does something else instead. When a gesture exists to stop
+something, both directions of it must stop that thing.
 
 **One step, always. No replay window, no two-step.** A skip key skips. An earlier version restarted
 the current sentence when he was already part-way into it — the media-player convention — and he was
@@ -130,9 +142,14 @@ Test them across the whole range of hold lengths, not at three sample points. Th
 
 ## The reading outlives the keyboard
 
-Nothing stops a reading except **the reader key, the ✕, or the passage ending.** Not a new text
-field, not a notification, not a dialog, not switching views, not the keyboard being collapsed by the
+Nothing stops a reading except **a deliberate stop, or the passage ending.** Not a new text field,
+not a notification, not a dialog, not switching views, not the keyboard being collapsed by the
 system.
+
+There are four deliberate stops now, and he asked for every one of them: the reader key, the ✕, a
+swipe either way across the window, and **STOP** in the long-press dashboard. All four do the same
+two things — end the voice and cancel a transcription still in flight — because two ways of stopping
+that stopped different amounts would be worse than one.
 
 `onStartInputView` used to stop it, and that was wrong: it fires for all of those, and every one of
 them killed a reading mid-sentence. **A reading is a task he started deliberately and can end with one

@@ -192,25 +192,21 @@ object MaVolumeKeys {
         //
         // The keys are not remapped by a setting; they follow what is on screen. A control that
         // means the obvious thing for the situation in front of him needs no mode and no memory.
-        if (MaReader.currentIndex >= 0) {
-            when (keyCode) {
-                // DOWN goes FORWARD. Not a mistake and not a preference.
-                //
-                // The text moves down the screen as it is read, so down is where the next sentence
-                // is. Every scroll on this phone works that way, and the hand is already trained by
-                // every one of them. Mapping up to "next" because up is bigger would be a rule from
-                // arithmetic imposed on a rule from movement.
-                KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                    MaLog.add("vol", "down tap while reading \u2014 next sentence")
-                    MaReader.skipSentence()
-                }
-                KeyEvent.KEYCODE_VOLUME_UP -> {
-                    MaLog.add("vol", "up tap while reading \u2014 previous sentence")
-                    MaReader.previousSentence()
-                }
-            }
-            return true
-        }
+        // THE READER NO LONGER ANSWERS TO THESE KEYS.
+        //
+        // While reading, volume up and down used to be previous and next sentence. He asked for that
+        // connection to be deleted: the reading is steered by swiping on the window now — down for
+        // next, up for previous, either side to kill it — and a second way of doing it with hardware
+        // keys is a second thing to remember for no gain.
+        //
+        // What they do instead while reading is nothing, which means the system hears them, which
+        // means **they change the volume of the voice he is listening to.** That is the thing
+        // actually wanted with a hardware key during playback, and it was the one thing he could not
+        // do while the old mapping held. Deleting a feature gave him a better one for free.
+        //
+        // The invariants still hold: exactly one thing happens per press, and never both.
+        if (MaReader.currentIndex >= 0) return false
+
 
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {

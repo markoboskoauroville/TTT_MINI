@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.MaSpeechify
@@ -97,6 +98,29 @@ fun MaReaderDashboard(onClose: () -> Unit) {
                 color = MaDashDim,
                 fontSize = 13.sp,
                 modifier = Modifier.weight(1f),
+            )
+            // STOP, and it means stop: the voice, the window, and a transcription still in flight.
+            //
+            // He asked for more ways to stop, in those words, and he is right to. Every other
+            // control here adjusts something that is running; this is the only one that ends it, and
+            // until now the only ways out were a swipe on the window and the key that opened this.
+            // **A screen that can start a thing and cannot stop it is a trap with settings.**
+            //
+            // Red, alone in this dashboard, because it is the only irreversible thing on it.
+            Text(
+                text = "STOP",
+                color = MaRecordRed,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .clickable {
+                        // The same pair the swipe fires, and deliberately the same pair: two ways of
+                        // stopping that stopped different amounts would be worse than one.
+                        MaReader.stop()
+                        DictateController.cancelTranscription()
+                        onClose()
+                    }
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
             )
             // Long press on the reader key closes it too. This is here for the press that lands
             // somewhere unexpected, which on a keyboard is most of them.

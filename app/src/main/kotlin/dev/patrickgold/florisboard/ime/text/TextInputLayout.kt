@@ -36,7 +36,6 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.dictate.gif.GifSearchPanel
-import dev.patrickgold.florisboard.dictate.ui.MaAnagramOverlay
 import dev.patrickgold.florisboard.dictate.ui.MaFeatureRow
 import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.ui.MaSubtitleRow
@@ -235,10 +234,6 @@ fun TextInputLayout(
                     )
                 }
                 TextKeyboardLayout(evaluator = evaluator)
-                // The anagram effect, traced over the keys. Draws nothing unless that effect is
-                // chosen AND something is being read, so it costs nothing the rest of the time and
-                // the keyboard never changes height because of it.
-                MaAnagramOverlay(modifier = Modifier.matchParentSize())
             }
             // Arrow strip along the very bottom, below the letters, exactly where the reference
             // keyboard puts it.

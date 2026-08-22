@@ -111,6 +111,33 @@ check("the picker uses it", "MaRows.catalogueGrouped()" in screen, "still groupi
 screen_code = re.sub(r"^\s*//.*$", "", re.sub(r"/\*.*?\*/", "", screen, flags=re.S), flags=re.M)
 check('the "Keys" catch-all is gone', '"Keys"' not in screen_code, "twenty-six things under one heading")
 
+# ---------------------------------------------------------------- one face, one key
+#
+# The volume-keys key wore VolumeUp, which is the READER key's glyph. Two keys with one picture is
+# the fault the design language names first, and he found it by looking at the row.
+picker = (SRC / "app/settings/dictate/MaRowsScreen.kt").read_text()
+reader_block = picker[picker.index("MaFeatureKey.READER ->"):][:200]
+volume_block = picker[picker.index("MaFeatureKey.VOLUME_KEYS ->"):][:600]
+check("the reader keeps the speaker", "VolumeUp" in reader_block, "the reader lost its own glyph")
+check("the volume key does not wear a speaker", "VolumeUp" not in volume_block, "two keys, one face")
+check("the volume key draws the rocker", "RoundedCornerShape(7.dp)" in volume_block, "no rocker in the picker")
+
+row_kt = (SRC / "dictate/ui/MaFeatureRow.kt").read_text()
+row_code_only = re.sub(r"^\s*//.*$", "", re.sub(r"/\*.*?\*/", "", row_kt, flags=re.S), flags=re.M)
+check("the key draws the rocker too", "MaVolumeRocker(tint = fg)" in row_code_only, "picker and key disagree")
+check("no speaker left on the volume key", "VolumeUp" not in row_code_only, "the speaker survived in the row")
+
+# ---------------------------------------------------------------- every way of stopping stops all
+#
+# Three ways out now: the swipe, the dashboard's STOP, and the reader key. Two of them that stopped
+# different amounts would be worse than one.
+dash = re.sub(r"^\s*//.*$", "", (SRC / "dictate/ui/MaReaderDashboard.kt").read_text(), flags=re.M)
+caption = re.sub(r"^\s*//.*$", "", (SRC / "dictate/ui/MaSubtitleRow.kt").read_text(), flags=re.M)
+for name, body in (("the dashboard STOP", dash), ("the swipe", caption)):
+    check(f"{name} stops the voice", "MaReader.stop()" in body, "leaves the reading running")
+    check(f"{name} cancels a transcription", "DictateController.cancelTranscription()" in body,
+          "leaves work in flight with nothing on screen to stop it")
+
 # NOTE, PAID FOR ONCE: this block was appended to the END of the file, after the exit, and reported
 # a happy total having run none of it. The count went up by two for an unrelated reason and hid it.
 # **Anything added to a test goes ABOVE the summary line**, and the summary is the last thing in the

@@ -21,7 +21,18 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 282.** The last stretch, newest first:
+**Build 283.** The last stretch, newest first:
+
+- **Matrix replaces Anagram.** The word resolves out of falling noise, one letter ahead of the voice,
+  in the void's own window. `MaMatrix` is pure and walked; anagram and its test are deleted.
+- **Four gestures on the reading window.** Swipe **either way** kills — voice, window, and a
+  transcription in flight; **down** next sentence, **up** previous; **pinch** full screen. Both sides
+  kill because the gesture is used without looking and a kill you have to aim is one you can miss.
+- **The volume keys let go of the reader.** While reading they pass through, so they change the
+  volume of the voice. `VOLUME_KEYS.md` amended.
+- **STOP in the long-press dashboard**, and four deliberate stops in total, all doing the same two
+  things.
+- **The volume-keys key is a drawn rocker**, not a speaker — it wore the reader key's glyph.
 
 - **Anagram, the sixth reading effect.** The keyboard becomes the display: the keys dim and the
   word's letters fly from their own keys to the middle and spell it out with the voice. `MaAnagram`

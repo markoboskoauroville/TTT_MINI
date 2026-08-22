@@ -45,6 +45,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import dev.patrickgold.florisboard.dictate.DictateController
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.MaSpeechify
 
@@ -125,6 +133,54 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // nothing to skip ahead to, and no line to lose — the word arrives, is read, and is replaced.
     //
     // Long press collapses it back to the small subtitle box, the same gesture that opened it.
+    // MATRIX. The word resolves out of falling noise, in the box the void uses.
+    //
+    // It shares the void's frame deliberately: black, full width, one word, and the same long press
+    // and the same gestures. The difference is what happens INSIDE the frame, and building it as a
+    // second kind of window would have meant a second copy of every gesture to keep in step.
+    if (style == "matrix") {
+        val word = words.getOrNull(index)?.text.orEmpty()
+        // Two clocks, as the rule says. `frame` drives the noise at a fixed speed; `progress` is
+        // where the voice is inside this word, and only that one follows the speaking rate.
+        var frame by remember { mutableIntStateOf(0) }
+        LaunchedEffect(index) {
+            while (true) {
+                frame++
+                delay(70L)
+            }
+        }
+        val started = remember(index) { android.os.SystemClock.elapsedRealtime() }
+        // The word's own spoken length, from the timings Speechify returned. Falls back to a fixed
+        // guess when a word has no usable span, so the resolve still runs rather than freezing on
+        // the first letter.
+        val spokenMs = words.getOrNull(index)
+            ?.let { (it.endMs - it.startMs).toLong() }
+            ?.takeIf { it > 0L } ?: 400L
+        val progress = ((android.os.SystemClock.elapsedRealtime() - started + frame * 0L)
+            .toFloat() / spokenMs.coerceAtLeast(1L)).coerceIn(0f, 1f)
+        val grid = remember(word, frame) { MaMatrix.frame(word, progress, frame) }
+        SubtitleBox(modifier = modifier, full = full) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                grid.forEachIndexed { row, cells ->
+                    Text(
+                        text = cells.joinToString("") { it.char.toString() },
+                        color = if (row == MaMatrix.WORD_ROW) MaMatrixGreen else MaMatrixGreen.copy(
+                            alpha = cells.firstOrNull()?.dim ?: 0.2f,
+                        ),
+                        fontSize = if (row == MaMatrix.WORD_ROW) (fontSp + 6).sp else (fontSp - 4).coerceAtLeast(9).sp,
+                        fontWeight = if (row == MaMatrix.WORD_ROW) FontWeight.Bold else FontWeight.Normal,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+        return
+    }
+
     if (style == "void") {
         val word = words.getOrNull(index)?.text.orEmpty()
         Box(
@@ -405,6 +461,13 @@ private fun SubtitleBox(
                     scope.launch { prefs.dictate.maReaderFullscreen.set(!full) }
                 },
             )
+            .maReaderGestures(
+                onKill = { MaReader.stop(); DictateController.cancelTranscription() },
+                onNext = { MaReader.skipSentence() },
+                onPrevious = { MaReader.previousSentence() },
+                onZoom = { wantFull -> scope.launch { prefs.dictate.maReaderFullscreen.set(wantFull) } },
+                full = full,
+            )
             .padding(horizontal = 16.dp, vertical = if (full) 18.dp else 10.dp),
         contentAlignment = if (full) Alignment.Center else Alignment.TopStart,
     ) {
@@ -507,3 +570,87 @@ private fun parseHex(hex: String): Color? {
     val v = h.toLongOrNull(16) ?: return null
     return Color(0xFF000000L or v)
 }
+
+/**
+ * THE FOUR GESTURES ON A READING WINDOW.
+ *
+ * | gesture | what it does |
+ * |---|---|
+ * | swipe LEFT or RIGHT | kill it: stop reading, cancel any transcription in flight, close |
+ * | swipe DOWN | next sentence |
+ * | swipe UP | previous sentence |
+ * | pinch | full screen, or back to the subtitle box |
+ *
+ * ### Why both sides kill
+ *
+ * He asked for the left swipe to kill and asked me to suggest something for the right. The best
+ * suggestion is **the same thing**, and that is not laziness.
+ *
+ * The gesture is reached for in one situation: something is running that he wants gone, and he is
+ * usually not looking at the phone when he decides that. A kill that works from one side only is a
+ * kill he has to aim, and a mis-aimed kill does something else instead — which for a pair like
+ * *stop* and *pause* means the reading carries on while he believes he has ended it. **When a
+ * gesture exists to stop something, both directions of it must stop that thing.**
+ *
+ * So there is no second meaning to remember and nothing to aim at. Whichever way the thumb goes, it
+ * dies.
+ *
+ * ### Down is forward, and that is deliberate
+ *
+ * The same rule the volume keys used to carry, and for the same reason: **the text moves down the
+ * screen as it is read, so down is where the next sentence is.** Every scroll on this phone works
+ * that way and the hand is already trained by all of them. Mapping up to "next" because up is
+ * bigger would be arithmetic imposed on movement.
+ *
+ * ### Kill means all of it
+ *
+ * `MaReader.stop()` ends the speaking and closes the window; `cancelTranscription()` ends a
+ * transcription that is still in flight. Both, from one gesture, because from where he is standing
+ * they are one thing — *the phone is busy with something I no longer want* — and a gesture that
+ * ended only the half he could see would leave the other half running with nothing on screen to
+ * stop it. Cancelling a transcription that is not running is a no-op, so there is no case where
+ * this does something he did not ask for.
+ */
+private fun Modifier.maReaderGestures(
+    onKill: () -> Unit,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit,
+    onZoom: (Boolean) -> Unit,
+    full: Boolean,
+): Modifier = this
+    .pointerInput(full) {
+        // Pinch on its own detector: a zoom is two fingers and a swipe is one, so they cannot be
+        // confused, and putting them in one gesture block would make each wait to see whether it was
+        // the other.
+        detectTransformGestures { _, _, zoom, _ ->
+            if (zoom > 1.18f && !full) onZoom(true)
+            if (zoom < 0.85f && full) onZoom(false)
+        }
+    }
+    .pointerInput(full) {
+        detectDragGestures(
+            onDragEnd = { },
+        ) { change, drag ->
+            change.consume()
+            // One decision per drag, taken on the first movement that is clearly a direction.
+            // Reading the running total instead would let a wandering thumb fire twice.
+            val x = drag.x
+            val y = drag.y
+            when {
+                kotlin.math.abs(x) > kotlin.math.abs(y) && kotlin.math.abs(x) > SWIPE_MIN -> onKill()
+                kotlin.math.abs(y) > SWIPE_MIN && y > 0f -> onNext()
+                kotlin.math.abs(y) > SWIPE_MIN -> onPrevious()
+            }
+        }
+    }
+
+/**
+ * How far a drag has to travel before it is a swipe.
+ *
+ * Generous, because the cheapest failure here is nothing happening and the most expensive is a
+ * reading killed by a thumb resting on the screen.
+ */
+private const val SWIPE_MIN = 24f
+
+/** The one green. Bright enough to read on black, not so bright it glows into the next line. */
+private val MaMatrixGreen = Color(0xFF56D364)

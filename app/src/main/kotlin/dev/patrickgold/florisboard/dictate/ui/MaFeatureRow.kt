@@ -48,7 +48,6 @@ import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -86,6 +85,8 @@ import androidx.compose.foundation.layout.size
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
@@ -1427,21 +1428,25 @@ fun MaFeatureRow(
                             ).show()
                         },
                     ) { fg ->
-                        Icon(
-                            // ONE GLYPH, ALWAYS. The ring says the state; the picture says which key
-                            // this is.
-                            //
-                            // A first version swapped in a crossed-out speaker when the keys were
-                            // off and tinted the glyph green when they were on — three channels
-                            // saying one thing. With the ring carrying it, the shape holds still:
-                            // **shape is identity.** A key whose face changes is a key he has to
-                            // re-find, and on a row pressed from memory that costs more than the
-                            // crossed speaker was worth.
-                            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = null,
-                            tint = fg,
-                            modifier = Modifier.size(24.dp),
-                        )
+                        // THE ROCKER, NOT A SPEAKER.
+                        //
+                        // It was `VolumeUp` — a speaker with waves — and he said plainly that it
+                        // reads as the speaking key. It does: the reader key on the same row is a
+                        // speaker, and two keys wearing one picture is the fault the design language
+                        // names first. **The glyph was describing the wrong noun.** This key is not
+                        // about sound at all; it is about the two buttons on the side of the phone.
+                        //
+                        // So it draws those buttons: the physical rocker, a rounded pill with + at
+                        // the top and − at the bottom, which is what he actually presses and what
+                        // nothing else on this keyboard looks like.
+                        //
+                        // Drawn rather than borrowed because Material has no glyph for a hardware
+                        // volume key — every candidate is a speaker, a bell or a slider, and all
+                        // three describe the sound instead of the button. The usual objection to a
+                        // hand-drawn shape is that it reads as a patch beside a set of real glyphs;
+                        // it does not apply when the alternative is a glyph that means something
+                        // else.
+                        MaVolumeRocker(tint = fg)
                     }
                 }
 
@@ -1756,4 +1761,29 @@ private fun maLevelToBar(level: Float): Float {
     val v = kotlin.math.abs(level).coerceAtLeast(1e-6f)
     val db = (20.0 * kotlin.math.log10(v.toDouble())).toFloat()
     return ((db + 48f) / 48f).coerceIn(0.06f, 1f)
+}
+
+/**
+ * The physical volume rocker: a rounded pill with + above and − below.
+ *
+ * Sized and weighted to sit in a line of 24dp Material glyphs — the same optical height, the same
+ * stroke, so it does not read as a sticker on a row of drawn icons.
+ */
+@Composable
+private fun MaVolumeRocker(tint: Color) {
+    Box(
+        modifier = Modifier
+            .size(width = 15.dp, height = 24.dp)
+            .border(1.5.dp, tint, RoundedCornerShape(7.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceEvenly,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = "+", color = tint, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text(text = "\u2212", color = tint, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+    }
 }

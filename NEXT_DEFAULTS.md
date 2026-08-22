@@ -6657,3 +6657,90 @@ allowed to be trusted on the evidence of the one file that prompted it.
 Proved against the red commit itself rather than by sabotage, because §156a applies again: HEAD *is*
 the red build, so reverting the fix made the file identical to HEAD and `verify.py` saw no changed
 files at all. Running the check directly against `git show HEAD:…` named the file and the reason.
+
+---
+
+# §158 — Matrix, four gestures, and four ways to stop
+
+Build 283.
+
+## Anagram out, Matrix in
+
+Anagram spelled the word across a tracing of the key grid. He watched it and said it was not good,
+and the reason is worth keeping: it read as *a clever thing happening to the keyboard* rather than as
+a word being read. The eye followed the letters travelling and lost the word. **A reading effect has
+one job — to put the word where the eye already is.**
+
+Matrix keeps the part that worked, which is that the display is not a strip of text, and drops the
+part that competed with the reading. The word stands in the middle; behind it columns of characters
+fall; each letter settles out of the noise **one letter ahead of the voice**, because a letter
+arriving exactly as it is spoken is too late to read.
+
+Latin glyphs, not the film's katakana — partly the font, mostly that a screen of characters he cannot
+read even in principle is noise in a sense nobody wanted.
+
+Two clocks: the noise runs at a fixed speed, the resolve follows the speaking rate. One clock would
+make the background speed up with the voice and turn it into a second thing to read.
+
+It shares the void's window rather than being a new kind of window, so there is one copy of the
+gestures rather than two.
+
+## The gestures
+
+| Gesture | What |
+|---|---|
+| swipe left **or right** | kill: voice, window, and a transcription in flight |
+| swipe down | next sentence |
+| swipe up | previous sentence |
+| pinch | full screen, or back |
+
+He asked for the left swipe to kill and asked me to suggest something for the right. **The best
+suggestion was the same thing.** The gesture is reached for in one situation — something is running
+that he wants gone — usually without looking. A kill that works from one side only is a kill he has
+to aim, and a mis-aimed kill does something else instead; for a pair like *stop* and *pause* that
+means the reading carries on while he believes he has ended it.
+
+Down is forward, the rule the volume keys used to carry, and it outlived them.
+
+## The volume keys let go
+
+While reading they now return false, so the system hears them and they change the volume of the voice
+he is listening to. That was the one thing the old mapping made impossible, and deleting a feature
+produced it for free.
+
+## Four ways to stop, all identical
+
+The reader key, the ✕, the swipe, and **STOP** in the long-press dashboard — which had every control
+for adjusting a reading and none for ending one. **A screen that can start a thing and cannot stop it
+is a trap with settings.**
+
+All four end the voice *and* cancel a transcription in flight, because from where he stands those are
+one thing — the phone is busy with something I no longer want — and a stop that ended only the
+visible half would leave the other running with nothing on screen to stop it.
+
+## The rocker
+
+The volume-keys key wore `VolumeUp`: a speaker with waves, which is the **reader key's** glyph. Two
+keys with one picture is the fault the design language names first, and he found it by looking at the
+row. It draws the physical rocker now — a rounded pill with + and − — because the key is not about
+sound, it is about the two buttons on the side of the phone. Material has no glyph for that; every
+candidate describes the sound instead of the button.
+
+The usual objection to a hand-drawn shape beside real glyphs is that it reads as a patch. It does not
+apply when the alternative is a glyph that means something else.
+
+## Tested
+
+Test 1: 7,920 checks, 0 failed, 3,939 walked points — every word length to 40 against every percent
+of progress, asserting the resolve is never behind the voice, never past the end, and never reverses.
+Plus the wiring: both sides kill, down is next, pinch zooms, the volume keys let go, no anagram left
+anywhere. Broken on purpose two ways — left-only kill, and a stop that left the transcription running
+— and confirmed red.
+
+One check earned itself immediately: **matrix was in the effects list with nothing drawing it**, for
+one commit. Picking it would have shown the plain highlight and looked like a setting that does
+nothing. A style in the menu with no branch behind it is worse than an absent feature; the absent one
+is honest.
+
+Not tested: nothing ran on a phone. Whether the resolve reads at speaking pace, and whether a swipe
+on a 96dp box is comfortable enough to trust as a kill, are both his.

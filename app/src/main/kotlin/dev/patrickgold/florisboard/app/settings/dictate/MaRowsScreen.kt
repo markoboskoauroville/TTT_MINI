@@ -11,6 +11,7 @@
 package dev.patrickgold.florisboard.app.settings.dictate
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,10 +32,10 @@ import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.KeyboardTab
 import androidx.compose.material.icons.filled.KeyboardCapslock
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.foundation.shape.CircleShape
@@ -570,8 +571,22 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                         .background(MaRecordRed, CircleShape),
                 )
             }
-            MaFeatureKey.VOLUME_KEYS ->
-                Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = tint, modifier = size)
+            // The rocker the key itself draws. The rule on this screen is that a row shows the glyph
+            // the keyboard shows, and a speaker here would send him looking for a speaker there.
+            MaFeatureKey.VOLUME_KEYS -> Box(
+                modifier = Modifier.size(width = 14.dp, height = 22.dp)
+                    .border(1.5.dp, tint, RoundedCornerShape(7.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("+", color = tint, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Text("\u2212", color = tint, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                }
+            }
             MaFeatureKey.UNDO ->
                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.REDO ->

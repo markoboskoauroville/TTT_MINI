@@ -27,8 +27,13 @@ object MaReaderEffects {
         Effect("karaoke", "Karaoke"),
         Effect("spotlight", "Spotlight"),
         Effect("void", "Void"),
-        // Last, because it is the furthest from a subtitle: it does not mark text at all, it turns
-        // the keyboard into the display.
-        Effect("anagram", "Anagram"),
+        // Last, because it is the furthest from a subtitle: it does not mark a word in a page, it
+        // resolves one out of noise.
+        //
+        // Anagram was here and is gone. It spelled the word across a tracing of the key grid, which
+        // read as a clever thing happening to the keyboard rather than as a word being read — the
+        // eye followed the letters travelling instead of the word arriving. Matrix keeps the one
+        // part that worked, which is that the display is not a strip of text.
+        Effect("matrix", "Matrix"),
     )
 }
