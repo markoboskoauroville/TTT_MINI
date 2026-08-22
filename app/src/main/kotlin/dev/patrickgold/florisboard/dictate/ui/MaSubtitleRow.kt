@@ -83,7 +83,12 @@ import dev.patrickgold.florisboard.dictate.MaSpeechify
 fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val index = MaReader.currentIndex
     if (index < 0) return
-    val words = MaSpeechify.lastWords
+    // The joined timeline, not the last chunk fetched.
+    //
+    // MaSpeechify.lastWords now holds whichever chunk came back most recently — which, while chunk
+    // two is playing and chunk three is in flight, is chunk three. The caption would jump forward
+    // to text he has not heard yet and then back again.
+    val words = MaReader.allWords
     if (index >= words.size) return
 
     // How the spoken word is marked, read as Compose state so a change in settings shows on the very

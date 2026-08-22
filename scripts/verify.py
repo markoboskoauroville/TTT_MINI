@@ -458,7 +458,15 @@ def check_removed_declarations(path: Path, text: str) -> None:
     ).stdout
     if not head:
         return
-    declared = lambda t: set(re.findall(r"^\s*(?:private\s+|internal\s+)?(?:val|var)\s+(\w+)", t, re.M))
+    # Parameters count as declarations too.
+    #
+    # This reported `file` as removed-but-used when a local `val file` became a function PARAMETER of
+    # the same name — a rename in shape only, and correct code. The check is about a name that has
+    # nothing declaring it any more, and a parameter declares it just as a val does.
+    def declared(t: str) -> set:
+        vals = set(re.findall(r"^\s*(?:private\s+|internal\s+)?(?:val|var)\s+(\w+)", t, re.M))
+        params = set(re.findall(r"^\s*(\w+)\s*:\s*[\w<>?., ()\[\]-]+,?\s*$", t, re.M))
+        return vals | params
     now = strip_code(text)
     removed = declared(strip_code(head)) - declared(now)
     # Objects declared in THIS file. A reference to `MaClipCapture.autoRank` inside MaClipCapture.kt

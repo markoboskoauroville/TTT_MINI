@@ -21,7 +21,14 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 283.** The last stretch, newest first:
+**Build 285.** The last stretch, newest first:
+
+- **Reading starts after one sentence, not after the whole screen.** `MaReadChunks` cuts the passage
+  into chunks that grow — 1, 2, 4, 8, 16 — and each is synthesised while the previous one plays.
+  `MaReader.allWords` joins every chunk's timings with the audio before it and `chunkBaseMs` is that
+  offset, so the ticker, skip, the caption and the effects still see one file and one timeline.
+  The other half of the twenty seconds was the key ring restarting at key one on every read, which
+  is already fixed.
 
 - **Matrix replaces Anagram.** The word resolves out of falling noise, one letter ahead of the voice,
   in the void's own window. `MaMatrix` is pure and walked; anagram and its test are deleted.

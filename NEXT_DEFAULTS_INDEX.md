@@ -156,3 +156,4 @@ since been removed.
 - **§158** — Anagram: the keyboard spells what is being read
 - **§158a** — Red on an import that blamed something else
 - **§158** — Matrix, four gestures, and four ways to stop
+- **§159** — The reading starts at once

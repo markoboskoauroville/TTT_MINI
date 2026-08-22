@@ -33,11 +33,20 @@ import java.io.File
  * the key's face shows what the NEXT press will do rather than what is happening now, because a
  * control that describes its own state leaves him working out what pressing it would achieve.
  *
- * ### Why the audio is one file
+ * ### The audio arrives in growing chunks, and behaves as one file
  *
- * Speechify returns the whole passage as a single mp3, so pausing is a real pause in playback and
- * resuming continues mid-sentence exactly where the voice was. Splitting it into sentences would buy
- * finer seeking and cost a synthesis per sentence, which is his money.
+ * It WAS one mp3 for the whole passage, and that section of this comment used to explain why:
+ * pausing is a real pause, resuming continues mid-sentence, and splitting per sentence would cost a
+ * synthesis per sentence. All still true — but it also meant the wait before the first word was the
+ * wait for the last one, and on a full screen that was seconds he sat through every time.
+ *
+ * So the passage is fetched as chunks that grow — one sentence, two, four, sixteen — and the wait is
+ * now one sentence long. See `MaReadChunks`. The cost the old comment was avoiding is avoided too:
+ * the chunks grow, so a long passage is a handful of requests rather than one per sentence.
+ *
+ * Everything above this line still sees ONE file and ONE timeline. `allWords` joins each chunk's
+ * timings with the audio before it, and `chunkBaseMs` is that offset. **The rest of the reader was
+ * not taught about chunks**, which is the only reason a change this deep was safe to make at all.
  *
  * ### Leaving stops it
  *
@@ -64,6 +73,23 @@ object MaReader {
      * reliable signal, and it is what keeps the reader from scrolling forever at the end.
      */
     private var lastPassage: String = ""
+
+    /**
+     * The whole passage's words, on one timeline, however many chunks it was fetched in.
+     *
+     * Everything that reads the reading — the ticker, skip, previous, the caption, the effects —
+     * looks here rather than at `MaSpeechify.lastWords`, which now holds only the most recently
+     * FETCHED chunk and would jump backwards mid-passage.
+     */
+    var allWords: List<MaSpeechify.Word> = emptyList()
+        private set
+
+    /** How much audio came before the chunk now playing. The offset that makes one timeline. */
+    private var chunkBaseMs: Int = 0
+
+    private var pending: kotlinx.coroutines.Job? = null
+    private var pendingFile: File? = null
+    private var pendingWords: List<MaSpeechify.Word> = emptyList()
 
     /**
      * How long a list is given to build the rows it has just scrolled into place.
@@ -177,55 +203,144 @@ object MaReader {
      * the same voice, the same speed, the same ticker and the same completion handler, or the
      * second screenful would behave subtly unlike the first.
      */
+    /**
+     * Speaks a passage, starting with one sentence and growing from there.
+     *
+     * ### The wait is one sentence long now
+     *
+     * It used to synthesise the whole screenful and then begin, so the wait before the first word
+     * was the wait for the last one. Now the first chunk is a single sentence — about a second — and
+     * every request after it happens behind audio that is already playing. See `MaReadChunks` for
+     * why the chunks grow and why they stop growing.
+     *
+     * ### One passage, several files
+     *
+     * Each chunk is its own mp3 with its own word timings, and everything above this — the karaoke
+     * ticker, skip, previous, the caption, the effects — was written for ONE file and ONE list.
+     * Rather than teach all of them about chunks, the chunks are hidden here: [allWords] is the
+     * whole passage with each chunk's timings shifted by the audio before it, and [chunkBaseMs] is
+     * how much audio that is. **The rest of the reader still sees one timeline**, which is the only
+     * reason this change is small enough to trust.
+     */
     private suspend fun speak(context: Context, text: String, onMessage: (String) -> Unit) {
         val prefs by FlorisPreferenceStore
         lastPassage = text
         val voice = MaSpeechify.chosenVoice(MaLanguage.active())
         state = State.LOADING
-        run {
-            val dest = File(context.cacheDir, "ma_reader.mp3")
-            val file = withContext(Dispatchers.IO) { MaSpeechify.synthesize(text, voice, dest) }
-            if (file == null) {
-                state = State.IDLE
-                onMessage("Could not speak this \u2014 check your Speechify key")
-                return
+
+        val sentences = MaReadChunks.sentences(text)
+        val plan = MaReadChunks.plan(sentences.size)
+        if (plan.isEmpty()) {
+            state = State.IDLE
+            return
+        }
+        allWords = emptyList()
+        chunkBaseMs = 0
+
+        // The first chunk, and the only one he waits for.
+        val firstFile = withContext(Dispatchers.IO) {
+            MaSpeechify.synthesize(
+                MaReadChunks.textOf(sentences, plan[0]),
+                voice,
+                File(context.cacheDir, "ma_reader_0.mp3"),
+            )
+        }
+        if (firstFile == null) {
+            state = State.IDLE
+            onMessage("Could not speak this \u2014 check your Speechify key")
+            return
+        }
+        allWords = MaSpeechify.lastWords
+        playChunk(context, firstFile, 0, plan, sentences, voice, onMessage)
+    }
+
+    /**
+     * Plays chunk [index], and asks for the next one while it plays.
+     *
+     * The prefetch is launched BEFORE playback starts rather than after, because the point is to
+     * spend the current chunk's playing time on the next chunk's synthesis. Started afterwards it
+     * would still work and would waste the first few hundred milliseconds of every chunk.
+     */
+    private fun playChunk(
+        context: Context,
+        file: File,
+        index: Int,
+        plan: List<IntRange>,
+        sentences: List<String>,
+        voice: MaSpeechify.Voice,
+        onMessage: (String) -> Unit,
+    ) {
+        val prefs by FlorisPreferenceStore
+        val speed = prefs.dictate.maReaderSpeed.get().coerceIn(5, 25) / 10f
+
+        // Ask for the next chunk now, into a file of its own. Alternating names would be enough for
+        // two in flight, but a numbered file per chunk means a slow request can never overwrite the
+        // audio that is playing.
+        val nextIndex = index + 1
+        if (nextIndex < plan.size) {
+            pending = scope.launch(Dispatchers.IO) {
+                val dest = File(context.cacheDir, "ma_reader_$nextIndex.mp3")
+                val f = MaSpeechify.synthesize(MaReadChunks.textOf(sentences, plan[nextIndex]), voice, dest)
+                if (f != null) pendingWords = MaSpeechify.lastWords
+                pendingFile = f
             }
-            // Read once, outside the player, because both the playback rate and the karaoke
-            // ticker need the same number and they must not be able to disagree.
-            val speed = prefs.dictate.maReaderSpeed.get().coerceIn(5, 25) / 10f
-            runCatching {
-                stopPlayer()
-                player = MediaPlayer().apply {
-                    setDataSource(file.path)
-                    setOnCompletionListener {
-                        // A screenful is finished. Scroll and carry on rather than stopping at the
-                        // edge, which is what he asked for and what makes it a reader rather than a
-                        // sampler.
-                        stopPlayer()
-                        scope.launch { continueBelow(context, onMessage) }
+        } else {
+            pending = null
+            pendingFile = null
+        }
+
+        runCatching {
+            stopPlayer()
+            player = MediaPlayer().apply {
+                setDataSource(file.path)
+                setOnCompletionListener {
+                    val played = runCatching { duration }.getOrDefault(0)
+                    stopPlayer()
+                    scope.launch {
+                        if (nextIndex >= plan.size) {
+                            // The passage is finished. Scroll and carry on, exactly as before.
+                            continueBelow(context, onMessage)
+                            return@launch
+                        }
+                        // Wait for the next chunk if it is not back yet. It usually is — that is the
+                        // whole design — but a slow network must produce a pause, not a stop.
+                        pending?.join()
+                        val next = pendingFile
+                        if (next == null) {
+                            state = State.IDLE
+                            onMessage("The reading stopped early \u2014 check your connection")
+                            return@launch
+                        }
+                        // The timeline the rest of the reader sees: this chunk's words, shifted by
+                        // all the audio before them.
+                        chunkBaseMs += played
+                        allWords = allWords + pendingWords.map {
+                            it.copy(startMs = it.startMs + chunkBaseMs, endMs = it.endMs + chunkBaseMs)
+                        }
+                        playChunk(context, next, nextIndex, plan, sentences, voice, onMessage)
                     }
-                    setOnErrorListener { _, _, _ ->
-                        state = State.IDLE
-                        stopPlayer()
-                        true
-                    }
-                    prepare()
-                    // Speed applies to playback, not to the synthesis.
-                    //
-                    // Changing it therefore costs nothing and takes effect on the next press
-                    // rather than the next request — and the word timings stay valid, because they
-                    // are positions in the audio and the position is scaled by the same rate.
-                    if (speed != 1.0f) {
-                        runCatching { playbackParams = playbackParams.setSpeed(speed) }
-                    }
-                    start()
                 }
-                state = State.SPEAKING
-                startTicker()
-            }.onFailure {
-                state = State.IDLE
-                onMessage("Could not play the audio")
+                setOnErrorListener { _, _, _ ->
+                    state = State.IDLE
+                    stopPlayer()
+                    true
+                }
+                prepare()
+                // Speed applies to playback, not to the synthesis.
+                //
+                // Changing it therefore costs nothing and takes effect on the next press rather
+                // than the next request — and the word timings stay valid, because they are
+                // positions in the audio and the position is scaled by the same rate.
+                if (speed != 1.0f) {
+                    runCatching { playbackParams = playbackParams.setSpeed(speed) }
+                }
+                start()
             }
+            state = State.SPEAKING
+            startTicker()
+        }.onFailure {
+            state = State.IDLE
+            onMessage("Could not play the audio")
         }
     }
 
@@ -280,8 +395,10 @@ object MaReader {
                     // factor. It was only right at 1.0, which is why it looked like drift rather
                     // than a plain error.
                     val pos = runCatching { player?.currentPosition ?: 0 }.getOrDefault(0)
-                    val words = MaSpeechify.lastWords
-                    val idx = words.indexOfFirst { pos >= it.startMs && pos < it.endMs }
+                    val words = allWords
+                    // The position within THIS chunk, plus the audio before it.
+                    val here = pos + chunkBaseMs
+                    val idx = words.indexOfFirst { here >= it.startMs && here < it.endMs }
                     currentIndex = idx
                     currentWord = if (idx >= 0) words[idx].text else ""
                 }
@@ -311,7 +428,7 @@ object MaReader {
      * means when the rest is all of it.
      */
     fun skipSentence() {
-        val words = MaSpeechify.lastWords
+        val words = allWords
         val here = currentIndex
         if (here < 0 || here >= words.size) return
         fun ends(w: String) = w.lastOrNull() in setOf('.', '!', '?')
@@ -339,7 +456,7 @@ object MaReader {
      * predicted.** At speed, predictable beats clever.
      */
     fun previousSentence() {
-        val words = MaSpeechify.lastWords
+        val words = allWords
         val here = currentIndex
         if (here < 0 || here >= words.size) return
         fun ends(w: String) = w.lastOrNull() in setOf('.', '!', '?')

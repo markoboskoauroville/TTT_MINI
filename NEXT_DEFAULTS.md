@@ -6762,3 +6762,77 @@ one hit on the broken file, naming the symbol; nothing anywhere else.
 
 The difference between this and `check_property_call` is not cleverness, it is the closed list. A
 guard over a set somebody can enumerate is checkable; a guard over "any symbol" is a guess.
+
+---
+
+# §159 — The reading starts at once
+
+Build 285. He waited twenty seconds after pressing the speaker and asked why it could not begin
+immediately, then described the answer himself: read the first sentence, fetch the next two while it
+plays, then four, and grow from there.
+
+## Two causes, and the first was already gone
+
+**The key ring restarted at key one on every read.** With twenty-one keys and a few tired ones at the
+front, every dead or throttled key ahead of the good one cost a full network round trip before a word
+could be spoken. That was found earlier and fixed — the ring starts from the key that answered last —
+and it was the larger half of the twenty seconds.
+
+**The rest is arithmetic and cannot be argued with**: a whole screenful of text takes as long to
+synthesise as a whole screenful of text. The only way to start sooner is to ask for less.
+
+## His growth rule, and why both ends of it are right
+
+One sentence, then two, then four, to a ceiling of sixteen.
+
+- **Small at the start**, because that is the only part he waits through. One sentence is about a
+  second.
+- **Bigger later**, because each request has a fixed cost of its own — connection, round trip, the
+  model warming — and forty one-sentence requests would pay it forty times and stutter between them.
+- **Stops doubling at sixteen**, roughly a minute of speech. Past that a chunk takes longer to
+  synthesise than the previous chunk takes to play, which is the exact moment prefetching stops being
+  ahead and starts being behind. **A gap in the middle of a sentence is worse than a wait at the
+  start**, because he cannot tell it from the reader having failed.
+
+The prefetch is launched *before* playback begins, not after, since the point is to spend the current
+chunk's playing time on the next chunk's synthesis.
+
+Each chunk gets a numbered file. Alternating two names would be enough for two in flight, but
+numbering means a slow request can never overwrite the audio that is playing.
+
+## One timeline, and why that is the whole trick
+
+The ticker, skip, previous, the caption and every effect were written for **one file and one word
+list**. Teaching all of them about chunks would have been a large, risky change to code that is
+carefully tuned.
+
+So the chunks are hidden in `speak`/`playChunk`: `allWords` is the whole passage with each chunk's
+timings shifted by the audio before it, and `chunkBaseMs` is that offset. **Nothing above that line
+was taught about chunks at all**, which is the only reason a change this deep was safe.
+
+`MaSpeechify.lastWords` now holds whichever chunk came back most recently — which, while chunk two
+plays and chunk three is in flight, is chunk three. Everything that read it was moved to `allWords`,
+including the caption, which would otherwise have jumped forward to text he had not heard and back
+again.
+
+## Sentence splitting is shared on purpose
+
+`MaReadChunks.sentences` uses the same rule `skipSentence` uses. Two different ideas of where a
+sentence ends would put chunk boundaries somewhere the skip could never land, and would drift apart
+the first time either was improved.
+
+## Tested
+
+Test 1: 1,222 checks, 0 failed, 400 walked lengths — every passage from 0 to 399 sentences, asserting
+every sentence is spoken exactly once, no chunk is empty, and every plan starts with a single
+sentence. Plus the joined timeline: strictly increasing, no overlap, ending at the total duration, and
+a position inside chunk two resolving to a chunk-two word. Broken on purpose two ways — a big first
+chunk, and the offset dropped — and confirmed red with 401 failures.
+
+A false positive was fixed rather than argued with on the way: `check_removed_declarations` reported
+`file` as removed-but-used when a local `val file` became a function **parameter** of the same name.
+A parameter declares a name as much as a val does, and the check now knows it.
+
+Not tested: nothing ran on a phone. The one number worth measuring is whether a chunk ever arrives
+late enough to leave a gap — the design says it cannot after the first few, and only his network can
+confirm it.
