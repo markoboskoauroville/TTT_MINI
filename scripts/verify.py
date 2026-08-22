@@ -548,6 +548,21 @@ def check_nullable_args(path: Path, text: str) -> None:
 # cost, and it is smaller than the cost of a script nobody believes.
 
 
+# A NOTE WHERE A CHECK WOULD GO, for the third time today.
+#
+# Build 279 went red on `Arrangement.Center` with no `import androidx.compose.foundation.layout.
+# Arrangement`. The guard is obvious — list the capitalised symbols used, list what is imported,
+# report the difference — and it is the same trap as check_property_call: this script cannot see
+# what a wildcard import, a same-package declaration or a Kotlin stdlib name brings in, so the
+# difference is full of names that resolve perfectly well.
+#
+# Measured before writing it rather than after: `check_symbols_resolve` already covers the cases
+# where the answer is knowable from inside this repo, and widening it to every androidx symbol
+# reintroduces the noise that got check_property_call deleted an hour earlier.
+#
+# The gap stays open. Kotlin names the symbol and the line; CI reports it in five minutes.
+
+
 def check_when_coverage() -> None:
     """
     Red build: a new key added to the enum and one `when` never given its branch.
