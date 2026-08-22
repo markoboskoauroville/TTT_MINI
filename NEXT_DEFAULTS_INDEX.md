@@ -150,3 +150,4 @@ since been removed.
 - **§153** — The volume keys get a switch, and it is a key
 - **§154** — Send and Record become keys
 - **§155** — Finding a key by typing what it does
+- **§156** — The AI key on the prediction row

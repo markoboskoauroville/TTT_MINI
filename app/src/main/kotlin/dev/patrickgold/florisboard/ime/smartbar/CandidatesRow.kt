@@ -58,6 +58,13 @@ import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggColumn
 import org.florisboard.lib.snygg.ui.SnyggIcon
+import dev.patrickgold.florisboard.dictate.nlp.MaAiPredict
+import dev.patrickgold.florisboard.dictate.nlp.MaNgram
+import dev.patrickgold.florisboard.dictate.DictateController
+import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.padding
+import dev.patrickgold.florisboard.editorInstance
 import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggSpacer
 import androidx.compose.ui.text.font.FontWeight
@@ -72,10 +79,37 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
     val keyboardManager by context.keyboardManager()
     val nlpManager by context.nlpManager()
     val subtypeManager by context.subtypeManager()
+    val editorInstance by context.editorInstance()
 
     val scope = rememberCoroutineScope()
     val displayMode by prefs.suggestion.displayMode.collectAsState()
-    val candidates by nlpManager.activeCandidatesFlow.collectAsState()
+    val ordinaryCandidates by nlpManager.activeCandidatesFlow.collectAsState()
+
+    // The AI suggestions, when he has asked for some.
+    //
+    // They REPLACE the row rather than being appended to it. Appending would leave him choosing
+    // between two kinds of guess with nothing on screen saying which was which, and the whole reason
+    // he pressed the key is that the ordinary guesses were wrong.
+    val aiWords = MaAiPredict.words.value
+    val aiBusy = MaAiPredict.busy.value
+    val candidates = remember(ordinaryCandidates, aiWords) {
+        if (aiWords.isEmpty()) {
+            ordinaryCandidates
+        } else {
+            aiWords.map { word ->
+                WordSuggestionCandidate(
+                    text = word,
+                    secondaryText = null,
+                    confidence = 0.95,
+                    // Never auto-committed. An auto-commit is the keyboard deciding for him, and a
+                    // guess he paid for and has not read yet is the last thing that should be
+                    // inserted without a tap.
+                    isEligibleForAutoCommit = false,
+                    sourceProvider = null,
+                )
+            }
+        }
+    }
     // Read once per composition instead of a synchronous pref get() per candidate on every keystroke
     // (the candidates row recomposes on each character — issue: typing jank).
     val longPressDelay by prefs.keyboard.longPressDelay.collectAsState()
@@ -153,6 +187,21 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                     // list is in plain order, so the first is.
                     emphasised = n == (if (list.size == 3) 1 else 0),
                     onClick = {
+                        // Taught to the local model BEFORE the commit, while the context that
+                        // produced this suggestion is still the context on screen. After the commit
+                        // the chosen word is itself part of the text before the cursor, and the
+                        // lesson would contain its own answer.
+                        //
+                        // Only for a word he chose out of the AI's list. An ordinary candidate came
+                        // from the local model or the dictionary, and teaching the model its own
+                        // output back is how a prediction engine ends up certain of one word.
+                        if (aiWords.isNotEmpty()) {
+                            MaNgram.learn(
+                                MaAiPredict.lesson(tapped.text.toString()),
+                                keyboardManager.activeState.isIncognitoMode,
+                            )
+                        }
+                        MaAiPredict.clear()
                         keyboardManager.commitCandidate(tapped)
                     },
                     onLongPress = {
@@ -191,6 +240,52 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                 )
             }
         }
+
+        // THE AI KEY, AT THE END OF THE ROW.
+        //
+        // Always the last thing, whether or not there are candidates: a key that moved with the
+        // number of guesses would be somewhere different every keystroke, and this row is used
+        // without being read.
+        //
+        // Pressed once, it asks; pressed again while its words are showing, it puts the ordinary
+        // guesses back. Nothing else clears it — typing does, on the next prediction, because the
+        // words would no longer be about the word being typed.
+        SnyggText(
+            elementName = FlorisImeUi.SmartbarCandidateWord.elementName,
+            text = if (aiBusy) "\u2026" else "AI",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .fillMaxHeight()
+                .wrapContentWidth()
+                .padding(horizontal = 12.dp)
+                .clickable(enabled = !aiBusy) {
+                    if (aiWords.isNotEmpty()) {
+                        MaAiPredict.clear()
+                        return@clickable
+                    }
+                    val content = editorInstance.activeContent
+                    val before = content.textBeforeSelection.toString()
+                    val current = content.currentWordText.toString()
+                    MaAiPredict.remember(before)
+                    MaAiPredict.busy.value = true
+                    scope.launch {
+                        val reply = DictateController.askCheapModel(
+                            MaAiPredict.prompt(
+                                before = before,
+                                current = current,
+                                language = subtypeManager.activeSubtype.primaryLocale.displayLanguage,
+                            ),
+                        )
+                        MaAiPredict.busy.value = false
+                        // Nothing back, or nothing usable, leaves the row exactly as it was. There
+                        // is no failure worth a message here: he can see the words did not change,
+                        // and the guesses he already had are still under his thumb.
+                        MaAiPredict.words.value = reply
+                            ?.let { MaAiPredict.readWords(it, current) }
+                            .orEmpty()
+                    }
+                },
+        )
     }
 }
 

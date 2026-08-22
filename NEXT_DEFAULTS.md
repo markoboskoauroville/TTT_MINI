@@ -6356,3 +6356,74 @@ the search — and confirmed red on both.
 
 Not tested: no model was actually called. The prompt has never been sent, so how good the suggestion
 is remains unmeasured, and it is the one thing only real use answers.
+
+---
+
+# §156 — The AI key on the prediction row
+
+Build 276. His words: *use AI as prediction algorithm with user triggering*, and when he picks a
+word, put it in the local database as the right choice.
+
+## It is a teacher, not an engine
+
+The n-gram already learns from everything he commits. This key reaches the same place in one press,
+on the words the local model happens to be wrong about, at the moment he notices — which is the only
+moment anybody knows the local guess was wrong.
+
+> **The model is a teacher for the database, not a replacement for it.**
+
+The same shape as the key search two builds ago, and now written down once for both in
+`MANTRA_MANIFEST/modules/find-by-typing.md`.
+
+**Only an AI pick teaches.** An ordinary candidate came from the local model or the dictionary, and
+teaching a prediction engine its own output back is how it becomes certain of one word.
+
+**The lesson is the word IN ITS CONTEXT** — the chosen word with the six before it. An n-gram learns
+sequences; a bare word teaches it that the word exists, which it already knew, and nothing about when
+to offer it. The whole point is fixing a wrong guess *in a context*, so the context is the part that
+must be stored.
+
+**Taught before the commit**, while the context that produced the suggestion is still the context on
+screen. After the commit the chosen word is itself part of the text before the cursor and the lesson
+would contain its own answer. The test asserts the order by position in the file.
+
+## Asked, never automatic
+
+Every press costs money and a second or two. Automatic would spend both on every word — including
+the overwhelming majority the local model gets right — and would put a pause into typing, which is
+the one thing a keyboard may never do.
+
+The key is always the last thing in the row, whether or not there are candidates. A key that moved
+with the number of guesses would be somewhere different every keystroke, and this row is used without
+being read.
+
+The words **replace** the row rather than being appended to it. Appending would leave him choosing
+between two kinds of guess with nothing saying which was which, and the reason he pressed the key is
+that the ordinary ones were wrong. Press again and the ordinary guesses come back.
+
+## The filter that matters
+
+Tapping a suggestion replaces the composing word. So **a suggestion that does not start with what he
+has already typed would silently rewrite it.** Anything not continuing his letters is dropped rather
+than shown, and that is the check with the most assertions on it.
+
+`readWords` is defensive beyond that: a model asked for bare words will still sometimes number them,
+quote them, bullet them or introduce them, and a candidate reading `1. "hello"` would be committed
+with the numbering attached.
+
+Nothing is ever auto-committed. A guess he paid for and has not read yet is the last thing that
+should insert itself.
+
+## Tested
+
+Test 1: 30 checks, 0 failed — the reply reader against numbering, bullets, quotes, prose, duplicates,
+runaway lengths and the continuation rule, and the lesson builder against trimming, empty context and
+word order. Broken on purpose two ways — the continuation filter removed, and the teaching moved
+after the commit — and confirmed red on both, five failures.
+
+One check had to be fixed rather than trusted: `"import android" not in …` matched
+`androidx.compose.runtime` and called a Compose state holder an Android dependency. **A check failing
+on correct code is the fastest way to teach somebody to stop reading it.**
+
+Not tested: no model has been called. How good the five words are, and whether one press is fast
+enough to be worth pressing, are Test 2 and his.

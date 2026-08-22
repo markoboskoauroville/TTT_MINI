@@ -21,7 +21,14 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 275.** The last stretch, newest first:
+**Build 276.** The last stretch, newest first:
+
+- **An AI key at the end of the prediction row.** Pressed, it asks the cheap model for five words
+  and they replace the row; pressed again, the ordinary guesses come back. **Whichever word he picks
+  is taught to the local n-gram with the six words before it**, so the key is a way of correcting
+  the local model quickly rather than a prediction engine. Only an AI pick teaches — teaching the
+  model its own output back is how an engine becomes certain of one word. `MaAiPredict`, and
+  `CandidatesRow`.
 
 - **The Add keys screen has a search, in three layers.** `MaKeySearch`: literal match on label,
   section, face and id; then what he has meant before, learned every time he picks a key with a
