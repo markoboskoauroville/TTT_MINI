@@ -264,6 +264,27 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * not, so the state he can otherwise only discover by pressing a volume key is on the row in
      * front of him.
      */
+    /**
+     * Send: the same press volume-down makes, as a key.
+     *
+     * It goes through `MaMagicTargets.pressSend()`, which is the magic finger reading his configured
+     * term and pressing that button on screen — not a hardcoded "Send". So the key, the volume key
+     * and the wand all send the same way, and changing the term changes all three at once.
+     */
+    SEND("send", "Send"),
+
+    /**
+     * Record: start, and stop.
+     *
+     * `DictateController.onMicClick`, the same call volume-up makes and the same one the mic on the
+     * recording bar makes. Recording has never had a key on the feature row — the MIC key here is
+     * the way into the transcribe view and says so — and he asked for one.
+     *
+     * That is not a reversal of the note on MIC. The objection there was to a THIRD route replacing
+     * the only route to the view. This is a fourth route that takes nothing away.
+     */
+    RECORD("record", "Record"),
+
     VOLUME_KEYS("volume_keys", "Volume keys"),
 
     UNDO("undo", "Undo"),
@@ -499,6 +520,8 @@ val MaFeatureKey.group: MaFeatureGroup
         // Dictation rather than "the keyboard itself": what it governs is whether the volume keys
         // start and stop recordings, which is a dictation question wearing a hardware button.
         MaFeatureKey.VOLUME_KEYS,
+        MaFeatureKey.RECORD,
+        MaFeatureKey.SEND,
         -> MaFeatureGroup.DICTATION
 
         MaFeatureKey.READER,

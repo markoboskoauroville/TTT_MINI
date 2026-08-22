@@ -49,6 +49,8 @@ import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Layers
@@ -1214,6 +1216,70 @@ fun MaFeatureRow(
                             contentDescription = null,
                             tint = if (zone3) onGreen else fg,
                             modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+
+                MaFeatureKey.SEND -> {
+                    // Send, and the same send volume-down makes.
+                    //
+                    // `MaMagicTargets.pressSend()` rather than a press of anything named "Send":
+                    // that reads his configured term and presses whatever button carries it in the
+                    // app he is in. So the key, the volume key and the wand are one behaviour with
+                    // three ways in, and changing the term changes all three at once. **Two ways of
+                    // doing one thing is one way too many when one of them can drift.**
+                    ThemedIconKey(
+                        code = KeyCode.NOOP,
+                        // An upward arrow, which is what he asked for and what the chat apps use:
+                        // the message goes up and away. A paper plane is the other convention and it
+                        // is not the one on his screen.
+                        icon = Icons.Default.ArrowUpward,
+                        contentDescription = null,
+                        modifier = keyMod,
+                    ) {
+                        if (!DictateAccessibilityService.isRunning) {
+                            maOpenAccessibilitySettings(context)
+                        } else if (MaMagicTargets.pressSend() == null) {
+                            // Nothing was found, and silence here is indistinguishable from a key
+                            // that does nothing — the failure this whole app keeps meeting.
+                            Toast.makeText(
+                                context,
+                                "No Send button found on this screen",
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    }
+                }
+
+                MaFeatureKey.RECORD -> {
+                    // Record, start and stop, the same call volume-up and the bar's mic make.
+                    //
+                    // The note on MIC says a third route to recording bought nothing and cost the
+                    // only route to the transcribe view. That still holds and this does not break
+                    // it: MIC keeps the view, and this is a route that takes nothing away. He asked
+                    // for it, and a hand already on the row should not have to find a hardware key.
+                    val recording = DictateController.state.collectAsState().value is
+                        DictateController.UiState.Recording
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        // The same green ring the buckets and the volume key wear: this thing is
+                        // live. One ring, one green, one meaning across the app.
+                        ring = if (recording) onGreen else null,
+                        onClick = { DictateController.onMicClick(context) },
+                    ) { _ ->
+                        // A red dot, as he described it, and the same red as the lamp on the
+                        // recording bar. It is what the key IS rather than what it is doing, so it
+                        // is red whether or not anything is being recorded — a dot that only
+                        // appeared while recording would leave an empty key the rest of the time.
+                        //
+                        // While recording it grows and takes the ring, which is the app's one way of
+                        // saying a thing is live. The dot does not change colour, because the colour
+                        // is its name.
+                        Box(
+                            modifier = Modifier
+                                .size(if (recording) 18.dp else 14.dp)
+                                .background(MaRecordRed, CircleShape),
                         )
                     }
                 }

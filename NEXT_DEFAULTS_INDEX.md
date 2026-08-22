@@ -148,3 +148,4 @@ since been removed.
 - **§151** — A takes what you are looking at
 - **§152** — Centred, the way that cannot wrap
 - **§153** — The volume keys get a switch, and it is a key
+- **§154** — Send and Record become keys

@@ -111,6 +111,38 @@ check("the picker uses it", "MaRows.catalogueGrouped()" in screen, "still groupi
 screen_code = re.sub(r"^\s*//.*$", "", re.sub(r"/\*.*?\*/", "", screen, flags=re.S), flags=re.M)
 check('the "Keys" catch-all is gone', '"Keys"' not in screen_code, "twenty-six things under one heading")
 
+# NOTE, PAID FOR ONCE: this block was appended to the END of the file, after the exit, and reported
+# a happy total having run none of it. The count went up by two for an unrelated reason and hid it.
+# **Anything added to a test goes ABOVE the summary line**, and the summary is the last thing in the
+# file.
+
+# ---------------------------------------------------------------- the two new keys
+#
+# Send and Record, added 22.8.2026. Checked by name because both are keys that DO something on
+# another app's screen, and the failure mode for those is silence.
+row_src = (SRC / "dictate/ui/MaFeatureRow.kt").read_text()
+row_code = re.sub(r"^\s*//.*$", "", re.sub(r"/\*.*?\*/", "", row_src, flags=re.S), flags=re.M)
+
+check("Send is in the catalogue", 'SEND("send"' in order, "not offered in the picker")
+check("Record is in the catalogue", 'RECORD("record"' in order, "not offered in the picker")
+check("both are dictation", assigned.get("SEND") == "DICTATION" and assigned.get("RECORD") == "DICTATION",
+      f"SEND={assigned.get('SEND')} RECORD={assigned.get('RECORD')}")
+
+# Send must go through the magic finger's own term, not a hardcoded word. Otherwise the key and the
+# volume key would disagree the moment he changes the term.
+check("Send uses the configured term", "MaMagicTargets.pressSend()" in row_code, "hardcoded, or its own path")
+check("Send says when it finds nothing", "No Send button found" in row_src, "silent failure")
+
+# Record must be the same call as the volume key and the bar's mic, or three routes drift apart.
+check("Record uses the one entry point", "DictateController.onMicClick(context)" in row_code, "its own recording path")
+check("Record wears the live ring", "ring = if (recording) onGreen else null" in row_code, "no sign it is running")
+
+# One red, named once. Two reds mixed by eye are the same colour to whoever wrote them.
+meter_src = (SRC / "dictate/ui/MaRecordMeter.kt").read_text()
+check("the recording red is named once", "val MaRecordRed = Color(0xFF9B3B33)" in meter_src, "not shared")
+check("the lamp uses it", "MaRecordLampOn = MaRecordRed" in meter_src, "a second red")
+check("the key uses it", "MaRecordRed" in row_code, "the dot is some other red")
+
 print(f"key groups, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

@@ -21,7 +21,13 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 272.** The last stretch, newest first:
+**Build 273.** The last stretch, newest first:
+
+- **Send and Record are keys on the feature row**, both under Dictation. Send goes through
+  `MaMagicTargets.pressSend()`, so it uses his configured term and cannot drift from what volume-down
+  does; it says so when no Send button is found. Record calls `DictateController.onMicClick`, the
+  same entry point as volume-up and the bar's mic, and wears the green live ring while running. The
+  red dot is `MaRecordRed`, named once and shared with the recording lamp.
 
 - **The volume keys can be switched off, by one key on the row and nothing else.** `VOLUME_KEYS`,
   wearing the same green ring as a full bucket. `VOLUME_KEYS.md` is amended rather than contradicted:

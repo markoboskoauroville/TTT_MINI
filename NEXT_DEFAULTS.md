@@ -6206,3 +6206,63 @@ on purpose twice — one half of the gate, and the ring removed — and confirme
 
 Not tested: nothing ran on a phone. Whether the ring reads clearly on a key holding an icon rather
 than a two-character label is a question only the screen answers.
+
+---
+
+# §154 — Send and Record become keys
+
+Build 273. Two keys, and both of them are a route to something that already exists rather than a new
+behaviour — which is the whole design constraint.
+
+## Send
+
+`MaMagicTargets.pressSend()`, not a press of anything called "Send". That function reads his
+configured term and presses whatever button carries it in the app he is in, which is what volume-down
+does. So the key, the volume key and the wand are one behaviour with three ways in, and changing the
+term changes all three at once.
+
+**Two ways of doing one thing is one way too many when one of them can drift.** A key with its own
+hardcoded "Send" would work perfectly until the day he changed the term, and then would be wrong in a
+way nothing on screen explains.
+
+Upward arrow, as he asked. A paper plane is the other convention and it is not the one on his screen.
+It says so out loud when no Send button is found, because silence from a key is indistinguishable
+from a key that does nothing — the failure this app keeps meeting.
+
+## Record
+
+`DictateController.onMicClick`, the same call volume-up makes and the same one the mic on the
+recording bar makes. Third route in, and nothing taken away.
+
+The note on the MIC key says a third route to recording bought nothing and cost the only route to the
+transcribe view. **That still holds and this does not contradict it**: MIC keeps the view, and this
+key is additional rather than a replacement. The objection there was to losing the view, not to the
+number of ways of recording.
+
+The dot is red always, not only while recording. It is what the key IS rather than what it is doing,
+and a dot that appeared only while recording would leave an empty key the rest of the time. While
+recording it grows and takes the **green ring** — the app's one way of saying a thing is live, now
+worn by the buckets, the volume key and this. The dot does not change colour, because the colour is
+its name.
+
+`MaRecordRed` is named once in `MaRecordMeter.kt` and used by the lamp, the key and the settings
+picker. A second red mixed by eye is the same colour to whoever wrote it and a different one on the
+screen.
+
+## The test that reported a happy total having run nothing
+
+The new checks were appended to the end of `test_key_groups.py` — **after `sys.exit`**. It printed
+73 checks, 0 failed, and had executed none of them. The count had gone up for an unrelated reason,
+which is exactly the kind of coincidence that makes this invisible.
+
+Same family as the `strip_code` bug found two builds ago: **a check that runs nothing looks exactly
+like a check that finds nothing.** The rule is written into the file now — anything added goes above
+the summary, and the summary is the last thing in the file.
+
+## Tested
+
+Test 1: 73 checks, 0 failed, plus every other suite still green. Broken on purpose two ways — Send
+hardcoded to the word "Send", and the record key's ring removed — and confirmed red on both.
+
+Not tested: nothing ran on a phone. Whether the red dot reads at key size beside lettered keys, and
+whether `pressSend` finds the button in the apps he actually sends from, are both Test 2.

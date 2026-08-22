@@ -293,8 +293,17 @@ private fun MaReadings(sending: Boolean, tint: Color) {
  * agree. The dark one is not grey: it is the same red taken most of the way down, which reads as a
  * lamp that is off rather than as a different indicator that has appeared.
  */
-private val MaRecordLampOn = Color(0xFF9B3B33)
-private val MaRecordLampOff = Color(0xFF9B3B33).copy(alpha = 0.22f)
+/**
+ * The recording red, named once and shared.
+ *
+ * The lamp on the recording bar, the dot on the RECORD key and the dot in the settings picker are
+ * all this. A second red mixed by eye somewhere else would be the same colour to whoever wrote it
+ * and a different one on the screen, and this is a mark that means "recording" wherever it appears.
+ */
+val MaRecordRed = Color(0xFF9B3B33)
+
+private val MaRecordLampOn = MaRecordRed
+private val MaRecordLampOff = MaRecordRed.copy(alpha = 0.22f)
 
 /** Below this a speech signal is silence as far as this meter is concerned. */
 private const val FLOOR_DB = -54f

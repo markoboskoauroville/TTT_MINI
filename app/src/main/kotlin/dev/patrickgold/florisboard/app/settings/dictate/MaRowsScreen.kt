@@ -36,6 +36,9 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Numbers
@@ -91,6 +94,7 @@ import androidx.compose.ui.window.DialogProperties
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaCommandPalette
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
+import dev.patrickgold.florisboard.dictate.ui.MaRecordRed
 import dev.patrickgold.florisboard.dictate.MaMacroSlots
 import dev.patrickgold.florisboard.dictate.MaRows
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -519,6 +523,21 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.KeyboardCapslock, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CHANGE_CASE -> letters("Aa")
             // The same two arrows LegacyEditAction draws, since that is what the key on the row is.
+            MaFeatureKey.SEND ->
+                Icon(Icons.Default.ArrowUpward, contentDescription = null, tint = tint, modifier = size)
+            // The red dot, drawn rather than tinted: on this screen every other glyph takes the row's
+            // tint, and a red one would look like a key in a state. It is not a state — it is what
+            // the key IS, the same lamp the recording bar lights.
+            MaFeatureKey.RECORD -> Box(
+                modifier = Modifier.size(24.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .background(MaRecordRed, CircleShape),
+                )
+            }
             MaFeatureKey.VOLUME_KEYS ->
                 Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.UNDO ->
