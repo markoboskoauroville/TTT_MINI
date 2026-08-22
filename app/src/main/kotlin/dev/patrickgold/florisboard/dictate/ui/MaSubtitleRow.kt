@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.layout.Column
 import dev.patrickgold.florisboard.dictate.MaReader
 import dev.patrickgold.florisboard.dictate.MaSpeechify
 

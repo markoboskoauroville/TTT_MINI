@@ -563,6 +563,37 @@ def check_nullable_args(path: Path, text: str) -> None:
 # The gap stays open. Kotlin names the symbol and the line; CI reports it in five minutes.
 
 
+def check_layout_imports(path: Path, text: str) -> None:
+    """
+    RED BUILD 283: `Column` used with no `import androidx.compose.foundation.layout.Column`.
+
+    The third time today a missing Compose import cost a build, and twice the general guard was
+    measured, found to be full of noise, and left unwritten — a symbol this script cannot resolve
+    might come from a wildcard import, the same package, or the Kotlin stdlib.
+
+    **This is the narrow version that survives measurement.** A closed list of six layout names that
+    always need this exact import, are never declared in this app's packages, and are never stdlib.
+    Swept over the whole app it produced ONE hit: `MaRows.kt`, which declares its own `Row` type —
+    so a file that declares the name is skipped, and the count went to zero.
+
+    Measured before it was written rather than after, which is the only thing separating a guard from
+    the 434-hit noise that got `check_property_call` deleted.
+    """
+    names = ["Column", "Row", "Box", "Spacer", "Arrangement", "BoxWithConstraints"]
+    imports = {ln.strip() for ln in text.splitlines() if ln.startswith("import ")}
+    # A wildcard brings them all in and this cannot see which.
+    if any(i.endswith(".layout.*") for i in imports):
+        return
+    code = strip_code(text)
+    for name in names:
+        # A file that declares the name means its own thing by it.
+        if re.search(rf"\b(?:class|interface|object|data class|fun)\s+{name}\b", code):
+            continue
+        if re.search(rf"(?<![.\w]){name}\s*[({{.]", code) and \
+                f"import androidx.compose.foundation.layout.{name}" not in imports:
+            fail(path.name, f"`{name}` used but not imported from foundation.layout")
+
+
 def check_prefs_collect_import(path: Path, text: str) -> None:
     """
     RED BUILD 281: `prefs.…collectAsState()` with Compose's `collectAsState` imported.
@@ -657,6 +688,7 @@ def main() -> int:
         check_removed_declarations(path, text)
         check_nullable_args(path, text)
         check_prefs_collect_import(path, text)
+        check_layout_imports(path, text)
     check_when_coverage()
     check_no_secrets()
 

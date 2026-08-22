@@ -6744,3 +6744,21 @@ is honest.
 
 Not tested: nothing ran on a phone. Whether the resolve reads at speaking pace, and whether a swipe
 on a 96dp box is comfortable enough to trust as a kill, are both his.
+
+## §158a — The third missing import, and the check that finally survived measurement
+
+Build 283 went red on `Column` with no `import androidx.compose.foundation.layout.Column`. That is
+the third build today lost to a missing Compose import, and twice already the obvious guard had been
+measured, found to be noise, and left unwritten with a note where it would have gone.
+
+**This time the narrow version survives.** Not "every capitalised symbol" — six names from
+`foundation.layout` that always need that exact import, are never declared in this app's packages,
+and are never Kotlin stdlib.
+
+Measured before writing it, as the earlier notes demand: swept over the whole app it produced **one**
+hit, `MaRows.kt`, which declares its own `Row` type. A file that declares the name means its own
+thing by it, so declarations are skipped — and the sweep went to **zero**. Proved in both directions:
+one hit on the broken file, naming the symbol; nothing anywhere else.
+
+The difference between this and `check_property_call` is not cleverness, it is the closed list. A
+guard over a set somebody can enumerate is checkable; a guard over "any symbol" is a guess.
