@@ -6636,3 +6636,24 @@ rather than patched as a bug. *A check that raises is not a check that fails.*
 Not tested: nothing ran on a phone, and this is the most visual thing in the app. Whether 260ms per
 flight reads as alive or as frantic, whether the letters are legible at 22sp over a dimmed keyboard,
 and whether it keeps up with Speechify at his reading speed are all Test 2 and all his.
+
+## §158a — Red on an import that blamed something else
+
+Build 281 went red on `import androidx.compose.runtime.collectAsState` in a file that reads a
+preference. A jetpref preference is not a Flow, and its `collectAsState` is jetpref's own extension.
+
+**What makes it worth a section is where Kotlin pointed.** The error names the `by` DELEGATE three
+lines above — *"Property delegate must have a getValue method"* — so it reads as a delegation
+problem, which is a thing this project has actually had before and has a check for. The delegate was
+fine. The import two lines up was not.
+
+`check_prefs_collect_import` closes it: a file that reads `prefs.…collectAsState(` must import
+jetpref's. Both imported is fine, since a real Flow may be collected in the same file.
+
+**Swept over the whole app before shipping it: 0 hits.** That sweep is now the price of admission for
+any new check here — `check_property_call` produced 434 and was deleted for it, and a check is not
+allowed to be trusted on the evidence of the one file that prompted it.
+
+Proved against the red commit itself rather than by sabotage, because §156a applies again: HEAD *is*
+the red build, so reverting the fix made the file identical to HEAD and `verify.py` saw no changed
+files at all. Running the check directly against `git show HEAD:…` named the file and the reason.

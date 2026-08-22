@@ -21,7 +21,7 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 281.** The last stretch, newest first:
+**Build 282.** The last stretch, newest first:
 
 - **Anagram, the sixth reading effect.** The keyboard becomes the display: the keys dim and the
   word's letters fly from their own keys to the middle and spell it out with the voice. `MaAnagram`

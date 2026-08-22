@@ -154,3 +154,4 @@ since been removed.
 - **§157** — Two n-grams, one per language, never touching
 - **§158** — Three small things the row was missing
 - **§158** — Anagram: the keyboard spells what is being read
+- **§158a** — Red on an import that blamed something else

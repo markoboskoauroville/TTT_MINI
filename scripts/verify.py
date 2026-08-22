@@ -563,6 +563,28 @@ def check_nullable_args(path: Path, text: str) -> None:
 # The gap stays open. Kotlin names the symbol and the line; CI reports it in five minutes.
 
 
+def check_prefs_collect_import(path: Path, text: str) -> None:
+    """
+    RED BUILD 281: `prefs.…collectAsState()` with Compose's `collectAsState` imported.
+
+    A jetpref preference is not a Flow, and its `collectAsState` is jetpref's own extension. Import
+    Compose's instead and the preference read does not resolve — and the error Kotlin prints names
+    the `by` DELEGATE, three lines up, not the import. It reads as a delegation problem and is not
+    one, which is exactly the kind of misdirection worth one line here.
+
+    Narrow: it fires only on a file that reads `prefs.` with `collectAsState` and has the Compose
+    import without the jetpref one. Both imported is fine — that is how several files here already
+    are, since a real Flow may be collected in the same file.
+    """
+    code = strip_code(text)
+    if not re.search(r"\bprefs\.[\w.]*collectAsState\(", code):
+        return
+    imports = {ln.strip() for ln in text.splitlines() if ln.startswith("import ")}
+    jetpref = "import dev.patrickgold.jetpref.datastore.model.collectAsState"
+    if jetpref not in imports:
+        fail(path.name, "reads a preference with collectAsState but does not import jetpref's")
+
+
 def check_when_coverage() -> None:
     """
     Red build: a new key added to the enum and one `when` never given its branch.
@@ -634,6 +656,7 @@ def main() -> int:
         check_balance(path, text)
         check_removed_declarations(path, text)
         check_nullable_args(path, text)
+        check_prefs_collect_import(path, text)
     check_when_coverage()
     check_no_secrets()
 
