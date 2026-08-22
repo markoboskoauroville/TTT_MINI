@@ -1234,7 +1234,10 @@ fun MaFeatureRow(
                         // the message goes up and away. A paper plane is the other convention and it
                         // is not the one on his screen.
                         icon = Icons.Default.ArrowUpward,
-                        contentDescription = null,
+                        // Not null: ThemedIconKey takes a non-null String, because every key on this
+                        // row has to be announceable. He uses a screen reader some of the time and a
+                        // key that reads as nothing is a key he cannot find.
+                        contentDescription = "Send",
                         modifier = keyMod,
                     ) {
                         if (!DictateAccessibilityService.isRunning) {

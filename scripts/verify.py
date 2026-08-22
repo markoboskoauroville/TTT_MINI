@@ -475,6 +475,59 @@ def check_removed_declarations(path: Path, text: str) -> None:
             fail(path.name, f"declaration of `{name}` was removed but it is still used")
 
 
+def check_nullable_args(path: Path, text: str) -> None:
+    """
+    RED BUILD 273: `contentDescription = null` passed to a parameter declared
+    `contentDescription: String`.
+
+    Kotlin catches it instantly; CI took five minutes and one build to say so. Nothing here could see
+    it because no check read one file's call against another file's declaration.
+
+    **The first version of this was worse than useless.** It collected parameter names across the
+    repo and flagged `name = null` wherever the name was non-null in the app's own code — which
+    immediately fired on four `Icon(contentDescription = null)` calls, where `Icon` is Compose's and
+    its parameter IS nullable. Four false alarms on correct code, on the first run.
+
+    So it reads the CALL, not just the name: the innermost unclosed `Name(` before the `= null`, and
+    only if `Name` is a function declared in this repo and that parameter is non-null in its
+    signature. A call to anything from a library is left alone, because this file cannot see those
+    signatures and a check that guesses is a check that gets ignored.
+    """
+    sigs: dict[str, dict[str, bool]] = {}
+    for src in sorted(ROOT.glob("app/src/main/kotlin/**/*.kt")):
+        body = src.read_text()
+        for m in re.finditer(r"\bfun\s+(\w+)\s*\(", body):
+            name, i, depth = m.group(1), m.end() - 1, 0
+            for j in range(i, min(len(body), i + 4000)):
+                depth += (body[j] == "(") - (body[j] == ")")
+                if depth == 0:
+                    params = body[i + 1:j]
+                    break
+            else:
+                continue
+            found: dict[str, bool] = {}
+            for pm in re.finditer(r"(\w+)\s*:\s*([\w<>., ]+?)(\?)?\s*(?:=[^,]*)?(?:,|$)", params):
+                found[pm.group(1)] = pm.group(3) != "?"
+            sigs.setdefault(name, {}).update(found)
+
+    code = strip_code(text)
+    for m in re.finditer(r"(\w+)\s*=\s*null\b", code):
+        # Walk back for the innermost call this argument belongs to.
+        depth, k, owner = 0, m.start(), None
+        while k > 0:
+            k -= 1
+            if code[k] == ")":
+                depth += 1
+            elif code[k] == "(":
+                if depth == 0:
+                    cm = re.search(r"(\w+)\s*$", code[:k])
+                    owner = cm.group(1) if cm else None
+                    break
+                depth -= 1
+        if owner and sigs.get(owner, {}).get(m.group(1)) is True:
+            fail(path.name, f"`{m.group(1)} = null` but {owner} declares it non-null")
+
+
 def check_when_coverage() -> None:
     """
     Red build: a new key added to the enum and one `when` never given its branch.
@@ -545,6 +598,7 @@ def main() -> int:
         check_imports_resolve(path, text)
         check_balance(path, text)
         check_removed_declarations(path, text)
+        check_nullable_args(path, text)
     check_when_coverage()
     check_no_secrets()
 

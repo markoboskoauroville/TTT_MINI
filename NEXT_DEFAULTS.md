@@ -6266,3 +6266,25 @@ hardcoded to the word "Send", and the record key's ring removed — and confirme
 
 Not tested: nothing ran on a phone. Whether the red dot reads at key size beside lettered keys, and
 whether `pressSend` finds the button in the apps he actually sends from, are both Test 2.
+
+## §154a — Red again, on a null
+
+Build 273 went red on one line: `contentDescription = null` passed to `ThemedIconKey`, which
+declares it `String`. My mistake, and the second red build of the day.
+
+The parameter is non-null on purpose — every key on that row has to be announceable, and a key that
+reads as nothing is a key he cannot find with a screen reader. So the fix is a real description,
+`"Send"`, not a nullable parameter.
+
+`check_nullable_args` closes it, and **its first version was worse than the gap it filled.** It
+collected parameter names across the repo and flagged `name = null` wherever that name was non-null
+somewhere in the app's own code — and immediately fired on four correct `Icon(contentDescription =
+null)` calls, because `Icon` is Compose's and its parameter is nullable. Four false alarms on correct
+code, on the first run, which is how a check teaches somebody to stop reading it.
+
+It reads the CALL now: the innermost unclosed `Name(` before the argument, flagged only if `Name` is
+declared in this repo and that parameter is non-null in its signature. Anything from a library is
+left alone, because this file cannot see those signatures and a check that guesses is a check that
+gets ignored.
+
+Proved by putting the null back and watching it name the line, the argument and the function.
