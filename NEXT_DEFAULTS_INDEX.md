@@ -146,3 +146,4 @@ since been removed.
 - **§149** — The key picker, grouped by meaning
 - **§150** — The bucket wears a ring, and undo gets its pair of keys
 - **§151** — A takes what you are looking at
+- **§152** — Centred, the way that cannot wrap

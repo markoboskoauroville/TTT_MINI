@@ -128,16 +128,24 @@ check(
 meter = code(SRC / "dictate/ui/MaRecordMeter.kt")
 check("the size says MB", '"%.1f MB"' in meter, "still three bare characters")
 check("the size cannot wrap", "softWrap = false" in meter, "it can still break onto two lines")
-# Guarded rather than indexed straight. The first run of this check THREW when the MB text was
-# removed on purpose, and a check that raises is not a check that fails: the count never prints, the
-# other results are lost, and the exit code is right by accident.
-size_at = meter.find('"%.1f MB"')
-weight_at = meter.rfind("Spacer(modifier = Modifier.weight(1f))")
+# Centred as a group, and centred the way that cannot wrap.
+#
+# Two checks rather than one, because they are two different claims and the first version of this
+# conflated them: the readings must be CENTRED, and there must be NO WEIGHT in the row. A weight is
+# how they were centred before, and it is what handed the size a share of the line too narrow to
+# hold "15,0 MB" — the wrap he photographed. Centred by arrangement measures each child at its own
+# width first and splits the leftover around them, which is the opposite order.
 check(
-    "the readings start at the left",
-    size_at >= 0 and weight_at > size_at,
-    "the weight is not after the readings, or the MB text is missing",
+    "the readings are centred",
+    "horizontalArrangement = Arrangement.Center" in meter,
+    "left-aligned, or centred by some other means",
 )
+check(
+    "no weight in the readings row",
+    "Modifier.weight(1f)" not in meter,
+    "a weight would push the group off centre and can make the size wrap again",
+)
+check('the size still says MB on one line', '"%.1f MB"' in meter and "softWrap = false" in meter)
 
 print(f"buckets and permissions, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:

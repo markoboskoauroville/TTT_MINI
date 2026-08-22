@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -192,6 +191,21 @@ private fun MaReadings(sending: Boolean, tint: Color) {
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
+        // CENTRED, AS A GROUP.
+        //
+        // `Arrangement.Center` rather than a weight on each side, which is what centred them before
+        // and is what broke the megabyte figure: a weight hands each child a SHARE of the line, so
+        // the size got whatever the clock did not use, and at 15,0 MB that was narrower than the
+        // text and it wrapped onto a second line.
+        //
+        // The arrangement centres children that have already been measured at their own width. The
+        // room is decided by the readings and then the leftover is split around them, which is the
+        // opposite order to a weight and the reason this is centred AND cannot wrap.
+        //
+        // Left-aligned in build 265 because the wrap had to stop and moving everything to the edge
+        // stopped it. It was the wrong half of the fix — the arrangement, not the alignment — and
+        // he said so as soon as he saw it.
+        horizontalArrangement = Arrangement.Center,
         // Bottom-aligned so the megabyte figure sits just above the meter line with a couple of
         // pixels of air, rather than floating in the middle of the row beside a much larger number.
         verticalAlignment = Alignment.Bottom,
@@ -200,17 +214,8 @@ private fun MaReadings(sending: Boolean, tint: Color) {
         // being read, which is what a meter is for; a number saying the same thing was one reading
         // too many on a strip this size and it was taking room from the one that matters.
         //
-        // EVERYTHING STARTS AT THE LEFT, WHERE THE METER STARTS.
-        //
-        // The readings used to be centred, with a weight on each side, and that is what broke the
-        // megabyte figure: the column left for it was whatever the clock did not use, and at 15,0 MB
-        // it was narrower than the text, so it wrapped onto a second line inside a strip one line
-        // tall. A weight is a promise about width that a number cannot keep, exactly as it is for a
-        // word.
-        //
-        // So the lamp, the clock and the size sit at the start, in that order, against the same edge
-        // the meter below them starts at, and one weight at the END takes up whatever is left. The
-        // room the readings need is now decided by the readings.
+        // The lamp, the clock and the size, in that order, centred as a group by the row's
+        // arrangement above.
         // The red dot, immediately before the clock.
         //
         // Marko asked for it and the reason is the right one: a red circle has meant "recording" on
@@ -275,8 +280,9 @@ private fun MaReadings(sending: Boolean, tint: Color) {
             softWrap = false,
             modifier = Modifier.padding(start = 6.dp),
         )
-        // The room left over, at the end, where it costs nothing.
-        Spacer(modifier = Modifier.weight(1f))
+        // No spacer at either end. A weight anywhere in this row would take the leftover space for
+        // itself and shove the group off centre, which is exactly what the one that used to sit here
+        // did.
     }
 }
 

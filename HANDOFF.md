@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 270.** The last stretch, newest first:
+**Build 271.** The last stretch, newest first:
+
+- **The recording readings are centred as a group**, by `Arrangement.Center` and not by weights.
+  Weights are what centred them originally and what made the size wrap; the arrangement measures
+  each child at its own width and splits the leftover around them. Left-aligning in 265 was the
+  wrong half of the fix.
 
 - **A takes the code block you are looking at.** The ladder is gone — `autoRank`, the A1/A2/A3 face,
   the long-press reset, `Step.rank`. The key sees only what is in the frame, tries the **lowest

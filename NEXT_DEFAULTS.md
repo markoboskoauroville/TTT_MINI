@@ -6104,3 +6104,36 @@ no-skip, and wrong wiring — and confirmed red with 464 failures.
 Not tested: nothing ran on a phone. The 350ms wait between the press and reading the buckets is
 reasoned from the 150ms the snippet key uses, not measured. Whether `isVisibleToUser` behaves in that
 chat app's hierarchy is unmeasured. Both are Test 2 and both are his to find.
+
+---
+
+# §152 — Centred, the way that cannot wrap
+
+Build 271. The recording readings are centred again, which is where they were two builds ago, and
+the round trip is the point.
+
+**Originally centred by a weight on each side.** That is what broke the megabyte figure: a weight
+hands each child a SHARE of the line, so the size got whatever the clock did not use, and at 15,0 MB
+that share was narrower than the text and it wrapped onto a second line inside a strip one line tall.
+
+**Build 265 left-aligned them.** The wrap stopped, because a group against the edge with a single
+weight at the end is measured at its own width. But left was never what he wanted — it was the side
+effect of the thing that actually fixed it, and he said so the moment he saw it.
+
+**Now centred by `Arrangement.Center`, which is the fix without the side effect.** The arrangement
+measures children at their own width FIRST and splits the leftover around them; a weight divides the
+line first and asks the children to fit. Opposite order, and that order is the whole difference
+between centred-and-wrapping and centred-and-not.
+
+The rule worth keeping: **a weight is a promise about width that a number cannot keep.** When
+something has to be positioned, position it; do not divide the space and hope.
+
+## Tested
+
+Test 1: 440 checks, 0 failed. The layout check was split into two, because it was making two claims
+at once — that the readings are centred, and that there is no weight in the row. Those are different
+things and the old single check could pass for the wrong reason. Broken on purpose both ways and
+confirmed red.
+
+Not tested: nothing ran on a phone. Whether the centred group looks right against the meter beneath
+it is the only question here and it is his.
