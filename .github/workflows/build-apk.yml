@@ -134,7 +134,16 @@ jobs:
           set -euo pipefail
           apk=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
           echo "scanning: $apk ($(stat -c%s "$apk") bytes)"
-          hits=$(strings -a "$apk" | grep -aoE '(gsk_|AIza|ghp_|github_pat_|sk-ant-|xox[baprs]-)[A-Za-z0-9_-]{20,}' | wc -l)
+          # `|| true` and it is load-bearing. grep exits 1 when it matches nothing, and with
+          # `set -o pipefail` that fails the pipeline — so the first run of this gate FAILED THE
+          # BUILD BECAUSE THE ARTEFACT WAS CLEAN. A check that goes red on success is worse than no
+          # check: it teaches you that red means nothing.
+          #
+          # Caught on the very first run, which is the argument for §14's rule — make every check
+          # fail on purpose once — turned inside out: this one was made to pass on purpose, and
+          # could not.
+          hits=$(strings -a "$apk" | grep -acE '(gsk_|AIza|ghp_|github_pat_|sk-ant-|xox[baprs]-)[A-Za-z0-9_-]{20,}' || true)
+          hits=${hits:-0}
           echo "key-shaped strings found: $hits"
           if [ "$hits" -ne 0 ]; then
             echo "A key shape is present in the artefact. Not printing it. Stopping."

@@ -7513,3 +7513,20 @@ next gap: G9 asks for a document with a fixed shape so two releases can be compa
 block for this app is currently longer than the pass list — no soak, no monkey, no upgrade test, no
 device of any kind on this side — and per §11 that makes it a more believable delivery than one with
 nine passes and an empty exclusions list, not a less believable one.
+
+## §168a — The gate that went red on a clean build
+
+The first run of the new G2 step failed, and the artefact was clean. `set -o pipefail` plus a `grep`
+that exits 1 when it matches nothing: **the check reported failure because it found no secrets.**
+
+A check that goes red on success is worse than no check, because it teaches you that red means
+nothing — and this one would have done it on every single build.
+
+§14 says make every check fail on purpose once, before trusting it. The inverse turned out to matter
+just as much here: **make it pass on purpose once.** I wrote a scanner and confirmed it could stop a
+build without confirming it could let one through.
+
+Lint's measurement, from the same run: **67 errors, 971 warnings**, on a codebase where Lint has
+never run on a release. That number is the entire justification for not making it blocking in the
+same commit that switched it on — a gate that arrives with 67 errors is a gate that gets deleted or
+bypassed on the day it is added, and the module says so in §5.2.
