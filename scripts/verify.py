@@ -571,6 +571,38 @@ def check_nullable_args(path: Path, text: str) -> None:
 # The gap stays open. Kotlin names the symbol and the line; CI reports it in five minutes.
 
 
+def check_suspend_in_lock(path: Path, text: str) -> None:
+    """
+    RED BUILD 287: `prefs…set(…)` inside `synchronized(askLock) { … }`.
+
+    `set` on a preference suspends, and Kotlin refuses a suspension point inside a critical section —
+    rightly, because a coroutine that suspends holding a monitor can resume on another thread and try
+    to release a lock it does not own.
+
+    Narrow, and measured before being written, like `check_layout_imports` and unlike the two guards
+    that were deleted: it looks only for a `.set(` inside a `synchronized(…) { … }` body, which is the
+    exact shape that failed. Swept over the whole app after the fix it found **zero**, so it is
+    silent until somebody writes the same thing again.
+
+    The fix that shape wants is always the same and is worth stating: decide inside the lock, write
+    outside it.
+    """
+    code = strip_code(text)
+    for m in re.finditer(r"synchronized\s*\(", code):
+        i = code.find("{", m.end())
+        if i < 0:
+            continue
+        depth, j = 0, i
+        while j < len(code):
+            depth += (code[j] == "{") - (code[j] == "}")
+            if depth == 0:
+                break
+            j += 1
+        body = code[i:j]
+        if re.search(r"\.set\s*\(", body):
+            fail(path.name, "a suspending `.set(` inside synchronized: decide in the lock, write outside")
+
+
 def check_layout_imports(path: Path, text: str) -> None:
     """
     RED BUILD 283: `Column` used with no `import androidx.compose.foundation.layout.Column`.
@@ -697,6 +729,7 @@ def main() -> int:
         check_nullable_args(path, text)
         check_prefs_collect_import(path, text)
         check_layout_imports(path, text)
+        check_suspend_in_lock(path, text)
     check_when_coverage()
     check_no_secrets()
 

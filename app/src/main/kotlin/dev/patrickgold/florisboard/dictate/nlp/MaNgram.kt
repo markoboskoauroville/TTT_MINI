@@ -452,16 +452,28 @@ object MaNgram {
     // waiting to be learned, which is the wrong way round for the only one of them he can feel.
     private val askLock = Any()
 
-    private fun queueForAsking(word: String) {
+    /**
+     * Adds [word] to the queue.
+     *
+     * The lock computes the new list; the WRITE happens outside it.
+     *
+     * `set` on a preference is a suspend function, and suspending inside `synchronized` is not
+     * allowed — Kotlin refuses it outright, which is the right refusal: a coroutine that suspends
+     * while holding a monitor can resume on a different thread and try to release a lock it does not
+     * own. So the critical section decides what the list should be and hands it out, and the write
+     * is an ordinary suspending call in the coroutine that called this.
+     */
+    private suspend fun queueForAsking(word: String) {
         val prefs by FlorisPreferenceStore
-        synchronized(askLock) {
+        val next = synchronized(askLock) {
             val current = prefs.dictate.maNgramPending.get()
                 .split(' ').filter { it.isNotBlank() }.toMutableList()
             if (word in current) return
             current += word
             while (current.size > PENDING_CAP) current.removeAt(0)
-            prefs.dictate.maNgramPending.set(current.joinToString(" "))
+            current.joinToString(" ")
         }
+        prefs.dictate.maNgramPending.set(next)
     }
 
     /** How many words are waiting to be classified. Shown on the settings screen. */
@@ -502,11 +514,13 @@ object MaNgram {
         for ((word, langs) in answers) {
             for (language in langs) modelFor(language).learn(word)
         }
-        synchronized(askLock) {
-            val rest = prefs.dictate.maNgramPending.get()
+        // Same shape as above, and for the same reason: decide inside the lock, write outside it.
+        val rest = synchronized(askLock) {
+            prefs.dictate.maNgramPending.get()
                 .split(' ').filter { it.isNotBlank() && it !in words }
-            prefs.dictate.maNgramPending.set(rest.joinToString(" "))
+                .joinToString(" ")
         }
+        prefs.dictate.maNgramPending.set(rest)
         scheduleSave()
         onMessage("Filed ${answers.size} of ${words.size}")
     }

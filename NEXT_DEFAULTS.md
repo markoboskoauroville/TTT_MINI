@@ -6971,3 +6971,20 @@ Not tested: no classification has been run. Whether Haiku is actually good at si
 out of context is unmeasured, and it is the assumption the whole queue rests on. If it is poor, the
 gate still works — everything simply stays where the badge put it, which is where it would have been
 anyway.
+
+## §160a — Suspending inside a lock
+
+Build 287 went red twice on one shape: `prefs…set(…)` inside `synchronized(askLock) { … }`. `set`
+suspends, and Kotlin refuses a suspension point in a critical section — rightly, because a coroutine
+that suspends holding a monitor can resume on another thread and try to release a lock it does not
+own.
+
+**Decide inside the lock, write outside it.** The critical section computes the new list and hands it
+out; the write is an ordinary suspending call in the coroutine that called it.
+
+`check_suspend_in_lock` catches the shape, and was measured before being written: swept over the
+whole app it found zero, so it stays silent until somebody writes it again. That is now three checks
+added this way — layout imports, this one — and two deleted for failing the same measurement. The
+rule has settled into something simple: **a guard over a shape somebody can describe in one sentence
+is checkable; a guard over "anything suspicious" is a guess, and a guess with a hundred false
+positives is worse than the gap it fills.**
