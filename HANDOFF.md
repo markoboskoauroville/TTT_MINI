@@ -21,7 +21,14 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 295.** The last stretch, newest first:
+**Build 296.** The last stretch, newest first:
+
+- **F1, F2, F3 keys** show and hide feature rows 1, 2 and 3 from the keyboard, each wearing the green
+  ring while its row is showing. Written once for the three, and they write through
+  `MaRows.setRowEnabled`.
+- **A row can become another row.** "Row 2 becomes → Row 1" on the editor's tab, a **swap** and never
+  an insert: three rows exist always, and a move that shuffled the others would renumber a row he
+  never touched. Keys, arrangement and on/off state travel together; the tab follows the keys.
 
 - **`[ENG] [×] [⠹ status…]`** — brackets around each part and 12dp between them, because two of the
   three are irreversible in opposite directions and a thumb aimed at hold was landing on X.

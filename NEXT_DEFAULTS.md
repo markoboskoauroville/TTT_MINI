@@ -7319,3 +7319,58 @@ release: red.
 One check had to be re-aimed rather than kept: it asserted `text = MaLanguage.badge()`, which is
 precisely the dead code he reported. **A check written against the broken spelling keeps passing on
 the bug**, so it now looks for the observed form.
+
+---
+
+# §165 — F1, F2, F3, and rows that trade places
+
+Build 296.
+
+## The keys
+
+Three keys, one per feature row, showing and hiding it from the keyboard. The switchboard has had
+these three switches all along — three screens away. **A control for what is on screen belongs on the
+screen it controls.**
+
+Each wears the green ring while its row is showing: the same ring the buckets and the volume key
+wear, because he asked for an outline and the app already had one that means exactly this. One ring,
+one green, one meaning.
+
+Written once for the three rather than three times. The only difference between them is an index, and
+three copies of one key would be three places for the ring to disagree with the row.
+
+A key can switch off the row it is standing on, and that is the point rather than a trap: the same
+key on another row brings it back, and `visibleRows` already refuses to leave him with no keyboard.
+
+## Swap, never insert
+
+"Row 2 becomes → Row 1", on the tab, taking keys, arrangement and on/off state in one move.
+
+He said swapping and he was right. **Three rows exist, always.** A move that shuffled the others along
+would renumber a row he never touched — and row 1 is the one his thumb reaches without moving, so an
+arrangement built by muscle memory must not shift under him because he rearranged something else. A
+swap changes exactly two things and leaves the third alone.
+
+The `enabled` flag travels with the keys, not the position: he switched a row off because he did not
+want *those keys* today, not because he did not want a row in that place.
+
+**The tab follows the keys.** He was looking at a set of keys; after the swap they are on the other
+row, and leaving him on the old tab number would show him something different and read as the swap
+having gone the wrong way.
+
+Through `commit`, like every other edit on that screen, so there is no path that updates the state
+without writing the preference.
+
+## Tested
+
+Test 1: 6,582 checks, 0 failed, 2,187 walked swaps — every sequence of three swaps over three rows,
+asserting **still three rows**, **no row lost**, **no row duplicated** after each. Plus the toggles,
+and that a swap is its own undo.
+
+Broken on purpose by making the swap an insert — the shape he explicitly did not ask for — and it
+went red on three: the flag stayed with the position instead of the keys, and the operation stopped
+being reversible. **The walked property is what tells the two apart**, since both look like "the rows
+moved" from a single example.
+
+Not tested: nothing ran on a phone. Whether three more keys fit a row he already fills is his to see,
+and if they do not, F1–F3 are exactly the keys to put on a row he switches off.

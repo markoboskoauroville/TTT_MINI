@@ -222,6 +222,42 @@ fun MaRowsScreen() = FlorisScreen {
         }
 
 
+        // BECOME ANOTHER ROW.
+        //
+        // The tab he is on can trade places with either of the others: keys, arrangement and on/off
+        // state, all of it, in one move. He builds a row, decides it belongs nearer his thumb, and
+        // says so — rather than rebuilding it key by key one row down.
+        //
+        // A swap and never an insert. Three rows exist, always. A move that shuffled the others
+        // along would renumber a row he never touched, and row 1 is the one his thumb reaches
+        // without moving — an arrangement built by muscle memory must not shift under him because he
+        // rearranged something else.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        ) {
+            Text(
+                text = "Row ${tab + 1} becomes",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            for (target in 0 until MaRows.ROW_COUNT) {
+                if (target == tab) continue
+                TextButton(
+                    onClick = {
+                        // Through `commit`, like every other edit on this screen: it sets the
+                        // state and writes the preference in one place, so there is no path that
+                        // updates one without the other.
+                        commit(MaRows.swapRows(rows, tab, target))
+                        // Follow the keys, not the number. He was looking at a set of keys; after
+                        // the swap they are on row `target`, and leaving him on the old tab would
+                        // show him a different row and look like the swap went the wrong way.
+                        tab = target
+                    },
+                ) { Text("Row ${target + 1}") }
+            }
+        }
+
         TabRow(selectedTabIndex = tab) {
             (0 until MaRows.ROW_COUNT).forEach { i ->
                 Tab(
@@ -556,6 +592,9 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.KeyboardCapslock, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CHANGE_CASE -> letters("Aa")
             // The same two arrows LegacyEditAction draws, since that is what the key on the row is.
+            MaFeatureKey.ROW_1 -> letters("F1")
+            MaFeatureKey.ROW_2 -> letters("F2")
+            MaFeatureKey.ROW_3 -> letters("F3")
             MaFeatureKey.SEND ->
                 Icon(Icons.Default.ArrowUpward, contentDescription = null, tint = tint, modifier = size)
             // The red dot, drawn rather than tinted: on this screen every other glyph takes the row's

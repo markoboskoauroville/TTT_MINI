@@ -1383,6 +1383,41 @@ fun MaFeatureRow(
                     }
                 }
 
+                MaFeatureKey.ROW_1, MaFeatureKey.ROW_2, MaFeatureKey.ROW_3 -> {
+                    // F1, F2, F3 — one row each, and the ring says which are showing.
+                    //
+                    // Written once for the three rather than three times: the only difference
+                    // between them is an index, and three copies of one key is three places for the
+                    // ring to disagree with the row.
+                    val which = when (button.key) {
+                        MaFeatureKey.ROW_1 -> 0
+                        MaFeatureKey.ROW_2 -> 1
+                        else -> 2
+                    }
+                    val on = storedRows.getOrNull(which)?.enabled == true
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        // The same green ring as a full bucket and a live volume key. He asked for
+                        // an outline and the app already had one that means exactly this.
+                        ring = if (on) onGreen else null,
+                        onClick = {
+                            scope.launch {
+                                prefs.dictate.maRows.set(
+                                    MaRows.serialize(MaRows.setRowEnabled(storedRows, which, !on)),
+                                )
+                            }
+                        },
+                    ) { fg ->
+                        Text(
+                            text = "F${which + 1}",
+                            color = fg,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+
                 MaFeatureKey.VOLUME_KEYS -> {
                     // Volume keys on or off, and the ONLY control for it.
                     //

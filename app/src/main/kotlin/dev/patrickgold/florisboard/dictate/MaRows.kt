@@ -143,6 +143,39 @@ object MaRows {
      * user would be looking at a keyboard with no keys and no way to reach the screen that puts them
      * back.
      */
+    /**
+     * Swaps two rows whole — their keys, their arrangement and their on/off state.
+     *
+     * ### Swap, never insert
+     *
+     * He asked for it as swapping and that is the right shape: **three rows exist, always, and a
+     * move that shuffled the others along would renumber a row he did not touch.** Row 1 is the one
+     * his thumb reaches without moving; if arranging row 3 could silently make row 2 into row 1, the
+     * arrangement he built by muscle memory would move under him.
+     *
+     * A swap changes exactly two things and leaves the third alone. Whatever was on row 2 is now on
+     * row 1 and whatever was on row 1 is now on row 2, and row 3 is where it was.
+     *
+     * The `enabled` flag travels with the row, because it belongs to the KEYS rather than to the
+     * position: he switched off a row because he did not want those keys today, not because he did
+     * not want a row in that place.
+     */
+    fun swapRows(rows: List<Row>, a: Int, b: Int): List<Row> {
+        if (a == b) return rows
+        if (a !in rows.indices || b !in rows.indices) return rows
+        val out = rows.toMutableList()
+        val held = out[a]
+        out[a] = out[b]
+        out[b] = held
+        return out
+    }
+
+    /** Turns one row on or off, leaving everything else as it was. */
+    fun setRowEnabled(rows: List<Row>, index: Int, enabled: Boolean): List<Row> {
+        if (index !in rows.indices) return rows
+        return rows.mapIndexed { i, row -> if (i == index) row.copy(enabled = enabled) else row }
+    }
+
     fun visibleRows(rows: List<Row>): List<List<Button>> {
         val drawn = rows.filter { it.enabled }
             .map { it.visibleButtons }

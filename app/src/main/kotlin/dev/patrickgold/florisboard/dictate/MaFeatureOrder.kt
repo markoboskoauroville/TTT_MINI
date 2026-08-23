@@ -271,6 +271,24 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * term and pressing that button on screen — not a hardcoded "Send". So the key, the volume key
      * and the wand all send the same way, and changing the term changes all three at once.
      */
+    /**
+     * F1, F2, F3: show or hide feature row 1, 2 or 3, from the keyboard.
+     *
+     * The switchboard has had these switches all along, three screens away. These are the same
+     * three, under his thumb, where the rows are — **a control for what is on screen belongs on the
+     * screen it controls.**
+     *
+     * Each wears the green ring when its row is showing, the same ring the buckets and the volume
+     * key wear. One ring, one green, one meaning: this is on.
+     *
+     * A key can switch off the row it is standing on. That is not a trap, it is the point — the key
+     * is on another row, or it is the last thing he sees before the row goes, and the same key on a
+     * remaining row brings it back. `visibleRows` already refuses to leave him with nothing.
+     */
+    ROW_1("row_1", "F1, show row 1"),
+    ROW_2("row_2", "F2, show row 2"),
+    ROW_3("row_3", "F3, show row 3"),
+
     SEND("send", "Send"),
 
     /**
@@ -541,6 +559,10 @@ val MaFeatureKey.group: MaFeatureGroup
         MaFeatureKey.SWITCHBOARD,
         MaFeatureKey.PIN,
         MaFeatureKey.SPACER,
+        // Which rows are showing is the shape of the keyboard, not something typed with it.
+        MaFeatureKey.ROW_1,
+        MaFeatureKey.ROW_2,
+        MaFeatureKey.ROW_3,
         -> MaFeatureGroup.KEYBOARD
 
         MaFeatureKey.SETTINGS,

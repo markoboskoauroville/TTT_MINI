@@ -164,3 +164,4 @@ since been removed.
 - **§163** — The badge on the sending line
 - **§164** — The sending line becomes a terminal
 - **§165** — Three faults on one line
+- **§165** — F1, F2, F3, and rows that trade places
