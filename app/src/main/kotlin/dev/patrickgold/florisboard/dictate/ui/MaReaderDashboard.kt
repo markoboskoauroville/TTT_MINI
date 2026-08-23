@@ -178,10 +178,15 @@ fun MaReaderDashboard(onClose: () -> Unit) {
                         .clip(RoundedCornerShape(14.dp))
                         .background(if (on) MaDashAccent else MaDashChip)
                         .clickable { scope.launch { prefs.dictate.maReaderStyle.set(effect.id) } }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                        // Sized to a key on the feature row below, which he asked for by pointing at
+                        // it: the panel and the keyboard are on screen together and a chip taller
+                        // than the keys underneath makes the panel look like a different app.
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = effect.label,
+                        // The abbreviation. All six fit one row now, so nothing is behind a scroll
+                        // — a chip he has to scroll to find is a chip he does not know exists.
+                        text = effect.short,
                         color = if (on) Color.Black else MaDashInk,
                         fontSize = 14.sp,
                         fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
@@ -221,6 +226,36 @@ fun MaReaderDashboard(onClose: () -> Unit) {
                     .background(swatchColour(hex.ifBlank { MaSwatches.GREYS.last() }))
                     .clickable { open = !open },
             )
+            // WHERE THE READING SITS, in the empty space beside the swatch.
+            //
+            // Top, middle or bottom, and **zero delay** in all three: the line does not travel to
+            // its place, it is drawn there. An animation between sentences would put movement on
+            // screen at the moment he is listening rather than looking, which is the opposite of
+            // what a caption is for.
+            //
+            // Beside the colour rather than under the effects because both of these are about the
+            // look of the marking, and the row was empty — he pointed at the gap and he was right
+            // that it was the place for this.
+            val align by prefs.dictate.maReaderAlign.collectAsState()
+            Spacer(Modifier.width(14.dp))
+            for (option in listOf("top" to "T", "middle" to "M", "bottom" to "B")) {
+                val on = align == option.first
+                Box(
+                    modifier = Modifier
+                        .padding(end = 6.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (on) MaDashAccent else MaDashChip)
+                        .clickable { scope.launch { prefs.dictate.maReaderAlign.set(option.first) } }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        text = option.second,
+                        color = if (on) Color.Black else MaDashInk,
+                        fontSize = 14.sp,
+                        fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+                    )
+                }
+            }
             if (open) {
                 Spacer(Modifier.width(10.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -97,12 +97,15 @@ check("no bare index guard survives", "if (index < 0) return" not in caption, "t
 check("a missing page draws an empty box", "SubtitleBox(modifier = modifier, full = full) { }" in caption,
       "returns instead, and the box disappears mid-passage")
 
-# ---------------------------------------------------------------- top line
+# ---------------------------------------------------------------- top line, promoted out
+#
+# The "top" EFFECT is gone, and these checks go with it rather than being deleted quietly. Where the
+# reading sits turned out to be a question worth asking of every effect, so it became `maReaderAlign`
+# — see test_reader_align.py, which asserts the replacement. Two ways to put the reading at the top
+# would have been the thing this file usually complains about.
 effects_src = code(SRC / "dictate/ui/MaReaderEffects.kt")
-check("top line is offered", 'Effect("top"' in effects_src, "not in the list")
-check("and something draws it", 'style == "top"' in caption, "offered but never drawn")
-check("the read sentence is at the top", "words.drop(index + 1)" in caption,
-      "what is coming is not what is shown below")
+check("the top-line effect is gone", 'Effect("top"' not in effects_src, "two controls for one job")
+check("and nothing still draws it", 'style == "top"' not in caption, "a branch for a style nobody can pick")
 
 check("matrix has a branch that draws it", 'style == "matrix"' in caption, "offered but never drawn")
 check("it uses the shared window", "SubtitleBox(modifier = modifier, full = full)" in caption,

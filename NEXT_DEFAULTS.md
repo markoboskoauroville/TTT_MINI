@@ -7041,3 +7041,66 @@ keyboard hidden, there is no way to stop a recording except opening the keyboard
 today and it is not wrong — the hairline is honest about the microphone being open, which is what it
 is for — but it is the corner where two good decisions meet, and it is written down here so the next
 person meets it on paper rather than on the phone.
+
+---
+
+# §162 — The slideshow, the alignment, and six short words
+
+Build 290.
+
+## The text was still blinking
+
+Build 286 stopped the *window* vanishing between chunks. He came back and said the text was blinking
+now, and he was right: **an empty box that fills again is a blink whether or not the box survived.**
+The fault had simply moved one layer in, and the fix at that layer was the same shape.
+
+The last page that had content is held and redrawn while there is nothing current. His word for it
+was slideshow, and that is exactly the behaviour: one thing is on screen until the next is ready, and
+**the change is the only event.**
+
+Two details that matter more than the hold itself:
+
+- `remember` sits outside the null check, so the held page survives the recompositions where there is
+  nothing current. Inside it, the hold would be discarded at exactly the moment it is needed.
+- Keyed on the passage. A new reading starts with nothing held, or the last sentence of the previous
+  reading would appear under the first second of the next — a caption for something nobody is saying.
+
+Blank before the very first page is kept, and is honest: it says the reading is coming.
+
+## Alignment, and one effect promoted out of the list
+
+Top, middle or bottom, in the empty space beside the highlight swatch that he pointed at. **Zero
+delay in all three** — the line is drawn where it belongs rather than travelling there. An animation
+between sentences puts movement on screen at the moment he is listening rather than looking, which is
+the opposite of what a caption is for.
+
+**The "Top line" effect is deleted, and that is a promotion.** It pinned the reading to the top edge
+as one style among six. Where the line sits turns out to be a question worth asking of *every*
+effect: an effect decides what the marking looks like, alignment decides where it sits. Two
+questions, two controls, and every answer to one now works with every answer to the other — instead
+of one combination being available and the rest not.
+
+Keeping both would have been two controls for one job, which this archive complains about roughly
+every fortnight.
+
+## Six short words
+
+Hi · Ty · Kar · Sp · Vo · Mx, sized to a key on the feature row underneath — he asked for that by
+pointing at the row, and he was right that a chip taller than the keys makes the panel look like a
+different app.
+
+All six fit one row now. **A chip behind a scroll is a chip he does not know exists**, which is the
+real cost of the long labels rather than the space they took.
+
+The short form is an abbreviation of the name and never a different name, and the test asserts it:
+somebody reading the chip and somebody reading the settings must be looking at the same word.
+
+## Tested
+
+Test 1: 536 checks, 0 failed, 510 walked sequences — every pattern of present and absent pages up to
+eight long, asserting **never blank after the first page**. Broken on purpose by dropping the hold
+and by hardcoding the alignment: 470 failures.
+
+Two checks in the matrix suite were rewritten rather than deleted when the top-line effect went, so
+the suite now asserts its *absence* — a deleted feature with its checks quietly removed is how a
+feature comes back by accident.

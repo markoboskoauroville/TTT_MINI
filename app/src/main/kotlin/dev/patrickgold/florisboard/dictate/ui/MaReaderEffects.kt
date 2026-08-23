@@ -18,19 +18,30 @@ package dev.patrickgold.florisboard.dictate.ui
  */
 object MaReaderEffects {
 
-    data class Effect(val id: String, val label: String)
+    /**
+     * [short] is what the chip shows: two or three characters, so all of them fit one row without
+     * scrolling and no chip is wider than a key on the feature row underneath.
+     *
+     * [label] is kept for anywhere with room to spell it out. **The short form is an abbreviation of
+     * the name, never a different name** — "Kar" is Karaoke shortened, and somebody reading the chip
+     * and somebody reading the settings are looking at the same word.
+     */
+    data class Effect(val id: String, val label: String, val short: String)
 
     /** Ordered as he uses them: the plain one first, the extreme one last. */
     val ALL: List<Effect> = listOf(
-        Effect("highlight", "Highlight"),
-        Effect("typewriter", "Typewriter"),
-        Effect("karaoke", "Karaoke"),
-        Effect("spotlight", "Spotlight"),
-        Effect("void", "Void"),
-        // The reading pinned to the top edge, with what is coming underneath. Beside the others
-        // because it is still a caption; different from all of them because nothing moves except
-        // the text, and the line he is listening to never leaves the same spot.
-        Effect("top", "Top line"),
+        Effect("highlight", "Highlight", "Hi"),
+        Effect("typewriter", "Typewriter", "Ty"),
+        Effect("karaoke", "Karaoke", "Kar"),
+        Effect("spotlight", "Spotlight", "Sp"),
+        Effect("void", "Void", "Vo"),
+        // "Top line" is gone, and this is a promotion rather than a deletion.
+        //
+        // It was one effect that pinned the reading to the top edge. Where the line sits turns out
+        // to be a question worth asking of EVERY effect, not a seventh effect — he asked for top,
+        // middle and bottom next to the highlight swatch, and that is the right shape: an effect
+        // decides what the marking looks like, alignment decides where it sits. Two questions, two
+        // controls, and every answer to one now works with every answer to the other.
         // Last, because it is the furthest from a subtitle: it does not mark a word in a page, it
         // resolves one out of noise.
         //
@@ -38,6 +49,6 @@ object MaReaderEffects {
         // read as a clever thing happening to the keyboard rather than as a word being read — the
         // eye followed the letters travelling instead of the word arriving. Matrix keeps the one
         // part that worked, which is that the display is not a strip of text.
-        Effect("matrix", "Matrix"),
+        Effect("matrix", "Matrix", "Mx"),
     )
 }

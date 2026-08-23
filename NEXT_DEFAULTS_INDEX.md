@@ -160,3 +160,4 @@ since been removed.
 - **§159** — The window stops blinking, and a mode that never moves the line
 - **§160** — The wrong-language words, and a gate that is nearly free
 - **§161** — The overlay becomes a hairline
+- **§162** — The slideshow, the alignment, and six short words

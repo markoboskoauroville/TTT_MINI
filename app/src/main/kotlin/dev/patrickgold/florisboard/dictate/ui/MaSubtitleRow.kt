@@ -140,8 +140,28 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     val pages = remember(words, perPage) { paginate(words.map { it.text }, perPage) }
     // No page yet — the first chunk is still coming, or one has just ended. The box is drawn empty
     // and keeps its place. Returning here is what made it blink.
-    val page = remember(pages, index) { pages.firstOrNull { index in it.range } }
+    // THE LAST PAGE STAYS UP UNTIL THE NEXT ONE IS READY.
+    //
+    // Build 286 stopped the WINDOW disappearing between chunks. The text still emptied, and he was
+    // right that this is the same fault one layer in: an empty box that fills again is a blink
+    // whether or not the box itself survived.
+    //
+    // So the last page that had content is held and redrawn while there is nothing current. **Like a
+    // slideshow**, in his words: one image is on screen until the next is ready, and the change is
+    // the only event. Nothing is ever blank mid-passage.
+    //
+    // `remember` outside the null check, so the held value survives the recompositions where the
+    // page is missing. Cleared by the reader going idle, not here — a stale page after the reading
+    // ends would be a caption for nothing.
+    val live = pages.firstOrNull { index in it.range }
+    // Keyed on the passage, not on the index: a new reading starts with nothing held, so the last
+    // sentence of the previous one cannot appear under the first second of the next.
+    var held by remember(words) { mutableStateOf<Page?>(null) }
+    if (live != null) held = live
+    val page = live ?: held
     if (page == null) {
+        // Only before the very first page has ever arrived. There is nothing to hold yet, and an
+        // empty box for the first second is honest — it says the reading is coming.
         SubtitleBox(modifier = modifier, full = full) { }
         return
     }
@@ -156,48 +176,8 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // nothing to skip ahead to, and no line to lose — the word arrives, is read, and is replaced.
     //
     // Long press collapses it back to the small subtitle box, the same gesture that opened it.
-    // TOP LINE. The sentence being read is pushed to the top, and what is coming sits under it.
-    //
-    // The other styles centre the reading in a page and move a mark through it, so the eye tracks a
-    // highlight down a block and back up again for the next one. This one never asks the eye to
-    // come back: the current sentence is always at the top edge, in the reading colour, and the
-    // text below it is what has not been said yet.
-    //
-    // **The eye stops hunting.** For a page of text and a moving mark the hunt is the work, and he
-    // is dyslexic — the hunt is the part that costs him. The line he wants is in the same place
-    // every time, and the only thing that moves is the text underneath.
-    //
-    // Behind, not above: what has already been read is dropped rather than greyed. Keeping it would
-    // put the finished text where the eye lands first and the live sentence in the middle again,
-    // which is the arrangement this exists to leave behind.
-    if (style == "top") {
-        val here = words.getOrNull(index)?.text.orEmpty()
-        val ahead = words.drop(index + 1).take(40).joinToString(" ") { it.text }
-        SubtitleBox(modifier = modifier, full = full) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = here,
-                    color = lit,
-                    fontSize = fontSize,
-                    lineHeight = lineHeight,
-                    fontWeight = if (litBold) FontWeight.Bold else FontWeight.Normal,
-                    maxLines = 2,
-                )
-                if (ahead.isNotBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        // Dim, and dim enough to be scenery. It is there so the top line has
-                        // somewhere to have come from, not to be read ahead of the voice.
-                        text = ahead,
-                        color = MaSubtitleWhite.copy(alpha = 0.38f),
-                        fontSize = fontSize,
-                        lineHeight = lineHeight,
-                    )
-                }
-            }
-        }
-        return
-    }
+    // The "top" style branch is gone. Where the reading sits is now `maReaderAlign` and applies to
+    // every effect rather than being one of them. See MaReaderEffects.
 
     // MATRIX. The word resolves out of falling noise, in the box the void uses.
     //
@@ -508,9 +488,18 @@ private fun SubtitleBox(
     full: Boolean,
     content: @Composable () -> Unit,
 ) {
+    // Top, middle or bottom, from the dashboard, with no animation between them. The line is DRAWN
+    // where it belongs rather than travelling there: movement on screen while he is listening is
+    // the thing a caption is supposed to avoid.
     val prefs by FlorisPreferenceStore
+    val alignPref by prefs.dictate.maReaderAlign.collectAsState()
     val scope = rememberCoroutineScope()
     Box(
+        contentAlignment = when (alignPref) {
+            "middle" -> Alignment.Center
+            "bottom" -> Alignment.BottomStart
+            else -> Alignment.TopStart
+        },
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 6.dp)

@@ -21,7 +21,16 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 289.** The last stretch, newest first:
+**Build 290.** The last stretch, newest first:
+
+- **The text holds between chunks.** The last page stays up until the next is ready — a slideshow,
+  where the change is the only event. Build 286 stopped the window disappearing; the text still
+  emptied, which is the same fault one layer in.
+- **Top, middle or bottom**, beside the highlight swatch, with no animation. Where the reading sits
+  is a question for every effect, so the **"Top line" effect is gone** — promoted to
+  `maReaderAlign`, not deleted.
+- **The effect chips are abbreviations** — Hi, Ty, Kar, Sp, Vo, Mx — sized to a key on the feature
+  row, so all six fit one row with nothing behind a scroll.
 
 - **The recording overlay is one hairline.** Full width, one device pixel, at the top, and
   `FLAG_NOT_TOUCHABLE` — the meter and nothing else. The notch carried a meter, a red dot, a clock, a

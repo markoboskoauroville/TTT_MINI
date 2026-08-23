@@ -1386,6 +1386,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         /** Words seen once, unmarked, and unknown to both models. Waiting to be classified. */
+        /**
+         * Where the reading sits in its window: "top", "middle" or "bottom".
+         *
+         * Top by default, because the line he is listening to should be where the eye lands first
+         * and because it leaves the space below for what is coming.
+         */
+        val maReaderAlign = string(
+            key = "dictate__ma_reader_align",
+            default = "top",
+        )
+
         val maNgramPending = string(
             key = "dictate__ma_ngram_pending",
             default = "",
