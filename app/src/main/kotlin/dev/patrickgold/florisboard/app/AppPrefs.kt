@@ -1385,6 +1385,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "",
         )
 
+        /** Words seen once, unmarked, and unknown to both models. Waiting to be classified. */
+        val maNgramPending = string(
+            key = "dictate__ma_ngram_pending",
+            default = "",
+        )
+
         val maClipDelaySelect = int(
             key = "dictate__ma_clip_delay_select",
             default = 0,

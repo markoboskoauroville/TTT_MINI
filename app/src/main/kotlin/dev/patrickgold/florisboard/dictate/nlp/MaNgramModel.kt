@@ -91,6 +91,18 @@ class MaNgramModel {
     val vocabularySize: Int
         get() = lock.read { unigrams.size }
 
+    /**
+     * Whether this model has seen [word] before.
+     *
+     * The whole language gate rests on this one question: a word already here is already in the
+     * right place, so it is never sent anywhere to be classified. Asked of the live table rather
+     * than a cache, or a word learned a second ago would be treated as new and asked about twice.
+     */
+    fun knows(word: String): Boolean {
+        if (word.isBlank()) return false
+        return lock.read { unigrams.containsKey(word.lowercase()) }
+    }
+
     /** How many words have been read in total. */
     var totalWords: Long = 0L
         private set

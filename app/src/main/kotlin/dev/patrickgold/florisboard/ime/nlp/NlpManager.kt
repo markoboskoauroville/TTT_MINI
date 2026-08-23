@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.core.Subtype
+import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
@@ -257,13 +258,33 @@ class NlpManager(context: Context) {
                     sourceProvider = null,
                 )
             }
+            // THE SHIPPED DICTIONARY ONLY SPEAKS WHEN IT IS SPEAKING HIS LANGUAGE.
+            //
+            // This is the bug he photographed: the badge said HR and the row offered "what",
+            // "existing", "are", "for", "to", "and", "in". None of those came from the personal
+            // model — that one was split by language and is innocent. They came from the shipped
+            // dictionary, which is chosen per subtype and falls back to an English one when the
+            // subtype has no dictionary of its own.
+            //
+            // So a provider whose locale does not match the badge is DROPPED ENTIRELY. Not ranked
+            // lower, dropped. **A wrong-language suggestion is not a weaker answer, it is a wrong
+            // one**, and an English row under a Croatian badge is worse than an empty row: the empty
+            // row tells the truth, which is that nothing here knows Croatian yet.
+            //
+            // What is left when it is dropped is his own Croatian model, which is the thing that
+            // learns as he writes. That is the honest state of it, and it fills.
+            val badge = MaLanguage.active()
+            val providerLanguage = subtype.primaryLocale.language.lowercase()
+            val providerAgrees = providerLanguage == badge
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < reqTime) {
                     internalSuggestions = reqTime to buildList {
                         addAll(emojiSuggestions)
                         addAll(personal)
-                        val seen = personal.map { it.text.toString().lowercase() }.toSet()
-                        addAll(suggestions.filter { it.text.toString().lowercase() !in seen })
+                        if (providerAgrees) {
+                            val seen = personal.map { it.text.toString().lowercase() }.toSet()
+                            addAll(suggestions.filter { it.text.toString().lowercase() !in seen })
+                        }
                     }
                 }
             }

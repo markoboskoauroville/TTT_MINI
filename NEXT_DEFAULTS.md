@@ -6893,3 +6893,81 @@ and confirmed red on all three. Every other suite green.
 
 Not tested: nothing ran on a phone. Whether the window is genuinely still across a chunk boundary is
 the one question that matters and only his eye answers it.
+
+---
+
+# §160 — The wrong-language words, and a gate that is nearly free
+
+Build 287. He photographed the badge reading **HR** and the row offering *what · existing · are ·
+for · to · and · in*, and said the n-gram was still broken.
+
+## It was not the n-gram
+
+Those words never came from the personal model. That one was split by language in build 278 and is
+innocent. They came from the **shipped dictionary**, which is chosen per subtype and falls back to an
+English one when the subtype has no dictionary of its own — so the badge moved, the personal model
+moved with it, and the shipped provider carried on answering in English underneath.
+
+**A provider whose locale disagrees with the badge is now dropped entirely.** Not ranked lower,
+dropped. A wrong-language suggestion is not a weaker answer, it is a wrong one, and an English row
+under a Croatian badge is worse than an empty row — the empty row tells the truth, which is that
+nothing here knows Croatian yet except his own model, and that one fills as he writes.
+
+Worth recording as a pattern: **the fix for the last bug was correct and did not fix the symptom**,
+because the symptom had two sources and only one had been found. The screenshot was the evidence that
+found the second.
+
+## The gate, and why it costs almost nothing
+
+His rule, and it is the right one: **a word already in a model is already in the right place.** It
+was filed once and asking again would pay to be told what is on disk.
+
+| Evidence | Answer | Cost |
+|---|---|---|
+| known to either model | leave it there | nothing |
+| known to both | leave it in both | nothing |
+| carries č ć ž š đ | Croatian | nothing |
+| new and unmarked | learn under the badge, queue it | one word in a batch, once ever |
+
+Walked over all sixteen combinations of known-en, known-hr, badge and diacritic: **two of them reach
+the network**, and only until that word has been seen once.
+
+There is deliberately **no matching "plain letters means English" rule**. Most Croatian words have no
+diacritics, so it would be right often and wrong constantly, which is the worst kind of rule.
+
+**Known beats the diacritic rule.** A filed word is not re-examined for any reason, including
+evidence that would have been decisive when it was new. That is what makes the cost decay rather than
+recur.
+
+**The sentence is still learned whole into the badge's model**, because an n-gram learns sequences
+and a sentence chopped into per-word destinations would teach neither model how the words follow each
+other. The gate decides where a NEW WORD belongs; the queue corrects the badge afterwards if it was
+wrong.
+
+## The asking
+
+Batched, capped at 60 a request, capped at 400 waiting, and **behind a button**. Never automatic and
+never on the typing path: it costs money and a second, and there is no moment while typing when
+either is acceptable. A word answered `both` — *radio, auto, student, film* — is learned into both
+models rather than forced into one; forcing a choice would delete a suggestion he had earned to
+satisfy a schema.
+
+An answer naming a word nobody asked about is refused. **A model must not be able to add words to his
+dictionary**, only to sort the ones already in it.
+
+## The screen
+
+Both models, each with words known and words read, a wipe each — wiping Croatian to fix Croatian
+should not cost him a year of English — and the number waiting to be sorted.
+
+## Tested
+
+Test 1: 41 checks, 0 failed, the sixteen-case walk included. Broken on purpose two ways — asking
+about known words, and letting the English dictionary back in under a Croatian badge — and confirmed
+red with 15 failures. Every other suite green; one check in the split suite updated for a renamed
+variable rather than deleted, since the claim it makes is still the one that matters.
+
+Not tested: no classification has been run. Whether Haiku is actually good at single Croatian words
+out of context is unmeasured, and it is the assumption the whole queue rests on. If it is poor, the
+gate still works — everything simply stays where the badge put it, which is where it would have been
+anyway.

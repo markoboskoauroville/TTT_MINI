@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.nlp.MaWordLanguage
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
@@ -78,24 +79,81 @@ fun MaNgramSetting() {
             )
         }
 
-        val known = if (forgotten) 0 else MaNgram.model.vocabularySize
-        val written = if (forgotten) 0L else MaNgram.model.totalWords
+        // ONE LINE PER LANGUAGE, because there are two models and a single total would hide the
+        // thing worth knowing: whether the Croatian one has anything in it yet.
+        //
+        // He asked to see the size and to be able to wipe it. Both, and per language, since wiping
+        // Croatian to fix Croatian should not cost him a year of English.
+        var wiped by remember { mutableStateOf(setOf<String>()) }
+        for (language in listOf(MaWordLanguage.EN, MaWordLanguage.HR)) {
+            val name = if (language == MaWordLanguage.EN) "English" else "Croatian"
+            val known = if (forgotten || language in wiped) 0 else MaNgram.vocabularyOf(language)
+            val written = if (forgotten || language in wiped) 0L else MaNgram.totalOf(language)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "$name: $known words known, from $written written",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = { MaNgram.forget(language); wiped = wiped + language }) {
+                    Text(text = "Wipe")
+                }
+            }
+        }
+
+        // The queue, and the button that empties it.
+        //
+        // A word is asked about only when it is NEW and carries no Croatian letters — a word already
+        // in a model is already in the right place, which is what keeps this from being a bill. So
+        // this number falls to nothing on its own as he writes, and rises only when he uses a word
+        // he has never used before.
+        //
+        // A button rather than automatic: it costs money and a second, and there is no moment while
+        // typing when either is acceptable.
+        var pending by remember { mutableStateOf(MaNgram.pendingCount()) }
+        var message by remember { mutableStateOf("") }
         Text(
-            text = "$known words known, from $written written. " +
-                "It stays quiet until it has read a few hundred.",
+            text = if (pending == 0) {
+                "No new words waiting to be sorted."
+            } else {
+                "$pending new word(s) waiting. They are already learned under the language badge; " +
+                    "sorting checks whether the badge was right."
+            },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = 12.dp),
         )
+        if (message.isNotBlank()) {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
 
         Row(modifier = Modifier.fillMaxWidth()) {
+            TextButton(
+                enabled = pending > 0,
+                onClick = {
+                    scope.launch {
+                        MaNgram.classifyPending { message = it }
+                        pending = MaNgram.pendingCount()
+                    }
+                },
+            ) {
+                Text(text = "Sort new words by language")
+            }
             TextButton(
                 onClick = {
                     MaNgram.forgetEverything()
                     forgotten = true
                 },
             ) {
-                Text(text = "Forget everything learned")
+                Text(text = "Forget everything")
             }
         }
     }

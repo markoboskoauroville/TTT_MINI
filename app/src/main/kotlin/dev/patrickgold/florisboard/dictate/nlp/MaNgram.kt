@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.dictate.nlp
 
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.MaLog
 import dev.patrickgold.florisboard.dictate.data.history.DictateHistoryStore
@@ -196,9 +197,42 @@ object MaNgram {
         // The language at the moment of writing, captured here rather than inside the coroutine: he
         // may press the badge between the commit and the save, and the sentence belongs to the
         // language it was written in.
-        val language = active()
+        val badge = active()
         scope.launch {
-            modelFor(language).learn(text)
+            // EVERY WORD GOES THROUGH THE GATE, AND ALMOST NONE OF THEM COST ANYTHING.
+            //
+            // The badge is right about a sentence and not always about a word: he writes an English
+            // word inside a Croatian sentence and back again, and a word filed under the badge alone
+            // is offered in the wrong language for good.
+            //
+            // So each word is checked against what the models already know. **A word already in a
+            // model is already in the right place** — it was filed once, correctly, and asking again
+            // would pay to be told what is on disk. Words carrying č ć ž š đ are Croatian with no
+            // help from anybody. Only a word that is new AND unmarked is queued to be asked about,
+            // once, ever.
+            //
+            // The sentence is still learned WHOLE into the badge's model, because an n-gram learns
+            // sequences and a sentence chopped into per-word destinations would teach neither model
+            // how the words follow each other. The gate decides where a NEW WORD belongs; the queue
+            // fixes it afterwards if the badge was wrong about it.
+            for (raw in text.split(Regex("\\s+"))) {
+                val word = MaWordLanguage.normalise(raw)
+                if (word.isBlank()) continue
+                when (
+                    val answer = MaWordLanguage.decide(
+                        word = word,
+                        badge = badge,
+                        knownEn = modelFor(MaWordLanguage.EN).knows(word),
+                        knownHr = modelFor(MaWordLanguage.HR).knows(word),
+                    )
+                ) {
+                    is MaWordLanguage.Answer.Known -> Unit
+                    is MaWordLanguage.Answer.Certain ->
+                        if (answer.language != badge) modelFor(answer.language).learn(word)
+                    is MaWordLanguage.Answer.Ask -> queueForAsking(word)
+                }
+            }
+            modelFor(badge).learn(text)
             scheduleSave()
         }
     }
@@ -398,4 +432,100 @@ object MaNgram {
 
     /** A sentence this long without punctuation is handed over anyway. */
     private const val MAX_PENDING = 400
+
+    // ---------------------------------------------------------------------------------------------
+    // The queue of words nobody has classified yet
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Words seen once, carrying no Croatian letters, and known to neither model.
+     *
+     * They are already learned under the badge, so nothing is lost and nothing waits. This queue is
+     * only for CORRECTING that guess, later, in the background, in one batch.
+     *
+     * Persisted, because the correction is worth having tomorrow and the phone will be killed
+     * tonight. Capped: past a few hundred the list is not a queue, it is a leak, and the words at
+     * the front are the ones he actually uses.
+     */
+    // A lock of its own. `pendingLock` already guards the commit buffer above and the two protect
+    // different things; sharing one would make a word waiting to be classified block a keystroke
+    // waiting to be learned, which is the wrong way round for the only one of them he can feel.
+    private val askLock = Any()
+
+    private fun queueForAsking(word: String) {
+        val prefs by FlorisPreferenceStore
+        synchronized(askLock) {
+            val current = prefs.dictate.maNgramPending.get()
+                .split(' ').filter { it.isNotBlank() }.toMutableList()
+            if (word in current) return
+            current += word
+            while (current.size > PENDING_CAP) current.removeAt(0)
+            prefs.dictate.maNgramPending.set(current.joinToString(" "))
+        }
+    }
+
+    /** How many words are waiting to be classified. Shown on the settings screen. */
+    fun pendingCount(): Int {
+        val prefs by FlorisPreferenceStore
+        return prefs.dictate.maNgramPending.get().split(' ').count { it.isNotBlank() }
+    }
+
+    /**
+     * Asks the model about the queue, in one batch, and files the answers.
+     *
+     * Never on the typing path and never automatic. It is a button he presses, because it costs
+     * money and takes a second and there is no moment while typing when either is acceptable.
+     *
+     * A word answered `both` is learned into both models: "radio", "auto", "student", "film" are
+     * ordinary in both languages, and forcing a choice would delete a suggestion he had earned to
+     * satisfy a schema.
+     *
+     * Words that come back unclassified are dropped from the queue rather than retried. They stay
+     * where the badge put them, which was never worse than a guess, and a retry loop over a word
+     * nobody can classify is a bill with no end.
+     */
+    suspend fun classifyPending(onMessage: (String) -> Unit) {
+        val prefs by FlorisPreferenceStore
+        val words = synchronized(askLock) {
+            prefs.dictate.maNgramPending.get().split(' ').filter { it.isNotBlank() }
+        }.take(BATCH)
+        if (words.isEmpty()) {
+            onMessage("Nothing waiting")
+            return
+        }
+        val reply = DictateController.askCheapModel(MaWordLanguage.prompt(words))
+        if (reply == null) {
+            onMessage("No answer \u2014 check the key and the network")
+            return
+        }
+        val answers = MaWordLanguage.readAnswer(reply, words.toSet())
+        for ((word, langs) in answers) {
+            for (language in langs) modelFor(language).learn(word)
+        }
+        synchronized(askLock) {
+            val rest = prefs.dictate.maNgramPending.get()
+                .split(' ').filter { it.isNotBlank() && it !in words }
+            prefs.dictate.maNgramPending.set(rest.joinToString(" "))
+        }
+        scheduleSave()
+        onMessage("Filed ${answers.size} of ${words.size}")
+    }
+
+    /** How many words go in one request. Enough to be worth the round trip, small enough to read. */
+    private const val BATCH = 60
+
+    /** Past this the queue is a leak rather than a queue. */
+    private const val PENDING_CAP = 400
+
+    /** What each model knows, for the settings screen. */
+    fun vocabularyOf(language: String): Int = modelFor(language).vocabularySize
+
+    /** How many words that model has read in total. */
+    fun totalOf(language: String): Long = modelFor(language).totalWords
+
+    /** Forgets one language only, leaving the other standing. */
+    fun forget(language: String) {
+        modelFor(language).clear()
+        synchronized(modelsLock) { files[language] }?.delete()
+    }
 }

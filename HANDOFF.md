@@ -21,7 +21,17 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 286.** The last stretch, newest first:
+**Build 287.** The last stretch, newest first:
+
+- **The English words under a Croatian badge came from the shipped dictionary, not the n-gram.** A
+  suggestion provider whose locale disagrees with the badge is now dropped entirely, not ranked
+  lower. An empty row is more honest than a wrong-language one.
+- **A language gate on every word learned.** Known to a model → already right, costs nothing. Carries
+  č ć ž š đ → Croatian, costs nothing. New and unmarked → learned under the badge and queued, and a
+  batch of up to 60 is sorted by Haiku when he presses **Sort new words by language**. Never on the
+  typing path.
+- **The n-gram setting shows both models** — words known and words read, per language — with a wipe
+  each and the number of words waiting to be sorted.
 
 - **The reading window no longer blinks.** It stays for as long as the reader is anything but idle
   and draws empty when there is nothing to show. Chunked fetching exposed the old rule — a moment

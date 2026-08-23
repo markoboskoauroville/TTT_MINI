@@ -158,3 +158,4 @@ since been removed.
 - **§158** — Matrix, four gestures, and four ways to stop
 - **§159** — The reading starts at once
 - **§159** — The window stops blinking, and a mode that never moves the line
+- **§160** — The wrong-language words, and a gate that is nearly free
