@@ -51,6 +51,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import dev.patrickgold.florisboard.dictate.DictateController
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.Spacer
@@ -495,6 +496,9 @@ private fun SubtitleBox(
     val alignPref by prefs.dictate.maReaderAlign.collectAsState()
     val scope = rememberCoroutineScope()
     Box(
+        // His setting, and it replaces the old `if (full) Center else TopStart`. That rule guessed
+        // what he wanted from the size of the window; now he says, and it is the same answer in both
+        // sizes — which is what "always, zero delay" means.
         contentAlignment = when (alignPref) {
             "middle" -> Alignment.Center
             "bottom" -> Alignment.BottomStart
@@ -524,7 +528,6 @@ private fun SubtitleBox(
                 full = full,
             )
             .padding(horizontal = 16.dp, vertical = if (full) 18.dp else 10.dp),
-        contentAlignment = if (full) Alignment.Center else Alignment.TopStart,
     ) {
         content()
         // Every reading view carries it, because the question it answers — which key is speaking —

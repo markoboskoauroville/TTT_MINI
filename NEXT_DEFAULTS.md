@@ -7104,3 +7104,25 @@ and by hardcoding the alignment: 470 failures.
 Two checks in the matrix suite were rewritten rather than deleted when the top-line effect went, so
 the suite now asserts its *absence* — a deleted feature with its checks quietly removed is how a
 feature comes back by accident.
+
+## §162a — The fourth missing import, and a duplicate argument
+
+Build 290 went red on three lines: `mutableStateOf` and `remember` used with no `compose.runtime`
+imports, and a `contentAlignment` passed twice to the same `Box` — my new one added above the
+existing `if (full) Center else TopStart`.
+
+The duplicate is the more interesting mistake. I added an argument without reading whether the call
+already had it, which is the same family as the range cuts that took live declarations: **editing by
+what I expected to be there rather than by what was there.** The old line was not redundant either —
+it guessed the alignment from the window size, and his setting is the thing that replaces it. Deleting
+it was right; passing both was not a compromise, it was a compile error.
+
+`check_layout_imports` now covers `compose.runtime` as well as `foundation.layout` — same closed-list
+discipline, measured before writing. The sweep found two hits, `MaLivePrompts.remember` and
+`MaAiPredict.remember`, both files that DECLARE a `fun remember` of their own; the existing
+declaration skip covers it and the sweep went to zero. It fires on the real broken file, naming the
+symbol and the package.
+
+Four builds have now been lost to missing Compose imports and three of them are closed by one check
+that took two measurements to get right. The remaining gap is arguments and types, which needs a
+compiler, which is what CI is.

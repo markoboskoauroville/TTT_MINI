@@ -619,19 +619,39 @@ def check_layout_imports(path: Path, text: str) -> None:
     Measured before it was written rather than after, which is the only thing separating a guard from
     the 434-hit noise that got `check_property_call` deleted.
     """
-    names = ["Column", "Row", "Box", "Spacer", "Arrangement", "BoxWithConstraints"]
+    # foundation.layout and compose.runtime, in one pass. Both are closed lists of names that always
+    # need their exact import, are never Kotlin stdlib, and are never same-package here.
+    #
+    # The runtime half was added after build 290, which went red on `mutableStateOf` and `remember`
+    # with no imports — the fourth missing-Compose-import build. Measured first, as always: it found
+    # two hits across the app, `MaLivePrompts.remember` and `MaAiPredict.remember`, both of them
+    # functions those files DECLARE. The declaration skip below already handles that, and the sweep
+    # went to zero.
+    groups = {
+        "androidx.compose.foundation.layout": ["Column", "Row", "Box", "Spacer", "Arrangement", "BoxWithConstraints"],
+        "androidx.compose.runtime": [
+            "mutableStateOf", "mutableIntStateOf", "mutableLongStateOf", "remember",
+            "rememberCoroutineScope", "LaunchedEffect", "DisposableEffect", "derivedStateOf",
+        ],
+    }
     imports = {ln.strip() for ln in text.splitlines() if ln.startswith("import ")}
-    # A wildcard brings them all in and this cannot see which.
-    if any(i.endswith(".layout.*") for i in imports):
-        return
     code = strip_code(text)
+    for package, names in groups.items():
+        # A wildcard brings them all in and this cannot see which.
+        if any(i == f"import {package}.*" for i in imports):
+            continue
+        _check_group(path, code, imports, package, names)
+
+
+def _check_group(path: Path, code: str, imports: set[str], package: str, names: list[str]) -> None:
     for name in names:
         # A file that declares the name means its own thing by it.
-        if re.search(rf"\b(?:class|interface|object|data class|fun)\s+{name}\b", code):
+        # A file that declares the name means its own thing by it. Both hits the runtime sweep found
+        # were exactly this: a `fun remember(...)` of their own.
+        if re.search(rf"\b(?:class|interface|object|data class|fun|suspend fun)\s+{name}\b", code):
             continue
-        if re.search(rf"(?<![.\w]){name}\s*[({{.]", code) and \
-                f"import androidx.compose.foundation.layout.{name}" not in imports:
-            fail(path.name, f"`{name}` used but not imported from foundation.layout")
+        if re.search(rf"(?<![.\w]){name}\s*[({{<.]", code) and f"import {package}.{name}" not in imports:
+            fail(path.name, f"`{name}` used but not imported from {package}")
 
 
 def check_prefs_collect_import(path: Path, text: str) -> None:
