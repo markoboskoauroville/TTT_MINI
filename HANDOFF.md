@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 290.** The last stretch, newest first:
+**Build 292.** The last stretch, newest first:
+
+- **The language badge is on the sending line, and tapping it resends.** Same badge as the history
+  rows. A tap cycles the language, cancels the request in flight and sends the same audio again —
+  `DictateController.retranscribeInLanguage`, with the audio and its metadata held in `inFlight`
+  for exactly as long as the request is.
 
 - **The text holds between chunks.** The last page stays up until the next is ready — a slideshow,
   where the change is the only event. Build 286 stopped the window disappearing; the text still

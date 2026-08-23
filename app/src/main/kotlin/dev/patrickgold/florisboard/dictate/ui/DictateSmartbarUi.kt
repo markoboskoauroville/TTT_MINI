@@ -582,6 +582,40 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
         fontFamily = MaStatusFontFamily,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.weight(1f),
+    )
+
+    // THE LANGUAGE, WHILE IT IS BEING SENT, AND TAPPABLE.
+    //
+    // The same badge the history rows carry, in the same place in the line, because it answers the
+    // same question — what language is this — and a reader who has learned it in one place should
+    // not have to learn it again in the other.
+    //
+    // He starts a Croatian dictation with the badge on ENG and knows, watching the spinner, that
+    // the answer will come back wrong. Tapping it here cancels the request and sends the same audio
+    // again in the new language. **Seeing a mistake and being unable to act on it is worse than not
+    // seeing it**, which is why the badge and the tap shipped together: a badge he could read but
+    // not change would have been half a feature, and the frustrating half.
+    //
+    // At the end of the line rather than the start: the spinner and the status say what is
+    // happening and are read first, and this is the one thing here he can act on.
+    val context = LocalContext.current
+    Spacer(modifier = Modifier.width(8.dp))
+    Text(
+        text = MaLanguage.badge(),
+        color = MaRecordInk,
+        fontSize = MaStatusFontSize,
+        fontFamily = MaStatusFontFamily,
+        fontWeight = FontWeight.Bold,
+        maxLines = 1,
+        modifier = Modifier
+            .clickable {
+                // Cycle, then resend. The same cycle the badge key uses, so the two agree about
+                // what "next" means.
+                MaLanguage.cycleMode(context)
+                DictateController.retranscribeInLanguage(context, MaLanguage.active())
+            }
+            .padding(horizontal = 6.dp),
     )
 }
 

@@ -161,3 +161,4 @@ since been removed.
 - **§160** — The wrong-language words, and a gate that is nearly free
 - **§161** — The overlay becomes a hairline
 - **§162** — The slideshow, the alignment, and six short words
+- **§163** — The badge on the sending line

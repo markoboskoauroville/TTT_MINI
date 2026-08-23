@@ -989,6 +989,65 @@ object DictateController {
      * network coroutine, drops the audio (handled in the job's finally) and returns to idle. No-op
      * outside the transcribing state, so a tap can never interrupt a rewording request.
      */
+    /** What is being transcribed right now, so the same audio can be sent again in another language. */
+    private data class InFlight(
+        val audioFile: File,
+        val recordedSeconds: Long,
+        val gate: Boolean,
+        val forceLocal: Boolean,
+        val isReplay: Boolean,
+        val source: String,
+        val replayHistoryId: Long?,
+    )
+
+    private var inFlight: InFlight? = null
+
+    /**
+     * The language badge was tapped while a transcription was in flight: throw it away and send the
+     * same audio again in the new language.
+     *
+     * ### Why cancelling is the only honest answer
+     *
+     * The language is settled before the upload — it is a field in the request and, on AUTO, the
+     * result of a probe that has already run. There is no way to change it mid-flight, so a badge
+     * that appeared to change the language of a request already on the wire would be lying about the
+     * one thing he tapped it to control.
+     *
+     * ### Why he wants this at all
+     *
+     * He starts a Croatian dictation with the badge on ENG, sees it in the status line, and knows
+     * before the result arrives that it will come back wrong. Until now the only cure was waiting
+     * for the wrong answer and then re-transcribing from the history. **Seeing a mistake and being
+     * unable to act on it is worse than not seeing it**, which is why the badge and this belong in
+     * the same build: showing the language without letting him change it would have been half a
+     * feature and the frustrating half.
+     *
+     * The audio is untouched by any of this — it is the same file, sent again — so nothing is
+     * re-recorded and nothing is lost.
+     */
+    fun retranscribeInLanguage(context: Context, language: String) {
+        val current = inFlight ?: return
+        if (_state.value !is UiState.Transcribing) return
+        if (!current.audioFile.exists() || current.audioFile.length() == 0L) return
+        MaLanguage.set(context, language)
+        MaLog.add("stt", "language changed mid-flight, sending again as $language")
+        // Cancelled rather than left to land: the first answer would arrive in the old language and
+        // overwrite the one he asked for, and which of the two won would depend on the network.
+        transcribeJob?.cancel()
+        transcribeJob = null
+        _state.value = UiState.Idle
+        transcribe(
+            context,
+            current.audioFile,
+            current.recordedSeconds,
+            gate = current.gate,
+            forceLocal = current.forceLocal,
+            isReplay = current.isReplay,
+            source = current.source,
+            replayHistoryId = current.replayHistoryId,
+        )
+    }
+
     fun cancelTranscription() {
         // Same reason as cancelRecording: an abandoned transcription must not leave a send armed
         // for whatever is dictated next.
@@ -1296,6 +1355,14 @@ object DictateController {
         latencyTrace: BatchLatencyTrace = BatchLatencyTrace(),
     ) {
         logLatency(latencyTrace, "transcribeEntered")
+        // Everything needed to send this exact audio again, kept for as long as it is in flight.
+        //
+        // He can change the language badge while the spinner is running, and the only honest answer
+        // to that is to abandon the request and make it again — the language is decided before the
+        // upload and there is no way to change it mid-flight. So the file and its metadata are held
+        // here rather than being reconstructed later from the history, which would only have them
+        // after the request finished, which is exactly when they are no longer wanted.
+        inFlight = InFlight(audioFile, recordedSeconds, gate, forceLocal, isReplay, source, replayHistoryId)
         val account = if (forceLocal) MaProviders.localTranscriptionAccount() else MaProviders.transcriptionAccount()
         val apiKey = account.apiKey
         val preset = MaProviders.presetFor(account)

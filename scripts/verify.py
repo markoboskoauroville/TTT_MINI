@@ -169,6 +169,7 @@ def check_duplicate_declarations(path: Path, text: str) -> None:
     """
     code = strip_code(text)
     scope: list[int] = []
+    paren_depth = 0
     counter = 0
     seen: set[tuple[tuple[int, ...], str]] = set()
     # Functions as well as properties. Two definitions of one composable compiled fine twice in this
@@ -200,11 +201,22 @@ def check_duplicate_declarations(path: Path, text: str) -> None:
             # signature alone called them a conflict — reported on 21.8.2026 the moment an unrelated
             # edit brought that file into the checked set.
             kind = "fun" if m.group(1) == "fun" else "prop"
+            # Constructor parameters are not declarations in the enclosing scope.
+            #
+            # `data class InFlight(val audioFile: File, …)` and `data class Recording(val audioFile:
+            # File?, …)` both sit at the same brace depth, so this reported `audioFile` as declared
+            # twice — on 22.8.2026, on two data classes that had coexisted for months. A parameter
+            # list belongs to its own class and cannot collide with anything outside it.
+            #
+            # Tracked by paren depth: anything declared while a paren is open is a parameter.
+            if paren_depth > 0:
+                continue
             key = (tuple(scope), kind, m.group(2), signature(lines, index))
             if key in seen:
                 fail(path.name, f"declared twice in the same scope: {m.group(2)}")
             seen.add(key)
         for ch in line:
+            paren_depth += (ch == "(") - (ch == ")")
             if ch == "{":
                 counter += 1
                 scope.append(counter)

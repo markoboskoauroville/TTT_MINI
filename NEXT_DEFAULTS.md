@@ -7126,3 +7126,62 @@ symbol and the package.
 Four builds have now been lost to missing Compose imports and three of them are closed by one check
 that took two measurements to get right. The remaining gap is arguments and types, which needs a
 compiler, which is what CI is.
+
+---
+
+# §163 — The badge on the sending line
+
+Build 292. He watches the spinner, knows from the badge that the answer is coming back in the wrong
+language, and until now could only wait for it to be wrong and re-transcribe from the history.
+
+## Both halves, or neither
+
+The badge shows the language while the request is in flight, in the same form the history rows use,
+because it answers the same question and a reader who has learned it in one place should not have to
+learn it twice.
+
+Tapping it cycles the language, **cancels the request and sends the same audio again**. That is the
+only honest answer to the tap: the language is settled before the upload — a field in the request,
+and on AUTO the result of a probe that has already run — so there is no way to change it mid-flight.
+A badge that appeared to change the language of a request already on the wire would lie about the one
+thing he tapped it for.
+
+**Seeing a mistake and being unable to act on it is worse than not seeing it.** Shipping the badge
+without the tap would have been half a feature and the frustrating half.
+
+The old request is cancelled rather than left to land: two answers racing would mean the one that
+arrived last won, and which that was would depend on the network. The audio is untouched — the same
+file, sent again — so nothing is re-recorded.
+
+## Two checks that were not checking
+
+Both found by sabotage, which is the entire reason for doing it.
+
+**The model could not express the bug.** The walked port reassigned `jobs` wholesale on every tap, so
+deleting the cancellation changed nothing and the sabotage run came back green. It appends now, with
+the cancellation as the thing that keeps the list at one. Sabotaged again: 241 failures.
+
+**A wiring check passed from the wrong function.** It searched the whole of `DictateController` for
+the state guard — and `cancelTranscription`, a few lines below, contains the same guard and the same
+`transcribeJob?.cancel()`. Removing the guard from the resend left the test green. The three checks
+now extract the body of `retranscribeInLanguage` and search inside it.
+
+**A check that can be satisfied by a different function is not checking the function**, and a model
+that cannot express the bug cannot test for it. Neither was visible by reading; both took a
+deliberate break to expose.
+
+## verify.py, again
+
+`check_duplicate_declarations` reported `audioFile`, `isReplay` and `source` as declared twice: they
+are constructor parameters of two different data classes at the same brace depth, coexisting for
+months. Parameters belong to their own class. It tracks paren depth now and skips anything declared
+inside a parameter list — swept to zero across the app, and still catches a real duplicate function.
+
+## Tested
+
+Test 1: 527 checks, 0 failed, 160 walked taps — any sequence of five taps at any point, asserting
+**never two in flight**, always the current language, always the same audio, and recorded exactly
+once. Fifteen other suites green.
+
+Not tested: nothing ran on a phone. Whether the badge is reachable with a thumb at the end of a line
+that shallow is the open question, and if it is not the answer is padding rather than a redesign.
