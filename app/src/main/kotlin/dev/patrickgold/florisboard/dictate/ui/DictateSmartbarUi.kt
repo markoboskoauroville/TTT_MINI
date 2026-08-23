@@ -566,10 +566,23 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
     // line. Both answer "is it still alive", one by counting and one by turning.
     val context = LocalContext.current
     val retrying = state.attempt > 1
+    val prefs by FlorisPreferenceStore
+
+    // THE BADGE IS OBSERVED, NOT READ ONCE.
+    //
+    // `MaLanguage.badge()` is a plain function call. Compose has no way to know the preference
+    // behind it changed, so the tap wrote HR and the letters on screen stayed ENG — a control that
+    // looked dead while working perfectly. **The same fault as the wand bar: the bar has to be told,
+    // not asked.**
+    //
+    // Reading the preference as state fixes it at the source: the letters are derived from the
+    // thing the tap writes, so they cannot disagree with it.
+    val languageMode by prefs.dictate.maLanguageMode.collectAsState()
+    val badge = if (languageMode == MaLanguage.EN) "ENG" else "HR"
 
     // ENG or HR, first, where his thumb already goes.
     Text(
-        text = MaLanguage.badge(),
+        text = "[$badge]",
         color = MaRecordInk,
         fontSize = MaStatusFontSize,
         fontFamily = MaStatusFontFamily,
@@ -582,12 +595,18 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
                 // see retranscribeInLanguage, which is where that difference lives rather than here.
                 DictateController.retranscribeInLanguage(context, MaLanguage.active())
             }
-            .padding(horizontal = 6.dp),
+            // ROOM BETWEEN THE THREE, because he told me he was missing them.
+            //
+            // These are three separate decisions — which language, throw it away, hold or send —
+            // and two of them are irreversible in opposite directions. Packed tight, a thumb aimed
+            // at the hold lands on the X. **Where the cost of a miss is asymmetric, the gap is not
+            // decoration.**
+            .padding(horizontal = 12.dp, vertical = 4.dp),
     )
 
     // X: kill it, audio and all. The one irreversible control on the line.
     Text(
-        text = "\u00D7",
+        text = "[\u00D7]",
         color = MaRecordInk,
         fontSize = MaStatusFontSize,
         fontFamily = MaStatusFontFamily,
@@ -595,7 +614,7 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
         maxLines = 1,
         modifier = Modifier
             .clickable { DictateController.cancelTranscription() }
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp),
     )
 
     // The middle: spinner and status, and the whole of it is the hold button.
@@ -608,8 +627,13 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .clickable { DictateController.toggleTranscriptionHold(context) }
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp),
     ) {
+        // The brackets are drawn as their own characters around the group rather than being folded
+        // into the status text, because the text inside them is whatever the machine is saying and
+        // is often ellipsised. A bracket that vanished with the overflow would leave the row
+        // looking broken rather than truncated.
+        Text(text = "[", color = MaRecordInk, fontSize = MaStatusFontSize, fontFamily = MaStatusFontFamily)
         when {
             // Held: no spinner. Nothing is turning because nothing is happening, and a spinner over
             // a stopped request is the lie this whole line exists to avoid.
@@ -638,6 +662,7 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        Text(text = "]", color = MaRecordInk, fontSize = MaStatusFontSize, fontFamily = MaStatusFontFamily)
     }
 }
 

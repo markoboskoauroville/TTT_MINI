@@ -7264,3 +7264,58 @@ different spelling.
 
 Not tested: nothing ran on a phone. Whether the middle is comfortable to hit without looking, and
 whether the held line reads as stopped rather than broken, are both his.
+
+---
+
+# §165 — Three faults on one line
+
+Build 295. He used the sending line for a day and found all three.
+
+## The badge that worked perfectly and looked dead
+
+`Text(text = MaLanguage.badge())`. A plain function call: the tap wrote HR, the preference changed,
+and Compose had no reason to redraw anything. The letters stayed ENG.
+
+**The same fault as the wand bar, and the same sentence fixes it: the bar has to be told, not asked.**
+The badge is derived from `maLanguageMode` collected as state, so the letters come from the thing the
+tap writes and cannot disagree with it.
+
+Worth naming as a pattern, because it has now happened twice in this app and both times the code
+looked obviously correct: **a value read from a store inside a composable is a snapshot unless it is
+collected.** Anything a tap changes must be observed, or the control is a mime.
+
+## The tap that cancelled instead of sending
+
+Releasing a hold re-ran the **speech gate** — the pass that decides whether the audio contains speech
+and trims the silence out of it. That audio had already been through it once, which is what "held"
+means. Run again on the trimmed result it found nothing worth sending and raised an error, and from
+where he was standing a tap that should have sent had thrown everything away.
+
+`gate = false` on release, exactly as `retranscribeHistoryEntry` has done since it was written. The
+same problem in a different hat, solved once already and not looked at.
+
+And the hold now **copies the audio to a file of its own** before dropping the request, because the
+trimmer rewrites the original in place: "send the same file" was sending whatever the trimmer had
+left behind. The history replay has copied to a temp file since day one for the same reason.
+
+Both halves of this bug were solved years of builds ago somewhere else in the file. Reading how the
+neighbouring feature does it is cheaper than finding out.
+
+## Brackets and room
+
+`[ENG] [×] [⠹ status…]`, 12dp between. He said he was missing them, and the layout deserved it:
+these are three separate decisions and two are irreversible in opposite directions. **Where the cost
+of a miss is asymmetric, the gap is not decoration.**
+
+The brackets around the status group are their own characters rather than part of the text, because
+that text is machine output and is often ellipsised — a bracket that vanished with the overflow would
+make the row look broken rather than truncated.
+
+## Tested
+
+Test 1: 4,441 checks, 0 failed, 1,375 walked taps. Broken on purpose by putting the gate back on
+release: red.
+
+One check had to be re-aimed rather than kept: it asserted `text = MaLanguage.badge()`, which is
+precisely the dead code he reported. **A check written against the broken spelling keeps passing on
+the bug**, so it now looks for the observed form.

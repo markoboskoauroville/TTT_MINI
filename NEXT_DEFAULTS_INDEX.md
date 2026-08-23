@@ -163,3 +163,4 @@ since been removed.
 - **§162** — The slideshow, the alignment, and six short words
 - **§163** — The badge on the sending line
 - **§164** — The sending line becomes a terminal
+- **§165** — Three faults on one line

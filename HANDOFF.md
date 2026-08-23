@@ -21,7 +21,17 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 294.** The last stretch, newest first:
+**Build 295.** The last stretch, newest first:
+
+- **`[ENG] [×] [⠹ status…]`** — brackets around each part and 12dp between them, because two of the
+  three are irreversible in opposite directions and a thumb aimed at hold was landing on X.
+- **The badge was read once, so it never changed.** `MaLanguage.badge()` is a plain call; Compose
+  had no way to know the preference behind it moved. It is derived from an observed
+  `maLanguageMode` now.
+- **Releasing a hold re-ran the speech gate on already-trimmed audio**, which judged it silent and
+  raised an error — a tap that should have sent looked like a cancel. Release passes `gate = false`,
+  as the history replay always has, and the hold keeps its own copy of the audio because the trimmer
+  rewrites the original under it.
 
 - **The sending line is laid out like the recording bar**: `ENG · X · ⠹ status…`. The badge is where
   it is in the recorder, because he reaches for it without looking. The bin's position becomes X —

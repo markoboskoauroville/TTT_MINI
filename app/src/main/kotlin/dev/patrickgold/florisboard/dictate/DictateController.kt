@@ -1074,14 +1074,33 @@ object DictateController {
                 context,
                 current.audioFile,
                 current.recordedSeconds,
-                gate = current.gate,
+                // NO GATE on a release, exactly as the history replay does it.
+                //
+                // The gate decides whether the audio contains speech at all and trims the silence
+                // out of it. This audio has already been through it once — that is what "held"
+                // means. Running it again on the trimmed result is how a perfectly good recording
+                // gets judged silent and thrown away with an error, which from where he is standing
+                // is a tap that cancelled instead of sending.
+                gate = false,
                 forceLocal = current.forceLocal,
                 isReplay = current.isReplay,
                 source = current.source,
                 replayHistoryId = current.replayHistoryId,
             )
         } else {
-            MaLog.add("stt", "send held, audio kept")
+            // The audio is COPIED before the request is dropped.
+            //
+            // The gate trims silence out of the recording in place while the first send is being
+            // prepared, so the file `inFlight` names can be rewritten or replaced under it. Holding
+            // and then sending "the same file" was therefore sending whatever the trimmer had left,
+            // which is how a tap that should have resent looked like a cancel.
+            //
+            // The history replay has done exactly this since it was written — copy to a stable file
+            // first — and this is the same problem wearing a different hat.
+            val kept = File(context.cacheDir, "dictate_held_send.wav")
+            val ok = runCatching { current.audioFile.copyTo(kept, overwrite = true) }.isSuccess
+            if (ok) inFlight = current.copy(audioFile = kept)
+            MaLog.add("stt", "send held, audio kept" + if (ok) "" else " (copy failed, using original)")
             transcribeJob?.cancel()
             transcribeJob = null
             _state.value = UiState.Transcribing(held = true)

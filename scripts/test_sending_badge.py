@@ -210,11 +210,35 @@ check("it checks the file is still there", "audioFile.length() == 0L) return" in
       "would send an empty file")
 
 ui = code(SRC / "dictate/ui/DictateSmartbarUi.kt")
-check("the badge is on the sending line", "text = MaLanguage.badge()" in ui, "no badge while sending")
+# The badge is derived from the observed preference now, not from a one-shot MaLanguage.badge().
+# That IS the fix for the dead badge, so the check has to look for the new spelling — the old string
+# would have kept passing on exactly the code he reported as broken.
+check("the badge is on the sending line", '"[$badge]"' in ui, "no badge while sending")
 check("and it is tappable", "retranscribeInLanguage(context, MaLanguage.active())" in ui,
       "readable but not changeable, which is the frustrating half")
 check("it cycles the same way the key does", "MaLanguage.cycleMode(context)" in ui,
       "two ideas of what next means")
+
+# ---------------------------------------------------------------- the three bugs he found
+ui = code(SRC / "dictate/ui/DictateSmartbarUi.kt")
+
+# 1. The badge was read once, so it never changed on screen. Observed now.
+check("the badge is observed", "maLanguageMode.collectAsState()" in ui,
+      "read once — the tap works and the letters never change")
+check("the badge is derived from what the tap writes", 'if (languageMode == MaLanguage.EN)' in ui,
+      "two sources for one letter")
+
+# 2. Brackets, and room between three controls with asymmetric costs.
+for part in ('"[$badge]"', '"[\\u00D7]"', '"["'):
+    check(f"bracketed: {part}", part in ui, "not in brackets")
+check("room between the controls", ui.count("horizontal = 12.dp") >= 3,
+      "packed tight, and a thumb aimed at hold lands on X")
+
+# 3. Release must not re-run the gate, and must send the copy.
+check("release skips the gate", "gate = false," in hold_body,
+      "the trimmer judges already-trimmed audio silent, which reads as a cancel")
+check("the hold keeps its own copy", 'File(context.cacheDir, "dictate_held_send.wav")' in hold_body,
+      "the trimmer can rewrite the file under it")
 
 print(f"sending badge, test 1: {checks} checks, {len(failures)} failed ({walked} taps walked)")
 for f in failures:
