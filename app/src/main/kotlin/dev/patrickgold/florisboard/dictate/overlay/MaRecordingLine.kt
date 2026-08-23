@@ -11,19 +11,10 @@
 package dev.patrickgold.florisboard.dictate.overlay
 
 import android.widget.FrameLayout
-import android.graphics.Typeface
 import android.graphics.Paint
 import android.graphics.Canvas
-import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.DictateController
-import android.os.SystemClock
-import android.os.Looper
-import android.os.Handler
 import dev.patrickgold.florisboard.dictate.MaLog
-import android.widget.TextView
-import android.widget.LinearLayout
-import android.view.inputmethod.InputMethodManager
-import android.graphics.drawable.GradientDrawable
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.graphics.PixelFormat
@@ -32,7 +23,7 @@ import android.view.View
 import android.view.WindowManager
 
 /**
- * One line across the bottom of the screen, while a recording is running with no keyboard in sight.
+ * One hairline across the top of the screen, while a recording is running with no keyboard in sight.
  *
  * ### Why it exists
  *
@@ -77,135 +68,56 @@ class MaRecordingLine(private val service: AccessibilityService) {
         if (visible) add() else remove()
     }
 
-    private var timer: TextView? = null
-    private var ticker: Runnable? = null
-    private val handler = Handler(Looper.getMainLooper())
+    // timer, ticker and handler are gone with the clock. Nothing on this strip changes on a
+    // schedule any more — the meter redraws from the audio level itself.
 
     private fun add() {
-        val d = service.resources.displayMetrics.density
-        fun px(v: Int) = (d * v).toInt()
-
-        // THE HEIGHT OF THE STATUS BAR, so it replaces it rather than pushing anything down.
+        // ONE HAIRLINE, FULL WIDTH, AND NOTHING ELSE.
         //
-        // It was a tall two-line bar over the top of the screen, which meant it covered the clock and
-        // the signal AND took a band of the app underneath. At exactly the status bar's height it
-        // occupies a strip that was never his to begin with: nothing of the app moves, nothing of his
-        // is hidden, and the row he loses is one he was not reading.
-        val statusBar = service.resources.getIdentifier("status_bar_height", "dimen", "android")
-            .takeIf { it > 0 }
-            ?.let { service.resources.getDimensionPixelSize(it) }
-            ?: px(28)
-
-        val row = LinearLayout(service).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            // Fully opaque, because it stands in for the status bar rather than floating over it.
-            setBackgroundColor(0xFF000000.toInt())
-            setPadding(px(8), 0, px(8), 0)
-        }
-
-        // ONE LINE, and the meter turns on its side to fit.
+        // It was a black notch carrying a meter, a red dot, a clock, a bin, a send arrow and the
+        // language badge — six things, in a strip stolen from the status bar, in the middle of the
+        // screen. He looked at it and asked for a single meter, one pixel tall, edge to edge.
         //
-        // A horizontal meter needs a run of width and a line of its own; upright it needs the height
-        // it already has. Same numbers, same colours, same peak — see MaVuView.
-        row.addView(
-            MaVuView(service, vertical = true),
-            LinearLayout.LayoutParams(px(5), statusBar - px(8)).apply { rightMargin = px(8) },
-        )
-
-        row.addView(
-            View(service).apply {
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.OVAL
-                    setColor(MA_REC_RED)
-                }
-            },
-            LinearLayout.LayoutParams(px(8), px(8)).apply { rightMargin = px(8) },
-        )
-
-        val clock = TextView(service).apply {
-            text = "0:00"
-            setTextColor(0xFFFFFFFF.toInt())
-            textSize = 13f
-            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-            setOnClickListener {
-                runCatching {
-                    (service.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
-                        ?.showSoftInput(null, InputMethodManager.SHOW_FORCED)
-                }
-                MaLog.add("keys", "overlay clock tapped, asking for the keyboard")
-            }
-        }
-        timer = clock
-        row.addView(clock)
-
-        row.addView(glyph("\uD83D\uDDD1", px(6)) { DictateController.cancelRecording() }.apply {
-            textSize = 14f
-        })
-
-        // Send: stop, transcribe, and it lands in the archive because there is no field open. The
-        // same press the microphone key makes — the destination is decided by what is on screen, not
-        // by this button being a different button.
-        row.addView(glyph("\u27A4", px(6)) { DictateController.onMicClick(service) }.apply {
-            textSize = 17f
-            setTextColor(MA_AMBER)
-        })
-
-        // Language last, on the right, because it is the one thing here he changes rather than
-        // watches.
-        row.addView(
-            TextView(service).apply {
-                text = MaLanguage.badge()
-                setTextColor(MA_INK)
-                textSize = 13f
-                typeface = Typeface.DEFAULT_BOLD
-                setPadding(px(8), 0, px(2), 0)
-                setOnClickListener {
-                    MaLanguage.cycleMode(service)
-                    text = MaLanguage.badge()
-                }
-            },
-        )
-
-        // A NOTCH, not a bar. This is the click-through.
+        // He is right, and the reason is the one this file already argues in its own header: **this
+        // is not a control, it carries one bit — the microphone is open — and the smallest shape
+        // that carries one bit is a line.** Every control that had crept onto it had a better home
+        // already: the bin and the send are volume down and volume up, the clock and the language
+        // are on the keyboard, and none of them were reachable without looking anyway.
         //
-        // The window was full width, so every pixel of that strip belonged to it and nothing beneath
-        // could be pressed — including the action buttons apps put in exactly those corners. Making
-        // the window *transparent to touch* would have solved that and lost the bin, the send and
-        // the language with it: a window is either touchable or it is not, and there is no per-region
-        // setting.
+        // Making it full width now costs nothing, because at this height there is no click-through
+        // problem left to solve: a one-pixel window intercepts nothing anybody was trying to press.
+        // The notch existed to keep the corners usable, and a hairline keeps the whole screen usable.
+        val meter = MaVuView(service, vertical = false)
+
+        // MATCH_PARENT wide, and as close to one pixel tall as the screen allows.
         //
-        // So the window is only as wide as its contents and sits in the middle. **The corners are not
-        // click-through because they let touches pass — they are click-through because there is
-        // nothing there.** Like the notch on a phone: the middle is spoken for, the sides are his.
+        // Not `px(1)`: on his phone that is three physical pixels, which is a stripe rather than a
+        // hairline. One device pixel is what he asked for and what the meter needs — a line is
+        // legible at any height as long as it is moving.
         //
-        // Which is also why the controls are packed with no gaps: every dp of width this takes is a
-        // dp of his screen that stops working.
+        // FLAG_NOT_TOUCHABLE as well as NOT_FOCUSABLE, which the old notch could not have: with no
+        // controls on it there is nothing to press, so every touch goes to the app underneath and
+        // the strip costs him nothing at all.
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            statusBar,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            1,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
-        ).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL }
+        ).apply { gravity = Gravity.TOP }
 
         runCatching {
-            windowManager.addView(row, params)
-            view = row
+            windowManager.addView(meter, params)
+            view = meter
             added = true
-            startTicking()
         }
     }
 
     /** One glyph as a button, sized for a thumb rather than for its own ink. */
-    private fun glyph(text: String, pad: Int, onClick: () -> Unit) = TextView(service).apply {
-        this.text = text
-        setTextColor(0xFFF2DDB4.toInt())
-        textSize = 18f
-        setPadding(pad, pad / 2, pad, pad / 2)
-        setOnClickListener { onClick() }
-    }
+    // glyph() built the bin and the send buttons, and both are volume keys.
+
 
     /**
      * The clock, once a second.
@@ -213,34 +125,15 @@ class MaRecordingLine(private val service: AccessibilityService) {
      * Read from the recorder's own state rather than counted here, so a pause is honoured and the
      * two views can never disagree about how long he has been speaking.
      */
-    private fun startTicking() {
-        val r = object : Runnable {
-            override fun run() {
-                val st = DictateController.state.value
-                if (st is DictateController.UiState.Recording) {
-                    val ms = if (st.paused) {
-                        st.accumulatedMs
-                    } else {
-                        st.accumulatedMs + (SystemClock.elapsedRealtime() - st.startedAtMs)
-                    }
-                    val total = ms / 1000
-                    timer?.text = "%d:%02d".format(total / 60, total % 60)
-                }
-                handler.postDelayed(this, 1000)
-            }
-        }
-        ticker = r
-        handler.post(r)
-    }
+    // startTicking is gone with the clock it drove. The meter animates itself from the audio level;
+    // nothing here needs waking once a second any more, which is a second of work per second that
+    // the phone gets back for the length of every recording.
 
     private fun remove() {
         val v = view ?: return
         // Wrapped, because a window can already be gone if the service was torn down under it, and
         // an exception here would take the accessibility service with it — which would cost him the
         // finger, the reader and the line all at once.
-        ticker?.let { handler.removeCallbacks(it) }
-        ticker = null
-        timer = null
         runCatching { windowManager.removeView(v) }
         view = null
         added = false

@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 287.** The last stretch, newest first:
+**Build 289.** The last stretch, newest first:
+
+- **The recording overlay is one hairline.** Full width, one device pixel, at the top, and
+  `FLAG_NOT_TOUCHABLE` — the meter and nothing else. The notch carried a meter, a red dot, a clock, a
+  bin, a send and the language badge; every control on it had a better home already, and with none
+  left the window can refuse touches entirely, which the notch never could.
 
 - **The English words under a Croatian badge came from the shipped dictionary, not the n-gram.** A
   suggestion provider whose locale disagrees with the badge is now dropped entirely, not ranked

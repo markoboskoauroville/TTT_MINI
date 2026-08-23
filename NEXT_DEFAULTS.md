@@ -6988,3 +6988,56 @@ added this way — layout imports, this one — and two deleted for failing the 
 rule has settled into something simple: **a guard over a shape somebody can describe in one sentence
 is checkable; a guard over "anything suspicious" is a guess, and a guess with a hundred false
 positives is worse than the gap it fills.**
+
+---
+
+# §161 — The overlay becomes a hairline
+
+Build 289. He looked at the recording notch and asked for one thing: a meter, one pixel tall, edge to
+edge, and nothing else.
+
+## He was applying this file's own rule to it
+
+The header of `MaRecordingLine.kt` already said it: **this is not a control, it carries one bit — the
+microphone is open — and the smallest shape that carries one bit is a line.** Then six things grew on
+it: a meter, a red dot, a clock, a bin, a send arrow and the language badge.
+
+Every one of them had a better home already. The bin and the send are volume down and volume up. The
+clock and the badge are on the keyboard. And none of them were reachable without looking at the top
+of the screen, which is the one thing somebody dictating into another app is not doing.
+
+## The click-through problem dissolved rather than being solved
+
+The notch was narrow *because* it was touchable: a window is touchable or it is not, there is no
+per-region setting, and a full-width strip would have stopped every touch in the corners where apps
+put their buttons. So it was made only as wide as its contents and pushed to the middle — the corners
+were click-through because there was nothing there.
+
+With no controls on it that whole argument disappears. `FLAG_NOT_TOUCHABLE` goes on, every touch
+reaches the app beneath, and the strip costs him nothing at all. **The constraint was never the
+width; it was the buttons.**
+
+One device pixel, not `px(1)` — on his phone that is three, which is a stripe rather than a hairline.
+A line is legible at any height as long as it is moving.
+
+The once-a-second ticker went with the clock. The meter's own 40ms redraw stays, because that is the
+meter working.
+
+## Tested
+
+Test 1: 18 checks, 0 failed — full width, one pixel, top gravity, horizontal meter, exactly one view
+added, no touches taken, and every removed control asserted absent by name. Broken on purpose by
+restoring the notch geometry and dropping the touch flag: red on three.
+
+A check had to be fixed before it was trusted: it banned every `postDelayed` and failed on the
+meter's animation loop — **a check firing on the one thing the file exists to do.** It bans the
+clock's once-a-second tick now and asserts the meter's loop is still there.
+
+## The one thing worth watching
+
+With the controls gone, stopping a recording from another app is volume up, and cancelling is volume
+down. Those keys can now be switched off by the key added in build 272. **Switched off, with the
+keyboard hidden, there is no way to stop a recording except opening the keyboard.** That is not new
+today and it is not wrong — the hairline is honest about the microphone being open, which is what it
+is for — but it is the corner where two good decisions meet, and it is written down here so the next
+person meets it on paper rather than on the phone.
