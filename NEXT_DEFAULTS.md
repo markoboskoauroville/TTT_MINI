@@ -7460,3 +7460,56 @@ screen destroys trust in every number beside it.**
 Test 1: 1,536 checks, 0 failed. Eleven new, including the clamp at both ends and the divide-by-zero
 case. Broken on purpose by removing the report: red on two, one of them the *nothing before the first
 run* case, which is the one a careless fix would get wrong.
+
+---
+
+# §168 — The delivery gate, run, and the one thing it stopped
+
+Build 299. He asked for the nine gates from `MANTRA_MANIFEST/modules/delivery-gate.md` to be run
+against the app, and then for the findings to be acted on.
+
+## What the gate actually found
+
+Five of nine ran here; G6, G7 and G8 need a phone. One blocking finding, and it was real.
+
+**G1: every action pinned by a mutable tag.** `actions/checkout@v4` and three others. A tag is
+whatever its owner points it at, and this workflow runs with a token that can push to every
+repository in the account — the module cites GhostAction, where repos pinned to moving tags pulled a
+modified action and their CI secrets were taken, with no compromise of the victim's own account
+needed. All four are pinned by commit now, each with the tag it came from in a comment beside it, and
+the rule for updating one written above them.
+
+**G7's `+0 bytes` was a true zero, and worth the ten minutes it took to disbelieve.** Two builds,
+different sha256, byte-identical file size. §14 says a suspicious zero is a failure of the check until
+proven otherwise, so the APKs were opened and diffed entry by entry: 250 entries each, five differ,
+`classes.dex` is **+1,920 bytes**. The zip total landing on the same number is alignment padding
+absorbing the delta. **The file size was the wrong metric** — the sum of uncompressed entry sizes
+(50,001,970 vs 50,000,050) is the one that moves, and that is what a future G7 should record.
+
+## What is now automated, and what deliberately is not
+
+§13: G1, G2 and G3 belong in CI on every build, failing rather than warning, because "everything a
+person has to remember will eventually not be remembered".
+
+    G3   verify.py and all 18 Test 1 suites          BLOCKING
+    G5   count of while(true) in the tree, printed   recorded, not a threshold
+    G2   the built APK scanned for key shapes        BLOCKING
+    G3   Android Lint                                MEASURING, continue-on-error
+
+**Lint is the one not turned on.** `-x lintVitalRelease` has been on the build line since before the
+gate existed — Lint has never run on a release of this app. The gate says it should be fatal. It is
+not being made fatal blind: §5.2 says a check that produces noise gets fixed, narrowed or deleted in
+the session it produced it, and that a check which cries wolf is worse than no check. So the first
+build reports the error and warning counts and blocks nothing. Once the number is known and the real
+findings are cleared, the flag comes off.
+
+That is written in the workflow beside the step, so the next session finds a decision rather than an
+oversight.
+
+## The record
+
+The full delivery record for build 298 was produced in chat rather than committed, and that is the
+next gap: G9 asks for a document with a fixed shape so two releases can be compared. The NOT TESTED
+block for this app is currently longer than the pass list — no soak, no monkey, no upgrade test, no
+device of any kind on this side — and per §11 that makes it a more believable delivery than one with
+nine passes and an empty exclusions list, not a less believable one.

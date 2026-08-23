@@ -21,7 +21,13 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 298.** The last stretch, newest first:
+**Build 299.** The last stretch, newest first:
+
+- **The delivery gate is in CI.** Every action pinned by commit SHA (the one blocking finding of the
+  nine gates); `verify.py` and all 18 Test 1 suites blocking; the built APK scanned for key shapes
+  and blocking; the loop count recorded. **Android Lint runs but does not block yet** — it has never
+  run on a release of this app (`-x lintVitalRelease`), and it is being measured before it is made
+  fatal, on purpose, per delivery-gate §5.2.
 
 - **The Trim silent gaps switch reports what it saved**: "Last dictation: 34% less audio uploaded",
   under the switch, in Settings → Dictation. The switch itself has been there all along, default on —
