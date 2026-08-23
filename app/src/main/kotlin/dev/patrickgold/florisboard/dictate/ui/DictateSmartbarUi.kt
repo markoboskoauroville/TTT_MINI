@@ -548,65 +548,26 @@ private fun MaUtilityKey(label: String, modifier: Modifier = Modifier, onClick: 
 
 @Composable
 private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
-    // The same spinner and the same line as the transcribe view, and for the same reason.
+    // THE SENDING LINE, LAID OUT LIKE THE RECORDING BAR.
     //
-    // Two arrows chasing each other says only that something is happening. It cannot say which key
-    // is being tried, how large the upload is, how fast it is moving, or whether it is retrying,
-    // and it looks identical whether the request is in flight or the app has died. The braille
-    // spinner blinks after six seconds so a pause never reads as a crash, and maStatus is the line
-    // that says what is actually being waited for.
+    //   recording:  ENG · bin · 0:23 2,1 MB · send · gear
+    //   sending:    ENG ·  X  · ⠹ status…
     //
-    // Drawn from the shared composable rather than a copy, so the two views cannot drift.
-    val retrying = state.attempt > 1
-    if (retrying) {
-        SnyggIcon(
-            imageVector = Icons.Default.CloudOff,
-            modifier = Modifier.size(18.dp),
-        )
-    } else {
-        MaBrailleSpinner(color = MaRecordInk, fontSize = MaStatusFontSize)
-    }
-    Spacer(modifier = Modifier.width(8.dp))
-    val maLine by DictateController.maStatus.collectFlowAsState()
-    // Plain Text with the shared status type rather than SnyggText: the theme's text styling sizes
-    // this for a suggestion, which is far too large for a line of machine output sitting in a strip
-    // this shallow. Same size, same gold and same monospace as the transcribe view, from the same
-    // two values, so the two cannot drift apart again.
-    Text(
-        text = when {
-            retrying -> stringRes(R.string.dictate__status_retrying, "attempt" to state.attempt)
-            else -> maLine.ifBlank { stringRes(R.string.dictate__status_transcribing) }
-        },
-        color = MaRecordInk,
-        fontSize = MaStatusFontSize,
-        fontFamily = MaStatusFontFamily,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        // No `weight` here. This composable is not declared inside a Row — it is CALLED into one by
-        // the caller, so `RowScope` is not in scope and `Modifier.weight` does not resolve. Making
-        // it a `RowScope.` extension would work and would tie the function to one kind of parent for
-        // the sake of one modifier.
-        //
-        // It does not need it: the status line is `maxLines = 1` with an ellipsis, so it takes what
-        // it needs and gives the badge the rest.
-    )
-
-    // THE LANGUAGE, WHILE IT IS BEING SENT, AND TAPPABLE.
+    // **The badge is in the same place in both, and that is the whole point of moving it.** He
+    // reaches for it without looking, and a control that moves between two views he switches
+    // between constantly is a control he has to find twice. It was at the end of this line one
+    // build ago, which was tidy and wrong.
     //
-    // The same badge the history rows carry, in the same place in the line, because it answers the
-    // same question — what language is this — and a reader who has learned it in one place should
-    // not have to learn it again in the other.
+    // The bin's position becomes X. Same place, same job — throw this away — and X rather than a
+    // drawn bin because this line is machine output and a glyph in it reads as decoration. **The
+    // recording bar is an instrument panel; this is a terminal.** Same skeleton, different voice.
     //
-    // He starts a Croatian dictation with the badge on ENG and knows, watching the spinner, that
-    // the answer will come back wrong. Tapping it here cancels the request and sends the same audio
-    // again in the new language. **Seeing a mistake and being unable to act on it is worse than not
-    // seeing it**, which is why the badge and the tap shipped together: a badge he could read but
-    // not change would have been half a feature, and the frustrating half.
-    //
-    // At the end of the line rather than the start: the spinner and the status say what is
-    // happening and are read first, and this is the one thing here he can act on.
+    // Where the recorder counts up in figures, this one runs the braille spinner and the status
+    // line. Both answer "is it still alive", one by counting and one by turning.
     val context = LocalContext.current
-    Spacer(modifier = Modifier.width(8.dp))
+    val retrying = state.attempt > 1
+
+    // ENG or HR, first, where his thumb already goes.
     Text(
         text = MaLanguage.badge(),
         color = MaRecordInk,
@@ -616,13 +577,68 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
         maxLines = 1,
         modifier = Modifier
             .clickable {
-                // Cycle, then resend. The same cycle the badge key uses, so the two agree about
-                // what "next" means.
                 MaLanguage.cycleMode(context)
+                // Sending: throw it away and send again in the new language. Held: just set it —
+                // see retranscribeInLanguage, which is where that difference lives rather than here.
                 DictateController.retranscribeInLanguage(context, MaLanguage.active())
             }
             .padding(horizontal = 6.dp),
     )
+
+    // X: kill it, audio and all. The one irreversible control on the line.
+    Text(
+        text = "\u00D7",
+        color = MaRecordInk,
+        fontSize = MaStatusFontSize,
+        fontFamily = MaStatusFontFamily,
+        fontWeight = FontWeight.Bold,
+        maxLines = 1,
+        modifier = Modifier
+            .clickable { DictateController.cancelTranscription() }
+            .padding(horizontal = 8.dp),
+    )
+
+    // The middle: spinner and status, and the whole of it is the hold button.
+    //
+    // A wide target on purpose. It is pressed while he is watching rather than aiming, and the
+    // alternative — a small button beside the text — would be one more thing on a line whose job is
+    // to be read.
+    val maLine by DictateController.maStatus.collectFlowAsState()
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clickable { DictateController.toggleTranscriptionHold(context) }
+            .padding(horizontal = 4.dp),
+    ) {
+        when {
+            // Held: no spinner. Nothing is turning because nothing is happening, and a spinner over
+            // a stopped request is the lie this whole line exists to avoid.
+            state.held -> Text(
+                text = "\u25A0",
+                color = MaRecordInk,
+                fontSize = MaStatusFontSize,
+                fontFamily = MaStatusFontFamily,
+            )
+            retrying -> SnyggIcon(
+                imageVector = Icons.Default.CloudOff,
+                modifier = Modifier.size(18.dp),
+            )
+            else -> MaBrailleSpinner(color = MaRecordInk, fontSize = MaStatusFontSize)
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = when {
+                state.held -> "held \u2014 tap to send"
+                retrying -> stringRes(R.string.dictate__status_retrying, "attempt" to state.attempt)
+                else -> maLine.ifBlank { stringRes(R.string.dictate__status_transcribing) }
+            },
+            color = MaRecordInk,
+            fontSize = MaStatusFontSize,
+            fontFamily = MaStatusFontFamily,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 /**

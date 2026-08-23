@@ -7204,3 +7204,63 @@ on the real broken file.
 
 Five checks have now been added by measuring first and two deleted for failing the same measurement.
 The discipline has paid for itself twice today alone.
+
+---
+
+# §164 — The sending line becomes a terminal
+
+Build 294.
+
+## The badge moves to where his thumb goes
+
+```
+recording:  ENG · bin · 0:23  2,1 MB · send · gear
+sending:    ENG ·  X  · ⠹ status…
+```
+
+One build ago the badge was at the *end* of the sending line, which was tidy and wrong. **A control
+that moves between two views he switches between constantly is a control he has to find twice.** He
+reaches for it without looking; it is in the same place in both now.
+
+The bin's position becomes **X** — same place, same job, throw this away. A letter and not a drawn
+bin, because the two lines are the same skeleton in different voices: **the recording bar is an
+instrument panel, this is a terminal.** Where the recorder counts up in figures, this one turns a
+braille spinner. Both answer *is it still alive*, one by counting and one by turning.
+
+## Hold is a cancel that keeps the tape
+
+There is no pausing a request already on the wire — it is thrown away. What makes this a hold is what
+is **not** thrown away: the audio, and the fact that he still means to send it. **The distinction the
+user cares about is not whether the socket closed, it is whether the recording is still his.**
+
+`Transcribing(held = true)` — a flag on the existing state rather than a fourth state, because
+everything that asks *is the recorder busy* must keep answering yes. A new state would have meant
+auditing every `when` in the app for a case that means what Transcribing already means.
+
+**While held, the badge sets the language and does not send.** That is the whole reason the hold
+exists: he stopped it in order to choose, and sending the instant he chooses would take the decision
+away at the moment he was making it. Stop · choose · send, two taps around whatever he needs in
+between.
+
+No spinner while held. Nothing is turning because nothing is happening, and a spinner over a stopped
+request is precisely the lie this line exists to avoid.
+
+The middle is the whole target — spinner and text together — because it is pressed while watching
+rather than aiming, and a small button beside the text would be one more thing on a line whose job is
+to be read.
+
+## Tested
+
+Test 1: 4,433 checks, 0 failed, 1,375 walked taps — every sequence of five actions drawn from hold,
+ENG and HR, asserting **never more than one request in flight**, **held means nothing in flight**, and
+**the audio survives every tap**. Plus X from both states, and that nothing can resume after a kill.
+
+Broken on purpose two ways — the hold throwing the audio away with the request, and the badge sending
+while held — and confirmed red with 797 failures.
+
+One check needed updating rather than deleting: the guard in `retranscribeInLanguage` became a cast
+because the function now needs the state's `held` flag, so the check reads the cast. Same refusal,
+different spelling.
+
+Not tested: nothing ran on a phone. Whether the middle is comfortable to hit without looking, and
+whether the held line reads as stopped rather than broken, are both his.

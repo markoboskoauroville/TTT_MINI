@@ -21,7 +21,14 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 292.** The last stretch, newest first:
+**Build 294.** The last stretch, newest first:
+
+- **The sending line is laid out like the recording bar**: `ENG · X · ⠹ status…`. The badge is where
+  it is in the recorder, because he reaches for it without looking. The bin's position becomes X —
+  same place, same job, and a letter rather than a glyph because this line is machine output.
+- **Tapping the middle holds the send**, and tapping again sends. A hold is a cancel that keeps the
+  tape: `Transcribing(held = true)`, request thrown away, audio kept. The badge sets the language
+  while held and does *not* send, so he can stop, choose, then send.
 
 - **The language badge is on the sending line, and tapping it resends.** Same badge as the history
   rows. A tap cycles the language, cancels the request in flight and sends the same audio again —

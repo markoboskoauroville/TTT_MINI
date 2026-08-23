@@ -150,7 +150,19 @@ object DictateController {
             val paused: Boolean = false,
         ) : UiState
         /** [attempt] is 1 for the first try, 2/3/… while retrying after a transient failure. */
-        data class Transcribing(val attempt: Int = 1) : UiState
+        /**
+         * A transcription is in flight, or [held].
+         *
+         * HELD means: the request was thrown away and the audio kept. He tapped the middle of the
+         * sending line to stop it, and the next tap sends the same audio again in whatever language
+         * the badge says by then.
+         *
+         * A flag on this state rather than a state of its own, because everything that asks "is the
+         * recorder busy" must keep answering yes: the audio is still here, still unsent, and still
+         * his. A fourth state would have meant auditing every `when` in the app for a case that
+         * means exactly what Transcribing already means.
+         */
+        data class Transcribing(val attempt: Int = 1, val held: Boolean = false) : UiState
         /** A rewording/GPT request is in flight (manual prompt, auto-apply, auto-format or live). */
         data class Rewording(val label: String) : UiState
         /**
@@ -1025,11 +1037,68 @@ object DictateController {
      * The audio is untouched by any of this — it is the same file, sent again — so nothing is
      * re-recorded and nothing is lost.
      */
+    /**
+     * The middle of the sending line was tapped: hold it, or send it again.
+     *
+     * ### Hold is a cancel that keeps the tape
+     *
+     * There is no pausing a request that is already on the wire — it is thrown away. What makes this
+     * a hold rather than a cancel is what is NOT thrown away: the audio, and the fact that he means
+     * to send it. **The distinction the user cares about is not whether the socket closed, it is
+     * whether the recording is still his.**
+     *
+     * So the state stays `Transcribing(held = true)`, the line stays on screen saying so, and
+     * nothing else in the app has to learn a new state to know the recorder is busy.
+     *
+     * ### Why he wants it
+     *
+     * Watching the spinner he realises the badge is wrong. Tapping the badge alone would resend
+     * immediately in the next language, which is one language further on than the one he wants when
+     * there are two to cycle through. Hold gives him the moment in between: stop, set the language,
+     * send. Two taps around whatever he needs to do in the middle.
+     */
+    fun toggleTranscriptionHold(context: Context) {
+        val current = inFlight ?: return
+        val state = _state.value as? UiState.Transcribing ?: return
+        if (state.held) {
+            if (!current.audioFile.exists() || current.audioFile.length() == 0L) {
+                // The audio went while it was held — a cache clear, or the system reclaiming space.
+                // Better to end honestly than to send nothing and blame the provider.
+                _state.value = UiState.Idle
+                inFlight = null
+                return
+            }
+            MaLog.add("stt", "hold released, sending as ${MaLanguage.active()}")
+            _state.value = UiState.Idle
+            transcribe(
+                context,
+                current.audioFile,
+                current.recordedSeconds,
+                gate = current.gate,
+                forceLocal = current.forceLocal,
+                isReplay = current.isReplay,
+                source = current.source,
+                replayHistoryId = current.replayHistoryId,
+            )
+        } else {
+            MaLog.add("stt", "send held, audio kept")
+            transcribeJob?.cancel()
+            transcribeJob = null
+            _state.value = UiState.Transcribing(held = true)
+        }
+    }
+
     fun retranscribeInLanguage(context: Context, language: String) {
         val current = inFlight ?: return
-        if (_state.value !is UiState.Transcribing) return
+        val state = _state.value as? UiState.Transcribing ?: return
         if (!current.audioFile.exists() || current.audioFile.length() == 0L) return
         MaLanguage.set(context, language)
+        // Held: set the language and stay held. He stopped it in order to choose, and sending the
+        // moment he chooses would take the decision away at the exact moment he was making it.
+        if (state.held) {
+            MaLog.add("stt", "language set to $language while held")
+            return
+        }
         MaLog.add("stt", "language changed mid-flight, sending again as $language")
         // Cancelled rather than left to land: the first answer would arrive in the old language and
         // overwrite the one he asked for, and which of the two won would depend on the network.

@@ -162,3 +162,4 @@ since been removed.
 - **§161** — The overlay becomes a hairline
 - **§162** — The slideshow, the alignment, and six short words
 - **§163** — The badge on the sending line
+- **§164** — The sending line becomes a terminal

@@ -29,6 +29,7 @@ def check(name: str, ok: bool, detail: str = "") -> None:
 
 class World:
     """The controller, as far as this feature is concerned."""
+    # held: the request was thrown away and the audio kept.
 
     def __init__(self):
         self.state = "idle"
@@ -52,9 +53,13 @@ class World:
         wholesale, so removing the cancellation changed nothing and the sabotage came back green.
         **A model that cannot express the bug cannot test for it.**
         """
-        if self.in_flight is None or self.state != "transcribing":
+        if self.in_flight is None or self.state not in ("transcribing", "held"):
             return False
         self.language = new_language
+        if self.state == "held":
+            # Set the language and stay held: he stopped it in order to choose, and sending as he
+            # chooses would take the decision away at the moment he was making it.
+            return True
         if cancel_first:
             self.jobs = []         # cancelled, not left to land
         self.state = "idle"
@@ -65,6 +70,23 @@ class World:
     def finish(self):
         self.state = "idle"
         self.jobs = []
+
+    def tap_middle(self):
+        """The port of toggleTranscriptionHold."""
+        if self.in_flight is None or self.state not in ("transcribing", "held"):
+            return False
+        if self.state == "held":
+            self.state = "transcribing"
+            self.jobs = [(self.in_flight, self.language)]
+        else:
+            self.jobs = []          # thrown away
+            self.state = "held"     # but the audio is kept
+        return True
+
+    def tap_x(self):
+        self.state = "idle"
+        self.jobs = []
+        self.in_flight = None
 
 
 # ---------------------------------------------------------------- the case it is for
@@ -101,6 +123,46 @@ for taps in itertools.product(["en", "hr"], repeat=5):
     check(f"{taps}: recorded once", w.audio_recorded == 1)
 
 
+# ---------------------------------------------------------------- hold, choose, send
+w = World()
+w.record_and_send("a.wav")
+check("the middle holds it", w.tap_middle() and w.state == "held", w.state)
+check("nothing is in flight while held", w.jobs == [], str(w.jobs))
+check("the audio is kept", w.in_flight == "a.wav", "the recording was thrown away with the request")
+check("the badge sets the language while held", w.tap_badge("hr") and w.language == "hr")
+check("and does NOT send", w.jobs == [], "sent before he had finished choosing")
+check("the middle sends it", w.tap_middle() and w.state == "transcribing")
+check("in the language he chose", w.jobs == [("a.wav", "hr")], str(w.jobs))
+check("still one recording", w.audio_recorded == 1)
+
+# X kills everything, from either state.
+for reach_held in (True, False):
+    w = World()
+    w.record_and_send("a.wav")
+    if reach_held:
+        w.tap_middle()
+    w.tap_x()
+    check(f"held={reach_held}: X ends it", w.state == "idle" and w.jobs == [], str(w.state))
+    check(f"held={reach_held}: X lets the audio go", w.in_flight is None, "still holding a recording")
+    check(f"held={reach_held}: nothing can resume it", w.tap_middle() is False, "resumed after a kill")
+
+# Walked: any sequence of middle taps and badge taps leaves at most one request in flight, and never
+# one while held.
+import itertools as _it
+for seq in _it.product(["mid", "en", "hr"], repeat=5):
+    w = World()
+    w.record_and_send("a.wav")
+    for act in seq:
+        if act == "mid":
+            w.tap_middle()
+        else:
+            w.tap_badge(act)
+        walked += 1
+        check(f"{seq}: never more than one in flight", len(w.jobs) <= 1, str(w.jobs))
+        check(f"{seq}: held means nothing in flight", not (w.state == "held" and w.jobs), str(w.jobs))
+        check(f"{seq}: the audio survives every tap", w.in_flight == "a.wav", "lost the recording")
+    check(f"{seq}: recorded once", w.audio_recorded == 1)
+
 # ---------------------------------------------------------------- the wiring
 def code(path: Path) -> str:
     t = path.read_text()
@@ -125,9 +187,25 @@ for j in range(i, len(ctrl)):
     if depth == 0:
         body = ctrl[i:j]
         break
-check("it refuses unless sending", "_state.value !is UiState.Transcribing) return" in body,
+# The guard is now a cast rather than an `!is` check, because the function needs the state's `held`
+# flag as well as its type. Same refusal — a non-Transcribing state gives null and returns.
+check("it refuses unless sending", "as? UiState.Transcribing ?: return" in body,
       "would fire from idle")
 check("it cancels the old job", "transcribeJob?.cancel()" in body, "two answers racing")
+
+# The hold, read from its own function body for the same reason as above.
+hstart = ctrl.index("fun toggleTranscriptionHold")
+hdepth, hi = 0, ctrl.index("{", hstart)
+for j in range(hi, len(ctrl)):
+    hdepth += (ctrl[j] == "{") - (ctrl[j] == "}")
+    if hdepth == 0:
+        hold_body = ctrl[hi:j]
+        break
+check("the hold keeps the audio", "inFlight = null" not in hold_body.split("held")[0],
+      "throws the recording away with the request")
+check("the hold cancels the request", "transcribeJob?.cancel()" in hold_body, "two things running")
+check("releasing sends the same file", "current.audioFile," in hold_body, "sends something else")
+check("the badge does not send while held", "if (state.held) {" in ctrl, "sends before he has chosen")
 check("it checks the file is still there", "audioFile.length() == 0L) return" in body,
       "would send an empty file")
 
