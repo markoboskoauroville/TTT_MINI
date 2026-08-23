@@ -21,7 +21,11 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 297.** The last stretch, newest first:
+**Build 298.** The last stretch, newest first:
+
+- **The Trim silent gaps switch reports what it saved**: "Last dictation: 34% less audio uploaded",
+  under the switch, in Settings → Dictation. The switch itself has been there all along, default on —
+  and saying nothing is how it sat at a threshold that saved nothing for months.
 
 - **Silence trimming tightened for cost: 2000/400 → 700/250.** Only pauses over two seconds were
   being cut, which is almost none of a real dictation. Every trim now logs what percentage it saved.

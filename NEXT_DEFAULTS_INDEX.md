@@ -166,3 +166,4 @@ since been removed.
 - **§165** — Three faults on one line
 - **§165** — F1, F2, F3, and rows that trade places
 - **§166** — Paying for silence
+- **§167** — The switch says what it saved

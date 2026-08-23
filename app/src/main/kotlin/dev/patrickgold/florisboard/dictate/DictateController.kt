@@ -1602,8 +1602,11 @@ object DictateController {
                                 // division by zero in a log line is a crash in the send path.
                                 val after = it.length()
                                 if (before > 0L) {
-                                    val cut = 100 - (after * 100 / before)
+                                    val cut = (100 - (after * 100 / before)).toInt().coerceIn(0, 100)
                                     MaLog.add("stt", "trimmed $cut% of the audio before upload")
+                                    // And where he can see it without opening the log: under the
+                                    // switch that did it.
+                                    scope.launch { prefs.dictate.trimLastSavedPercent.set(cut) }
                                 }
                             }
                         }

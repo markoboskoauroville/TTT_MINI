@@ -274,12 +274,26 @@ fun DictateRecordingScreen() = FlorisScreen {
             title = stringRes(R.string.dictate__skip_silent_title),
             summary = stringRes(R.string.dictate__skip_silent_summary),
         )
+        // THE SWITCH SAYS WHAT IT SAVED.
+        //
+        // It has been here all along, default on, and told him nothing about whether it was worth
+        // having — which is how it sat for months at a threshold that cut only pauses longer than
+        // two seconds, saving essentially nothing on a real dictation, without anybody noticing.
+        //
+        // **A setting that cannot be evaluated is a setting nobody can decide about.** He asked to be
+        // able to experiment and see the result, and the result is one number: how much less audio
+        // went up last time. Off, on, dictate the same paragraph twice, compare.
+        //
+        // Appended to the summary rather than replacing it, so the switch still explains itself
+        // before the first dictation, when there is nothing to report.
+        val trimSaved by prefs.dictate.trimLastSavedPercent.collectAsState()
         SwitchPreference(
             prefs.dictate.trimSilentGaps,
             icon = Icons.Default.ContentCut,
             modifier = Modifier.settingsSearchAnchor("dictate__trim_silent_gaps_title"),
             title = stringRes(R.string.dictate__trim_silent_gaps_title),
-            summary = stringRes(R.string.dictate__trim_silent_gaps_summary),
+            summary = stringRes(R.string.dictate__trim_silent_gaps_summary) +
+                if (trimSaved >= 0) "\n\nLast dictation: $trimSaved% less audio uploaded." else "",
         )
         SwitchPreference(
             prefs.dictate.instantRecording,

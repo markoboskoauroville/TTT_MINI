@@ -1397,6 +1397,19 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "top",
         )
 
+        /**
+         * What the last trim saved, as a percentage of the recording, or -1 before the first one.
+         *
+         * Shown under the Trim silent gaps switch. The switch has existed all along and told him
+         * nothing about whether it was worth having — which is how it sat at a threshold that saved
+         * nothing for months without anybody noticing. **A setting that cannot be evaluated is a
+         * setting nobody can decide about**, and he asked to be able to experiment.
+         */
+        val trimLastSavedPercent = int(
+            key = "dictate__trim_last_saved_percent",
+            default = -1,
+        )
+
         val maNgramPending = string(
             key = "dictate__ma_ngram_pending",
             default = "",

@@ -7429,3 +7429,34 @@ and confirmed red with 483 failures.
 
 Not tested: nothing ran on a phone, and no audio was actually trimmed. The percentage in the log is
 the measurement that matters and it will only exist once he dictates.
+
+---
+
+# §167 — The switch says what it saved
+
+Build 298. He asked for a setting to turn trimming on and off so he could experiment and see the
+result. **The setting already existed** — Settings → Dictation → Trim silent gaps, default on, with
+`Skip silent recordings` above it. What did not exist was the result.
+
+That gap is the whole story of the last two builds: the switch sat at a threshold that saved
+essentially nothing on a real dictation, for months, switched on, telling him nothing. **A setting
+that cannot be evaluated is a setting nobody can decide about** — and nobody did decide about it,
+which is exactly why nobody noticed.
+
+So the switch reports its own last outcome: *Last dictation: 34% less audio uploaded*. Off, on,
+dictate the same paragraph twice, compare. That is what he asked for, and it is the part that was
+missing rather than the switch.
+
+Appended to the summary rather than replacing it, so the switch still explains itself before the
+first dictation, when there is nothing to report. `-1` means never run, and shows nothing at all
+rather than `0%`, which would read as *this does not work*.
+
+The percentage is clamped to 0..100. A trim that somehow grew the file must not report a saving of
+minus twenty percent, and a rounding artefact must not report 101 — **an impossible number on a
+screen destroys trust in every number beside it.**
+
+## Tested
+
+Test 1: 1,536 checks, 0 failed. Eleven new, including the clamp at both ends and the divide-by-zero
+case. Broken on purpose by removing the report: red on two, one of them the *nothing before the first
+run* case, which is the one a careless fix would get wrong.

@@ -103,6 +103,31 @@ check("the saving is logged", "trimmed $cut% of the audio before upload" in ctrl
       "a saving nobody can see is a saving nobody can trust")
 check("the log cannot divide by zero", "if (before > 0L)" in ctrl, "a crash in the send path")
 
+# ---------------------------------------------------------------- he can see the result
+#
+# The switch has been in Settings all along, default on, and said nothing about whether it was worth
+# having — which is how it sat at a useless threshold for months unnoticed. A setting that cannot be
+# evaluated is a setting nobody can decide about.
+screen = code(SRC / "app/settings/dictate/DictateScreen.kt")
+check("the switch exists", "prefs.dictate.trimSilentGaps," in screen, "no way to turn it off and compare")
+check("the skip-silent switch exists too", "prefs.dictate.skipSilentRecordings," in screen)
+check("the switch reports the saving", "Last dictation:" in screen, "on or off with no way to tell which is better")
+check("it reads live state", "trimLastSavedPercent.collectAsState()" in screen, "read once, never updated")
+check("the saving is recorded", "trimLastSavedPercent.set(cut)" in ctrl, "nothing to report")
+check("it says nothing before the first one", 'if (trimSaved >= 0)' in screen, "0% before anything has run")
+
+# The percentage is clamped: a trim that somehow grew the file must not show a negative saving, and a
+# rounding artefact must not show 101%.
+def clamp(before, after):
+    return max(0, min(100, 100 - (after * 100 // before))) if before > 0 else None
+
+
+check("a normal trim reports honestly", clamp(1000, 600) == 40)
+check("no negative saving", clamp(1000, 1200) == 0, "would read as a saving of minus twenty percent")
+check("no saving over 100", clamp(1000, 0) == 100)
+check("a zero-length original reports nothing", clamp(0, 0) is None, "divided by zero")
+check("the clamp is in the code", "coerceIn(0, 100)" in ctrl, "an impossible percentage can reach him")
+
 print(f"trim cost, test 1: {checks} checks, {len(failures)} failed ({walked} timelines walked)")
 for f in failures:
     print(f"  FAIL  {f}")
