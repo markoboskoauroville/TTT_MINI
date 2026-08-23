@@ -7374,3 +7374,58 @@ moved" from a single example.
 
 Not tested: nothing ran on a phone. Whether three more keys fit a row he already fills is his to see,
 and if they do not, F1–F3 are exactly the keys to put on a row he switches off.
+
+---
+
+# §166 — Paying for silence
+
+Build 297. He is watching the bill and asked for the app to be made cost-effective.
+
+## The thresholds were doing almost nothing
+
+`TRIM_MAX_SILENCE_MS` was **2000**. Only a pause longer than two seconds was touched — and a real
+dictation is made of half-second and second-and-a-half pauses. Modelled on a plausible dictation, the
+old numbers saved **nothing at all**: every gap in it was under the threshold.
+
+700/250 now. 700ms is above the longest gap inside fluent speech and below the shortest deliberate
+pause: a gap that long is somebody thinking, not somebody speaking.
+
+**250ms is kept rather than 0**, and that is not timidity. A hard cut mid-breath sounds like a splice
+and makes the recogniser guess at the join; a sentence with every pause removed reads back as one
+breathless run; and the padding is what stops the first syllable after a pause being clipped. **A
+clipped word costs a re-record, which costs more than the silence did.**
+
+## The saving is logged, every time
+
+`trimmed 34% of the audio before upload`. **A saving nobody can see is a saving nobody can trust** —
+and if these thresholds are ever wrong, that line is how it gets noticed, either by being
+suspiciously large or by being stuck at zero.
+
+## Two cost problems found and NOT fixed
+
+Both need a decision or a verification I could not make alone, and both are worth more than the trim.
+
+**1. The async path is on a model he is not pricing.** `defaultTranscriptionModel = "universal-3-pro"`,
+with `universal-2` offered in the picker. His price sheet has Universal-3.5 Pro and
+Universal-Streaming. Whatever the async path bills, it is not one of the two rates he quoted. The fix
+is a two-line change, but the sync path passes that model id as an `X-AAI-Model` **header** while
+async sends a body field — those are not interchangeable, and I will not switch it on the strength of
+a guess about the schema.
+
+**2. `longform` skips trimming entirely.** `if (gate && !longform && …)`. Longform is the mode for the
+longest recordings, which is exactly where silence costs most. The exclusion presumably exists for
+latency on big files. **It is backwards for cost**, and it is his call whether a longform dictation
+should wait a little longer to upload half as much.
+
+## Tested
+
+Test 1: 1,525 checks, 0 failed, 504 walked timelines — every arrangement of speech and gaps up to six
+segments at four length profiles, asserting **no speech is ever lost**, the upload is never longer
+than the recording, and no segment vanishes. Plus a modelled dictation showing the old thresholds
+saving nothing and the new ones saving real time.
+
+Broken on purpose two ways — padding to zero, and a trim that eats 100ms of every speech segment —
+and confirmed red with 483 failures.
+
+Not tested: nothing ran on a phone, and no audio was actually trimmed. The percentage in the log is
+the measurement that matters and it will only exist once he dictates.

@@ -165,3 +165,4 @@ since been removed.
 - **§164** — The sending line becomes a terminal
 - **§165** — Three faults on one line
 - **§165** — F1, F2, F3, and rows that trade places
+- **§166** — Paying for silence

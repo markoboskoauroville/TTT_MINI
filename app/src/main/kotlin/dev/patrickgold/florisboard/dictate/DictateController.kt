@@ -529,8 +529,29 @@ object DictateController {
     // gap longer than TRIM_MAX_SILENCE_MS is collapsed down to TRIM_KEEP_SILENCE_MS (a short pad on each
     // side of the cut); shorter, natural pauses are left untouched.
     private const val TRIMMED_AUDIO_NAME = "dictate_trimmed.wav"
-    private const val TRIM_MAX_SILENCE_MS = 2_000
-    private const val TRIM_KEEP_SILENCE_MS = 400
+    /**
+     * HOW LONG A PAUSE HAS TO BE BEFORE IT IS CUT, AND HOW MUCH OF IT SURVIVES.
+     *
+     * These two numbers are the whole cost of dictation. Async speech-to-text bills by the second of
+     * audio, and dictation is roughly half silence — thinking, breathing, reading the screen. **The
+     * seconds not uploaded are free, and they cost nothing in quality, because they carried no
+     * words.**
+     *
+     * They were 2000/400: only pauses longer than TWO SECONDS were touched. That left every ordinary
+     * mid-sentence pause — the half-second and the second-and-a-half, which is most of them — paid
+     * for in full. Tightened to 700/250 for the money.
+     *
+     * 700ms is above the longest gap inside fluent speech and below the shortest deliberate pause. A
+     * gap that long is somebody thinking, not somebody speaking.
+     *
+     * 250ms is kept rather than 0 for two reasons that both cost more than the silence saves: a hard
+     * cut mid-breath sounds like a splice and makes the recogniser guess at the join, and a sentence
+     * with every pause removed reads back as one breathless run. It is also the floor for not
+     * clipping the first syllable after the pause — **a clipped word costs a re-record, which costs
+     * more than the silence did.**
+     */
+    private const val TRIM_MAX_SILENCE_MS = 700
+    private const val TRIM_KEEP_SILENCE_MS = 250
     // Realtime (#128): after finish(), how long to wait for the provider to flush the last words before we
     // commit the already-streamed text. Short — the text is already on screen; we only wait for the tail.
     private const val REALTIME_FINALIZE_TIMEOUT_MS = 1_200L
@@ -1561,12 +1582,30 @@ object DictateController {
                             return@launch // audio is dropped by the finally block
                         }
                         if (analysis != null && analysis.hasSpeech) {
+                            val before = audioFile.length()
                             SpeechGate.writeTrimmedWav(
                                 analysis,
                                 File(appContext.cacheDir, TRIMMED_AUDIO_NAME),
                                 TRIM_MAX_SILENCE_MS,
                                 TRIM_KEEP_SILENCE_MS,
-                            )?.let { uploadFile = it }
+                            )?.let {
+                                uploadFile = it
+                                // WHAT THE TRIM SAVED, IN THE LOG, EVERY TIME.
+                                //
+                                // He is watching the bill. **A saving nobody can see is a saving
+                                // nobody can trust** — and if these thresholds are ever wrong, this
+                                // line is how it gets noticed, either because the figure is
+                                // suspiciously large or because it is stuck at zero.
+                                //
+                                // Bytes rather than seconds because both files are the same format
+                                // and the ratio is what matters. Guarded against a zero length: a
+                                // division by zero in a log line is a crash in the send path.
+                                val after = it.length()
+                                if (before > 0L) {
+                                    val cut = 100 - (after * 100 / before)
+                                    MaLog.add("stt", "trimmed $cut% of the audio before upload")
+                                }
+                            }
                         }
                     } else {
                         // Gate only: the cheaper early-exit check (returns as soon as the first speech closes).
