@@ -7185,3 +7185,22 @@ once. Fifteen other suites green.
 
 Not tested: nothing ran on a phone. Whether the badge is reachable with a thumb at the end of a line
 that shallow is the open question, and if it is not the answer is padding rather than a redesign.
+
+## §163a — weight without a scope
+
+Build 292 went red on `Modifier.weight(1f)` in `TranscribingContent` — a composable that is *called
+into* a Row rather than declaring one, so `RowScope` belongs to the caller and the extension does not
+resolve.
+
+It did not need the weight anyway: the status line is `maxLines = 1` with an ellipsis, so it takes
+what it needs and leaves the badge the rest. The alternative — making the function a `RowScope.`
+extension — would tie it to one kind of parent for the sake of one modifier.
+
+`check_weight_scope` catches the shape, and the measurement is the part worth recording. **The first
+sweep reported one hit and the hit was the detector's fault**: it looked for `Row(` and missed
+`Row {`, so a correct file looked wrong. One hit is exactly where the temptation is to accept the
+noise and move on. With the trailing-lambda form counted it swept to zero, and it names the function
+on the real broken file.
+
+Five checks have now been added by measuring first and two deleted for failing the same measurement.
+The discipline has paid for itself twice today alone.

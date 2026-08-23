@@ -582,7 +582,13 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
         fontFamily = MaStatusFontFamily,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.weight(1f),
+        // No `weight` here. This composable is not declared inside a Row — it is CALLED into one by
+        // the caller, so `RowScope` is not in scope and `Modifier.weight` does not resolve. Making
+        // it a `RowScope.` extension would work and would tie the function to one kind of parent for
+        // the sake of one modifier.
+        //
+        // It does not need it: the status line is `maxLines = 1` with an ellipsis, so it takes what
+        // it needs and gives the badge the rest.
     )
 
     // THE LANGUAGE, WHILE IT IS BEING SENT, AND TAPPABLE.

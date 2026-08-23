@@ -583,6 +583,37 @@ def check_nullable_args(path: Path, text: str) -> None:
 # The gap stays open. Kotlin names the symbol and the line; CI reports it in five minutes.
 
 
+def check_weight_scope(path: Path, text: str) -> None:
+    """
+    RED BUILD 292: `Modifier.weight(1f)` in a composable that is CALLED into a Row rather than
+    declaring one.
+
+    `weight` is a `RowScope`/`ColumnScope` extension. A composable called into a Row does not have
+    that scope — the caller does — so it does not resolve, and the fix is either a `RowScope.`
+    receiver or not using it. Kotlin says `Unresolved reference 'weight'` and CI says it five minutes
+    later.
+
+    Measured before writing, and the FIRST measurement was wrong: it looked for `Row(` and missed
+    `Row {`, reporting a correct file. With the trailing-lambda form counted the sweep went to zero.
+    Worth recording because a candidate check that reports one hit is exactly where the temptation
+    is to accept it and move on — the hit was the detector's fault, not the code's.
+    """
+    code = strip_code(text)
+    for m in re.finditer(r"^(private |internal )?fun ([\w.]*?)(\w+)\s*\(", code, re.M):
+        start = m.start()
+        ends = [x for x in (code.find("\nfun ", start + 1), code.find("\nprivate fun ", start + 1)) if x > 0]
+        end = min(ends) if ends else len(code)
+        body = code[start:end]
+        if ".weight(" not in body:
+            continue
+        receiver = m.group(2) or ""
+        if "RowScope" in receiver or "ColumnScope" in receiver:
+            continue
+        if re.search(r"\b(Row|Column|LazyRow|LazyColumn|SnyggRow|SnyggColumn)\s*[({]", body):
+            continue
+        fail(path.name, f"`weight` in {m.group(3)}, which is not in a Row or Column scope")
+
+
 def check_suspend_in_lock(path: Path, text: str) -> None:
     """
     RED BUILD 287: `prefs…set(…)` inside `synchronized(askLock) { … }`.
@@ -762,6 +793,7 @@ def main() -> int:
         check_prefs_collect_import(path, text)
         check_layout_imports(path, text)
         check_suspend_in_lock(path, text)
+        check_weight_scope(path, text)
     check_when_coverage()
     check_no_secrets()
 
