@@ -7530,3 +7530,51 @@ Lint's measurement, from the same run: **67 errors, 971 warnings**, on a codebas
 never run on a release. That number is the entire justification for not making it blocking in the
 same commit that switched it on — a gate that arrives with 67 errors is a gate that gets deleted or
 bypassed on the day it is added, and the module says so in §5.2.
+
+---
+
+# §169 — Six rows, and four arrows
+
+Build 301.
+
+## The upgrade was free, and it was not luck
+
+`ROW_COUNT` 3 → 6. `parse` has padded a short read to exactly `ROW_COUNT` with empty, disabled rows
+since it was written — so a stored three-row arrangement opens as three arranged rows and three empty
+ones, nothing he built moves, and nothing new appears on the keyboard until he puts something on it.
+
+**The other direction is not free**, and the constant now says so. `parse` truncates as well as pads,
+so a six-row arrangement read by a three-row build loses rows four to six the first time the app
+writes. That is exactly the delivery gate's rollback clause — a change to the meaning of stored data
+that cannot be rolled back — and the note at the constant is the version marker's cheap cousin: a
+warning to the next person that lowering this number deletes his work.
+
+F4, F5 and F6 join F1–F3. The key that draws them was already written once for the three rather than
+three times, so it became six by extending one `when`.
+
+## The arrows
+
+Left, right, up, down. They matter more here than on an ordinary keyboard: he dictates rather than
+types, and moving a cursor by touch means aiming at a caret a few pixels wide in text he can barely
+see — the gesture with the worst accuracy on the phone. **A key press cannot miss by three
+characters.**
+
+They send the letter keyboard's own key codes through `keyboardManager.tapKey`, not their own
+movement logic, so long-press repeat and shift-selection are whatever they already were. Written once
+for the four, because four copies of one key is four chances for one of them to drift.
+
+Filed under **Getting about** rather than Editing the text: an arrow changes where he is, not what is
+written.
+
+## Tested
+
+Test 1: 7,810 checks, 0 failed, 2,592 walked swaps — now over six rows rather than three, with the
+count read from a constant instead of written out. Plus the upgrade modelled directly: an old
+three-row arrangement pads to six, the new rows arrive empty AND switched off.
+
+Broken on purpose by putting `ROW_COUNT` back to 3: red, on the check that says the keys and the
+model must agree.
+
+One check had to be repaired first: it compared a swap against the literal names `keysA`/`keysB`,
+which the six-row fixture no longer produces. **A test that repeats its fixture's contents by hand
+fails on the day the fixture changes, for no reason at all** — it reads from the fixture now.

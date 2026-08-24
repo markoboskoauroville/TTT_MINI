@@ -52,6 +52,10 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Layers
@@ -1383,7 +1387,38 @@ fun MaFeatureRow(
                     }
                 }
 
-                MaFeatureKey.ROW_1, MaFeatureKey.ROW_2, MaFeatureKey.ROW_3 -> {
+                MaFeatureKey.ARROW_LEFT, MaFeatureKey.ARROW_RIGHT,
+                MaFeatureKey.ARROW_UP, MaFeatureKey.ARROW_DOWN -> {
+                    // The four arrows, sending the letter keyboard's own key codes.
+                    //
+                    // Written once for the four: the only difference is which code goes out, and
+                    // four copies of one key is four chances for one of them to drift.
+                    val code = when (button.key) {
+                        MaFeatureKey.ARROW_LEFT -> KeyCode.ARROW_LEFT
+                        MaFeatureKey.ARROW_RIGHT -> KeyCode.ARROW_RIGHT
+                        MaFeatureKey.ARROW_UP -> KeyCode.ARROW_UP
+                        else -> KeyCode.ARROW_DOWN
+                    }
+                    val glyph = when (button.key) {
+                        MaFeatureKey.ARROW_LEFT -> Icons.Default.KeyboardArrowLeft
+                        MaFeatureKey.ARROW_RIGHT -> Icons.Default.KeyboardArrowRight
+                        MaFeatureKey.ARROW_UP -> Icons.Default.KeyboardArrowUp
+                        else -> Icons.Default.KeyboardArrowDown
+                    }
+                    ThemedIconKey(
+                        code = code,
+                        icon = glyph,
+                        contentDescription = button.key.label,
+                        modifier = keyMod,
+                    ) {
+                        // Through the keyboard manager, not the editor, so long-press repeat and
+                        // shift-selection behave exactly as they do on the letter keyboard's arrows.
+                        keyboardManager.tapKey(code)
+                    }
+                }
+
+                MaFeatureKey.ROW_1, MaFeatureKey.ROW_2, MaFeatureKey.ROW_3,
+                MaFeatureKey.ROW_4, MaFeatureKey.ROW_5, MaFeatureKey.ROW_6 -> {
                     // F1, F2, F3 — one row each, and the ring says which are showing.
                     //
                     // Written once for the three rather than three times: the only difference
@@ -1392,7 +1427,10 @@ fun MaFeatureRow(
                     val which = when (button.key) {
                         MaFeatureKey.ROW_1 -> 0
                         MaFeatureKey.ROW_2 -> 1
-                        else -> 2
+                        MaFeatureKey.ROW_3 -> 2
+                        MaFeatureKey.ROW_4 -> 3
+                        MaFeatureKey.ROW_5 -> 4
+                        else -> 5
                     }
                     val on = storedRows.getOrNull(which)?.enabled == true
                     ThemedKey(

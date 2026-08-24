@@ -288,6 +288,25 @@ enum class MaFeatureKey(val id: String, val label: String) {
     ROW_1("row_1", "F1, show row 1"),
     ROW_2("row_2", "F2, show row 2"),
     ROW_3("row_3", "F3, show row 3"),
+    ROW_4("row_4", "F4, show row 4"),
+    ROW_5("row_5", "F5, show row 5"),
+    ROW_6("row_6", "F6, show row 6"),
+
+    /**
+     * The four arrows: left, right, up, down.
+     *
+     * Plain cursor movement, and the reason they are worth a key each is the reason this whole row
+     * exists. He dictates rather than types, and moving a cursor by touch means aiming at a caret
+     * a few pixels wide in text he can barely see — the gesture with the worst accuracy on the
+     * phone. **A key press cannot miss by three characters.**
+     *
+     * They send the same key codes the letter keyboard's own arrows send, so long-press repeat,
+     * shift-selection and every editor's handling of them are whatever they already were.
+     */
+    ARROW_LEFT("arrow_left", "Left"),
+    ARROW_RIGHT("arrow_right", "Right"),
+    ARROW_UP("arrow_up", "Up"),
+    ARROW_DOWN("arrow_down", "Down"),
 
     SEND("send", "Send"),
 
@@ -549,6 +568,12 @@ val MaFeatureKey.group: MaFeatureGroup
         MaFeatureKey.APP_SWITCH,
         MaFeatureKey.NEXT_FIELD,
         MaFeatureKey.SCROLL,
+        // Moving about, which is what an arrow does. Not "editing the text": an arrow changes where
+        // he is, not what is written.
+        MaFeatureKey.ARROW_LEFT,
+        MaFeatureKey.ARROW_RIGHT,
+        MaFeatureKey.ARROW_UP,
+        MaFeatureKey.ARROW_DOWN,
         -> MaFeatureGroup.MOVING
 
         // The shape of the keyboard rather than anything typed with it: which zones show, whether it
@@ -563,6 +588,9 @@ val MaFeatureKey.group: MaFeatureGroup
         MaFeatureKey.ROW_1,
         MaFeatureKey.ROW_2,
         MaFeatureKey.ROW_3,
+        MaFeatureKey.ROW_4,
+        MaFeatureKey.ROW_5,
+        MaFeatureKey.ROW_6,
         -> MaFeatureGroup.KEYBOARD
 
         MaFeatureKey.SETTINGS,

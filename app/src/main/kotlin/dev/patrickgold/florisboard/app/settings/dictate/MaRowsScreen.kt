@@ -40,6 +40,10 @@ import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Numbers
@@ -595,6 +599,18 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             MaFeatureKey.ROW_1 -> letters("F1")
             MaFeatureKey.ROW_2 -> letters("F2")
             MaFeatureKey.ROW_3 -> letters("F3")
+            MaFeatureKey.ROW_4 -> letters("F4")
+            MaFeatureKey.ROW_5 -> letters("F5")
+            MaFeatureKey.ROW_6 -> letters("F6")
+            // The arrows the keyboard itself draws, so the picker and the key are one picture.
+            MaFeatureKey.ARROW_LEFT ->
+                Icon(Icons.Default.KeyboardArrowLeft, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.ARROW_RIGHT ->
+                Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.ARROW_UP ->
+                Icon(Icons.Default.KeyboardArrowUp, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.ARROW_DOWN ->
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.SEND ->
                 Icon(Icons.Default.ArrowUpward, contentDescription = null, tint = tint, modifier = size)
             // The red dot, drawn rather than tinted: on this screen every other glyph takes the row's

@@ -21,7 +21,14 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 299.** The last stretch, newest first:
+**Build 301.** The last stretch, newest first:
+
+- **Six feature rows**, up from three, and **F4/F5/F6** to go with F1–F3. The upgrade is free
+  because `parse` has always padded a short read: his three rows come back as rows one to three and
+  the new ones arrive empty and switched off. **Lowering `ROW_COUNT` would delete the rows beyond
+  it** — noted at the constant.
+- **Four arrow keys**, left/right/up/down, sending the letter keyboard's own key codes through
+  `keyboardManager.tapKey`, so long-press repeat and shift-selection behave exactly as they do there.
 
 - **The delivery gate is in CI.** Every action pinned by commit SHA (the one blocking finding of the
   nine gates); `verify.py` and all 18 Test 1 suites blocking; the built APK scanned for key shapes

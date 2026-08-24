@@ -52,7 +52,21 @@ object MaRows {
     private const val T_MACRO = "m"
 
     /** Three rows, always. They are presets to switch between, not a list to grow. */
-    const val ROW_COUNT = 3
+    /**
+     * SIX ROWS, up from three.
+     *
+     * The upgrade is free and that is not luck — `parse` has always padded a short read to exactly
+     * ROW_COUNT with empty, disabled rows. His three arranged rows come back as rows one to three
+     * and rows four to six arrive empty and switched off, so nothing he built moves and nothing new
+     * appears on the keyboard until he puts something on it.
+     *
+     * Going the other way would not be free: a stored six-row arrangement read by a three-row build
+     * silently loses rows four to six, because `parse` truncates as well as pads. That is the
+     * rollback clause of the delivery gate, and it is why this note exists — **if this number is
+     * ever lowered, the rows beyond it are deleted from his preference the first time the app
+     * writes.**
+     */
+    const val ROW_COUNT = 6
 
     /**
      * The copy row: a fourth row that belongs to the transcription view alone.
