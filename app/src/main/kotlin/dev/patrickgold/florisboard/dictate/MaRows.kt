@@ -184,6 +184,36 @@ object MaRows {
         return out
     }
 
+    /**
+     * Moves a row to another position, sliding everything between it and there along by one.
+     *
+     * ### A move, where `swapRows` was a swap, and that is a real change
+     *
+     * The buttons this replaces said "Row 2 becomes Row 1", and for a BUTTON a swap is right: the
+     * sentence names two rows and touches two rows, and an insert that silently renumbered a third
+     * would be a surprise.
+     *
+     * A DRAG says something different. Dragging the third tab to the front depicts sliding it in
+     * front of the others, and every list on the phone that can be dragged behaves that way. **The
+     * gesture is the specification.** A drag that swapped instead would leave the row he dragged
+     * past sitting where he dragged it from, which is not what his finger drew.
+     *
+     * So the semantics follow the gesture rather than the model, and `swapRows` stays where it is:
+     * still correct, still tested, no longer called from the editor.
+     *
+     * `MaFeatureOrder.move` does exactly this for keys within a row, and the reasoning there is the
+     * same one written out — a move, not a swap, because that is what the eye expects from watching
+     * a drag.
+     */
+    fun moveRow(rows: List<Row>, from: Int, to: Int): List<Row> {
+        if (from !in rows.indices) return rows
+        val target = to.coerceIn(0, rows.size - 1)
+        if (from == target) return rows
+        val out = rows.toMutableList()
+        out.add(target, out.removeAt(from))
+        return out
+    }
+
     /** Turns one row on or off, leaving everything else as it was. */
     fun setRowEnabled(rows: List<Row>, index: Int, enabled: Boolean): List<Row> {
         if (index !in rows.indices) return rows

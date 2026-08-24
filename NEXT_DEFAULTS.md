@@ -7578,3 +7578,59 @@ model must agree.
 One check had to be repaired first: it compared a swap against the literal names `keysA`/`keysB`,
 which the six-row fixture no longer produces. **A test that repeats its fixture's contents by hand
 fails on the day the fixture changes, for no reason at all** — it reads from the fixture now.
+
+---
+
+# §170 — The tabs are dragged
+
+Build 302. The "Row 2 becomes → Row 1" buttons are gone and the tabs are dragged instead.
+
+At three rows the buttons were two per tab. At six they were **five per tab, thirty sentences to
+read**, for something a finger says in one movement. Six rows made a workable control unworkable, and
+that is worth noticing as a shape: a control that scales with the number of things it operates on
+stops being a control at some size, and the size is usually smaller than you expect.
+
+## The semantics changed, on purpose
+
+The buttons **swapped**. The drag **moves**, and §165's argument for swapping does not carry over —
+it was an argument about a BUTTON. A sentence that names two rows and touches two rows is honest; an
+insert that silently renumbered a third would be a surprise.
+
+A drag says something different. Dragging the third tab to the front depicts sliding it in front of
+the others, and every draggable list on the phone behaves that way. **The gesture is the
+specification.** A drag that swapped would leave the row he dragged past sitting where he started,
+which is not what his finger drew.
+
+`swapRows` stays in the model, still correct and still tested. It is simply no longer what the editor
+calls. `MaFeatureOrder.move` has done exactly this for keys within a row since it was written, with
+the same reasoning written out.
+
+## Long press first
+
+A plain tap still selects, so the gesture he uses constantly is untouched and reordering is
+deliberate. A drag that began on the first pixel of movement would reorder his rows every time his
+thumb slid slightly while tapping — and he would not know which of the six had moved.
+
+The target is the distance travelled divided by the tab width, **rounded**: the row lands where the
+finger is rather than where it has fully passed. A drag needing 51% of a tab to register reads as
+being ignored.
+
+## The check that read its own import
+
+The check for the long press searched for `detectDragGesturesAfterLongPress` anywhere in the file —
+and passed with the long press removed, because **the import line still contained the name.** A check
+satisfied by the very line the mistake would leave behind.
+
+It matches the call now, with the trailing paren, plus a second check that no bare `detectDragGestures(`
+appears. Found by sabotage, as usual, and it is the third check in a fortnight that was passing for a
+reason unrelated to what it claimed.
+
+## Tested
+
+Test 1: 15,602 checks, 0 failed, 5,184 walked reorders — every sequence of two moves over six rows,
+asserting six rows survive, nothing is lost and nothing is duplicated, exactly as the swap suite does.
+Plus the distance-to-index arithmetic at both clamps.
+
+Broken three ways: the drag made a swap (red, including *a move is not a swap*, which is the check
+that would catch somebody quietly reverting the semantics), and the long press removed (red, once the
+check was repaired).

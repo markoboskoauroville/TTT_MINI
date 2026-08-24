@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 301.** The last stretch, newest first:
+**Build 302.** The last stretch, newest first:
+
+- **Tabs are dragged to reorder the rows.** Long press, then slide; a plain tap still selects. The
+  "Row 2 becomes Row 1" buttons are gone — at six rows that was five buttons per tab. The drag
+  **moves** where the buttons swapped, because a drag depicts sliding in front of the others.
+  `MaRows.moveRow`; `swapRows` stays, tested, no longer called from the editor.
 
 - **Six feature rows**, up from three, and **F4/F5/F6** to go with F1–F3. The upgrade is free
   because `parse` has always padded a short read: his three rows come back as rows one to three and

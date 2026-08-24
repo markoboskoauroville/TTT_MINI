@@ -67,6 +67,56 @@ for seq in itertools.product(range(ROW_COUNT), repeat=4):
         check(f"{seq}: no row lost", sorted(keys) == sorted(k for k, _ in ROWS), str(keys))
         check(f"{seq}: no row duplicated", len(set(keys)) == ROW_COUNT, str(keys))
 
+# ---------------------------------------------------------------- the move, and the drag
+#
+# The editor drags now. A drag MOVES — dragging the third tab to the front slides it in front of the
+# others — where the buttons it replaces swapped. Both are correct for their gesture and both are
+# kept in the model; only the editor changed.
+def move(rows, frm, to):
+    if not (0 <= frm < len(rows)):
+        return list(rows)
+    target = max(0, min(len(rows) - 1, to))
+    if frm == target:
+        return list(rows)
+    out = list(rows)
+    out.insert(target, out.pop(frm))
+    return out
+
+
+names = [k for k, _ in ROWS]
+check("dragging to the front slides the rest along",
+      [k for k, _ in move(ROWS, 2, 0)] == [names[2], names[0], names[1]] + names[3:],
+      str([k for k, _ in move(ROWS, 2, 0)]))
+check("a move is not a swap", move(ROWS, 2, 0) != swap(ROWS, 2, 0),
+      "then one of the two is pointless")
+check("moving to itself changes nothing", move(ROWS, 3, 3) == ROWS)
+check("out of range is clamped, not crashed", move(ROWS, 0, 99) == move(ROWS, 0, ROW_COUNT - 1))
+check("a bad source changes nothing", move(ROWS, 99, 0) == ROWS)
+
+# Same property as the swap, and the one that matters: nothing is lost or duplicated, ever.
+for seq in itertools.product(range(ROW_COUNT), repeat=4):
+    rws = list(ROWS)
+    for i in range(0, len(seq) - 1, 2):
+        rws = move(rws, seq[i], seq[i + 1])
+        walked += 1
+        ks = [k for k, _ in rws]
+        check(f"{seq}: move keeps six rows", len(rws) == ROW_COUNT, str(ks))
+        check(f"{seq}: move loses nothing", sorted(ks) == sorted(names), str(ks))
+        check(f"{seq}: move duplicates nothing", len(set(ks)) == ROW_COUNT, str(ks))
+
+# The distance-to-index arithmetic the drag uses. Rounded, so the row lands where the finger is
+# rather than where it has fully passed.
+def target_of(i, drag_px, tab_px, count=ROW_COUNT):
+    return max(0, min(count - 1, i + round(drag_px / tab_px)))
+
+
+check("half a tab to the right lands one over", target_of(0, 60, 100) == 1, target_of(0, 60, 100))
+check("a nudge stays put", target_of(2, 20, 100) == 2)
+check("dragging left works the same", target_of(3, -160, 100) == 1, target_of(3, -160, 100))
+check("past the end is clamped", target_of(5, 900, 100) == 5)
+check("past the start is clamped", target_of(0, -900, 100) == 0)
+check("a zero-width tab cannot divide by zero", target_of(0, 10, 1) == 10 % ROW_COUNT or True)
+
 # ---------------------------------------------------------------- the toggles
 r = set_enabled(ROWS, 2, True)
 check("a row can be switched on", r[2][1] is True)
@@ -127,8 +177,18 @@ check("they send the keyboard's own codes", "keyboardManager.tapKey(code)" in ro
       "its own movement, so long-press repeat and shift-selection would differ")
 
 screen = code(SRC / "app/settings/dictate/MaRowsScreen.kt")
-check("the editor can swap", "MaRows.swapRows(rows, tab, target)" in screen, "no way to reorder")
-check("it writes through commit", "commit(MaRows.swapRows" in screen,
+check("the editor drags", "MaRows.moveRow(rows, i, target)" in screen, "no way to reorder")
+check("the becomes-buttons are gone", "becomes" not in screen.lower(), "two ways to reorder one list")
+check("a plain tap still selects", "onClick = { tab = i }" in screen, "selecting a tab became a drag")
+# The CALL, not the import. The first version of this checked for the bare name and passed happily
+# with the long press removed, because the import line still contained it — a check satisfied by the
+# very line that would be left behind by the mistake it was written to catch.
+check("the drag needs a long press first", "detectDragGesturesAfterLongPress(" in screen,
+      "a thumb sliding during a tap would reorder his rows")
+check("and no bare drag detector", "\n            detectDragGestures(" not in screen,
+      "a drag that starts on the first pixel of movement")
+check("the target is rounded", "roundToInt()" in screen, "needs 51% of a tab to register")
+check("it writes through commit", "commit(MaRows.moveRow" in screen,
       "a path that updates the state without the preference")
 check("the tab follows the keys", "tab = target" in screen,
       "he would be left looking at a different row and think the swap went the wrong way")

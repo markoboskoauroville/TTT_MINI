@@ -12,6 +12,10 @@ package dev.patrickgold.florisboard.app.settings.dictate
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -226,45 +230,55 @@ fun MaRowsScreen() = FlorisScreen {
         }
 
 
-        // BECOME ANOTHER ROW.
-        //
-        // The tab he is on can trade places with either of the others: keys, arrangement and on/off
-        // state, all of it, in one move. He builds a row, decides it belongs nearer his thumb, and
-        // says so — rather than rebuilding it key by key one row down.
-        //
-        // A swap and never an insert. Three rows exist, always. A move that shuffled the others
-        // along would renumber a row he never touched, and row 1 is the one his thumb reaches
-        // without moving — an arrangement built by muscle memory must not shift under him because he
-        // rearranged something else.
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        ) {
-            Text(
-                text = "Row ${tab + 1} becomes",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            for (target in 0 until MaRows.ROW_COUNT) {
-                if (target == tab) continue
-                TextButton(
-                    onClick = {
-                        // Through `commit`, like every other edit on this screen: it sets the
-                        // state and writes the preference in one place, so there is no path that
-                        // updates one without the other.
-                        commit(MaRows.swapRows(rows, tab, target))
-                        // Follow the keys, not the number. He was looking at a set of keys; after
-                        // the swap they are on row `target`, and leaving him on the old tab would
-                        // show him a different row and look like the swap went the wrong way.
-                        tab = target
-                    },
-                ) { Text("Row ${target + 1}") }
-            }
-        }
+        // The "Row 2 becomes Row 1" buttons are gone. The tabs are dragged instead — see the strip
+        // below. Six rows made the button version untenable anyway: it was five buttons per tab,
+        // thirty sentences to read, for a thing his finger can say in one movement.
 
-        TabRow(selectedTabIndex = tab) {
+        // DRAG A TAB TO REORDER THE ROWS.
+        //
+        // Long press, then slide. A plain tap still selects, so the gesture he uses constantly is
+        // untouched and the new one is deliberate — a drag that started on the first pixel of
+        // movement would reorder his rows every time his thumb slid while tapping.
+        //
+        // The drag MOVES rather than swaps, which is a real change from the buttons this replaces
+        // and is the right one: dragging the third tab to the front depicts sliding it in front of
+        // the others, and every draggable list on the phone behaves that way. **The gesture is the
+        // specification.** A swap would leave the row he dragged past sitting where he started,
+        // which is not what his finger drew.
+        //
+        // The target is worked out from the distance travelled divided by the tab width, because
+        // the tabs are equal width by construction. Rounded, so the row lands where the finger is
+        // rather than where it has fully passed — a drag that needs 51% of a tab to register reads
+        // as ignoring him.
+        var dragging by remember { mutableStateOf(-1) }
+        var dragBy by remember { mutableStateOf(0f) }
+        var tabWidth by remember { mutableStateOf(1f) }
+        TabRow(
+            selectedTabIndex = tab,
+            modifier = Modifier.onSizeChanged { tabWidth = (it.width / MaRows.ROW_COUNT).toFloat().coerceAtLeast(1f) },
+        ) {
             (0 until MaRows.ROW_COUNT).forEach { i ->
                 Tab(
+                    modifier = Modifier.pointerInput(rows) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = { dragging = i; dragBy = 0f },
+                            onDragEnd = {
+                                val moved = (dragBy / tabWidth).roundToInt()
+                                val target = (i + moved).coerceIn(0, MaRows.ROW_COUNT - 1)
+                                if (dragging >= 0 && target != i) {
+                                    commit(MaRows.moveRow(rows, i, target))
+                                    // Follow the keys, not the number, exactly as the buttons did.
+                                    tab = target
+                                }
+                                dragging = -1
+                                dragBy = 0f
+                            },
+                            onDragCancel = { dragging = -1; dragBy = 0f },
+                        ) { change, drag ->
+                            change.consume()
+                            dragBy += drag.x
+                        }
+                    },
                     selected = tab == i,
                     onClick = { tab = i },
                     text = {

@@ -169,3 +169,4 @@ since been removed.
 - **§167** — The switch says what it saved
 - **§168** — The delivery gate, run, and the one thing it stopped
 - **§169** — Six rows, and four arrows
+- **§170** — The tabs are dragged
