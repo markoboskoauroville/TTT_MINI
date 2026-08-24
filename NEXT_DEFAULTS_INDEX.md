@@ -170,3 +170,4 @@ since been removed.
 - **§168** — The delivery gate, run, and the one thing it stopped
 - **§169** — Six rows, and four arrows
 - **§170** — The tabs are dragged
+- **§171** — One shift, not two

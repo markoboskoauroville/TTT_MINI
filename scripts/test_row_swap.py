@@ -171,6 +171,27 @@ check("the key writes through the model", "MaRows.setRowEnabled(storedRows, whic
 # The four arrows.
 for a in ("LEFT", "RIGHT", "UP", "DOWN"):
     check(f"arrow {a} is a key", f'ARROW_{a}("arrow_{a.lower()}"' in order, "not in the catalogue")
+# ---------------------------------------------------------------- shift is the letter key's shift
+#
+# It used to write inputShiftState directly, which produced capitals and was still a second shift:
+# caps lock took three taps rather than a double tap, and an auto-shift at a sentence start was
+# cleared by touching it. Two implementations of one key is one too many.
+check("shift goes through the dispatcher", "inputEventDispatcher.sendDown(TextKeyData.SHIFT)" in row_ui,
+      "a private copy of shift")
+check("and sends the up as well", "inputEventDispatcher.sendUp(TextKeyData.SHIFT)" in row_ui,
+      "the lock is decided in handleShiftUp: a down alone can arm shift but never lock it")
+# Scoped to the SHIFT key's own branch. The bare search found a second, unrelated write in
+# MaNextFieldKey — where shift is CONSUMED as a modifier for backwards-TAB, which is a different job
+# and is correct where it is. A check that reads the whole file to make a claim about one key will
+# find every other key that touches the same thing.
+shift_branch = row_ui[row_ui.index("MaFeatureKey.SHIFT ->"):]
+shift_branch = shift_branch[:shift_branch.index("MaFeatureKey.", 40)]
+check("the shift key no longer writes the state itself", "inputShiftState =" not in shift_branch,
+      "still setting the flag behind the dispatcher's back")
+check("it carries the real key code", "code = KeyCode.SHIFT," in row_ui, "a NOOP key that fakes shift")
+check("locked looks different from armed", "InputShiftState.CAPS_LOCK) {" in row_ui,
+      "an armed shift and a locked shift would look the same")
+
 check("the arrows are written once", row_ui.count("MaFeatureKey.ARROW_LEFT, MaFeatureKey.ARROW_RIGHT") == 1,
       "four copies is four chances to drift")
 check("they send the keyboard's own codes", "keyboardManager.tapKey(code)" in row_ui,

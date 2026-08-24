@@ -114,6 +114,7 @@ import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.stringRes
 import dev.patrickgold.florisboard.R
@@ -719,30 +720,42 @@ fun MaFeatureRow(
                 }
 
                 MaFeatureKey.SHIFT -> {
-                    // The real shift, not a private flag: it writes the same inputShiftState the
-                    // letter shift writes, so capitals still come out capital and one press still
-                    // means one letter. Its whole reason to exist is that the letter shift is
-                    // unreachable with the keys folded away, which is the state this row is for.
+                    // THE LETTER KEYBOARD'S SHIFT, NOT A COPY OF IT.
+                    //
+                    // It used to write `inputShiftState` directly, cycling off → once → locked on
+                    // every tap. That produced capitals, and it was still a second shift: caps lock
+                    // needed three taps instead of a double tap, an auto-shift at a sentence start
+                    // was cleared by touching it, and nothing about a press reached the editor's own
+                    // shift handling.
+                    //
+                    // **Two implementations of one key is one too many**, and this is the one he
+                    // photographed. It sends `KeyCode.SHIFT` down and up through the input event
+                    // dispatcher now, which is exactly what the letter shift key does — so
+                    // `handleShiftDown`, `handleShiftUp`, the double-tap lock, the Gboard-style
+                    // recapitalisation of a selection and the automatic re-evaluation after a
+                    // sentence all happen here because they are not written here at all.
+                    //
+                    // Down AND up, in that order, because the lock is decided in `handleShiftUp`
+                    // from whether the sequence was uninterrupted. A tap that only sent one half
+                    // would arm shift and never be able to lock it.
                     val shiftState = keyboardManager.activeState.inputShiftState
                     ThemedIconKey(
-                        code = KeyCode.NOOP,
-                        icon = Icons.Default.KeyboardCapslock,
+                        code = KeyCode.SHIFT,
+                        icon = if (shiftState == InputShiftState.CAPS_LOCK) {
+                            Icons.Default.KeyboardCapslock
+                        } else {
+                            Icons.Default.KeyboardArrowUp
+                        },
                         contentDescription = "Shift",
                         modifier = keyMod,
-                        // Lit while it is holding, so a modifier that outlives the press says
-                        // so rather than leaving him to remember whether he armed it.
+                        // Three states, three appearances, the same three the letter key shows:
+                        // off is plain, armed-for-one-letter is lit, locked is lit and wears the
+                        // capslock glyph. An armed shift that looked like an off shift is how a
+                        // sentence comes out wrong and nobody knows why.
                         tint = if (shiftState != InputShiftState.UNSHIFTED) MaSand else null,
                     ) {
-                        keyboardManager.activeState.inputShiftState =
-                            when (keyboardManager.activeState.inputShiftState) {
-                                // Three states in a ring, the same three the letter shift uses:
-                                // off, once, locked. Locked matters here more than on the letters,
-                                // because backwards through a long form is several presses of TAB
-                                // and re-arming shift before each one would be the worse key.
-                                InputShiftState.UNSHIFTED -> InputShiftState.SHIFTED_MANUAL
-                                InputShiftState.SHIFTED_MANUAL -> InputShiftState.CAPS_LOCK
-                                else -> InputShiftState.UNSHIFTED
-                            }
+                        keyboardManager.inputEventDispatcher.sendDown(TextKeyData.SHIFT)
+                        keyboardManager.inputEventDispatcher.sendUp(TextKeyData.SHIFT)
                     }
                 }
 

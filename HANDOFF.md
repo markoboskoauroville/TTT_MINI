@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 302.** The last stretch, newest first:
+**Build 303.** The last stretch, newest first:
+
+- **The feature row's Shift is the letter keyboard's Shift.** It sends `KeyCode.SHIFT` down and up
+  through `inputEventDispatcher` instead of writing `inputShiftState` itself, so double-tap lock,
+  auto-shift, and the recapitalise-a-selection behaviour all arrive for free. Locked wears the
+  capslock glyph; armed is lit; off is plain.
 
 - **Tabs are dragged to reorder the rows.** Long press, then slide; a plain tap still selects. The
   "Row 2 becomes Row 1" buttons are gone — at six rows that was five buttons per tab. The drag

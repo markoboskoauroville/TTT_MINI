@@ -7634,3 +7634,54 @@ Plus the distance-to-index arithmetic at both clamps.
 Broken three ways: the drag made a swap (red, including *a move is not a swap*, which is the check
 that would catch somebody quietly reverting the semantics), and the long press removed (red, once the
 check was repaired).
+
+---
+
+# §171 — One shift, not two
+
+Build 303. He circled the feature row's Shift and asked for the letter keyboard's shift instead —
+identical function, caps, lockable, all of it.
+
+## What it was doing
+
+Writing `inputShiftState` directly, cycling off → once → locked on every tap. **It produced capitals,
+which is why it survived this long, and it was still a second shift:**
+
+- caps lock needed three taps rather than the double tap everybody's thumb already knows
+- an auto-shift at the start of a sentence was *cleared* by touching it, because the cycle started
+  from wherever the state happened to be
+- `handleShiftDown` and `handleShiftUp` never ran, so the Gboard-style recapitalisation of a
+  selection — cycle a selected word through Title, UPPER, lower — did not exist on this key
+- nothing re-evaluated after a sentence ended
+
+**Two implementations of one key is one too many**, and the second one is always the one that drifts,
+because it is the one nobody thinks of when the first is improved.
+
+## What it is now
+
+`inputEventDispatcher.sendDown(TextKeyData.SHIFT)` then `sendUp`. That is exactly what the letter key
+does, so every behaviour above arrives without being written here at all.
+
+**Both halves, and in that order.** The lock is decided inside `handleShiftUp`, from whether the
+dispatcher saw an uninterrupted sequence. A tap that sent only the down would arm shift and never be
+able to lock it — which is the same failure the volume keys had, in a different room.
+
+Three states, three appearances, matching the letter key: off plain, armed lit, locked lit and
+wearing the capslock glyph. An armed shift that looked like an off shift is how a sentence comes out
+wrong with nobody able to say why.
+
+## The check that read the whole file
+
+`"activeState.inputShiftState =" not in row_ui` — and it failed, correctly, on a **different key**:
+`MaNextFieldKey` consumes shift as a modifier for backwards-TAB, which is a different job and right
+where it is.
+
+**A check that reads the whole file to make a claim about one key will find every other key that
+touches the same thing.** It reads the SHIFT branch only now — the same fix as the
+`retranscribeInLanguage` checks two weeks ago, which passed because `cancelTranscription` contained
+the same line.
+
+## Tested
+
+Test 1: 15,607 checks, 0 failed. Broken two ways — the key-up removed, and the whole thing reverted
+to writing the flag — red on two and three respectively.
