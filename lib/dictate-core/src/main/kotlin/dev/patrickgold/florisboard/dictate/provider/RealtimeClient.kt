@@ -44,6 +44,26 @@ object RealtimeClient {
 
     private val wsClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            // A USER-AGENT ON EVERY REQUEST. One interceptor, so no call site can forget.
+            //
+            // Groq sits behind Cloudflare, which refuses a client that sends none: MEASURED
+            // 25.8.2026 in another project, no User-Agent returns 403 with `error code: 1010` on
+            // ALL twenty-one accounts, and 200 on all of them with one. It hits every key
+            // identically, so it reads as the entire ring dying at once.
+            //
+            // This app was sending none. The classifier now recognises that 403 and refuses to bury
+            // keys over it, but **not being refused is better than recovering from being refused**,
+            // and the fix costs one header.
+            //
+            // Descriptive, not a browser string: quota-and-fallback.md and apis/groq.md both say a
+            // real name works and impersonating Chrome is a lie that can be checked.
+            .addInterceptor { chain ->
+                chain.proceed(
+                    chain.request().newBuilder()
+                        .header("User-Agent", "TTTmini/1.0 (Android; Mantra Productions)")
+                        .build(),
+                )
+            }
             .connectTimeout(8, TimeUnit.SECONDS)   // fail a dead route fast instead of stalling the session
             // Race IPv6/IPv4 with OkHttp 5 Happy Eyeballs instead of forcing either address family.
             .fastFallback(true)

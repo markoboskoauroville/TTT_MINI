@@ -63,6 +63,25 @@ class DictateApiException(
             // Search code + type + message together so any of the three can trigger a match.
             val hay = listOf(code, type, message).joinToString(" ") { it.orEmpty() }.lowercase()
             val kind = when {
+                // CLOUDFLARE, NOT THE KEY. Trap 1 of quota-and-fallback.md, and the expensive one.
+                //
+                // `api.groq.com` sits behind Cloudflare, which refuses the CLIENT — so it answers
+                // 403 with `error code: 1010` to **every key identically**. Classified as a bad key,
+                // as the line below did, one request buries the entire ring in a single pass and the
+                // only way back is editing the store by hand.
+                //
+                // MEASURED elsewhere on 25.8.2026: no User-Agent gives 403+1010 on all 21 accounts,
+                // and 200 on all 21 with one. This app sent NO User-Agent until this same
+                // build — the comment first written here claimed it did, and it did not. Both were
+                // fixed together: the header so it is not refused, and this line so a refusal
+                // cannot bury the ring. **The failure it prevents is
+                // silent, total and manual to undo.**
+                //
+                // SERVER_ERROR because that is this app's "not the key's fault, stop asking other
+                // keys" verdict. A new Kind would have meant a branch in every `when` over Kind for
+                // a case that means what SERVER_ERROR already means.
+                status == 403 && (hay.contains("1010") || hay.contains("cloudflare")) ->
+                    Kind.SERVER_ERROR
                 status == 401 || status == 403 ||
                     hay.contains("api key") || hay.contains("api_key") || hay.contains("invalid_api_key") ||
                     hay.contains("unauthorized") || hay.contains("authentication") -> Kind.INVALID_API_KEY

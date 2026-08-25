@@ -8016,3 +8016,64 @@ against a cause not yet found, plus a marker so the next report can say where it
 that it happens. If it loops again, the log line *"refused to read the same passage twice in one
 reading"* will say whether the guard fired — and if it did not, the passage differs between reads and
 the next place to look is `readableScreenText`.
+
+---
+
+# §177 — Audited against the fallback module
+
+Build 312. He wrote `modules/quota-and-fallback.md` after auditing four rings in another project and
+finding three broken the same way, and asked for this app to be brought in line.
+
+## Trap 1 was live, and worse here than the module describes
+
+`fromHttp` classified **every** 403 as a bad key. Groq sits behind Cloudflare, which refuses the
+CLIENT — so a single refusal returns 403 to every key identically and **buries the entire ring in one
+pass**, with nothing on screen to explain it and no way back but editing the store by hand.
+
+And the app sent **no User-Agent at all**, which is precisely what provokes that refusal. MEASURED in
+his other project on 25.8.2026: no User-Agent gives 403 with `error code: 1010` on all twenty-one
+accounts, and 200 on all twenty-one with one.
+
+**The first version of my fix carried a comment saying the app already sent a User-Agent.** I wrote
+it from memory; the grep afterwards said otherwise. Both were corrected in the same commit, and the
+comment now records that it was wrong — because a confident false comment is worse than no comment,
+and this file has said so about somebody else's comments twice.
+
+> **Not being refused is better than recovering from being refused.**
+
+Both were fixed. The header, so it is not refused. The classifier, so a refusal cannot bury the ring.
+
+**The branch must come first**, before the plain 403, and the test asserts the ordering **by index**
+rather than by presence: a branch in the right file in the wrong place is the same bug, and a check
+that only asks whether the line exists would pass.
+
+## What was already right, and worth recording as such
+
+- **Trap 3 — a failure arriving as HTTP 200.** The AssemblyAI poll already reads `status` inside the
+  body and throws on `"error"`. Closed before the module named it.
+- **`dead` and `cool` never confused.** A 429 rests and never buries, and the body is read before the
+  status so a monthly cap wearing a 429 is quota rather than a rate limit. The comment in that file
+  records the afternoon that cost.
+- **Credit words** matched across code, type and message together — so Hume's `zero_credits`-in-a-400
+  shape would classify as quota rather than stopping the run.
+- **Unknown defaults to soft**, touching no key.
+
+Four of the module's five traps were already closed. It is worth saying that plainly: the audit found
+one live fault, not a broken ring.
+
+## Still open, and named rather than quietly skipped
+
+**`Retry-After` and `x-ratelimit-reset-*` are parsed nowhere.** §4 of the module is unimplemented: a
+rested key waits a fixed period rather than the one the provider asked for. Groq answers a per-minute
+429 with `retry-after: 2`. Fixing it means threading a duration from the response through the client
+to the ring — a real change, not a line, and it is in the module's open list rather than pretended
+away.
+
+## Tested
+
+`scripts/test_fallback.py`: 21 checks, 0 failed, porting the classifier and running the module's
+measured bodies through it — Hume's exhausted 400, Groq's rate-limited 429 and invalid-key 401,
+AssemblyAI's 401, and the Cloudflare 403. Broken on purpose by moving the Cloudflare branch below the
+403 branch: red, on the ordering check.
+
+Not tested: no provider was called. Every body here is quoted from his measurements, not from mine.

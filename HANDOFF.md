@@ -21,7 +21,15 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 311.** The last stretch, newest first:
+**Build 312.** The last stretch, newest first:
+
+- **A Cloudflare 403 can no longer bury the key ring.** Every 403 was classified as a bad key, and
+  Cloudflare refuses the *client* — so one request would have killed every key at once, recoverable
+  only by hand. The branch is first, and a test asserts the ordering.
+- **A User-Agent on every request**, from all three clients. The app was sending none, which is what
+  provokes that 403 in the first place.
+- Audited against `MANTRA_MANIFEST/modules/quota-and-fallback.md`; the audit is §11 of that module.
+  **Still open: `Retry-After` is parsed nowhere.**
 
 - **The loop guard moved to `speak`**, where every reading must pass. It was in `continueBelow` and
   the loop survived, which says the loop is on another path — so rather than hunting the caller, the
