@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 306.** The last stretch, newest first:
+**Build 307.** The last stretch, newest first:
+
+- **A circle on every clipboard entry pins it.** Looks like a radio button, behaves like nothing of
+  the sort: any number filled at once, and filled entries sit in the pinned section at the top. It
+  toggles `pinClip`/`unpinClip`, so it is the same pin the long-press popup already had — with the
+  lid off.
 
 - **Copy and cut work when the input connection has gone.** Selecting text collapses the keyboard and
   takes the connection with it; the selection is still on screen, so the accessibility service asks

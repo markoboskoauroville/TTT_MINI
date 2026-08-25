@@ -31,6 +31,11 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -310,10 +315,28 @@ fun ClipboardInputLayout(
         val attributes = remember(item) {
             mapOf("type" to item.type.toString().lowercase())
         }
+        // THE CIRCLE THAT PINS.
+        //
+        // It looks like a radio button and behaves like nothing of the sort: any number of entries
+        // can be filled at once, and filling one moves it to the pinned section at the top.
+        //
+        // A ring rather than a tick box because a ring reads as "one of a set" at a glance and a
+        // tick box reads as "a setting" — and this is a set: he is choosing which of these he is
+        // keeping. **The shape borrowed from radio buttons is borrowed for how it reads, not for how
+        // it behaves**, which is a trade worth making once and worth writing down, since the next
+        // person to see it will think it is a bug.
+        //
+        // Pinning already existed behind a long press and a popup — two gestures and a menu to keep
+        // one line. This is the same operation with the lid off: one tap, on a target that says
+        // what it will do before it is pressed.
+        //
+        // Empty ring is not pinned, filled ring is pinned. The whole state of the thing is in one
+        // shape and nothing has to be remembered.
+        Box(modifier = modifier.fillMaxWidth()) {
         SnyggBox(
             elementName = elementName,
             attributes = attributes,
-            modifier = modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             clickAndSemanticsModifier = Modifier.combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(),
@@ -413,6 +436,30 @@ fun ClipboardInputLayout(
                         text = item.displayText(),
                     )
                 }
+            }
+        }
+
+            // Top right, over the entry, where it cannot be hit by accident while reaching for the
+            // text: the whole card pastes on a tap, so this target has to be somewhere the thumb
+            // does not go on its way to pasting.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        if (item.isPinned) clipboardManager.unpinClip(item) else clipboardManager.pinClip(item)
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .clip(CircleShape)
+                        .border(1.5.dp, MaClipRing, CircleShape)
+                        .background(if (item.isPinned) MaClipRing else Color.Transparent),
+                )
             }
         }
     }
@@ -862,3 +909,11 @@ private fun PopupAction(
         )
     }
 }
+
+/**
+ * The pin circle, in the app's ink.
+ *
+ * One colour for the ring and for the fill, because empty-versus-filled is the whole message and a
+ * second colour would be a second thing to learn.
+ */
+private val MaClipRing = Color(0xFFF2DDB4)

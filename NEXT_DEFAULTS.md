@@ -7800,3 +7800,45 @@ the count printed.
 Not tested: nothing ran on a phone, and the accessibility copy has never been performed. Whether the
 Claude app's text view honours `ACTION_COPY` is the one thing that decides whether this works at all,
 and only his phone can answer it.
+
+---
+
+# §174 — The circle that pins
+
+Build 307.
+
+## A shape borrowed for how it reads, not for how it behaves
+
+It looks like a radio button. It is not one: any number can be filled at once, and filling one moves
+that entry to the pinned section at the top.
+
+A ring rather than a tick box, because **a ring reads as "one of a set" and a tick box reads as "a
+setting"** — and this is a set. He is choosing which of these he is keeping.
+
+Borrowing the radio button's shape while refusing its behaviour is a real trade and worth writing
+down, because the next person to see it will think it is a bug. The alternative — a tick box — would
+have been technically more honest and would have read as a preference, which is the wrong idea
+entirely.
+
+## The pin already existed
+
+Behind a long press and a popup: two gestures and a menu to keep one line. This is the same
+operation with the lid off — one tap, on a target that says what it will do before it is pressed,
+and that shows the current state without being touched.
+
+It toggles `pinClip`/`unpinClip` and reads `item.isPinned`, so there is no second idea of "selected"
+to drift from the one the history sorts by. `ClipboardHistory` has always sectioned pinned above
+unpinned; the circle simply makes that reachable.
+
+Top right of the card, because the whole card pastes on a tap — the circle has to be somewhere the
+thumb does not travel on its way to pasting.
+
+## Tested
+
+Test 1: 7,515 checks, 0 failed, 2,500 walked taps — every sequence of four taps across five entries,
+asserting five entries survive, none is lost, and **nothing pinned ever sits below something
+unpinned**. Plus that order within each section is preserved: a history that reshuffles when he pins
+something is a history he cannot find anything in.
+
+Broken on purpose into an actual radio button — one filled at a time — and confirmed red with nine
+failures, including *a second tap empties it*, which is the one that would leave him unable to unpin.
