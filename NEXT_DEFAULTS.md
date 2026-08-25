@@ -7739,3 +7739,64 @@ no business failing in a commit that touched neither key.
 Test 1: 102 checks, 0 failed. Broken on purpose by reverting zone 2 to the old convention: red on
 both of its checks, and not on zones 1 and 3 — which is what makes it a check on each key rather than
 on the file.
+
+---
+
+# §173 — Copying when the keyboard has been taken away
+
+Build 306.
+
+## The failure
+
+Selecting text in another app makes Android collapse the keyboard, and the input connection goes with
+it. Pinning keeps the keyboard on screen and **does not give the connection back** — so
+`activeContent.selectedText` is empty, `getSelectedText` returns null, and the copy key said:
+
+> *Failed to retrieve selected text requested to copy: either selection state is invalid or an error
+> occurred within the input connection.*
+
+Accurate, and no use to anybody holding a phone.
+
+**The selection never went anywhere.** It is on the screen, in another app's view, and the
+accessibility service can see it and act on it. The keyboard lost its handle on the text; the text is
+still there.
+
+## `ACTION_COPY`, on the node, not the text
+
+The view that owns the selection performs the copy itself, so it copies exactly what that view thinks
+is selected — including a partial selection inside a formatted document, which reading `text` and
+slicing by index gets wrong the moment the view's idea of an index is not a character offset.
+
+A selection of zero length is a cursor, and copying a cursor is a no-op that would look like success
+and leave the old clipboard in place. Refused.
+
+**Second route, not first.** When the connection works it is faster, needs no permission, and is what
+every other keyboard does. This runs only after the first has come back empty. And when both fail the
+message now says *"Nothing to copy — select some text first"*, because at that point it is true and
+it tells him what to do.
+
+## The copy row, from his staging row
+
+`select all · paste · copy · cut · clipboard history · AP · AC · pin`
+
+Copy was the one of the four directions that was missing. **The pin is on this row for a reason that
+has nothing to do with the clipboard**: selecting text is what collapses the keyboard, so the key he
+needs *before* he can press any of the others was one row away — on a row that had just been hidden.
+
+## A check that threw instead of failing
+
+`editor.index(...)` in the ordering check. The sabotage run raised `ValueError`, the count never
+printed, and every other result was lost.
+
+**This is §162 exactly, made again three weeks later.** A check that raises is not a check that
+fails. It uses `find` now, and the guard is also the assertion — both routes present, in the right
+order.
+
+## Tested
+
+Test 1: 112 checks, 0 failed. Broken on purpose by removing the fallback: red on two, cleanly, with
+the count printed.
+
+Not tested: nothing ran on a phone, and the accessibility copy has never been performed. Whether the
+Claude app's text view honours `ACTION_COPY` is the one thing that decides whether this works at all,
+and only his phone can answer it.

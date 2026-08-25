@@ -172,3 +172,4 @@ since been removed.
 - **§170** — The tabs are dragged
 - **§171** — One shift, not two
 - **§172** — The ring convention reaches the keys that predate it
+- **§173** — Copying when the keyboard has been taken away

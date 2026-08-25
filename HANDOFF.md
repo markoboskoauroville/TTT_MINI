@@ -21,7 +21,15 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 304.** The last stretch, newest first:
+**Build 306.** The last stretch, newest first:
+
+- **Copy and cut work when the input connection has gone.** Selecting text collapses the keyboard and
+  takes the connection with it; the selection is still on screen, so the accessibility service asks
+  the view that owns it to `ACTION_COPY`. Second route, tried only after the connection comes back
+  empty. The old message about input connections is gone.
+- **Copy row: select all · paste · copy · cut · clipboard history · AP · AC · pin.** The pin is on
+  this row because selecting is what collapses the keyboard — the key he needs first is now beside
+  the keys it enables.
 
 - **The three zone keys follow the ring convention now**: green ring on, cream ring off, glyph never
   changes. They had it backwards — monochrome ring, green glyph — because they were written before

@@ -906,6 +906,60 @@ class DictateAccessibilityService : AccessibilityService() {
             return MaScreenTargets.countMatchesInView(ims, targets)
         }
 
+        /**
+         * COPY WHAT IS SELECTED, THROUGH ACCESSIBILITY, WHEN THE INPUT CONNECTION CANNOT.
+         *
+         * ### The failure this exists for
+         *
+         * Selecting text in another app makes Android collapse the keyboard, and the input
+         * connection goes with it. Pinning the keyboard keeps it on screen but does not give the
+         * connection back — so the copy key reports *"Failed to retrieve selected text requested to
+         * copy: either selection state is invalid or an error occurred within the input
+         * connection"*, which is true and useless.
+         *
+         * The selection is still there. It is on the SCREEN, in another app's view, and the
+         * accessibility service can see it and act on it. **The keyboard lost its handle on the
+         * text; the text did not go anywhere.**
+         *
+         * ### Why the node's own action rather than reading the text
+         *
+         * `ACTION_COPY` is performed BY the view that owns the selection, so it copies exactly what
+         * that view thinks is selected — including a partial selection inside a formatted document,
+         * which reading `text` and slicing by index gets wrong the moment the view's idea of an
+         * index is not a character offset.
+         *
+         * Returns false when there is no focused node, no selection, or the action is refused, so
+         * the caller can fall back rather than believing a copy happened.
+         */
+        fun copySelectionOnScreen(): Boolean {
+            val ims = instance ?: return false
+            return runCatching {
+                val node = ims.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                    ?: ims.rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                    ?: return false
+                // A selection of zero length is a cursor, and copying a cursor is a no-op that would
+                // look like success and leave the old clipboard in place.
+                val start = node.textSelectionStart
+                val end = node.textSelectionEnd
+                if (start < 0 || end < 0 || start == end) return false
+                node.performAction(AccessibilityNodeInfo.ACTION_COPY)
+            }.getOrDefault(false)
+        }
+
+        /** The same, for cut. */
+        fun cutSelectionOnScreen(): Boolean {
+            val ims = instance ?: return false
+            return runCatching {
+                val node = ims.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                    ?: ims.rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                    ?: return false
+                val start = node.textSelectionStart
+                val end = node.textSelectionEnd
+                if (start < 0 || end < 0 || start == end) return false
+                node.performAction(AccessibilityNodeInfo.ACTION_CUT)
+            }.getOrDefault(false)
+        }
+
         /** Scrolls the match at [rank] into view without pressing it. */
         fun revealScreenTargetAt(targets: List<String>, rank: Int): Boolean {
             val ims = instance ?: return false

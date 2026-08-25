@@ -163,11 +163,46 @@ block = block[:block.index(").map")]
 copy_order = [l.strip().rstrip(",").replace("MaFeatureKey.", "")
               for l in block.splitlines() if l.strip().startswith("MaFeatureKey.")]
 check("the copy row reads as he asked",
-      copy_order == ["SELECT_ALL", "PASTE", "CUT", "CLIP_HISTORY", "ALL_PASTE", "ALL_CLEAR"], str(copy_order))
+      copy_order == ["SELECT_ALL", "PASTE", "COPY", "CUT", "CLIP_HISTORY",
+                     "ALL_PASTE", "ALL_CLEAR", "PIN"], str(copy_order))
+check("copy is on it", "COPY" in copy_order, "the one operation of the four that was missing")
+check("the pin is last", copy_order[-1] == "PIN",
+      "the key that stops Android collapsing the keyboard is one row away from the keys it enables")
 check("transcription history is off the copy row", "HISTORY" not in copy_order,
       "two ideas of history one key apart")
 check("but still in the catalogue", 'HISTORY("history"' in (SRC / "dictate/MaFeatureOrder.kt").read_text(),
       "removed from the app rather than from the row")
+
+# ---------------------------------------------------------------- copy without a connection
+#
+# Selecting text in another app makes Android collapse the keyboard, and the input connection goes
+# with it. Pinning keeps the keyboard on screen and does not give the connection back — so the copy
+# key reported "either selection state is invalid or an error occurred within the input connection",
+# which was accurate and useless. The selection is still on the screen; the accessibility service can
+# ask the view that owns it to copy it.
+editor = re.sub(r"^\s*//.*$", "", re.sub(r"/\*.*?\*/", "",
+                (SRC / "ime/editor/EditorInstance.kt").read_text(), flags=re.S), flags=re.M)
+svc = re.sub(r"^\s*//.*$", "", re.sub(r"/\*.*?\*/", "",
+             (SRC / "dictate/overlay/DictateAccessibilityService.kt").read_text(), flags=re.S), flags=re.M)
+
+check("the service can copy a screen selection", "fun copySelectionOnScreen" in svc, "no second route")
+check("and cut one", "fun cutSelectionOnScreen" in svc, "cut still dies with the connection")
+check("it uses the view's own action", "ACTION_COPY" in svc,
+      "reading the text and slicing by index gets a formatted selection wrong")
+check("a cursor is not a selection", "start == end) return false" in svc,
+      "copying a cursor would look like success and leave the old clipboard")
+
+check("copy falls back to it", "DictateAccessibilityService.copySelectionOnScreen()" in editor, "no fallback")
+check("cut falls back to it", "DictateAccessibilityService.cutSelectionOnScreen()" in editor, "no fallback")
+# find, not index. The sabotage run THREW here rather than failing — the count never printed and the
+# other results were lost. Exactly the fault fixed in §162 and made again: **a check that raises is
+# not a check that fails.** Guarded, and the guard is also the assertion that both are present.
+conn_at = editor.find("getSelectedText(0)")
+fallback_at = editor.find("copySelectionOnScreen()")
+check("the connection is tried FIRST", conn_at >= 0 and fallback_at > conn_at,
+      "the fallback is missing, or it runs before the fast route that needs no permission")
+check("the old message is gone", "an error occurred within the input connection" not in editor,
+      "a message describing an input connection to somebody holding a phone")
 
 # NOTE, PAID FOR ONCE: this block was appended to the END of the file, after the exit, and reported
 # a happy total having run none of it. The count went up by two for an unrelated reason and hid it.

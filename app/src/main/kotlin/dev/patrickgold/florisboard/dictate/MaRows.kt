@@ -84,6 +84,10 @@ object MaRows {
         listOf(
             MaFeatureKey.SELECT_ALL,
             MaFeatureKey.PASTE,
+            // COPY, sixth in the staging row he photographed, and it belongs here rather than
+            // anywhere else: select-all, paste, copy and cut are one operation in four directions
+            // and having three of them together was the odd arrangement, not this.
+            MaFeatureKey.COPY,
             MaFeatureKey.CUT,
             MaFeatureKey.CLIP_HISTORY,
             // HISTORY — the transcription history — is off this row, at his request.
@@ -96,6 +100,14 @@ object MaRows {
             // Still in the catalogue, under Dictation, where somebody looking for it will look.
             MaFeatureKey.ALL_PASTE,
             MaFeatureKey.ALL_CLEAR,
+            // PIN, last, after AC.
+            //
+            // It is on this row for a reason that has nothing to do with the clipboard and
+            // everything to do with using it: **selecting text makes Android collapse the
+            // keyboard**, and the pin is what keeps it up. So the key he needs before he can press
+            // any of the others is on the same row as the others, rather than one row away on a row
+            // that has just been hidden.
+            MaFeatureKey.PIN,
         ).map { Entry(Button.Builtin(it)) },
         enabled = true,
     )

@@ -39,6 +39,7 @@ import dev.patrickgold.florisboard.ime.text.composing.Appender
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.dictate.MaBucketUndo
+import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -564,8 +565,12 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
         if (text != null) {
             clipboardManager.addNewPlaintext(text.toString())
+        } else if (DictateAccessibilityService.cutSelectionOnScreen()) {
+            // See performClipboardCopy for the whole reasoning. The connection is gone, the
+            // selection is not, and the view that owns it can cut it itself.
+            return true
         } else {
-            appContext.showShortToastSync("Failed to retrieve selected text requested to cut: Eiter selection state is invalid or an error occurred within the input connection.")
+            appContext.showShortToastSync("Nothing to cut \u2014 select some text first.")
         }
         return deleteBackwards(OperationUnit.CHARACTERS)
     }
@@ -582,8 +587,27 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
         if (text != null) {
             clipboardManager.addNewPlaintext(text.toString())
+        } else if (DictateAccessibilityService.copySelectionOnScreen()) {
+            // THE SECOND ROUTE, FOR THE CASE THAT MADE THIS KEY LOOK BROKEN.
+            //
+            // Selecting text in another app makes Android collapse the keyboard, and the input
+            // connection goes with it. Pinning keeps the keyboard on screen and does NOT give the
+            // connection back — so `selectedText` is empty, `getSelectedText` returns null, and the
+            // key used to say "either selection state is invalid or an error occurred within the
+            // input connection", which is accurate and no use to anybody.
+            //
+            // The selection never went anywhere. It is on the screen, in another app's view, and
+            // the accessibility service can ask that view to copy it. **The keyboard lost its handle
+            // on the text; the text is still there.**
+            //
+            // Second, not first: when the connection works it is faster, it is what every other
+            // keyboard uses, and it does not need a permission. This runs only when the first route
+            // has already come back empty.
+            return true
         } else {
-            appContext.showShortToastSync("Failed to retrieve selected text requested to copy: Eiter selection state is invalid or an error occurred within the input connection.")
+            // Only reachable now when there is genuinely no selection anywhere — so it says that,
+            // in words that tell him what to do, instead of describing an input connection.
+            appContext.showShortToastSync("Nothing to copy \u2014 select some text first.")
         }
         val activeSelection = activeContent.selection
         return setSelection(activeSelection.end, activeSelection.end)
