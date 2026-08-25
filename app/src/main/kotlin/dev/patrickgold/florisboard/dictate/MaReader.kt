@@ -225,6 +225,7 @@ object MaReader {
     private suspend fun speak(context: Context, text: String, onMessage: (String) -> Unit) {
         val prefs by FlorisPreferenceStore
         lastPassage = text
+        passagesRead.add(normalisedForCompare(text))
         val voice = MaSpeechify.chosenVoice(MaLanguage.active())
         state = State.LOADING
 
@@ -358,6 +359,12 @@ object MaReader {
      * either stop early on a long page or spin on a short one.
      */
     private suspend fun continueBelow(context: Context, onMessage: (String) -> Unit) {
+        // WHAT WAS READ BEFORE THE SCROLL, so "did the screen actually move" can be answered.
+        //
+        // `scrollScreenDown` returns whether the scroll ACTION was accepted, not whether anything
+        // moved — and at the bottom of a list it is accepted and nothing moves. That was half the
+        // loop.
+        val before = DictateAccessibilityService.readableScreenText()
         val moved = DictateAccessibilityService.scrollScreenDown()
         if (!moved) {
             state = State.IDLE
@@ -367,13 +374,82 @@ object MaReader {
         // would find the old ones, or none at all.
         kotlinx.coroutines.delay(SETTLE_MS)
         val next = DictateAccessibilityService.readableScreenText()
-        if (next.isBlank() || next == lastPassage) {
+
+        // THE LOOP AT THE END OF A CHAT, AND WHY IT WAS NOT CAUGHT BY THE OLD CHECK.
+        //
+        // It compared the new passage against `lastPassage` — the one immediately before — and
+        // stopped when they were identical. At the bottom of a chat the screen does not move, so the
+        // two SHOULD be identical and it should have stopped.
+        //
+        // They were not identical. A live screen changes by a character or two between reads: a
+        // clock in the status bar, a relative timestamp, a typing indicator, the reading overlay
+        // itself. **One character of difference made the equality check false, and it read the same
+        // screen again, and again.** He counted a thousand times and that is not hyperbole — nothing
+        // in the loop was bounded.
+        //
+        // Three answers, because one of them alone is the kind of fix that comes back:
+        //
+        //  1. the screen did not move — compare what was on it before and after the scroll;
+        //  2. this passage has been read ALREADY, at any point in this reading, not just last;
+        //  3. a hard ceiling on how many screens one press may read.
+        //
+        // The third is a backstop and is meant never to fire. It is here because the first two are
+        // judgements about text from another app, and a judgement can be wrong, while a counter
+        // cannot run forever.
+        val cleaned = next.trim()
+        val screenStuck = normalisedForCompare(before) == normalisedForCompare(next)
+        val seenBefore = passagesRead.contains(normalisedForCompare(cleaned))
+        if (cleaned.isBlank() || screenStuck || seenBefore || passagesRead.size >= MAX_SCREENS) {
             state = State.IDLE
-            MaLog.add("read", "reached the end")
+            MaLog.add(
+                "read",
+                when {
+                    cleaned.isBlank() -> "reached the end — nothing left to read"
+                    screenStuck -> "reached the end — the screen did not move"
+                    seenBefore -> "reached the end — this screen has been read already"
+                    else -> "stopped after $MAX_SCREENS screens"
+                },
+            )
             return
         }
+        passagesRead.add(normalisedForCompare(cleaned))
         speak(context, next, onMessage)
     }
+
+    /**
+     * Every passage read since this reading began, so one cannot be read twice.
+     *
+     * Cleared by [stop] and by the start of a new reading — it is about this reading, not about the
+     * app's whole life. Normalised, because the comparison it exists for is defeated by exactly the
+     * differences normalising removes.
+     */
+    private val passagesRead = mutableSetOf<String>()
+
+    /**
+     * Text as it is compared, not as it is read.
+     *
+     * Digits go, because a clock and a relative timestamp are the commonest thing that changes
+     * between two reads of one screen. Whitespace collapses, because a re-laid-out list wraps
+     * differently for the same words. What is left is the words, which is what "the same screen"
+     * means to him.
+     */
+    private fun normalisedForCompare(text: String): String =
+        // Every non-letter becomes a SPACE rather than being dropped.
+        //
+        // The first version filtered to `isLetter() || it == ' '`, which deleted newlines — so a
+        // re-wrapped screen turned "two\nthree" into "twothree" and compared unequal to the same
+        // words wrapped differently. That is exactly the failure this function exists to prevent,
+        // reintroduced inside the fix for it, and the test caught it before the build.
+        text.lowercase().map { if (it.isLetter()) it else ' ' }
+            .joinToString("").split(' ').filter { it.isNotBlank() }.joinToString(" ")
+
+    /**
+     * The most screens one press of the reader may work through.
+     *
+     * A backstop, not a feature. Thirty screens is far past any passage he has read in one go and
+     * far short of a thousand.
+     */
+    private const val MAX_SCREENS = 30
 
     /**
      * Follows the playhead and publishes the word being spoken.
@@ -517,6 +593,10 @@ object MaReader {
         // Without this, pressing play again on the same screen would find the text identical to
         // last time and stop immediately, which reads as a reader that has died.
         lastPassage = ""
+        // The record of what has been read belongs to one reading. Kept across a stop, the next
+        // reading of the same screen would find it "already read" and refuse to start — the fix
+        // becoming the bug, which is how the loop got here in the first place.
+        passagesRead.clear()
         state = State.IDLE
     }
 

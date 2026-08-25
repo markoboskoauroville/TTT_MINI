@@ -21,7 +21,13 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 307.** The last stretch, newest first:
+**Build 308.** The last stretch, newest first:
+
+- **The reader stops at the end instead of looping.** It compared each new passage only against the
+  one before, and a live screen differs by a character between reads — a clock, a timestamp — so it
+  read the same screen forever. Three answers now: the screen must actually have moved, the passage
+  must not have been read already *at any point in this reading*, and a ceiling of 30 screens as a
+  backstop. Comparison is on letters only, so a ticking clock cannot make one screen look like two.
 
 - **A circle on every clipboard entry pins it.** Looks like a radio button, behaves like nothing of
   the sort: any number filled at once, and filled entries sit in the pinned section at the top. It

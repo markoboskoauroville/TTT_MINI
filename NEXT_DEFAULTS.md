@@ -7842,3 +7842,60 @@ something is a history he cannot find anything in.
 
 Broken on purpose into an actual radio button — one filled at a time — and confirmed red with nine
 failures, including *a second tap empties it*, which is the one that would leave him unable to unpin.
+
+---
+
+# §175 — The reader that would not stop
+
+Build 308. *"When it comes to the end, it starts to loop. It reads the same thing 1,000 times."*
+
+## Why the old guard could not work
+
+`continueBelow` compared the new passage against `lastPassage` — the one immediately before — and
+stopped when they were identical. At the bottom of a chat the screen does not move, so they should
+have been identical.
+
+They were not. **A live screen differs by a character or two between two reads**: the clock in the
+status bar, a relative timestamp, a typing indicator, the reading overlay itself. One character made
+the equality false, so it read the same screen again. Nothing in that loop was bounded, so *a
+thousand times* is not hyperbole.
+
+And `scrollScreenDown` returns whether the scroll ACTION was accepted, not whether anything moved. At
+the bottom of a list it is accepted and nothing moves.
+
+## Three answers, because one is the kind of fix that comes back
+
+1. **The screen must actually have moved** — read it before the scroll and after, and compare.
+2. **The passage must not have been read already**, at any point in this reading, not just last.
+3. **A ceiling of 30 screens.**
+
+The third is a backstop and is meant never to fire. It is there because the first two are judgements
+about text belonging to another app, and a judgement can be wrong, while a counter cannot run
+forever.
+
+Comparison is on **letters only** — every other character becomes a space. Digits go because a clock
+is the commonest thing that changes between two reads of one screen; whitespace collapses because a
+re-laid-out list wraps the same words differently.
+
+The record is cleared on stop and seeded with the first screen. Kept across readings, the fix would
+refuse to read a page a second time ever — the fix becoming the bug, which is how the loop arrived.
+
+## The test found two bugs in the fix before the build
+
+**The normaliser dropped newlines** instead of turning them into spaces, so `two\nthree` became
+`twothree` and a re-wrapped screen compared unequal to the same words. That is precisely the failure
+this function exists to prevent, reintroduced inside the fix for it.
+
+**A fixture could not reach the condition it was written for**: the ceiling test used "screen 1",
+"screen 2"… and the normaliser strips digits, so every one of them was the *same* screen and the
+check was exercising the revisit rule instead. A fixture that cannot reach its condition passes for
+the wrong reason.
+
+A third, smaller: an escaped `\\n` survived a heredoc into the test, so the newline check was
+comparing literal backslash-n.
+
+## Tested
+
+Test 1: 18 checks, 0 failed. Sabotaged back to the old behaviour — compare against the last passage
+only — and the bug reproduced exactly: **"the same screen is read once: read 50 times"**, plus the
+ceiling and the revisit rule. That is the failure he described, in a test, on purpose.
