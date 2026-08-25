@@ -161,7 +161,17 @@ object MaRows {
     data class Entry(val button: Button, val enabled: Boolean = true)
 
     /** One of the three rows: its buttons in order, and whether the row itself is switched on. */
-    data class Row(val entries: List<Entry>, val enabled: Boolean = true) {
+    /**
+     * [name] is his word for this row — "bucket row", "keyboard row" — or blank for "Row 3".
+     *
+     * Blank rather than a pre-filled "Row 3", so the editor can tell a row he has named from one he
+     * has not and fall back without having to guess whether "Row 3" was chosen or inherited.
+     */
+    data class Row(
+        val entries: List<Entry>,
+        val enabled: Boolean = true,
+        val name: String = "",
+    ) {
         val visibleButtons: List<Button> get() = entries.filter { it.enabled }.map { it.button }
     }
 
@@ -372,6 +382,28 @@ object MaRows {
         else -> 0
     }
 
+    /** The character that separates the enabled flag from the name inside the META field. */
+    private const val NAME_SEP = '~'
+
+    /**
+     * A name that cannot damage the store.
+     *
+     * Every separator is stripped rather than escaped. Escaping means an unescaper, and an
+     * unescaper is a second thing that can be wrong about a string read while the keyboard opens.
+     * He is naming a row, not writing a document — losing a tilde from "bucket~row" costs nothing
+     * and cannot corrupt the row after it.
+     *
+     * Capped at 24 characters: longer than any name that fits on a tab, short enough that a paste
+     * accident cannot fill the preference.
+     */
+    fun sanitiseName(name: String): String =
+        name.filter { it != ROW_SEP && it != BTN_SEP && it != FIELD_SEP && it != ROW_META_SEP && it != NAME_SEP }
+            .trim().take(24)
+
+    /** His name for the row, or "Row 3" when he has not given one. */
+    fun displayName(row: Row, index: Int): String =
+        row.name.ifBlank { "Row ${index + 1}" }
+
     fun serialize(rows: List<Row>): String =
         rows.joinToString(ROW_SEP.toString()) { row ->
             val flag = if (row.enabled) "1" else "0"
@@ -383,7 +415,18 @@ object MaRows {
                     is Button.Macro -> "$T_MACRO$FIELD_SEP${b.slot}$FIELD_SEP$on"
                 }
             }
-            "$flag$ROW_META_SEP$body"
+            // The name rides in the META field beside the enabled flag, as `1~bucket row`.
+            //
+            // A NEW FIELD IN AN OLD SLOT, on purpose. Appending a fourth separator would have made
+            // every stored arrangement written before today unparseable by the new code or the new
+            // one unparseable by the old — and `parse` runs while the keyboard is opening, in front
+            // of whatever he was about to type. Here, an old string has no `~` and reads exactly as
+            // it did; a new one has a name the old code would ignore.
+            //
+            // Separators are stripped from the name on the way in, so a row called "a|b" cannot
+            // corrupt the row after it.
+            val meta = if (row.name.isBlank()) flag else "$flag$NAME_SEP${sanitiseName(row.name)}"
+            "$meta$ROW_META_SEP$body"
         }
 
     /**
@@ -400,12 +443,16 @@ object MaRows {
         val parsed = if (raw.isBlank()) emptyList() else {
             raw.split(ROW_SEP).map { rowText ->
                 val metaIdx = rowText.indexOf(ROW_META_SEP)
-                val enabled = metaIdx <= 0 || rowText.substring(0, metaIdx) == "1"
+                val meta = if (metaIdx > 0) rowText.substring(0, metaIdx) else ""
+                val enabled = metaIdx <= 0 || meta.substringBefore(NAME_SEP) == "1"
+                // No NAME_SEP means a string written before names existed: no name, and everything
+                // else read exactly as it always was.
+                val name = if (NAME_SEP in meta) meta.substringAfter(NAME_SEP) else ""
                 val body = if (metaIdx >= 0) rowText.substring(metaIdx + 1) else rowText
                 val entries = if (body.isBlank()) emptyList() else {
                     body.split(BTN_SEP).mapNotNull { parseEntry(it) }
                 }
-                Row(entries, enabled)
+                Row(entries, enabled, name)
             }
         }
         return (0 until ROW_COUNT).map { i ->

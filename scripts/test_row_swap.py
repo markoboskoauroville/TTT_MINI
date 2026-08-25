@@ -214,6 +214,89 @@ check("it writes through commit", "commit(MaRows.moveRow" in screen,
 check("the tab follows the keys", "tab = target" in screen,
       "he would be left looking at a different row and think the swap went the wrong way")
 
+# ---------------------------------------------------------------- naming a row
+#
+# Round-trip through the store, including the case that matters most: an arrangement written BEFORE
+# names existed must read back unchanged. `parse` runs while the keyboard is opening, in front of
+# whatever he was about to type into.
+# Read from the source, not guessed. The first version of this block invented ":" and "|" for
+# FIELD_SEP and META_SEP; the real ones are 0x1D and 0x1C. Every check still passed, because a port
+# that is internally consistent proves only that it agrees with itself. **A fixture that does not
+# match the thing it models is a test of the fixture.**
+_src = (SRC / "dictate/MaRows.kt").read_text()
+_sep = lambda n: chr(int(re.search(rf"{n} = '\\u([0-9A-F]{{4}})'", _src).group(1), 16))
+ROW_SEP, BTN_SEP = _sep("ROW_SEP"), _sep("BTN_SEP")
+FIELD_SEP, META_SEP = _sep("FIELD_SEP"), _sep("ROW_META_SEP")
+NAME_SEP = "~"
+check("the separators were read from the source", ROW_SEP == "\u001e" and META_SEP == "\u001c",
+      f"{ROW_SEP!r} {META_SEP!r}")
+
+
+def sanitise(name):
+    return "".join(c for c in name if c not in (ROW_SEP, BTN_SEP, FIELD_SEP, META_SEP, NAME_SEP)).strip()[:24]
+
+
+def ser(enabled, name, body="b" + FIELD_SEP + "paste" + FIELD_SEP + "1"):
+    meta = "1" if enabled else "0"
+    if name:
+        meta += NAME_SEP + sanitise(name)
+    return meta + META_SEP + body
+
+
+def parse_meta(row_text):
+    """The port of what parse does with the META field."""
+    idx = row_text.find(META_SEP)
+    meta = row_text[:idx] if idx > 0 else ""
+    enabled = idx <= 0 or meta.split(NAME_SEP)[0] == "1"
+    name = meta.split(NAME_SEP, 1)[1] if NAME_SEP in meta else ""
+    return enabled, name
+
+
+check("a name survives the round trip", parse_meta(ser(True, "bucket row")) == (True, "bucket row"))
+check("so does the enabled flag beside it", parse_meta(ser(False, "keyboard row")) == (False, "keyboard row"))
+check("no name means no name", parse_meta(ser(True, "")) == (True, ""))
+
+# THE UPGRADE. A string written before names existed has no NAME_SEP.
+check("an old row reads unchanged", parse_meta("1" + META_SEP + "b" + FIELD_SEP + "paste") == (True, ""))
+check("an old disabled row too", parse_meta("0" + META_SEP + "b" + FIELD_SEP + "paste") == (False, ""))
+
+# A name cannot corrupt the store. Separators are stripped, not escaped.
+for bad, why in ((f"a{ROW_SEP}b", "a row separator would split one row into two"),
+                 (f"a{BTN_SEP}b", "a button separator would invent a key"),
+                 (f"a{NAME_SEP}b", "a second name separator"),
+                 (f"a{META_SEP}b", "a meta separator would swallow the buttons")):
+    out = sanitise(bad)
+    check(f"stripped: {why}", all(c not in out for c in (ROW_SEP, BTN_SEP, META_SEP, NAME_SEP)), repr(out))
+    check(f"round trips anyway: {why}", parse_meta(ser(True, bad))[0] is True, "the row was damaged")
+
+check("a long name is capped", len(sanitise("x" * 200)) == 24, len(sanitise("x" * 200)))
+check("whitespace is trimmed", sanitise("  spaced  ") == "spaced")
+
+rows_named = code(SRC / "dictate/MaRows.kt")
+check("the name is on the model", "val name: String = \"\"" in rows_named, "held on the screen instead")
+check("there is one fallback helper", "fun displayName(" in rows_named,
+      "the tab and everything else could disagree about what a row is called")
+check("names are sanitised on the way in", "fun sanitiseName(" in rows_named, "a name could corrupt the store")
+
+# THE SANITISER IS CHECKED AGAINST THE KOTLIN, not only against the port.
+#
+# The separator cases above walk a Python `sanitise` that I wrote to match — and when the Kotlin was
+# sabotaged to strip nothing, they all still passed, because a port proves only that it agrees with
+# itself. **A model is not a witness to the code it models.** These read the real function.
+sani = rows_named[rows_named.index("fun sanitiseName("):]
+sani = sani[:sani.index("fun displayName")]
+for sep in ("ROW_SEP", "BTN_SEP", "FIELD_SEP", "ROW_META_SEP", "NAME_SEP"):
+    check(f"the Kotlin strips {sep}", f"it != {sep}" in sani,
+          "a name containing it would corrupt the row after it")
+check("the Kotlin caps the length", "take(24)" in sani, "a paste could fill the preference")
+check("the Kotlin trims", ".trim()" in sani, "a name of spaces would look unnamed and not be")
+
+screen_named = code(SRC / "app/settings/dictate/MaRowsScreen.kt")
+check("the tab shows the name", "MaRows.displayName(it, i)" in screen_named, "still Row 1, Row 2")
+check("there is a field to type it in", 'label = { Text("Name this row") }' in screen_named, "no way to set it")
+check("it writes through commit", "row.copy(name = MaRows.sanitiseName(typed))" in screen_named,
+      "a path that updates the state without the preference")
+
 print(f"row swap, test 1: {checks} checks, {len(failures)} failed ({walked} swaps walked)")
 for f in failures:
     print(f"  FAIL  {f}")

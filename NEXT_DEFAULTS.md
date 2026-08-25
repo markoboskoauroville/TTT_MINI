@@ -8077,3 +8077,54 @@ AssemblyAI's 401, and the Cloudflare 403. Broken on purpose by moving the Cloudf
 403 branch: red, on the ordering check.
 
 Not tested: no provider was called. Every body here is quoted from his measurements, not from mine.
+
+---
+
+# §178 — Rows have names
+
+Build 313. Six rows called Row 1 to Row 6 are six rows he has to remember the contents of. Now they
+can be called what they are.
+
+## A new field in an old slot
+
+The name goes inside the existing META field, beside the enabled flag: `1~bucket row`.
+
+Appending a fourth separator would have made every arrangement stored before today unparseable by the
+new code, or the new one unparseable by the old. **`parse` runs while the keyboard is opening, in
+front of whatever he was about to type** — a damaged preference there costs a keyboard that never
+appears, and there is no route to the settings app from behind one. An old string has no `~` and
+reads exactly as it did; a new one carries a name the old code would have ignored.
+
+## Stripped, not escaped
+
+Every separator is removed from a name rather than escaped. Escaping means an unescaper, and an
+unescaper is a second thing that can be wrong about a string read at that moment. He is naming a row,
+not writing a document: losing a tilde costs nothing, and a name containing a row separator would
+otherwise split one row into two.
+
+Capped at 24 characters, trimmed. Blank means blank rather than a pre-filled "Row 3", so the editor
+can tell a row he has named from one he has not.
+
+## One fallback, in the model
+
+`MaRows.displayName(row, index)` — his name, or "Row 3". On the model rather than in the tab, so
+nothing else that names a row can disagree with the tab about what it is called.
+
+## A test that was testing itself
+
+The separator cases walked a Python `sanitise` I had written to match the Kotlin. **Sabotaging the
+Kotlin to strip nothing left all of them green** — a port proves only that it agrees with itself.
+
+> **A model is not a witness to the code it models.**
+
+Fixed by reading the real function's body and asserting it names each separator. Sabotaged again: red
+on five.
+
+Same session, a smaller version of the same fault: the port had invented `":"` and `"|"` for two
+separators that are really 0x1D and 0x1C, and every check passed anyway. The separators are read out
+of the source now.
+
+## Tested
+
+Test 1: 15,636 checks, 0 failed. The round trip, the upgrade from a nameless arrangement, the four
+corrupting separators, the cap and the trim.

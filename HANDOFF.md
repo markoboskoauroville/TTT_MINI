@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 312.** The last stretch, newest first:
+**Build 313.** The last stretch, newest first:
+
+- **Rows can be named.** "bucket row", "keyboard row" — typed on the row's own tab, shown on the
+  tab, falling back to "Row 3" when blank. The name rides inside the existing META field as
+  `1~name`, so an arrangement stored before today reads back unchanged. Separators are **stripped,
+  not escaped**.
 
 - **A Cloudflare 403 can no longer bury the key ring.** Every 403 was classified as a bad key, and
   Cloudflare refuses the *client* — so one request would have killed every key at once, recoverable

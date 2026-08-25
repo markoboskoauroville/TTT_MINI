@@ -16,6 +16,7 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import kotlin.math.roundToInt
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -253,6 +254,31 @@ fun MaRowsScreen() = FlorisScreen {
         var dragging by remember { mutableStateOf(-1) }
         var dragBy by remember { mutableStateOf(0f) }
         var tabWidth by remember { mutableStateOf(1f) }
+        // NAMING THE ROW HE IS LOOKING AT.
+        //
+        // On the tab's own page rather than in a dialog: he is already here arranging this row, and
+        // the name is one more thing about it. A dialog would be a second screen for one field.
+        //
+        // It writes on every keystroke through `commit`, like everything else on this screen. No
+        // save button, because a save button on a settings screen is a thing to forget — and there
+        // is nothing here that a half-typed name can damage.
+        //
+        // The placeholder is what the tab falls back to, so an empty field and the tab agree about
+        // what the row is called.
+        OutlinedTextField(
+            value = rows.getOrNull(tab)?.name.orEmpty(),
+            onValueChange = { typed ->
+                val next = rows.mapIndexed { i, row ->
+                    if (i == tab) row.copy(name = MaRows.sanitiseName(typed)) else row
+                }
+                commit(next)
+            },
+            singleLine = true,
+            label = { Text("Name this row") },
+            placeholder = { Text("Row ${tab + 1}") },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+
         TabRow(
             selectedTabIndex = tab,
             modifier = Modifier.onSizeChanged { tabWidth = (it.width / MaRows.ROW_COUNT).toFloat().coerceAtLeast(1f) },
@@ -283,7 +309,11 @@ fun MaRowsScreen() = FlorisScreen {
                     onClick = { tab = i },
                     text = {
                         Text(
-                            text = "Row ${i + 1}",
+                            // His name for it, or "Row 3" when he has not given one. One helper, so
+                            // the tab and anywhere else that names a row cannot disagree.
+                            text = rows.getOrNull(i)?.let { MaRows.displayName(it, i) } ?: "Row ${i + 1}",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             // A row that is switched off says so on its own tab, so the state is
                             // visible before it is opened. Without it, an empty-looking row and a
                             // switched-off row read identically from here.
