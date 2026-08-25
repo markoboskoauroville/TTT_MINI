@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 308.** The last stretch, newest first:
+**Build 309.** The last stretch, newest first:
+
+- **The clipboard-history key wears the history arrow**, composed by `MaHistoryGlyph`: the clipboard
+  for the subject, the counter-clockwise arrow for the past. It was `ContentPasteGo`, whose arrow
+  points right and means *go*. Written up as **design-language §14a** in the manifest — one idea,
+  one mark, applied to whatever it is about.
 
 - **The reader stops at the end instead of looping.** It compared each new passage only against the
   one before, and a live screen differs by a character between reads — a clock, a timestamp — so it

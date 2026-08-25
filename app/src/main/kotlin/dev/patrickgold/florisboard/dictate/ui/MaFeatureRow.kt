@@ -57,7 +57,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.KeyboardCapslock
 import androidx.compose.material.icons.filled.Numbers
@@ -793,13 +792,25 @@ fun MaFeatureRow(
                     tint = null,
                 ) { keyboardManager.tapKey(KeyCode.CLIPBOARD_COPY) }
 
-                MaFeatureKey.CLIP_HISTORY -> ThemedIconKey(
+                MaFeatureKey.CLIP_HISTORY -> ThemedKey(
                     code = KeyCode.NOOP,
-                    icon = Icons.Default.ContentPasteGo,
-                    contentDescription = "Clipboard history",
                     modifier = keyMod,
-                    tint = null,
-                ) { keyboardManager.activeState.imeUiMode = ImeUiMode.CLIPBOARD }
+                    onClick = { keyboardManager.activeState.imeUiMode = ImeUiMode.CLIPBOARD },
+                ) { fg ->
+                    // A CLIPBOARD WEARING THE HISTORY ARROW.
+                    //
+                    // It was `ContentPasteGo` — a clipboard with an arrow pointing RIGHT — while the
+                    // transcription history key next to it wears the circular arrow round a clock.
+                    // Two keys that open a history, two different pictures, and only one of them
+                    // says "history" at all: an arrow to the right means GO, which is what that
+                    // glyph is drawn for.
+                    //
+                    // **The subject changes, the mark does not.** A clipboard for what is being
+                    // looked through, the counter-clockwise arrow for the fact that it is a past.
+                    // See MANTRA_MANIFEST/modules/design-language.md — this is now the rule for
+                    // every key in every app of mine that opens a history.
+                    MaHistoryGlyph(base = Icons.Default.ContentPaste, tint = fg)
+                }
 
                 MaFeatureKey.DUMP -> ThemedIconKey(
                     code = KeyCode.NOOP,
@@ -1906,3 +1917,62 @@ private fun MaVolumeRocker(tint: Color) {
         }
     }
 }
+
+/**
+ * A glyph with the history mark on it: [base] for the subject, the circular arrow for the past.
+ *
+ * ### Why a composed glyph rather than a Material one
+ *
+ * Material has `History` — the arrow round a clock — and nothing for "the history of a clipboard".
+ * The alternatives were all wrong in the same way: `ContentPasteGo` says go, `ContentPasteSearch`
+ * says find, `Restore` says undo. **None of them says "the ones before".**
+ *
+ * So the mark is applied rather than looked up, which also makes it a rule instead of a coincidence:
+ * anything that opens a history takes the same arrow, and a reader who learns it once on the
+ * transcription key reads it everywhere without being taught again.
+ *
+ * ### The proportions
+ *
+ * The arrow sits at the bottom-left at 60% and overlaps rather than sitting beside: a badge in the
+ * corner of a glyph reads as one picture, a second glyph beside it reads as two keys crammed into
+ * one. It is drawn over a small disc of the key's own background so the two sets of strokes do not
+ * tangle where they cross — without it the arrow's tail reads as part of the clipboard's rim at key
+ * size.
+ *
+ * Bottom-LEFT because the clipboard's clip is top-centre and its lines run right; the free corner is
+ * the one the base glyph is quietest in, and that is where a badge belongs.
+ */
+@Composable
+internal fun MaHistoryGlyph(
+    base: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color,
+    size: Dp = 24.dp,
+) {
+    Box(modifier = Modifier.size(size), contentAlignment = Alignment.Center) {
+        Icon(imageVector = base, contentDescription = null, tint = tint, modifier = Modifier.size(size))
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .size(size * 0.62f)
+                .clip(CircleShape)
+                .background(MaKeyFaceForBadge),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Default.History,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(size * 0.58f),
+            )
+        }
+    }
+}
+
+/**
+ * What a badge is punched out of: the key face behind the glyph.
+ *
+ * Hardcoded rather than read from the theme because a key face is a Snygg-styled surface and this
+ * runs inside the icon slot, where that colour is not in scope. It matches the dark key of the
+ * app's own theme, which is the only theme these keys have ever been drawn in.
+ */
+private val MaKeyFaceForBadge = Color(0xFF161B22)

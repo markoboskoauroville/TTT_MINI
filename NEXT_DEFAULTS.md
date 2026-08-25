@@ -7899,3 +7899,44 @@ comparing literal backslash-n.
 Test 1: 18 checks, 0 failed. Sabotaged back to the old behaviour — compare against the last passage
 only — and the bug reproduced exactly: **"the same screen is read once: read 50 times"**, plus the
 ceiling and the revisit rule. That is the failure he described, in a test, on purpose.
+
+---
+
+# §176 — One idea, one mark
+
+Build 309. Two keys on his row open a past: transcription history and clipboard history. They wore
+different pictures, and only one of them said *history*.
+
+The clipboard one was `ContentPasteGo` — a clipboard with an arrow pointing **right**, which means
+**go**, because that is what the glyph is drawn for. It was chosen because it was the closest thing
+in the icon set to "clipboard, and something happens", which is how an icon set quietly writes your
+design language for you.
+
+## Compose the mark rather than hunt for a glyph
+
+Material has `History`. It does not have "the history of a clipboard". Every near-miss was wrong in
+the same direction — `ContentPasteGo` says go, `ContentPasteSearch` says find, `Restore` says undo —
+because none of them was drawn to mean **the ones before**.
+
+So `MaHistoryGlyph(base, tint)`: base glyph for the subject, the counter-clockwise arrow for the
+past. That turns a coincidence into a rule — learn the arrow once on one key and read it everywhere.
+
+The proportions are the part that decides whether it looks drawn or stuck on, and they are in
+`design-language.md §14a` rather than only here: overlap rather than sit beside, about 60% of the
+base, punched out of the background so the strokes do not tangle where they cross, in the base
+glyph's quietest corner, one tint for both.
+
+## The general form, which is the reason it went in the manifest
+
+He asked for the rule to be written down for every button that opens a history. The rule generalises
+past history: **when an idea applies to many subjects — history, locked, shared, offline — give it
+one mark and apply it, rather than finding a whole glyph per combination.**
+
+A vocabulary of marks scales. A vocabulary of pictures does not — it runs out at the first
+combination nobody drew.
+
+## Tested
+
+Test 1: 117 checks, 0 failed. Five new, including that the picker and the key draw the same glyph —
+this key is the one that proved that rule was only being followed where a Material icon happened to
+exist. Broken back to a plain clipboard: red.

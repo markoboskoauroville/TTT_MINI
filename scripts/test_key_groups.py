@@ -204,6 +204,26 @@ check("the connection is tried FIRST", conn_at >= 0 and fallback_at > conn_at,
 check("the old message is gone", "an error occurred within the input connection" not in editor,
       "a message describing an input connection to somebody holding a phone")
 
+# ---------------------------------------------------------------- the history mark
+#
+# Two keys open a history: transcription and clipboard. They wore different pictures, and only one of
+# them said "history" — the other was ContentPasteGo, whose arrow points RIGHT and means GO. The
+# subject changes, the mark does not.
+row_hist = re.sub(r"^\s*//.*$", "", re.sub(r"/\*.*?\*/", "",
+                  (SRC / "dictate/ui/MaFeatureRow.kt").read_text(), flags=re.S), flags=re.M)
+picker_hist = re.sub(r"^\s*//.*$", "", re.sub(r"/\*.*?\*/", "",
+                     (SRC / "app/settings/dictate/MaRowsScreen.kt").read_text(), flags=re.S), flags=re.M)
+check("the mark is composed once", "fun MaHistoryGlyph(" in row_hist, "each key draws its own badge")
+check("the clipboard history key wears it",
+      "MaHistoryGlyph(base = Icons.Default.ContentPaste" in row_hist, "still an arrow pointing right")
+check("the picker shows the same glyph",
+      "MaHistoryGlyph(base = Icons.Default.ContentPaste" in picker_hist,
+      "the row and the keyboard would disagree")
+check("the go-arrow is gone from both", "ContentPasteGo" not in row_hist and "ContentPasteGo" not in picker_hist,
+      "an arrow meaning GO on a key that opens a past")
+check("the mark is the History arrow", "Icons.Default.History" in row_hist,
+      "a second drawing of the same idea")
+
 # NOTE, PAID FOR ONCE: this block was appended to the END of the file, after the exit, and reported
 # a happy total having run none of it. The count went up by two for an unrelated reason and hid it.
 # **Anything added to a test goes ABOVE the summary line**, and the summary is the last thing in the

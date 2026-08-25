@@ -49,7 +49,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Keyboard
@@ -107,6 +106,7 @@ import dev.patrickgold.florisboard.dictate.MaKeySearch
 import dev.patrickgold.florisboard.dictate.DictateController
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.LaunchedEffect
+import dev.patrickgold.florisboard.dictate.ui.MaHistoryGlyph
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import dev.patrickgold.florisboard.dictate.ui.MaRecordRed
 import dev.patrickgold.florisboard.dictate.MaMacroSlots
@@ -667,8 +667,12 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.Default.ContentCut, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.COPY ->
                 Icon(Icons.Default.ContentCopy, contentDescription = null, tint = tint, modifier = size)
+            // The same composed glyph the key draws — a clipboard wearing the history arrow. The
+            // rule on this screen has always been that a row shows what the keyboard shows, and
+            // this key is the one that proved the rule was only being followed where a Material
+            // icon happened to exist.
             MaFeatureKey.CLIP_HISTORY ->
-                Icon(Icons.Default.ContentPasteGo, contentDescription = null, tint = tint, modifier = size)
+                MaHistoryGlyph(base = Icons.Default.ContentPaste, tint = tint)
             MaFeatureKey.DUMP ->
                 Icon(Icons.Default.Layers, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.SUBTITLE -> letters("S")
