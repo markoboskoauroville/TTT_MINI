@@ -614,6 +614,37 @@ def check_weight_scope(path: Path, text: str) -> None:
         fail(path.name, f"`weight` in {m.group(3)}, which is not in a Row or Column scope")
 
 
+def check_modifier_clip_import(path: Path, text: str) -> None:
+    """
+    RED BUILD 309: `Modifier.…clip(CircleShape)` with no `import androidx.compose.ui.draw.clip`.
+
+    The fifth build lost to a missing Compose import, and the closed-list check added for
+    `foundation.layout` and `compose.runtime` did not cover it because `clip` lives in a third
+    package.
+
+    **Narrower than those two, deliberately.** A bare `.clip(` sweep found four hits across the app —
+    `canvas.rotate`, `paint.alpha` and friends — all of them ordinary View and Canvas calls that have
+    nothing to do with Compose. So this looks only for a `.clip(` inside a MODIFIER CHAIN: `Modifier`
+    on the same line or within the three above it. Measured that way the sweep is zero.
+
+    One name rather than a list, because `clip` is the only one of that package this codebase uses.
+    A list of names nobody calls is a list nobody maintains.
+    """
+    imports = {ln.strip() for ln in text.splitlines() if ln.startswith("import ")}
+    if any(i == "import androidx.compose.ui.draw.*" for i in imports):
+        return
+    if "import androidx.compose.ui.draw.clip" in imports:
+        return
+    lines = strip_code(text).splitlines()
+    for i, line in enumerate(lines):
+        if ".clip(" not in line:
+            continue
+        window = "\n".join(lines[max(0, i - 3):i + 1])
+        if "Modifier" in window:
+            fail(path.name, "`Modifier.clip` used but androidx.compose.ui.draw.clip is not imported")
+            return
+
+
 def check_suspend_in_lock(path: Path, text: str) -> None:
     """
     RED BUILD 287: `prefs…set(…)` inside `synchronized(askLock) { … }`.
@@ -793,6 +824,7 @@ def main() -> int:
         check_prefs_collect_import(path, text)
         check_layout_imports(path, text)
         check_suspend_in_lock(path, text)
+        check_modifier_clip_import(path, text)
         check_weight_scope(path, text)
     check_when_coverage()
     check_no_secrets()

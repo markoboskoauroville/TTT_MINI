@@ -7940,3 +7940,21 @@ combination nobody drew.
 Test 1: 117 checks, 0 failed. Five new, including that the picker and the key draw the same glyph —
 this key is the one that proved that rule was only being followed where a Material icon happened to
 exist. Broken back to a plain clipboard: red.
+
+## §176a — The fifth missing import
+
+Build 309 went red on `Modifier.clip` with no `androidx.compose.ui.draw.clip`. Fifth build lost to a
+missing Compose import, and the closed-list check added for `foundation.layout` and `compose.runtime`
+did not cover it: `clip` lives in a third package.
+
+`check_modifier_clip_import` is **narrower than either of those**, and had to be. A bare `.clip(`
+sweep found four hits — `canvas.rotate`, `paint.alpha` and friends — ordinary View and Canvas calls
+with nothing to do with Compose. So it looks only for `.clip(` inside a **modifier chain**:
+`Modifier` on the same line or within the three above. Measured that way, zero.
+
+One name rather than a list of the package's members, because `clip` is the only one this codebase
+uses, and a list of names nobody calls is a list nobody maintains.
+
+Proving it hit the trap from §158a again: **HEAD was the red commit**, so removing the import made
+the file identical to HEAD and `verify.py` reported "no Kotlin files changed". Called directly, it
+names the file and the symbol, and sweeps the app clean.
