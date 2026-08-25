@@ -224,8 +224,42 @@ object MaReader {
      */
     private suspend fun speak(context: Context, text: String, onMessage: (String) -> Unit) {
         val prefs by FlorisPreferenceStore
+
+        // THE GUARD LIVES HERE, WHERE EVERY READING HAS TO PASS.
+        //
+        // It was in `continueBelow` — the path taken after a chunk finishes and the screen is
+        // scrolled — and the loop survived that fix. Which says the loop is not on that path, or not
+        // only on it: something else is calling `speak` again with a passage already read.
+        //
+        // Rather than hunt for the caller, the check moves to the one place all of them must come
+        // through. **A guard on one route is a guard on one route; a guard at the door is a guard.**
+        // If some path is calling this twice, the second call now ends here instead of speaking.
+        //
+        // Note what this does NOT do: it does not stop him reading the same screen again on purpose.
+        // `passagesRead` is cleared by `stop`, and stopping is what the reader key does — so
+        // pressing read, stopping, and pressing read again on the same text works exactly as before.
+        // Only an unasked-for repeat inside one reading is refused.
+        val key = normalisedForCompare(text)
+        if (key.isNotBlank() && passagesRead.contains(key)) {
+            MaLog.add("read", "refused to read the same passage twice in one reading")
+            state = State.IDLE
+            onMessage("Already read this \u2014 stopping")
+            return
+        }
         lastPassage = text
-        passagesRead.add(normalisedForCompare(text))
+        passagesRead.add(key)
+        // The marker he asked for: a filled square at the head of each passage.
+        //
+        // His idea, and a good one — he asked for it as a fallback in case the loop could not be
+        // found, and it is worth having whether or not it is found. **A reading that starts again
+        // says so, visibly, without anybody having to diagnose why.** If he sees a second square he
+        // knows immediately that he is hearing the same words rather than similar ones, and he can
+        // stop it himself instead of listening to work out what happened.
+        //
+        // In the caption only. It is never spoken and never inserted into his text — Speechify is
+        // sent the passage, not the marker.
+        passageMark = "\u25A0"
+        
         val voice = MaSpeechify.chosenVoice(MaLanguage.active())
         state = State.LOADING
 
@@ -423,6 +457,14 @@ object MaReader {
      * app's whole life. Normalised, because the comparison it exists for is defeated by exactly the
      * differences normalising removes.
      */
+    /**
+     * A filled square shown at the head of a passage, cleared once the reading is under way.
+     *
+     * Drawn by the caption, spoken by nobody. See `speak`.
+     */
+    var passageMark by mutableStateOf("")
+        private set
+
     private val passagesRead = mutableSetOf<String>()
 
     /**
@@ -475,6 +517,10 @@ object MaReader {
                     // The position within THIS chunk, plus the audio before it.
                     val here = pos + chunkBaseMs
                     val idx = words.indexOfFirst { here >= it.startMs && here < it.endMs }
+                    // The square lives until the third word. Long enough to be seen when a reading
+                    // starts again, short enough that it is not decoration on a passage he is
+                    // halfway through — a mark that never leaves stops being a signal.
+                    if (idx >= 3) passageMark = ""
                     currentIndex = idx
                     currentWord = if (idx >= 0) words[idx].text else ""
                 }
@@ -597,6 +643,7 @@ object MaReader {
         // reading of the same screen would find it "already read" and refuse to start — the fix
         // becoming the bug, which is how the loop got here in the first place.
         passagesRead.clear()
+        passageMark = ""
         state = State.IDLE
     }
 

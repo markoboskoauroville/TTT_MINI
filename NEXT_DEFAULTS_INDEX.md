@@ -176,3 +176,4 @@ since been removed.
 - **§174** — The circle that pins
 - **§175** — The reader that would not stop
 - **§176** — One idea, one mark
+- **§176** — A guard at the door, and a square

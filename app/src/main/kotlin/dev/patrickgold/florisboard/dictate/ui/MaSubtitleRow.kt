@@ -154,6 +154,12 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // `remember` outside the null check, so the held value survives the recompositions where the
     // page is missing. Cleared by the reader going idle, not here — a stale page after the reading
     // ends would be a caption for nothing.
+    // The start-of-passage square, in front of everything the caption draws.
+    //
+    // One place rather than one per effect: every style shows it, because the question it answers —
+    // "am I hearing this for the second time?" — does not depend on which effect he picked.
+    val mark = MaReader.passageMark
+
     val live = pages.firstOrNull { index in it.range }
     // Keyed on the passage, not on the index: a new reading starts with nothing held, so the last
     // sentence of the previous one cannot appear under the first second of the next.
@@ -163,7 +169,11 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     if (page == null) {
         // Only before the very first page has ever arrived. There is nothing to hold yet, and an
         // empty box for the first second is honest — it says the reading is coming.
-        SubtitleBox(modifier = modifier, full = full) { }
+        SubtitleBox(modifier = modifier, full = full) {
+            if (mark.isNotBlank()) {
+                Text(text = mark, color = lit, fontSize = fontSize, fontWeight = FontWeight.Bold)
+            }
+        }
         return
     }
 
@@ -186,7 +196,9 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // and the same gestures. The difference is what happens INSIDE the frame, and building it as a
     // second kind of window would have meant a second copy of every gesture to keep in step.
     if (style == "matrix") {
-        val word = words.getOrNull(index)?.text.orEmpty()
+        // The square rides in front of the word for the first few, so it is seen wherever the eye
+        // is rather than in a corner it has no reason to look at.
+        val word = (if (mark.isNotBlank()) "$mark " else "") + words.getOrNull(index)?.text.orEmpty()
         // Two clocks, as the rule says. `frame` drives the noise at a fixed speed; `progress` is
         // where the voice is inside this word, and only that one follows the speaking rate.
         var frame by remember { mutableIntStateOf(0) }
@@ -229,7 +241,9 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     }
 
     if (style == "void") {
-        val word = words.getOrNull(index)?.text.orEmpty()
+        // The square rides in front of the word for the first few, so it is seen wherever the eye
+        // is rather than in a corner it has no reason to look at.
+        val word = (if (mark.isNotBlank()) "$mark " else "") + words.getOrNull(index)?.text.orEmpty()
         Box(
             modifier = modifier
                 .fillMaxWidth()

@@ -106,8 +106,32 @@ check("it compares normalised text", "normalisedForCompare(" in reader, "a ticki
 check("there is a ceiling", "MAX_SCREENS" in reader, "nothing bounds the loop")
 check("the record is cleared on stop", "passagesRead.clear()" in reader,
       "the next reading of the same screen would refuse to start")
-check("the first screen is recorded", "passagesRead.add(normalisedForCompare(text))" in reader,
+# The line moved when the guard moved: `speak` now computes the key once, checks it and adds it, so
+# the literal `passagesRead.add(normalisedForCompare(text))` is gone and `passagesRead.add(key)` is
+# what does the job. The claim is unchanged — the first screen must be recorded — and checking for
+# the old spelling would have been a check on a line rather than on a behaviour.
+check("the first screen is recorded", "passagesRead.add(key)" in reader,
       "screen one could be read twice")
+
+# ---------------------------------------------------------------- the guard at the door
+#
+# The first fix put the check in continueBelow — the path taken after a chunk finishes. He came back
+# and said it still loops, which means the loop is not on that path, or not only on it. So the check
+# moved to `speak`, where every reading has to pass. A guard on one route is a guard on one route.
+check("speak refuses a passage already read", "passagesRead.contains(key)" in reader,
+      "a second caller could still start the same passage")
+check("and it says so out loud", "Already read this" in reader, "it would look like the reader died")
+check("stopping clears the record", "passagesRead.clear()" in reader,
+      "he could never read the same screen twice on purpose")
+
+# The marker he asked for, as a fallback he should not need.
+check("a passage starts with the square", 'passageMark = "\\u25A0"' in reader, "no start marker")
+check("the square goes once the reading is under way", "if (idx >= 3) passageMark" in reader,
+      "a mark that never leaves stops being a signal")
+check("the caption draws it", "MaReader.passageMark" in
+      (SRC / "dictate/ui/MaSubtitleRow.kt").read_text(), "set but never shown")
+check("it is never spoken", "passageMark" not in reader.split("MaSpeechify.synthesize")[1][:400],
+      "the square would be read aloud")
 
 print(f"reader end, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:

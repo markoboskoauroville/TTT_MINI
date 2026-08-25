@@ -94,7 +94,11 @@ check("its file is gone", not (SRC / "dictate/ui/MaAnagram.kt").exists(), "still
 check("only idle hides the window", "MaReader.state == MaReader.State.IDLE) return" in caption,
       "still leaves on a missing index, which is a blink")
 check("no bare index guard survives", "if (index < 0) return" not in caption, "the old blink is back")
-check("a missing page draws an empty box", "SubtitleBox(modifier = modifier, full = full) { }" in caption,
+# The empty box is no longer literally empty: it carries the start-of-passage square when there is
+# one. The claim is that the box is DRAWN rather than returned from — checking for an empty lambda
+# was checking the spelling of "nothing to put in it yet".
+missing_page = caption[caption.index("if (page == null)"):][:400]
+check("a missing page draws a box", "SubtitleBox(modifier = modifier, full = full)" in missing_page,
       "returns instead, and the box disappears mid-passage")
 
 # ---------------------------------------------------------------- top line, promoted out

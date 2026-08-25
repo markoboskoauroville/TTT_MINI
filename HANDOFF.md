@@ -21,7 +21,14 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 309.** The last stretch, newest first:
+**Build 311.** The last stretch, newest first:
+
+- **The loop guard moved to `speak`**, where every reading must pass. It was in `continueBelow` and
+  the loop survived, which says the loop is on another path — so rather than hunting the caller, the
+  check is at the door. A repeat inside one reading now ends with *"Already read this — stopping"*.
+- **A filled square marks the head of every passage**, his idea and his fallback: if it appears
+  twice he is hearing the same words and can stop it himself. It clears after three words, is drawn
+  by every effect, and is never sent to Speechify.
 
 - **The clipboard-history key wears the history arrow**, composed by `MaHistoryGlyph`: the clipboard
   for the subject, the counter-clockwise arrow for the past. It was `ContentPasteGo`, whose arrow

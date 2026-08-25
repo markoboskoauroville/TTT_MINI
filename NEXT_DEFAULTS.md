@@ -7958,3 +7958,61 @@ uses, and a list of names nobody calls is a list nobody maintains.
 Proving it hit the trap from §158a again: **HEAD was the red commit**, so removing the import made
 the file identical to HEAD and `verify.py` reported "no Kotlin files changed". Called directly, it
 names the file and the symbol, and sweeps the app clean.
+
+---
+
+# §176 — A guard at the door, and a square
+
+Build 311. He came back: *"Loop issue is still not fixed."*
+
+## The first fix was on one path
+
+§175 put the check in `continueBelow` — the path taken after a chunk finishes and the screen is
+scrolled — and the reasoning about ticking clocks and unmoved screens was right about that path. The
+loop survived, which says it is **not on that path**, or not only on it: something else is calling
+`speak` again with a passage already read.
+
+Rather than keep hunting the caller, the check moved to `speak`, where every reading has to pass.
+**A guard on one route is a guard on one route; a guard at the door is a guard.** Whatever is calling
+twice now ends at the first line instead of speaking.
+
+It says so out loud — *"Already read this — stopping"* — because a reader that silently refuses looks
+exactly like a reader that has died, and he would be back with a different bug report about the same
+thing.
+
+What it deliberately does not do: stop him re-reading a screen on purpose. `passagesRead` is cleared
+by `stop`, and stopping is what the reader key does, so read → stop → read on the same text works as
+before. Only an unasked-for repeat inside one reading is refused.
+
+## The square
+
+His idea, offered as a fallback in case the loop could not be found, and worth having either way. **A
+reading that starts again says so, visibly, without anybody having to diagnose why.** Two squares
+means the same words, not similar ones, and he can stop it himself rather than listening to work out
+what happened.
+
+It clears after the third word: long enough to catch a restart, short enough that it is not
+decoration on a passage he is halfway through. A mark that never leaves stops being a signal.
+
+Drawn by the caption in one place rather than per effect, because the question it answers does not
+depend on which effect he chose. Never sent to Speechify — it is in the caption, not in the text.
+
+## Two checks that were checking spelling
+
+Both broke on this change and neither had found a bug: one looked for
+`passagesRead.add(normalisedForCompare(text))`, which became `passagesRead.add(key)` when `speak`
+started computing the key once; the other for an empty lambda `{ }` that now holds the square.
+
+**Checking for a line rather than for a behaviour costs a false failure every time the line is
+rewritten**, and the temptation each time is to delete the check rather than restate it. Both were
+restated.
+
+## Tested
+
+Test 1: 25 checks, 0 failed. Broken by removing the door guard: red, on the check that names it.
+
+Not tested: nothing ran on a phone, and **the loop has not been reproduced here.** This is a guard
+against a cause not yet found, plus a marker so the next report can say where it starts rather than
+that it happens. If it loops again, the log line *"refused to read the same passage twice in one
+reading"* will say whether the guard fired — and if it did not, the passage differs between reads and
+the next place to look is `readableScreenText`.
