@@ -7685,3 +7685,57 @@ the same line.
 
 Test 1: 15,607 checks, 0 failed. Broken two ways — the key-up removed, and the whole thing reverted
 to writing the flag — red on two and three respectively.
+
+---
+
+# §172 — The ring convention reaches the keys that predate it
+
+Build 304.
+
+## The three zone keys had it backwards
+
+Monochrome ring meaning "this is a switcher", green **glyph** meaning "the zone is open". Everywhere
+else in this app the ring carries the state and the picture holds still — the buckets, the volume
+key, the record key all learned that over the last fortnight. **These three were written before the
+convention existed and were never revisited**, which is how a house style ends up with three
+exceptions that nobody decided on.
+
+He photographed them and said they were not following the convention. Green ring on, cream ring off,
+glyph constant.
+
+**The ring is always there**, in one colour or the other, rather than appearing when the zone opens.
+Same reason the reading window keeps its box when there is nothing in it: a border that appears and
+disappears makes the row flicker as he works.
+
+Worth keeping as a pattern: a convention introduced late does not apply itself retroactively. Every
+key written before it is an exception until somebody looks. **He is the one who looks, because he is
+the one holding it.**
+
+## The copy row
+
+`select all · paste · cut · clipboard history · AP · AC`, and the transcription history key is off it.
+
+It sat between clipboard history and AP and belonged to neither side. Everything else on that row
+acts on what is on the clipboard right now; that one opened a list of things he had dictated. **Two
+ideas of "history" one key apart**, and the one that did not fit is the one that got pressed by
+mistake. Still in the catalogue under Dictation, where anybody looking for it will look.
+
+Only the DEFAULT changed. A stored arrangement is his and is not rewritten — so this reaches him only
+if he has never edited the copy row, and the handoff says so rather than leaving him to wonder why
+nothing moved.
+
+## A shadowed variable in a test
+
+The new block reused the name `order`, which already held the text of `MaFeatureOrder.kt` further up
+the file. Two unrelated checks — SEND and RECORD are in the catalogue — went red immediately,
+pointing at code that was completely fine.
+
+**A shadowed variable in a test file is a false failure pointing at innocent code**, and the ten
+minutes it costs are spent looking in the wrong place. Caught here only because those two checks had
+no business failing in a commit that touched neither key.
+
+## Tested
+
+Test 1: 102 checks, 0 failed. Broken on purpose by reverting zone 2 to the old convention: red on
+both of its checks, and not on zones 1 and 3 — which is what makes it a check on each key rather than
+on the file.

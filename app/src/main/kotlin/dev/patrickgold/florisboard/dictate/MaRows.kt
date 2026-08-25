@@ -86,7 +86,14 @@ object MaRows {
             MaFeatureKey.PASTE,
             MaFeatureKey.CUT,
             MaFeatureKey.CLIP_HISTORY,
-            MaFeatureKey.HISTORY,
+            // HISTORY — the transcription history — is off this row, at his request.
+            //
+            // It sat between clipboard history and AP and belonged to neither side: everything else
+            // here acts on what is on the clipboard RIGHT NOW, and that one opened a list of things
+            // he had dictated. Two ideas of "history" a key apart, and the one that did not fit was
+            // the one that got pressed by mistake.
+            //
+            // Still in the catalogue, under Dictation, where somebody looking for it will look.
             MaFeatureKey.ALL_PASTE,
             MaFeatureKey.ALL_CLEAR,
         ).map { Entry(Button.Builtin(it)) },

@@ -463,6 +463,8 @@ internal fun ThemedKey(
                     // bucket is a switcher — and if something ever does, what it is holding matters
                     // more at a glance than what kind of key it is.
                     ring != null -> Modifier.border(1.5.dp, ring, LegacyKeyShape)
+                    // A switcher with no state ring given still gets the plain one: it says "this
+                    // key changes what the keyboard shows" for keys that have no on/off to report.
                     switcher -> Modifier.border(1.5.dp, MaSwitcherRing, LegacyKeyShape)
                     else -> Modifier
                 },
@@ -1679,3 +1681,15 @@ internal val MaStatusFontFamily = FontFamily.Monospace
  * reads as a set rather than as an alarm.
  */
 private val MaSwitcherRing = Color(0xFFF2DDB4).copy(alpha = 0.55f)
+
+/**
+ * The switcher ring when the thing it switches is OFF.
+ *
+ * Cream, the app's ink colour, against the green of on. It is the same ring in a different colour
+ * rather than an absent ring, so the key does not change size or weight when the zone closes — a row
+ * where a border appears and disappears is a row that flickers as he works.
+ *
+ * Public because the feature row draws these three keys and the ring lives here with the key it
+ * belongs to.
+ */
+val MaSwitcherRingOff = Color(0xFFF2DDB4).copy(alpha = 0.55f)

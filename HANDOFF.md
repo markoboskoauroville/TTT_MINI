@@ -21,7 +21,14 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 303.** The last stretch, newest first:
+**Build 304.** The last stretch, newest first:
+
+- **The three zone keys follow the ring convention now**: green ring on, cream ring off, glyph never
+  changes. They had it backwards — monochrome ring, green glyph — because they were written before
+  the convention existed.
+- **The copy row is select all · paste · cut · clipboard history · AP · AC.** Transcription history
+  is off it, still in the catalogue under Dictation. A stored arrangement is not rewritten, so if
+  you have ever edited the copy row, remove the clock key yourself.
 
 - **The feature row's Shift is the letter keyboard's Shift.** It sends `KeyCode.SHIFT` down and up
   through `inputEventDispatcher` instead of writing `inputShiftState` itself, so double-tap lock,

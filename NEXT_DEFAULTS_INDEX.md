@@ -171,3 +171,4 @@ since been removed.
 - **§169** — Six rows, and four arrows
 - **§170** — The tabs are dragged
 - **§171** — One shift, not two
+- **§172** — The ring convention reaches the keys that predate it

@@ -138,6 +138,37 @@ for name, body in (("the dashboard STOP", dash), ("the swipe", caption)):
     check(f"{name} cancels a transcription", "DictateController.cancelTranscription()" in body,
           "leaves work in flight with nothing on screen to stop it")
 
+# ---------------------------------------------------------------- the ring convention
+#
+# He photographed the three zone keys and said they were not following the convention: everywhere
+# else in this app the RING carries the state and the GLYPH holds still. These three were written
+# before that convention existed and had it backwards — monochrome ring, green glyph.
+row_conv = re.sub(r"^\s*//.*$", "", re.sub(r"/\*.*?\*/", "", (SRC / "dictate/ui/MaFeatureRow.kt").read_text(), flags=re.S), flags=re.M)
+for zone in ("zone1", "zone2", "zone3"):
+    check(f"{zone}'s ring carries the state",
+          f"ring = if ({zone}) onGreen else MaSwitcherRingOff" in row_conv, "still a monochrome ring")
+    check(f"{zone}'s glyph holds still", f"tint = if ({zone}) onGreen else fg" not in row_conv,
+          "the picture changes as well as the ring")
+check("the off ring is a colour, not an absence", "val MaSwitcherRingOff" in
+      (SRC / "dictate/ui/LegacyDictateLayout.kt").read_text(),
+      "the border would appear and disappear, and the row would flicker")
+
+# ---------------------------------------------------------------- the copy row he asked for
+rows_src = (SRC / "dictate/MaRows.kt").read_text()
+block = rows_src[rows_src.index("fun defaultCopyRow"):]
+block = block[:block.index(").map")]
+# NOT `order` — that name already holds MaFeatureOrder.kt further up this file, and reusing it here
+# silently broke two checks about SEND and RECORD which then failed for a reason that had nothing to
+# do with them. **A shadowed variable in a test file is a false failure pointing at innocent code.**
+copy_order = [l.strip().rstrip(",").replace("MaFeatureKey.", "")
+              for l in block.splitlines() if l.strip().startswith("MaFeatureKey.")]
+check("the copy row reads as he asked",
+      copy_order == ["SELECT_ALL", "PASTE", "CUT", "CLIP_HISTORY", "ALL_PASTE", "ALL_CLEAR"], str(copy_order))
+check("transcription history is off the copy row", "HISTORY" not in copy_order,
+      "two ideas of history one key apart")
+check("but still in the catalogue", 'HISTORY("history"' in (SRC / "dictate/MaFeatureOrder.kt").read_text(),
+      "removed from the app rather than from the row")
+
 # NOTE, PAID FOR ONCE: this block was appended to the END of the file, after the exit, and reported
 # a happy total having run none of it. The count went up by two for an unrelated reason and hid it.
 # **Anything added to a test goes ABOVE the summary line**, and the summary is the last thing in the

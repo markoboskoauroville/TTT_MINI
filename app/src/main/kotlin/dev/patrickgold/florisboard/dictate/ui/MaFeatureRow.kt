@@ -1177,14 +1177,25 @@ fun MaFeatureRow(
                         // an amateur patch however carefully it is proportioned. Colour still says
                         // whether the zone is open, the way it does everywhere in this app.
                         modifier = keyMod,
-                        // A switcher: it changes what the keyboard shows rather than typing.
-                        switcher = true,
+                        // THE RING SAYS ON OR OFF; THE GLYPH NEVER CHANGES.
+                        //
+                        // It was the other way round — a monochrome ring meaning "this is a
+                        // switcher" and a green GLYPH meaning "the zone is open". He photographed
+                        // the three of them and said they were not following the convention, and he
+                        // is right: everywhere else in this app the ring carries the state and the
+                        // picture holds still. The buckets, the volume key and the record key all
+                        // learned that; these three were written before it and never revisited.
+                        //
+                        // Green ring on, cream ring off. **The ring is always there**, so nothing
+                        // appears or disappears and the row does not reflow — the same reason the
+                        // reading window keeps its box when there is nothing in it.
+                        ring = if (zone1) onGreen else MaSwitcherRingOff,
                         onClick = { scope.launch { prefs.dictate.maExtraRow.set(!zone1) } },
                     ) { fg ->
                         Icon(
                             imageVector = Icons.Default.Numbers,
                             contentDescription = null,
-                            tint = if (zone1) onGreen else fg,
+                            tint = fg,
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -1203,14 +1214,25 @@ fun MaFeatureRow(
                         // an amateur patch however carefully it is proportioned. Colour still says
                         // whether the zone is open, the way it does everywhere in this app.
                         modifier = keyMod,
-                        // A switcher: it changes what the keyboard shows rather than typing.
-                        switcher = true,
+                        // THE RING SAYS ON OR OFF; THE GLYPH NEVER CHANGES.
+                        //
+                        // It was the other way round — a monochrome ring meaning "this is a
+                        // switcher" and a green GLYPH meaning "the zone is open". He photographed
+                        // the three of them and said they were not following the convention, and he
+                        // is right: everywhere else in this app the ring carries the state and the
+                        // picture holds still. The buckets, the volume key and the record key all
+                        // learned that; these three were written before it and never revisited.
+                        //
+                        // Green ring on, cream ring off. **The ring is always there**, so nothing
+                        // appears or disappears and the row does not reflow — the same reason the
+                        // reading window keeps its box when there is nothing in it.
+                        ring = if (zone2) onGreen else MaSwitcherRingOff,
                         onClick = { scope.launch { prefs.dictate.maZoneKeyboard.set(!zone2) } },
                     ) { fg ->
                         Icon(
                             imageVector = Icons.Default.Keyboard,
                             contentDescription = null,
-                            tint = if (zone2) onGreen else fg,
+                            tint = fg,
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -1228,14 +1250,25 @@ fun MaFeatureRow(
                         // an amateur patch however carefully it is proportioned. Colour still says
                         // whether the zone is open, the way it does everywhere in this app.
                         modifier = keyMod,
-                        // A switcher: it changes what the keyboard shows rather than typing.
-                        switcher = true,
+                        // THE RING SAYS ON OR OFF; THE GLYPH NEVER CHANGES.
+                        //
+                        // It was the other way round — a monochrome ring meaning "this is a
+                        // switcher" and a green GLYPH meaning "the zone is open". He photographed
+                        // the three of them and said they were not following the convention, and he
+                        // is right: everywhere else in this app the ring carries the state and the
+                        // picture holds still. The buckets, the volume key and the record key all
+                        // learned that; these three were written before it and never revisited.
+                        //
+                        // Green ring on, cream ring off. **The ring is always there**, so nothing
+                        // appears or disappears and the row does not reflow — the same reason the
+                        // reading window keeps its box when there is nothing in it.
+                        ring = if (zone3) onGreen else MaSwitcherRingOff,
                         onClick = { scope.launch { prefs.dictate.maEditRow.set(!zone3) } },
                     ) { fg ->
                         Icon(
                             imageVector = Icons.Default.ContentPaste,
                             contentDescription = null,
-                            tint = if (zone3) onGreen else fg,
+                            tint = fg,
                             modifier = Modifier.size(24.dp),
                         )
                     }
