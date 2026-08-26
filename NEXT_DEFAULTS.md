@@ -8128,3 +8128,66 @@ of the source now.
 
 Test 1: 15,636 checks, 0 failed. The round trip, the upgrade from a nameless arrangement, the four
 corrupting separators, the cap and the trim.
+
+---
+
+# §179 — Reflow stopped translating
+
+Build 314.
+
+## The bug
+
+He reflowed Croatian and got English back, and usually only found out after pasting it somewhere.
+
+The reflow instruction **never mentioned language at all**, and every style rule in it is written in
+English. So the model followed the language of the instruction rather than the language of the text.
+It was not translating on purpose; it was answering in the language it was being spoken to in.
+
+## Three parts, and the ordering is the one that is easy to miss
+
+1. **Detected here, not inferred there.** `MaWordLanguage.detect` — Croatian letters settle it
+   outright, and without them the badge decides, because a six-word dictation has too little
+   evidence for anything cleverer. **It never returns "unknown"**, because unknown resolves to
+   English every time, which is the bug.
+2. **Named.** "Croatian", not "the original language". A rule that describes a language without
+   naming it is a rule the model has to resolve, and it resolves it towards the language it is being
+   addressed in. The proofread prompt has carried `Keep the original language. Never translate.` for
+   months — buried mid-list, in English — and this happened anyway.
+3. **Last.** After the instruction, after the system prompt, immediately before his text. Anything
+   in English written *after* the language rule pulls the output back.
+
+Applied in `requestReword`, so it covers every rewording prompt rather than only reflow. The failure
+is a property of an English instruction meeting foreign text, and all of them are English
+instructions.
+
+The test asserts the **ordering by index**, not the presence of the sentence. Sabotaged by moving the
+rule to the front: red.
+
+## The voice
+
+`MANTRA_MANIFEST/modules/prose-voice.md`, added to the instruction. The rules already there said some
+of it in other words; these are the parts the module names that were missing — short paragraphs, the
+honest counterweight, witness rather than assert, one image carried through, the principle before the
+request, practical facts bare, ending by taking pressure off, and normal sentence capitalisation,
+which is the module's one deliberate deviation from its source.
+
+And the sentence that matters most: **change the shape only, never the meaning.** Three rambling
+sentences become the same three points, not four.
+
+## The badge, checked rather than assumed
+
+He asked whether the tap is applied. It is: build 292 put the badge on the sending line and build 295
+moved it to the left, where the recorder's badge sits. A tap runs `MaLanguage.cycleMode` and then
+`retranscribeInLanguage` — cancel, switch, send the same audio again.
+
+And the switch is **global**, which is what he says it should be. `cycleMode` writes both
+`maLanguageMode` and `activeInputLanguage`, synchronously, so a tap followed immediately by a send
+has landed before the send reads it. There is no per-field or per-session scope anywhere.
+
+The badge showing ENG while he speaks Croatian is therefore not a bug in the badge — it is the badge
+telling the truth about a keyboard set to English. Tapping it is the fix, and it now also fixes the
+reflow, because reflow reads the same setting.
+
+## Tested
+
+Test 1: 53 checks, 0 failed. Sabotaged by putting the language rule first: red on the ordering check.

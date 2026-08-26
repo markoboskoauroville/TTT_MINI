@@ -70,7 +70,26 @@ object MaFlow {
             "like where I can be reached, not ceremonial.\n\n" +
             "Warm does not mean soft. If something will not work, say it will not work, then offer " +
             "the version that will.\n\n" +
-            "Keep it as short as it can be while still carrying the reason."
+            "Keep it as short as it can be while still carrying the reason.\n\n" +
+            // THE VOICE, from MANTRA_MANIFEST/modules/prose-voice.md. The rules above were written
+            // before that module existed and said most of this in other words; these are the parts
+            // it names that were missing.
+            "Short paragraphs of one or two sentences, with white space between them. Almost never " +
+            "three.\n\n" +
+            "Say the thing, then the honest counterweight to it. The qualification is what makes " +
+            "the claim trustworthy.\n\n" +
+            "Witness rather than assert: say what was seen, not what is true in general.\n\n" +
+            "One image, carried through. Never stack metaphors.\n\n" +
+            "The principle before the request, so an ask arrives already justified.\n\n" +
+            "Practical facts bare: time, link, place, with no apology and no padding.\n\n" +
+            "End by taking pressure off the reader rather than adding it.\n\n" +
+            "No exclamation marks. No emoji. No bullet points. No dashes. Written to one person as " +
+            "\"you\", never to \"everyone\".\n\n" +
+            "Normal sentence capitalisation, a capital after every full stop, correct " +
+            "apostrophes.\n\n" +
+            "Change the shape only, never the meaning. No new facts, no invented details, no " +
+            "softening of something said firmly. Three rambling sentences become the same three " +
+            "points in clean prose, not four."
 
     /**
      * The wording of the instance that carries the checkmark, or empty for the shipped one.

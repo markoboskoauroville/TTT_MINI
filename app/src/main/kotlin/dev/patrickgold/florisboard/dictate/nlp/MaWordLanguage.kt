@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.nlp
 
+import dev.patrickgold.florisboard.dictate.MaLanguage
+
 /**
  * WHICH LANGUAGE IS THIS WORD, AND IS IT WORTH ASKING.
  *
@@ -68,6 +70,27 @@ object MaWordLanguage {
         /** Nobody knows yet. Queue it, learn it under [fallback] meanwhile so nothing is lost. */
         data class Ask(val word: String, val fallback: String) : Answer
     }
+
+    /**
+     * The language of a whole passage, decided here rather than by the model.
+     *
+     * Croatian letters are conclusive: č ć ž š đ exist in Croatian and not in English, so one of
+     * them anywhere in the text settles it. That covers most of what he writes.
+     *
+     * Without them, the badge decides. It is what he set, it is global, and it is right far more
+     * often than a guess from short dictated text would be — a sentence of six words has too little
+     * evidence for anything cleverer, and a wrong guess here is the bug this exists to fix.
+     *
+     * **Never returns "unknown".** The caller has to name a language to the model, and "unknown"
+     * resolves to English every time.
+     */
+    fun detect(text: String): String {
+        if (text.any { it in CROATIAN_LETTERS }) return HR
+        return MaLanguage.active()
+    }
+
+    /** The English name of a language code, for naming it in an instruction. */
+    fun nameOf(code: String): String = if (code == HR) "Croatian" else "English"
 
     /** Lowercased, stripped of anything that is not a letter. The form both models are keyed on. */
     fun normalise(word: String): String =

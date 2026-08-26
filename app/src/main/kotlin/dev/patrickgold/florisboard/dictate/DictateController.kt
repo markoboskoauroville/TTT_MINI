@@ -3696,7 +3696,36 @@ object DictateController {
         val content = buildString {
             append(instruction)
             if (sys.isNotBlank()) append("\n\n").append(sys)
-            if (!input.isNullOrBlank()) append("\n\n").append(input)
+            if (!input.isNullOrBlank()) {
+                // THE LANGUAGE RULE GOES LAST, AND IT NAMES THE LANGUAGE.
+                //
+                // He reported reflow silently TRANSLATING his Croatian into English, and only
+                // noticing after he had pasted it somewhere. The instruction never mentioned
+                // language at all, and every style rule in it is written in English — so the model
+                // followed the language of the instruction rather than the language of the text.
+                //
+                // Three things, and each matters on its own:
+                //
+                //  1. The language is DETECTED HERE from the text, not left to the model to infer.
+                //     Inferring is what it was already doing, and it inferred English.
+                //  2. It is NAMED. "Croatian", not "the original language" — a rule that describes
+                //     a language without naming it is a rule the model has to resolve, and it
+                //     resolves it towards the language it is being spoken to in.
+                //  3. It is LAST, after every style rule and immediately before his text. Anything
+                //     written in English AFTER it drags the output back, which is exactly how the
+                //     old "keep the original language" line in the proofread prompt survives being
+                //     buried in the middle of a list.
+                //
+                // Applied to every rewording prompt, not only reflow — proofread, the library, the
+                // live prompts. The failure is a property of an English instruction meeting foreign
+                // text, and every one of them is an English instruction.
+                val language = MaWordLanguage.nameOf(MaWordLanguage.detect(input))
+                append("\n\n").append(
+                    "The text below is written in $language. Your entire answer must be in " +
+                        "$language. Do not translate it into English or any other language.",
+                )
+                append("\n\n").append(input)
+            }
         }
         return requestRewordRaw(content, reasoning, reasoningCustom)
     }

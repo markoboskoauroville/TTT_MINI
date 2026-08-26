@@ -147,6 +147,52 @@ check("the screen shows both languages", "MaWordLanguage.HR" in setting, "one nu
 check("each can be wiped alone", "MaNgram.forget(language)" in setting, "wiping one costs the other")
 check("the queue is visible", "MaNgram.pendingCount()" in setting, "no way to see what is waiting")
 
+# ---------------------------------------------------------------- reflow must not translate
+#
+# He reported reflow returning English for Croatian text, and only noticing after pasting it. The
+# instruction never named a language and every style rule in it is English, so the model followed the
+# instruction's language rather than the text's.
+CRO = "čćžšđ"
+
+
+def detect(text, badge):
+    """The port of MaWordLanguage.detect. Never returns unknown."""
+    if any(c in CRO for c in text):
+        return "hr"
+    return badge
+
+
+def name_of(code):
+    return "Croatian" if code == "hr" else "English"
+
+
+check("Croatian letters settle it", detect("Idemo na kolodvor u pet, čekaj me", "en") == "hr",
+      "the badge would have said English and the reflow would have translated")
+check("one accented letter is enough", detect("ovo je čudno", "en") == "hr")
+check("plain English follows the badge", detect("meet me at five", "en") == "en")
+check("plain Croatian follows the badge", detect("idemo na kolodvor", "hr") == "hr",
+      "no diacritics, so the badge is the only evidence there is")
+check("it never answers unknown", detect("", "en") in ("en", "hr"),
+      "unknown resolves to English every time, which is the bug")
+check("the name is a real language name", name_of("hr") == "Croatian" and name_of("en") == "English",
+      "the original language is a rule the model has to resolve, and it resolves it to English")
+
+wl = code(SRC / "dictate/nlp/MaWordLanguage.kt")
+check("the detector exists", "fun detect(" in wl, "left to the model to infer")
+check("it names the language", "fun nameOf(" in wl, "nothing to put in the instruction")
+
+ctrl = code(SRC / "dictate/DictateController.kt")
+check("every rewording names the language", "Your entire answer must be in" in ctrl, "silent translation")
+check("it forbids translating outright", "Do not translate it into English" in ctrl)
+# THE ORDERING, which is the whole fix. The language rule must sit AFTER the instruction and the
+# system prompt, and immediately before his text.
+lang_at = ctrl.find("The text below is written in")
+sys_at = ctrl.find("if (sys.isNotBlank())")
+check("the language rule comes after the style rules", 0 < sys_at < lang_at,
+      "English written after it drags the output back into English")
+check("and immediately before the text", ctrl.find('append("\\n\\n").append(input)', lang_at) > lang_at,
+      "something else sits between the rule and the text it governs")
+
 print(f"word language, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

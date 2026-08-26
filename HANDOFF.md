@@ -21,7 +21,15 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 313.** The last stretch, newest first:
+**Build 314.** The last stretch, newest first:
+
+- **Reflow no longer translates.** Every rewording prompt now DETECTS the language of the text,
+  NAMES it, and puts that rule LAST — after the style rules and immediately before his text. It was
+  the ordering as much as the omission: English style rules after a language rule drag the output
+  back into English.
+- **The reflow instruction follows `prose-voice.md`** — short paragraphs, the honest counterweight,
+  witness rather than assert, one image, the principle before the request, ending by taking pressure
+  off. Shape only, never meaning.
 
 - **Rows can be named.** "bucket row", "keyboard row" — typed on the row's own tab, shown on the
   tab, falling back to "Row 3" when blank. The name rides inside the existing META field as
