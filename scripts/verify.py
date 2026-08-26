@@ -702,6 +702,14 @@ def check_layout_imports(path: Path, text: str) -> None:
     # functions those files DECLARE. The declaration skip below already handles that, and the sweep
     # went to zero.
     groups = {
+        # This app's own nlp package. Added after build 314 went red on `MaWordLanguage` used with
+        # no import — the edit that added the reference used an anchor that did not exist in that
+        # file, so the import was silently never inserted and nothing noticed until CI.
+        #
+        # Same closed-list discipline, measured first: zero hits across the app.
+        "dev.patrickgold.florisboard.dictate.nlp": [
+            "MaWordLanguage", "MaNgram", "MaNgramModel", "MaAiPredict",
+        ],
         "androidx.compose.foundation.layout": ["Column", "Row", "Box", "Spacer", "Arrangement", "BoxWithConstraints"],
         "androidx.compose.runtime": [
             "mutableStateOf", "mutableIntStateOf", "mutableLongStateOf", "remember",
@@ -710,7 +718,17 @@ def check_layout_imports(path: Path, text: str) -> None:
     }
     imports = {ln.strip() for ln in text.splitlines() if ln.startswith("import ")}
     code = strip_code(text)
+    # A file IN the package needs no import from it. The measurement before adding the nlp group
+    # missed this because it excluded on the package DECLARATION and the sweep ran on the whole
+    # file — two hits in MaNgram.kt, which lives there. Two is not many, and two is enough to teach
+    # somebody to skim past the third.
+    declared_package = next(
+        (ln.removeprefix("package ").strip() for ln in text.splitlines() if ln.startswith("package ")),
+        "",
+    )
     for package, names in groups.items():
+        if package == declared_package:
+            continue
         # A wildcard brings them all in and this cannot see which.
         if any(i == f"import {package}.*" for i in imports):
             continue

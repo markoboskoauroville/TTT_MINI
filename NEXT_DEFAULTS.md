@@ -8191,3 +8191,25 @@ reflow, because reflow reads the same setting.
 ## Tested
 
 Test 1: 53 checks, 0 failed. Sabotaged by putting the language rule first: red on the ordering check.
+
+## §179a — An edit whose anchor did not exist
+
+Build 314 went red on `MaWordLanguage` used with no import.
+
+The edit that added the reference also tried to add the import, anchored on a `MaNgram` import line
+that **does not exist in `DictateController.kt`**. The replace matched nothing, did nothing, and said
+nothing. The reference went in; the import did not.
+
+That is the fourth time this month a scripted edit has failed silently — the range cuts that removed
+live declarations, twice, and now an anchor that was never there. **A `str.replace` that matches
+nothing is indistinguishable from one that worked**, and the only way to tell is to check the result
+rather than the absence of an error.
+
+`check_layout_imports` gained a group for this app's own `dictate.nlp` package. Measured first, as
+the file demands — and the first measurement was **wrong**: it reported zero because the probe
+excluded files by their package declaration while the real check did not, so `MaNgram.kt`, which
+lives in that package, produced two false positives once it was wired in.
+
+Two false positives is not many, and two is exactly enough to teach somebody to skim past the third.
+The check skips a file whose own `package` line matches the group. Re-measured: zero across the app,
+and it still names the real broken file.

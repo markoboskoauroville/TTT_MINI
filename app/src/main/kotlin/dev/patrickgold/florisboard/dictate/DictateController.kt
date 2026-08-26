@@ -95,6 +95,7 @@ import dev.patrickgold.florisboard.dictate.audio.MaEncoder
 import dev.patrickgold.florisboard.dictate.audio.MaResample
 import dev.patrickgold.florisboard.dictate.provider.MaKeyRing
 import dev.patrickgold.florisboard.dictate.provider.MaKeys
+import dev.patrickgold.florisboard.dictate.nlp.MaWordLanguage
 
 /**
  * Orchestrates the dictation flow that fuses the recording, the provider layer and the editor: tap
