@@ -193,6 +193,27 @@ check("the language rule comes after the style rules", 0 < sys_at < lang_at,
 check("and immediately before the text", ctrl.find('append("\\n\\n").append(input)', lang_at) > lang_at,
       "something else sits between the rule and the text it governs")
 
+# ---------------------------------------------------------------- short phrases and the styles
+proof = code(SRC / "dictate/MaProofread.kt")
+check("a fragment is still corrected", "A short phrase is still text" in proof,
+      "three or four words came back untouched: no capital, no full stop")
+check("the fragment rule is read before the unchanged rule",
+      proof.index("A short phrase is still text") < proof.index("already correct, return it"),
+      "the model reads 'return it unchanged' first and a fragment qualifies")
+
+flow = code(SRC / "dictate/MaFlow.kt")
+check("there are two styles", "STYLE_MARKO" in flow and "STYLE_YSHAI" in flow, "no choice at all")
+check("Yshai adds lower case", "entirely in lower case" in flow, "the styles would be identical")
+check("Marko adds nothing", 'STYLE_YSHAI) {' in flow, "the default would carry a rule it does not need")
+check("his own wording is untouched by the style", "custom().ifBlank {" in flow,
+      "a prompt he wrote would have rules appended to it")
+
+prompts_ui = code(SRC / "app/settings/dictate/MaPromptsScreen.kt")
+check("the section is named for Mantra", "Grammar correction (Mantra)" in prompts_ui,
+      "indistinguishable from the settings inherited from the fork")
+check("the whole row is the target", "onClick = null," in prompts_ui,
+      "a 20dp circle is not a target for somebody with low vision")
+
 print(f"word language, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

@@ -1410,6 +1410,24 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = -1,
         )
 
+        /**
+         * Which of the two writing styles the reflow produces: "marko" or "yshai".
+         *
+         * MANTRA_MANIFEST/modules/prose-voice.md defines ONE voice, taken from Yshai Afterman's
+         * letters, with exactly one deliberate deviation: Marko's prose uses normal sentence
+         * capitalisation and correct apostrophes where Yshai writes his most personal letters in
+         * lowercase and drops them.
+         *
+         * So these are not two voices. They are the same voice with that one deviation on or off,
+         * and the setting says so in those words rather than offering two names as if they were
+         * different characters. **A choice between two things that differ in one respect should
+         * name the respect.**
+         */
+        val maProseStyle = string(
+            key = "dictate__ma_prose_style",
+            default = "marko",
+        )
+
         val maNgramPending = string(
             key = "dictate__ma_ngram_pending",
             default = "",

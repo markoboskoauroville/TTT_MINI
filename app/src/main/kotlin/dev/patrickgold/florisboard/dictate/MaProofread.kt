@@ -38,6 +38,15 @@ import dev.patrickgold.florisboard.dictate.data.prompts.PromptModel
  * had written it. The instruction forbids it explicitly; a note about preamble is the difference
  * between a feature and a mess to clean up.
  *
+ * ### Short phrases
+ *
+ * He pressed Ctrl+P on three or four words and nothing happened: no capital, no full stop. The
+ * instruction said "if the text is already correct, return it completely unchanged", and a model
+ * reading a bare fragment decides a fragment is what was intended and returns it.
+ *
+ * **A short phrase is still text.** The rule now says so, above the unchanged rule so it is read
+ * first, and names what to do: capital at the front, terminal punctuation at the end.
+ *
  * ### Language
  *
  * Nothing here names a language. The text says what language it is in, and this app is used in two;
@@ -64,6 +73,9 @@ object MaProofread {
             "- Keep the original language. Never translate.\n" +
             "- Keep line breaks, paragraph breaks, lists and any formatting exactly as they are.\n" +
             "- Do not add or remove content, and do not add explanations, comments or notes.\n" +
+            "- A short phrase is still text. Capitalise the first letter and end it with a full " +
+            "stop unless it is a question or exclamation, even if it is only three or four words. " +
+            "A fragment is not an excuse to return it untouched.\n" +
             "- If the text is already correct, return it completely unchanged.\n\n" +
             "Return only the corrected text. No preamble, no quotation marks around it, no " +
             "commentary."

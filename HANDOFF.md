@@ -21,7 +21,15 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 314.** The last stretch, newest first:
+**Build 316.** The last stretch, newest first:
+
+- **Ctrl+P now corrects a three-word phrase.** The instruction said "if the text is already correct,
+  return it unchanged" and a model reading a bare fragment decided a fragment was intended. The new
+  rule sits ABOVE that one and names what to do: capital at the front, terminal punctuation.
+- **Grammar correction (Mantra)**, under the Ctrl+F prompt: Marko or Yshai. Not two voices — one
+  voice with `prose-voice.md`'s single deviation on or off. Your own wording is never modified.
+- **Row renaming already shipped in build 313** — the field is above the tabs, labelled *Name this
+  row*.
 
 - **Reflow no longer translates.** Every rewording prompt now DETECTS the language of the text,
   NAMES it, and puts that rule LAST — after the style rules and immediately before his text. It was

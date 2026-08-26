@@ -11,6 +11,7 @@
 package dev.patrickgold.florisboard.app.settings.dictate
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -79,6 +80,8 @@ fun MaPromptsScreen() = FlorisScreen {
 
     content {
         val prefs by FlorisPreferenceStore
+        // The style chooser writes a preference, and a preference write suspends.
+        val scope = rememberCoroutineScope()
 
         Text(
             text = "Ctrl+P and Ctrl+F each send an instruction to the rewording model. Keep as " +
@@ -101,6 +104,72 @@ fun MaPromptsScreen() = FlorisScreen {
             title = "Ctrl + F \u2014 Better flow",
             pref = prefs.dictate.maFlowPrompt,
             shipped = MaFlow.INSTRUCTION,
+        )
+
+        // GRAMMAR CORRECTION (MANTRA) — the writing style the reflow produces.
+        //
+        // Named with "Mantra" in it at his request, so it cannot be confused with the settings
+        // inherited from the app this was forked out of. Everything here is his, not FlorisBoard's.
+        //
+        // Placed under the Ctrl+F prompt rather than on a screen of its own: it changes what that
+        // prompt produces, and a setting one screen away from the thing it modifies is a setting
+        // nobody connects to the result.
+        //
+        // TWO OPTIONS, AND THEY ARE NOT TWO VOICES. prose-voice.md defines ONE voice, taken from
+        // Yshai Afterman's letters, with exactly one deliberate deviation: Marko's prose uses
+        // sentence capitalisation and apostrophes where Yshai writes his most personal letters in
+        // lowercase and drops them. So the chooser names the RESPECT they differ in rather than
+        // offering two names as though they were different characters.
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = "Grammar correction (Mantra)",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        Text(
+            text = "One voice, taken from Yshai Afterman's letters. The two options differ in " +
+                "one respect only.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+        val style by prefs.dictate.maProseStyle.collectAsState()
+        for (option in listOf(
+            MaFlow.STYLE_MARKO to ("Marko" to "Sentence capitalisation, apostrophes kept. The default."),
+            MaFlow.STYLE_YSHAI to ("Yshai" to "All lower case, apostrophes dropped, exactly as he writes."),
+        )) {
+            val on = style == option.first
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { scope.launch { prefs.dictate.maProseStyle.set(option.first) } }
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            ) {
+                RadioButton(
+                    selected = on,
+                    // Null, and the Row above carries the click: the whole line is the target, which
+                    // matters more here than usual — he reads on a phone with low vision, and a
+                    // 20dp circle is not a target, it is a dare.
+                    onClick = null,
+                )
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(text = option.second.first, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = option.second.second,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        Text(
+            text = "This changes the shipped Ctrl + F instruction only. If you have written your " +
+                "own wording above, yours is used exactly as you wrote it.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
 
         Spacer(Modifier.height(28.dp))

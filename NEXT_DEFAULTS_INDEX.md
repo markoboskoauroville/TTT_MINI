@@ -180,3 +180,4 @@ since been removed.
 - **§177** — Audited against the fallback module
 - **§178** — Rows have names
 - **§179** — Reflow stopped translating
+- **§180** — A fragment is still text, and one voice with a switch

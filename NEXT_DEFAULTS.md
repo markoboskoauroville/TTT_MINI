@@ -8213,3 +8213,51 @@ lives in that package, produced two false positives once it was wired in.
 Two false positives is not many, and two is exactly enough to teach somebody to skim past the third.
 The check skips a file whose own `package` line matches the group. Re-measured: zero across the app,
 and it still names the real broken file.
+
+---
+
+# §180 — A fragment is still text, and one voice with a switch
+
+Build 316.
+
+## Ctrl+P did nothing to three words
+
+The instruction ended with *"If the text is already correct, return it completely unchanged."* A
+model handed a bare fragment decides the fragment is what was intended, and returns it. No capital,
+no full stop, nothing.
+
+**A short phrase is still text**, and the rule now says so — placed ABOVE the unchanged rule, because
+the unchanged rule is read first and a fragment qualifies for it. Ordering again, exactly as with the
+language rule yesterday: the same instruction with the same lines in a different order behaves
+differently, and the test asserts the order by index.
+
+## Grammar correction (Mantra)
+
+Named with Mantra in it at his request, so it cannot be confused with the settings inherited from the
+app this was forked from.
+
+Under the Ctrl+F prompt rather than on a screen of its own. **A setting one screen away from the
+thing it modifies is a setting nobody connects to the result.**
+
+**Two options that are not two voices.** `prose-voice.md` defines ONE voice, taken from Yshai
+Afterman's letters, with exactly one deliberate deviation: Marko's prose uses sentence capitalisation
+and apostrophes where Yshai writes his most personal letters in lowercase and drops them. So the
+chooser names the respect they differ in rather than offering two names as if they were different
+characters — otherwise the next person adds a third "style" and the module's one rule becomes a
+palette.
+
+His own wording, if he has written one, is used exactly as written. The style toggle appends nothing
+to it. **A setting that edits text he typed is a setting that has exceeded its authority.**
+
+The whole row is the tap target, not the radio circle. He has low vision; a 20dp circle is not a
+target, it is a dare.
+
+## Row renaming
+
+Already shipped, build 313. The field is above the tabs on the feature row editor, labelled *Name
+this row*, and the tab shows the name as you type. Nothing was missing; it needed pointing at.
+
+## Tested
+
+Test 1: 61 checks, 0 failed. Broken by moving the fragment rule below the unchanged rule: red on the
+ordering check — the version that reads correctly and does nothing.
