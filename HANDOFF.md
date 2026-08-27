@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 316.** The last stretch, newest first:
+**Build 317.** The last stretch, newest first:
+
+- **The lowercase style option is gone — it should never have existed.** `prose-voice.md` §3 says
+  Yshai's lowercase is *the one thing we deliberately do not copy*, and build 316 turned that note
+  into a setting offering to copy it. There is one voice, his, with sentence capitalisation. The
+  section states it rather than offering a choice that does not exist.
 
 - **Ctrl+P now corrects a three-word phrase.** The instruction said "if the text is already correct,
   return it unchanged" and a model reading a bare fragment decided a fragment was intended. The new

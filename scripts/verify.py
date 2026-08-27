@@ -486,7 +486,12 @@ def check_removed_declarations(path: Path, text: str) -> None:
     # version of this check reported three of the four names the red build actually failed on.
     local_objects = set(re.findall(r"^\s*(?:private\s+|internal\s+)?object\s+(\w+)", now, re.M))
     for name in sorted(removed):
-        bare = re.search(r"(?<![.\w])" + re.escape(name) + r"\b", now)
+        # NOT a named argument. `style = MaterialTheme.typography...` is a parameter called style,
+        # not a use of a local called style — and after a local `style` was removed this check
+        # reported it as still used, on a file where every remaining hit was somebody else's
+        # parameter name. A check that cannot tell a use from a label is a check that fires on
+        # ordinary Compose code, which is most of this app.
+        bare = re.search(r"(?<![.\w])" + re.escape(name) + r"\b(?!\s*=[^=])", now)
         qualified = any(
             re.search(r"(?<![.\w])" + re.escape(obj) + r"\." + re.escape(name) + r"\b", now)
             for obj in local_objects

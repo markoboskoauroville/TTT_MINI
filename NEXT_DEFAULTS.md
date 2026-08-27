@@ -8261,3 +8261,47 @@ this row*, and the tab shows the name as you type. Nothing was missing; it neede
 
 Test 1: 61 checks, 0 failed. Broken by moving the fragment rule below the unchanged rule: red on the
 ordering check — the version that reads correctly and does nothing.
+
+---
+
+# §181 — The choice that should not have existed
+
+Build 317. He looked at the chooser shipped one build earlier and said the plain thing: the Yshai
+option is not the style, because we capitalise after a full stop.
+
+He is right, and it is worse than a wrong description. **I turned a note about what we do not copy
+into a setting offering to copy it.**
+
+`prose-voice.md` §3, which I had read and quoted in the same commit:
+
+> Yshai writes his most personal letters entirely in lowercase, and drops apostrophes. **We do not.**
+> … This is the only deviation. Do not add others.
+
+The module names ONE voice. A chooser with two entries makes it a palette, which is exactly what §1
+warns against when it says a voice is extracted from real writing rather than invented from
+adjectives. And "Marko" and "Yshai" as two options implies two people's writing are both on offer,
+when one of them is the source and the other is the source with one correction applied.
+
+So the chooser is gone and a sentence replaces it: what the voice is, and which single part of it we
+do not copy. **A control offering a choice that does not exist is worse than no control** — it
+invites him to pick the wrong one and then wonder why nothing changed.
+
+`maProseStyle` stays declared and unread rather than being deleted, so a phone that already stored
+"yshai" reads back harmlessly.
+
+The tests now assert the ABSENCE: no lowercase rule anywhere in the instruction, no style constants,
+no chooser in that section. Sabotaged by putting the lowercase line back: red.
+
+## Three checks that were wrong about correct code, in one sitting
+
+**`check_removed_declarations` could not tell a use from a label.** After a local `style` was
+removed it reported `style` as still used — every remaining hit being `style = MaterialTheme…`, a
+named argument. On a Compose codebase that is most of the file. It now excludes `name =`.
+
+**A test searched the whole file for a control belonging to one section.** It found the
+prompt-wordings picker, which is a different control doing a real job. Same fault as the shift check
+that found `MaNextFieldKey`.
+
+**Then the scoped version sliced to end-of-file**, which swept the helper below it back in.
+**An open-ended slice is not a section.** Bounded at both ends, it passes and still fails on the
+sabotage.

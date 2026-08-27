@@ -201,18 +201,44 @@ check("the fragment rule is read before the unchanged rule",
       proof.index("A short phrase is still text") < proof.index("already correct, return it"),
       "the model reads 'return it unchanged' first and a fragment qualifies")
 
+# ONE VOICE, AND NO LOWERCASE OPTION.
+#
+# Build 316 offered "Marko" and "Yshai", the second all lower case. prose-voice.md §3 says that
+# lowercase is the one thing we deliberately do NOT copy — I turned a note about what not to do into
+# a setting offering to do it, and he said so as soon as he saw it. These checks exist so it cannot
+# come back.
 flow = code(SRC / "dictate/MaFlow.kt")
-check("there are two styles", "STYLE_MARKO" in flow and "STYLE_YSHAI" in flow, "no choice at all")
-check("Yshai adds lower case", "entirely in lower case" in flow, "the styles would be identical")
-check("Marko adds nothing", 'STYLE_YSHAI) {' in flow, "the default would carry a rule it does not need")
-check("his own wording is untouched by the style", "custom().ifBlank {" in flow,
+check("no lowercase rule anywhere", "lower case" not in flow.lower(),
+      "the one thing prose-voice.md says not to copy, offered as an option")
+check("no style constants", "STYLE_YSHAI" not in flow and "STYLE_MARKO" not in flow,
+      "a chooser between variants of a single voice")
+check("the prompt is the instruction", "custom().ifBlank { INSTRUCTION }" in flow,
+      "something still selects between styles")
+check("his own wording is used as written", "custom().ifBlank" in flow,
       "a prompt he wrote would have rules appended to it")
+
+prompts_ui2 = code(SRC / "app/settings/dictate/MaPromptsScreen.kt")
+# Scoped to the Mantra section. The bare search found the prompt-wordings picker further up the
+# file, which is a different control doing a real job — the same fault as the shift check that found
+# MaNextFieldKey. **A claim about one section must be checked inside that section.**
+# BOUNDED at both ends. Slicing to end-of-file swept in the PromptCategory helper below it, which
+# has a RadioButton of its own doing a real job — so the check failed on correct code twice before
+# the bound was added. **An open-ended slice is not a section.**
+_m0 = prompts_ui2.index("Grammar correction (Mantra)")
+_m1 = prompts_ui2.index("Spacer(Modifier.height(28.dp))", _m0)
+mantra = prompts_ui2[_m0:_m1]
+check("the chooser is gone from that section", "RadioButton(" not in mantra,
+      "a control offering a choice that does not exist")
+check("and no style preference is read there", "maProseStyle" not in mantra, "still selecting a variant")
+check("the voice is stated instead", "one voice, taken from Yshai Afterman" in prompts_ui2,
+      "the section says nothing about what Ctrl+F does")
+check("and says which part is not copied", "that is the one thing we do not copy" in prompts_ui2,
+      "somebody will re-add the lowercase option next year")
 
 prompts_ui = code(SRC / "app/settings/dictate/MaPromptsScreen.kt")
 check("the section is named for Mantra", "Grammar correction (Mantra)" in prompts_ui,
       "indistinguishable from the settings inherited from the fork")
-check("the whole row is the target", "onClick = null," in prompts_ui,
-      "a 20dp circle is not a target for somebody with low vision")
+
 
 print(f"word language, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:

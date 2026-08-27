@@ -181,3 +181,4 @@ since been removed.
 - **§178** — Rows have names
 - **§179** — Reflow stopped translating
 - **§180** — A fragment is still text, and one voice with a switch
+- **§181** — The choice that should not have existed

@@ -103,23 +103,23 @@ object MaFlow {
         return MaPrompts.activeText(prefs.dictate.maFlowPrompt.get())
     }
 
-    /**
-     * The instruction plus the capitalisation rule the chosen style asks for.
-     *
-     * Appended rather than woven in, so the shipped instruction stays one readable string and the
-     * style is a line at the end that can be read on its own. It sits before the language rule that
-     * `requestReword` adds, which must stay last of all.
-     */
-    fun instructionFor(style: String): String = INSTRUCTION + if (style == STYLE_YSHAI) {
-        "\n\nWrite it entirely in lower case, including the first word of every sentence and the " +
-            "word I. Drop apostrophes from contractions: dont, havent, im. Everything else above " +
-            "stays exactly as it is."
-    } else {
-        ""
-    }
-
-    const val STYLE_MARKO = "marko"
-    const val STYLE_YSHAI = "yshai"
+    // THERE IS ONE VOICE, AND THE LOWERCASE OPTION WAS MY MISTAKE.
+    //
+    // Build 316 offered "Marko" and "Yshai", the second writing everything in lower case with
+    // apostrophes dropped. He looked at it and said the plain thing: **that is not the style.**
+    //
+    // prose-voice.md §3 could not be clearer, and I had read it: *"Yshai writes his most personal
+    // letters entirely in lowercase, and drops apostrophes. We do not... This is the only
+    // deviation. Do not add others."*
+    //
+    // I turned a note explaining what we DO NOT COPY into a setting offering to copy it. The module
+    // names one voice — his, with sentence capitalisation — and a chooser with two entries makes it
+    // look like a palette, which is the thing §1 warns about when it says a voice is extracted from
+    // real writing rather than invented from adjectives.
+    //
+    // So the chooser is gone. The instruction carries the voice, capitalised, and nothing selects
+    // between variants of it. `maProseStyle` is left declared and unread rather than deleted, so a
+    // phone that stored "yshai" reads back harmlessly instead of tripping a missing preference.
 
     fun prompt(): PromptModel = PromptModel(
         id = PromptModel.ID_INSTANT_PROMPT,
@@ -131,10 +131,7 @@ object MaFlow {
         // very next press with nothing to restart.
         // His own wording wins outright, including its capitalisation — if he has written a prompt,
         // the style toggle is not entitled to append rules to it.
-        prompt = custom().ifBlank {
-            val prefs by FlorisPreferenceStore
-            instructionFor(prefs.dictate.maProseStyle.get())
-        },
+        prompt = custom().ifBlank { INSTRUCTION },
         requiresSelection = true,
         autoApply = false,
     )
