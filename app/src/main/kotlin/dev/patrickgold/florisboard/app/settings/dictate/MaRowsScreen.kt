@@ -690,7 +690,10 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.REDO ->
                 Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = null, tint = tint, modifier = size)
-            MaFeatureKey.AUTO_BUCKET -> letters("A1")
+            // A with the direction it works in. The old face was "A1", a leftover from the ladder
+            // that counted how far up the page it had climbed — there is no ladder and no number.
+            MaFeatureKey.AUTO_BUCKET -> letters("A\u2191")
+            MaFeatureKey.AUTO_BUCKET_DOWN -> letters("A\u2193")
             MaFeatureKey.PASTE ->
                 Icon(Icons.Default.ContentPaste, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CUT ->

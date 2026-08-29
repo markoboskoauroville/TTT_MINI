@@ -147,7 +147,21 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * Long press resets the count to the first block. Without that, one mistaken press leaves the
      * counter pointing at last month, and there would be no way back down the page.
      */
-    AUTO_BUCKET("autobucket", "A-bucket, code blocks into the buckets"),
+    /**
+     * TWO AUTOMATIC BUCKETS, differing only in the end of the frame they start at.
+     *
+     * [AUTO_BUCKET] takes the LOWEST code block in view and works upward — newest first, which
+     * is right in a chat, where the answer he just received is at the bottom.
+     *
+     * [AUTO_BUCKET_DOWN] takes the HIGHEST in view and works downward, which is right when he
+     * has scrolled back to a run of answers and wants them in the order they were written.
+     *
+     * Both skip a block already in a bucket and both stop when every block in the frame is
+     * held. **One key, one direction.** A single key with a mode would mean remembering which
+     * way it was pointing before every press, and being wrong collects from the wrong end.
+     */
+    AUTO_BUCKET("autobucket", "A-bucket, from the bottom up"),
+    AUTO_BUCKET_DOWN("autobucketdown", "A-bucket, from the top down"),
 
     /**
      * The pin: keep the keyboard up when the app it is typing into would close it.
@@ -535,6 +549,7 @@ val MaFeatureKey.group: MaFeatureGroup
         -> MaFeatureGroup.CLIPBOARD
 
         MaFeatureKey.AUTO_BUCKET,
+        MaFeatureKey.AUTO_BUCKET_DOWN,
         MaFeatureKey.CLIP_CLEAR,
         -> MaFeatureGroup.BUCKETS
 

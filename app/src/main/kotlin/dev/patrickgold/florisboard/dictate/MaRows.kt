@@ -376,7 +376,9 @@ object MaRows {
 
     /** A fills, the buckets hold, the bin empties. Everything else keeps catalogue order. */
     private fun bucketOrder(button: Button): Int = when {
-        button is Button.Builtin && button.key == MaFeatureKey.AUTO_BUCKET -> 0
+        // The two A keys sit together at the head of the section, up before down.
+        button is Button.Builtin && button.key == MaFeatureKey.AUTO_BUCKET -> -1
+        button is Button.Builtin && button.key == MaFeatureKey.AUTO_BUCKET_DOWN -> 0
         button is Button.Clip -> button.slot
         button is Button.Builtin && button.key == MaFeatureKey.CLIP_CLEAR -> CLIP_SLOTS + 1
         else -> 0

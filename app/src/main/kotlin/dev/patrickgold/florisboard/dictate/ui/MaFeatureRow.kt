@@ -861,7 +861,11 @@ fun MaFeatureRow(
                     },
                 )
 
-                MaFeatureKey.AUTO_BUCKET -> {
+                MaFeatureKey.AUTO_BUCKET, MaFeatureKey.AUTO_BUCKET_DOWN -> {
+                    // TWO KEYS, ONE BODY. The only difference is which end of the frame it starts
+                    // at, so writing it twice would be two places for the skip rule, the messages
+                    // and the undo arming to drift apart.
+                    val downward = button.key == MaFeatureKey.AUTO_BUCKET_DOWN
                     // A: TAKE THE CODE BLOCK YOU ARE LOOKING AT.
                     //
                     // It used to walk the whole document by a counter — press once for the newest
@@ -885,7 +889,7 @@ fun MaFeatureRow(
                     // it say so, which is the message he asked for after copying the same thing
                     // twice on a screen he had scrolled back to.
                     ThemedTextKey(
-                        label = "A",
+                        label = if (downward) "A\u2193" else "A\u2191",
                         modifier = keyMod,
                         tint = null,
                         onLongClick = {
@@ -931,7 +935,12 @@ fun MaFeatureRow(
                                 var alreadyHeld = 0
                                 // Lowest first, then upward. Every rank in the frame is tried, so a
                                 // block already in a bucket costs one press and not a dead key.
-                                for (rank in 0 until inView) {
+                                // Rank 0 is the LOWEST block in the frame, so counting up walks
+                                // upward and counting down from the top walks downward. One range,
+                                // reversed — not a second loop with the comparison flipped, which
+                                // is where an off-by-one lives.
+                                val order = if (downward) (inView - 1) downTo 0 else 0 until inView
+                                for (rank in order) {
                                     val before = MaClipCapture.parse(
                                         prefs.dictate.maClipCaptured.get(),
                                     )

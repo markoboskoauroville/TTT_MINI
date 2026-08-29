@@ -29,7 +29,7 @@ def check(name: str, ok: bool, detail: str = "") -> None:
         failures.append(f"{name}: {detail}")
 
 
-def press(in_view, buckets, visible=(1, 2, 3, 4, 5)):
+def press(in_view, buckets, visible=(1, 2, 3, 4, 5), downward=False):
     """
     One press of A.
 
@@ -39,7 +39,8 @@ def press(in_view, buckets, visible=(1, 2, 3, 4, 5)):
     if not in_view:
         return "empty", buckets, 0
     presses = 0
-    for text in in_view:
+    # in_view is lowest-first. The downward key starts at the other end — one order, reversed.
+    for text in (list(reversed(in_view)) if downward else in_view):
         presses += 1
         # The press happens; the capture decides. This mirrors MaClipCapture.capture exactly.
         if text in buckets.values():
@@ -108,6 +109,32 @@ outcome, buckets, _ = press(["b2", "b1"], buckets)
 check("a third visit to the same screen takes nothing", buckets == before, str(buckets))
 check("and says everything here is held", outcome == "all-held", outcome)
 
+# ---------------------------------------------------------------- the second A key
+#
+# Two keys, differing only in which end of the frame they start at. Everything else — the skip, the
+# refusals, the messages — is one body, so these check the direction and nothing else.
+out, b, n = press(["lowest", "middle", "highest"], {}, downward=True)
+check("downward takes the highest first", b.get(1) == "highest", str(b))
+out, b, n = press(["lowest", "middle", "highest"], b, downward=True)
+check("then the one below it", b.get(2) == "middle", str(b))
+out, b, _ = press(["lowest", "middle", "highest"], {}, downward=False)
+check("upward still takes the lowest", b.get(1) == "lowest", str(b))
+
+# The two meet in the middle and neither takes anything twice.
+b = {}
+_, b, _ = press(["a", "b", "c"], b, downward=False)   # a
+_, b, _ = press(["a", "b", "c"], b, downward=True)    # c
+_, b, _ = press(["a", "b", "c"], b, downward=False)   # b, the only one left
+check("the two directions meet without repeating",
+      sorted(b.values()) == ["a", "b", "c"] and len(set(b.values())) == 3, str(b))
+out, b2, _ = press(["a", "b", "c"], b, downward=True)
+check("and then both say everything is held", out == "all-held" and b2 == b, out)
+
+# One block in view: both keys take the same one, and neither takes it twice.
+_, one, _ = press(["only"], {}, downward=True)
+check("one block, either direction", one.get(1) == "only", str(one))
+check("and not again", press(["only"], one, downward=False)[0] == "all-held")
+
 # ---------------------------------------------------------------- the wiring
 def code(path: Path) -> str:
     t = path.read_text()
@@ -118,8 +145,17 @@ def code(path: Path) -> str:
 row = code(SRC / "dictate/ui/MaFeatureRow.kt")
 check("the key presses only what is in view", "pressScreenTargetInView" in row, "still walking the page")
 check("the key counts what is in view", "countScreenTargetsInView" in row, "no bound on the loop")
-check("it tries every block in the frame", "for (rank in 0 until inView)" in row, "one press and give up")
-check("the face is A, not A1", 'label = "A"' in row, "the ladder is still on the key")
+# The loop is written over a range VARIABLE now, because the two keys walk it in opposite
+# directions. The claim is unchanged — every block in the frame is tried — and checking for the old
+# literal would have been a check on a line rather than on a behaviour.
+check("it tries every block in the frame", "for (rank in order)" in row, "one press and give up")
+check("the faces carry the direction", 'label = if (downward)' in row, "both keys would look the same")
+check("the ladder number is gone", 'letters("A1")' not in
+      (SRC / "app/settings/dictate/MaRowsScreen.kt").read_text(), "a number left over from the ladder")
+check("one body, two keys", "MaFeatureKey.AUTO_BUCKET, MaFeatureKey.AUTO_BUCKET_DOWN ->" in row,
+      "two copies for the skip rule and the messages to drift apart")
+check("one range, reversed", "(inView - 1) downTo 0 else 0 until inView" in row,
+      "a second loop with the comparison flipped is where an off-by-one lives")
 check("it says which bucket took it", "C${slot + 1}" in row, "no confirmation")
 check("it says when a block is already held", "Already copied" in row, "silent on the case he asked about")
 check("full and held are different messages", "Every bucket is full" in row, "one message for two states")

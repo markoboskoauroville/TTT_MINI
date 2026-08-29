@@ -8305,3 +8305,47 @@ that found `MaNextFieldKey`.
 **Then the scoped version sliced to end-of-file**, which swept the helper below it back in.
 **An open-ended slice is not a section.** Bounded at both ends, it passes and still fails on the
 sabotage.
+
+---
+
+# §182 — The other direction
+
+Build 318. A second automatic bucket, starting from the other end of the frame.
+
+`A↑` takes the LOWEST code block in view and works upward — newest first, which is right in a chat,
+where the answer he just received is at the bottom. `A↓` takes the HIGHEST and works downward, which
+is right when he has scrolled back to a run of answers and wants them in the order they were written.
+
+## One key, one direction
+
+Not one key with a mode. A mode would mean remembering which way it was pointing before every press,
+and being wrong collects from the wrong end of the screen — which is the failure the frame rule was
+introduced to end in §151.
+
+## One body, one range reversed
+
+Both keys are the same branch. Rank 0 is the lowest block in the frame, so counting up walks upward
+and `(inView - 1) downTo 0` walks downward. **One range, reversed — not a second loop with the
+comparison flipped**, which is where an off-by-one lives and where the skip rule, the arming and the
+three messages would drift apart.
+
+The test walks both directions meeting in the middle over the same three blocks and asserts nothing
+is taken twice.
+
+## The faces
+
+`A↑` and `A↓`. The old face was `A1` — a leftover from the ladder that counted how far up the page it
+had climbed, deleted in §151. There is no ladder and no number, and a key wearing a number nothing
+counts is a key that promises something it cannot do.
+
+## A check on a line rather than a behaviour, again
+
+`"for (rank in 0 until inView)" in row` broke, because the loop is now written over a range variable.
+Nothing was wrong; the line had moved. Restated as `for (rank in order)`.
+
+That is the fourth in three weeks. The pattern is always the same — the check quotes an
+implementation detail because it was the easiest thing to grep for on the day.
+
+## Tested
+
+Test 1: 3,107 checks, 0 failed. Broken by making both keys walk upward: red on the range check.

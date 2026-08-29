@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 317.** The last stretch, newest first:
+**Build 318.** The last stretch, newest first:
+
+- **Two automatic buckets.** `A↑` takes the lowest code block in the frame and works upward, `A↓`
+  takes the highest and works downward. One body, one range reversed — everything else, the skip
+  rule and the three messages, is shared. The old `A1` face is gone; it was a leftover from the
+  ladder.
 
 - **The lowercase style option is gone — it should never have existed.** `prose-voice.md` §3 says
   Yshai's lowercase is *the one thing we deliberately do not copy*, and build 316 turned that note
