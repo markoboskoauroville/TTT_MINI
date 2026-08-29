@@ -1193,6 +1193,23 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "",
         )
 
+        /** The bucket row's arrangement. Its own row, like the copy row. */
+        val maBucketRow = string(
+            key = "dictate__ma_bucket_row",
+            default = "",
+        )
+
+        /**
+         * Whether the bucket row is showing.
+         *
+         * Off by default: it is a mode he turns on when he is collecting, and a row that appears
+         * uninvited on every keyboard is a row he has to switch off before he can type.
+         */
+        val maBucketRowShown = boolean(
+            key = "dictate__ma_bucket_row_shown",
+            default = false,
+        )
+
         val maCopyRow = string(
             key = "dictate__ma_copy_row",
             default = "",

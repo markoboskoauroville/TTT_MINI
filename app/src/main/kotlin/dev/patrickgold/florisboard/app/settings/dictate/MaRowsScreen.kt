@@ -694,6 +694,8 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             // that counted how far up the page it had climbed — there is no ladder and no number.
             MaFeatureKey.AUTO_BUCKET -> letters("A\u2191")
             MaFeatureKey.AUTO_BUCKET_DOWN -> letters("A\u2193")
+            // The row it reveals, as a word. "C" would collide with the buckets themselves.
+            MaFeatureKey.BUCKET_ROW -> letters("Cs")
             MaFeatureKey.PASTE ->
                 Icon(Icons.Default.ContentPaste, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CUT ->

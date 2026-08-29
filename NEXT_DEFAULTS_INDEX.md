@@ -183,3 +183,4 @@ since been removed.
 - **§180** — A fragment is still text, and one voice with a switch
 - **§181** — The choice that should not have existed
 - **§182** — The other direction
+- **§183** — The bucket row becomes a row

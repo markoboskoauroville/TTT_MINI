@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 318.** The last stretch, newest first:
+**Build 319.** The last stretch, newest first:
+
+- **The bucket row is a special row**, like the copy row and the number row: its own preference
+  (`maBucketRow`), its own arrangement, its own switch (`maBucketRowShown`, off by default), and two
+  ways to reach that switch — the **Cs** key on any feature row, and the switchboard. Default is what
+  he had on screen: bin · C1 · C2 · C3 · A↑ · swap.
 
 - **Two automatic buckets.** `A↑` takes the lowest code block in the frame and works upward, `A↓`
   takes the highest and works downward. One body, one range reversed — everything else, the skip

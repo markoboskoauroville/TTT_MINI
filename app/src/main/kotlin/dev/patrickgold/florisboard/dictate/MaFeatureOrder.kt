@@ -164,6 +164,15 @@ enum class MaFeatureKey(val id: String, val label: String) {
     AUTO_BUCKET_DOWN("autobucketdown", "A-bucket, from the top down"),
 
     /**
+     * Shows or hides the bucket row, the way the zone keys show or hide theirs.
+     *
+     * In the buckets section rather than "the keyboard itself", although it is a zone key in
+     * everything but name: what it reveals is the buckets, and somebody looking for a way to get at
+     * them looks under them. The zone keys govern parts of the letter keyboard; this governs a mode.
+     */
+    BUCKET_ROW("bucketrow", "Show the bucket row"),
+
+    /**
      * The pin: keep the keyboard up when the app it is typing into would close it.
      *
      * It had a strip of its own along the bottom — half a key row, permanently, for a switch set
@@ -550,6 +559,7 @@ val MaFeatureKey.group: MaFeatureGroup
 
         MaFeatureKey.AUTO_BUCKET,
         MaFeatureKey.AUTO_BUCKET_DOWN,
+        MaFeatureKey.BUCKET_ROW,
         MaFeatureKey.CLIP_CLEAR,
         -> MaFeatureGroup.BUCKETS
 

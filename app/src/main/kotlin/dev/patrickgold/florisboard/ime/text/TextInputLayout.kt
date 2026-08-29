@@ -181,6 +181,20 @@ fun TextInputLayout(
                     drawChrome = false,
                 )
             }
+
+            // The bucket row, under the copy row, switched by its own preference.
+            //
+            // Its own switch rather than sharing the copy row's: they are shown at different times.
+            // The copy row is on nearly always; this one is on while he is collecting.
+            val bucketRowShown by prefs.dictate.maBucketRowShown.collectAsState()
+            if (bucketRowShown) {
+                MaFeatureRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    rowHeight = FlorisImeSizing.smartbarHeight,
+                    bucketRowOnly = true,
+                    drawChrome = false,
+                )
+            }
         }
         // The number row stands on its own, like the feature rows do.
         //

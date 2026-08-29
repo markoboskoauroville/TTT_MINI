@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.ClosedCaption
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.foundation.clickable
@@ -142,6 +143,8 @@ private fun MaSwitchRowFor(entry: MaSwitchboardOrder.Entry, lifted: Boolean) {
             MaSwitchRow("Suggestion row", Icons.Default.Spellcheck, prefs.suggestion.enabled, Routes.Settings.MaPredictions, modifier)
         // The copy row, and the same switch key 3 presses on the feature row. The glyph is the one
         // that key draws, so the row and the key are recognisable as one thing.
+        MaSwitchboardOrder.Entry.BUCKET_ROW ->
+            MaSwitchRow("Bucket row", Icons.Default.Inventory2, prefs.dictate.maBucketRowShown, Routes.Settings.MaBuckets, modifier)
         MaSwitchboardOrder.Entry.EDIT_ROW ->
             MaSwitchRow("Copy row", Icons.Default.ContentPaste, prefs.dictate.maEditRow, Routes.Settings.MaCopyRow, modifier)
         MaSwitchboardOrder.Entry.MAGIC_ROW ->

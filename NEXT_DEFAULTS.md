@@ -8349,3 +8349,56 @@ implementation detail because it was the easiest thing to grep for on the day.
 ## Tested
 
 Test 1: 3,107 checks, 0 failed. Broken by making both keys walk upward: red on the range check.
+
+---
+
+# §183 — The bucket row becomes a row
+
+Build 319. He had assembled the buckets on an ordinary feature row and asked for it to be a special
+row instead — the copy row's shape, switchable like a keyboard zone, invokable as a preset.
+
+## Why it deserves to be special rather than ordinary
+
+**It is a MODE, not a set of keys.** When he is collecting code blocks he wants those six and nothing
+else; when he is not, he wants the space back. An ordinary row is a place to keep keys; a special row
+is a thing you turn on.
+
+Same shape as the copy row throughout: its own preference, its own parser, its own default, its own
+switch. Nothing shared, so arranging one cannot disturb the other.
+
+**Off by default.** A row that appears uninvited on every keyboard is a row he has to switch off
+before he can type, and the first impression of a feature that arrives in the way is that it is in
+the way.
+
+## Two ways in, one preference
+
+The **Cs** key on any feature row, wearing the green ring — ringed means the row is there. And the
+switchboard, where every other row lives.
+
+Both write `maBucketRowShown`. **Two switches for one row is the fault this app has met three times**
+— the copy row on the keyboard, the buckets themselves, the volume keys — and each time the cure was
+one preference with several doors rather than several preferences.
+
+## Two booleans rather than an enum
+
+`copyRowOnly` and `bucketRowOnly` are never both true, which usually argues for an enum. Not yet: two
+booleans are honest about what they are — two callers each asking for one specific row — where an
+enum invites a third value nobody has designed. **If a fourth special row is ever wanted, that is the
+moment to introduce the enum**, and the comment says so where the next person will read it.
+
+## The switchboard id is appended
+
+`parse` keeps his stored order and appends ids it did not know about, so `bucket_row` arrives at the
+bottom of the arrangement he built rather than shuffling it. An id inserted in the middle of the enum
+would have moved nothing — the order is his, not the enum's — but the note is there because the next
+person will want to insert one alphabetically.
+
+## Tested
+
+Test 1: 19 checks, 0 failed — its own storage, its own switch, off by default, the default row he
+photographed, one preference behind both doors, and no chrome drawn twice. Broken by making the row
+unconditional: red.
+
+Not tested: nothing ran on a phone. Whether six keys at smartbar height under the copy row leaves
+enough screen is the question, and if it does not the answer is fewer keys in the default, not a
+smaller row.

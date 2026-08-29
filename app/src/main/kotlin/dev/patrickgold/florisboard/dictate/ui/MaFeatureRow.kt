@@ -182,6 +182,16 @@ fun MaFeatureRow(
      */
     copyRowOnly: Boolean = false,
     /**
+     * Draw the bucket row instead of the feature rows.
+     *
+     * A second special row beside `copyRowOnly`, and a second boolean rather than one enum for the
+     * same reason the copy row got its own: **two booleans that are never both true are honest
+     * about what they are** — two callers each asking for one specific row — where an enum invites
+     * a third value nobody has designed. If a fourth special row is ever wanted, that is the moment
+     * to introduce the enum, not before.
+     */
+    bucketRowOnly: Boolean = false,
+    /**
      * Draw the things that sit ABOVE the rows: the wand bar, the magic row, the reader dashboard.
      *
      * True everywhere except the typing keyboard's copy row, which is a second instance of this
@@ -289,10 +299,19 @@ fun MaFeatureRow(
     //
     // visibleRows yields List<List<Button>>, so the copy row contributes its BUTTONS — appending
     // its entries would have been a type error hiding behind a plausible name.
-    val rows = if (copyRowOnly) {
-        if (copyButtons.isNotEmpty()) listOf(copyButtons) else emptyList()
-    } else {
-        MaRows.visibleRows(storedRows)
+    // THE BUCKET ROW, the second special row.
+    //
+    // Its own preference, its own switch, its own arrangement — the copy row's shape exactly, and
+    // for the same reason: it is a MODE rather than a set of keys. When he is collecting code
+    // blocks he wants these six and nothing else; when he is not, he wants the space back.
+    val bucketRaw by prefs.dictate.maBucketRow.collectAsState()
+    val bucketRow = remember(bucketRaw) { MaRows.parseBucketRow(bucketRaw) }
+    val bucketButtons = if (bucketRow.enabled) bucketRow.visibleButtons else emptyList()
+
+    val rows = when {
+        copyRowOnly -> if (copyButtons.isNotEmpty()) listOf(copyButtons) else emptyList()
+        bucketRowOnly -> if (bucketButtons.isNotEmpty()) listOf(bucketButtons) else emptyList()
+        else -> MaRows.visibleRows(storedRows)
     }
     // The buckets this user actually has, and whether they are all holding something. Derived from
     // the same rows the keyboard is drawing, so the answer here and the answer the capture uses
@@ -1516,6 +1535,27 @@ fun MaFeatureRow(
                     ) { fg ->
                         Text(
                             text = "F${which + 1}",
+                            color = fg,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+
+                MaFeatureKey.BUCKET_ROW -> {
+                    // Shows or hides the bucket row, wearing the green ring like every other
+                    // switch in this app: ringed means the row is there.
+                    val bucketShown by prefs.dictate.maBucketRowShown.collectAsState()
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        ring = if (bucketShown) onGreen else MaSwitcherRingOff,
+                        onClick = {
+                            scope.launch { prefs.dictate.maBucketRowShown.set(!bucketShown) }
+                        },
+                    ) { fg ->
+                        Text(
+                            text = "Cs",
                             color = fg,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,

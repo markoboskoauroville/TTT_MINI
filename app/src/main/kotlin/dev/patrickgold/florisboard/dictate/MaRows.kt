@@ -112,6 +112,31 @@ object MaRows {
         enabled = true,
     )
 
+    /**
+     * The bucket row: the buckets and the two keys that fill and empty them.
+     *
+     * A special row like the copy row and the number row — its own preference, its own switch, its
+     * own arrangement — rather than one of the six ordinary rows. He asked for it in those words,
+     * and the reason it is worth a special row is that it is a MODE rather than a set of keys: when
+     * he is collecting code blocks he wants these six and nothing else, and when he is not he wants
+     * the space back.
+     *
+     * The default is what he had on screen: bin, C1, C2, C3, the upward A, and the swap key.
+     */
+    fun defaultBucketRow(): Row = Row(
+        listOf(
+            MaFeatureKey.CLIP_CLEAR,
+        ).map { Entry(Button.Builtin(it)) } +
+            (1..3).map { Entry(Button.Clip(it)) } +
+            listOf(MaFeatureKey.AUTO_BUCKET, MaFeatureKey.APP_SWITCH).map { Entry(Button.Builtin(it)) },
+        enabled = true,
+    )
+
+    fun parseBucketRow(raw: String): Row =
+        if (raw.isBlank()) defaultBucketRow() else parse(raw).firstOrNull() ?: defaultBucketRow()
+
+    fun serializeBucketRow(row: Row): String = serialize(listOf(row))
+
     fun parseCopyRow(raw: String): Row =
         if (raw.isBlank()) defaultCopyRow() else parse(raw).firstOrNull() ?: defaultCopyRow()
 
