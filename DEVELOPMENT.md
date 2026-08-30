@@ -171,27 +171,14 @@ A decision without its rejected alternative is a decision that gets re-litigated
 
 ---
 
-# PART FOUR — WHAT WAS INHERITED
-
-- **Forked from FlorisBoard.** The IME framework, the letter keyboard, the theming engine
-  (`Snygg`), the clipboard, the NLP provider structure. Everything under `ime/` is largely theirs;
-  everything under `dictate/` is largely ours.
-- **`sherpa-onnx` 1.13.3**, vendored from the GitHub release AAR — not on Maven Central. The fetch
-  script extracts only the API jar and the JNI bridge, avoiding a second 20–27 MB copy of
-  `libonnxruntime` per ABI. One ABI only (`arm64-v8a`); a universal APK would be about 120 MB.
-- **Deliberately NOT carried across:** Groq, and with it automatic language detection. **A detector
-  that is confidently wrong returns fluent text in the other language, which is worse than an
-  error.** The language is chosen by hand, on the badge, and the badge is global.
-- **`MaNeuralPredictor` and `MaLanguageGuess`** were written and never called. Check for callers
-  before assuming a file is live.
-
----
-
 # PART THREE — THE ARCHIVE, IN THE ORDER IT WAS WRITTEN
 
-Everything below this line is the original `NEXT_DEFAULTS.md`, unchanged. It is the detail behind the
+The original `NEXT_DEFAULTS.md`, unchanged, from here to Part Four. It is the detail behind the
 shapes above: newer sections override older ones, and several early entries describe features that
 have since been removed.
+
+**Part Four follows it**, at the end of the file, because this part is thousands of lines long and
+burying the inherited-code notes inside it would hide the cheapest paragraphs in the repository.
 
 ---
 
@@ -8853,3 +8840,21 @@ shipped. The gap stays open and CI keeps it, at five minutes a time.
 
 What did work, and is worth keeping as the habit: after every scripted edit, **grep for the thing the
 edit was supposed to add** rather than trusting that no exception was raised.
+
+---
+
+# PART FOUR — WHAT WAS INHERITED
+
+- **Forked from FlorisBoard.** The IME framework, the letter keyboard, the theming engine
+  (`Snygg`), the clipboard, the NLP provider structure. Everything under `ime/` is largely theirs;
+  everything under `dictate/` is largely ours.
+- **`sherpa-onnx` 1.13.3**, vendored from the GitHub release AAR — not on Maven Central. The fetch
+  script extracts only the API jar and the JNI bridge, avoiding a second 20–27 MB copy of
+  `libonnxruntime` per ABI. One ABI only (`arm64-v8a`); a universal APK would be about 120 MB.
+- **Deliberately NOT carried across:** Groq, and with it automatic language detection. **A detector
+  that is confidently wrong returns fluent text in the other language, which is worse than an
+  error.** The language is chosen by hand, on the badge, and the badge is global.
+- **`MaNeuralPredictor` and `MaLanguageGuess`** were written and never called. Check for callers
+  before assuming a file is live.
+
+---
