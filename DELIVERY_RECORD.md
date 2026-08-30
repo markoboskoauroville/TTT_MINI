@@ -7,12 +7,12 @@ What was measured, what failed on the way, and what was not tested. Specified by
 
 ---
 
-## Build 324 — 26.8.2026
+## Build 326 — 26.8.2026
 
-    ARTEFACT   ttt-mini-build-324.apk
-               https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-324/ttt-mini-build-324.apk
-    BUILT BY   GitHub Actions, from commit 88e9675
-    PREVIOUS   build-322, still downloadable — G8's parachute exists
+    ARTEFACT   ttt-mini-build-326.apk
+               https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-326/ttt-mini-build-326.apk
+    BUILT BY   GitHub Actions, from commit 8de5264
+    PREVIOUS   build-324, still downloadable — G8's parachute exists
 
 ### The gates
 
