@@ -8578,3 +8578,59 @@ inside a build about drag feedback.
 
 Test 1: 15,644 checks, 0 failed. Eight new. Broken by removing the landing mark: red on the check
 that names it.
+
+---
+
+# §187 — Hold a half, and the cursor runs
+
+Build 323.
+
+## The hold
+
+Left half repeats ←, right half repeats →, every 111ms after a 350ms hold. His number, and a good
+one: about nine characters a second, which is reading speed rather than typing speed — fast enough to
+cross a sentence without waiting, slow enough to stop on a word.
+
+**Two halves on the hold, three zones on the tap.** The two gestures ask different questions. A tap
+has to leave room for the space, which is what the bar is for; a hold does not, because nobody holds
+a spacebar to type spaces. So on a hold the middle belongs to whichever arrow is nearer and every
+hold lands on one. **No seam is drawn** — a line on the bar would advertise a boundary that only
+exists while he is holding it.
+
+Two details that decide whether it works:
+
+- **The repeat runs in `onPress`, not `onLongPress`.** `onLongPress` fires once and this has to keep
+  going until he lifts; `tryAwaitRelease` is what gives us the lift and is only available inside
+  `onPress`.
+- **The first wait is what separates a hold from a tap.** Without `HOLD_START_MS`, every tap would
+  fire one arrow before the tap handler ever ran.
+
+The coroutine is scoped to the key's composition, so lifting cancels it and so does the key leaving
+the screen — a repeat that outlived its key would type arrows into whatever came next.
+
+## The cursor pad
+
+He asked for total removal. **What is done: it is unreachable.** Both doors are shut — the feature
+row's spacebar now repeats instead of opening it, and the letter keyboard's spacebar long press is
+inert. A test asserts that neither file calls `open()` again, so a third door cannot be opened by
+accident.
+
+**What is NOT done: the code is still in the tree** — 17 references across five files, including the
+overlay itself, a branch in `KeyboardManager`, and a branch in `Smartbar` that swaps the candidate
+row while the pad is active. Cutting those is an excision through live keyboard code, and doing it at
+the end of a build to save a round trip is exactly how the range cuts of §150a happened.
+
+Left for its own build, and named here rather than quietly skipped.
+
+**The letter keyboard's long press is inert rather than repurposed.** Nothing replaces it there: the
+half-hold belongs on the feature row's spacebar, which is the one he uses while dictating, and on the
+letter keyboard a long press on the spacebar has meant the language picker on every phone he has
+owned. Leaving it doing nothing is better than giving it a third meaning nobody asked for.
+
+## Tested
+
+Test 1: 26 checks, 0 failed, 1,001 walked points. Broken by removing the hold delay: red on the check
+that says a tap must not reach the repeat.
+
+Not tested: nothing ran on a phone, and the repeat has never been held. Whether 111ms is right, and
+whether 350ms is long enough not to fire on a slow tap, are both his and both one number to change.

@@ -428,6 +428,17 @@ internal fun ThemedKey(
      * answers to one tap, and a key that ran both would send a space AND an arrow.
      */
     onClickAt: ((Float) -> Unit)? = null,
+    /**
+     * A HOLD that repeats a key code, chosen by where along the key the finger is.
+     *
+     * The lambda answers "which code for this position", and the key sends it every [REPEAT_MS]
+     * until the finger lifts. Only the spacebar uses it.
+     *
+     * A repeat rather than a single press on release, because the thing being repeated is movement:
+     * he holds until the cursor is where he wants it and lets go. A hold that fired once at the end
+     * would be a slow tap.
+     */
+    onLongClickAt: ((Float) -> Unit)? = null,
     /** Draws the switcher ring. See [ThemedIconKey]. */
     switcher: Boolean = false,
     /**
@@ -493,12 +504,37 @@ internal fun ThemedKey(
                     // No ripple here: an indication would need an interaction source fed by hand,
                     // and a half-fed one leaves a key stuck looking pressed. The haptic tick is the
                     // feedback, and it is the one he feels rather than sees.
-                    Modifier.pointerInput(onClickAt, onLongClick) {
+                    Modifier.pointerInput(onClickAt, onLongClick, onLongClickAt) {
                         detectTapGestures(
                             onTap = { offset ->
                                 feedback.keyPress()
                                 val width = size.width.toFloat().coerceAtLeast(1f)
                                 onClickAt((offset.x / width).coerceIn(0f, 1f))
+                            },
+                            onPress = { offset ->
+                                // The repeat runs HERE rather than in onLongPress, because
+                                // onLongPress fires once and this has to keep going until he lifts.
+                                // `tryAwaitRelease` is what gives us the lift, and it is only
+                                // available inside onPress.
+                                if (onLongClickAt != null) {
+                                    val width = size.width.toFloat().coerceAtLeast(1f)
+                                    val where = (offset.x / width).coerceIn(0f, 1f)
+                                    val job = keyScope.launch {
+                                        // The first wait is longer: it is what separates a hold from
+                                        // a tap. Without it every tap would fire one arrow before
+                                        // the tap handler ever ran.
+                                        delay(HOLD_START_MS)
+                                        while (true) {
+                                            feedback.keyPress()
+                                            onLongClickAt(where)
+                                            delay(REPEAT_MS)
+                                        }
+                                    }
+                                    tryAwaitRelease()
+                                    job.cancel()
+                                } else {
+                                    tryAwaitRelease()
+                                }
                             },
                             onLongPress = onLongClick?.let { { _ -> feedback.keyPress(); it() } },
                         )
@@ -740,7 +776,29 @@ internal fun LegacyActionKey(
             // the text — the gesture the pad exists to replace, on the screen where the text is
             // longest. The same hold does the same thing on both keyboards, which is the only way a
             // gesture becomes something the hand does without deciding to.
-            onLongClick = { MaCursorPad.open() },
+            // HOLD A HALF, AND THE CURSOR RUNS.
+            //
+            // The long press used to open the cursor pad — a drag surface over the keyboard. It is
+            // deleted. **A gesture that replaces the keyboard to move a cursor asks him to change
+            // mode to do the smallest thing there is**, and he had to learn a second surface to do
+            // what an arrow key does.
+            //
+            // What the hold does now is the obvious thing: it repeats the arrow for the half he is
+            // holding. Left half runs left, right half runs right, at 111ms — fast enough to cross a
+            // sentence, slow enough to stop on a word.
+            //
+            // TWO HALVES ON THE HOLD, THREE ZONES ON THE TAP, AND NO SEAM DRAWN.
+            //
+            // A tap has to leave room for the space, which is what the bar is for. A hold does not:
+            // nobody holds a spacebar to type spaces, so the middle can belong to whichever arrow is
+            // nearer and every hold lands on one. The two rules differ because the two gestures
+            // ask different questions, and the seam is invisible because a line drawn on the bar
+            // would advertise a boundary that only exists while he is holding it.
+            onLongClickAt = { fraction ->
+                keyboardManager.tapKey(
+                    if (fraction < 0.5f) KeyCode.ARROW_LEFT else KeyCode.ARROW_RIGHT,
+                )
+            },
             // THREE ZONES ACROSS THE SPACEBAR: left arrow, space, right arrow.
             //
             // The spacebar is the widest key on the keyboard and it does the least — one character,
@@ -1734,6 +1792,22 @@ internal val MaStatusFontFamily = FontFamily.Monospace
  * colour meaning "this is a switcher" would give one channel two jobs. Low alpha so a row of them
  * reads as a set rather than as an alarm.
  */
+/**
+ * How long a press has to last before it counts as a hold.
+ *
+ * Longer than a tap and shorter than a thought. Without it every tap would fire one arrow before
+ * the tap handler ran — the repeat starts after this, so a tap never reaches it.
+ */
+private const val HOLD_START_MS = 350L
+
+/**
+ * How fast the cursor runs while held. His number.
+ *
+ * Fast enough to cross a sentence without waiting, slow enough to stop on a word — about nine
+ * characters a second, which is reading speed rather than typing speed.
+ */
+private const val REPEAT_MS = 111L
+
 private val MaSwitcherRing = Color(0xFFF2DDB4).copy(alpha = 0.55f)
 
 /**

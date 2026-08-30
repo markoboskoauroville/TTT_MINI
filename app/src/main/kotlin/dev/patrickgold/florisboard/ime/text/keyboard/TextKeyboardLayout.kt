@@ -682,19 +682,18 @@ private class TextKeyboardLayoutController(
                     pointer.hasTriggeredLongPress = true
                     when (key.computedData.code) {
                         KeyCode.SPACE, KeyCode.CJK_SPACE -> {
-                            // The cursor pad, in place of the language picker.
+                            // The long press on the letter keyboard's spacebar does NOTHING now.
                             //
-                            // Picking a language is rare and deliberate, and has two other routes
-                            // already — the badge and a long press on volume down. Moving the caret
-                            // through dictated text is constant, and doing it by tapping at the text
-                            // is the least accurate gesture on a phone, because the finger covers
-                            // exactly the character being aimed at.
+                            // It opened the cursor pad, which is deleted — a surface that
+                            // replaced the keyboard to move a caret, asking him to change mode to
+                            // do the smallest thing there is.
                             //
-                            // The setting is ignored rather than consulted: this is what the key
-                            // does now. Anything the old value would have chosen is still reachable
-                            // somewhere else, so there is nothing to lose by not asking.
-                            MaCursorPad.open()
-                            true
+                            // Nothing replaces it HERE. The half-hold repeat lives on the
+                            // feature row's spacebar, which is the one he uses while dictating,
+                            // and this key belongs to the letter keyboard where a long press has
+                            // meant the language picker on every phone he has owned. Leaving it
+                            // inert is better than giving it a third meaning nobody asked for.
+                            false
                         }
                         KeyCode.SHIFT -> {
                             if (inputEventDispatcher.isUninterruptedEventSequence(key.computedData)) {

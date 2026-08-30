@@ -21,7 +21,12 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 322.** The last stretch, newest first:
+**Build 323.** The last stretch, newest first:
+
+- **Holding a half of the spacebar runs the cursor** — left half repeats ←, right half repeats →, at
+  111ms after a 350ms hold. Two halves on the hold, three zones on the tap, no seam drawn.
+- **The cursor pad is unreachable**: both long presses that opened it are gone. **Its code is still
+  in the tree** — 17 references across five files — and deleting it is the next job, not this one.
 
 - **Dragging a tab now shows what it is doing**: the held tab lifts and moves with the finger, and
   the tab it would swap with dims so he can see where it lands before letting go. The landing mark

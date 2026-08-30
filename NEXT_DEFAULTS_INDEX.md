@@ -187,3 +187,4 @@ since been removed.
 - **§184** — The same setting in two windows
 - **§185** — Three zones, and messages that stop covering the keys
 - **§186** — Drag feedback, and where the 40 MB is
+- **§187** — Hold a half, and the cursor runs

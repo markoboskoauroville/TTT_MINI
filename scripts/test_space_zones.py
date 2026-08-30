@@ -76,8 +76,21 @@ legacy = code(SRC / "dictate/ui/LegacyDictateLayout.kt")
 check("the spacebar has zones", "onClickAt = { fraction ->" in legacy, "one action across the whole bar")
 check("left sends the left arrow", "fraction < 0.25f -> keyboardManager.tapKey(KeyCode.ARROW_LEFT)" in legacy)
 check("right sends the right arrow", "fraction > 0.75f -> keyboardManager.tapKey(KeyCode.ARROW_RIGHT)" in legacy)
-check("the long press still opens the pad", "onLongClick = { MaCursorPad.open() }" in legacy,
-      "the cursor pad is what the zones are a shortcut for")
+# THE HOLD REPEATS AN ARROW. The cursor pad it used to open is unreachable — see below.
+check("the hold repeats by half", "if (fraction < 0.5f) KeyCode.ARROW_LEFT else KeyCode.ARROW_RIGHT" in legacy,
+      "no repeat, or three zones on a gesture that does not need room for a space")
+check("it repeats rather than firing once", "delay(REPEAT_MS)" in legacy, "a hold would be a slow tap")
+check("the repeat rate is his", "REPEAT_MS = 111L" in legacy, "wrong speed")
+check("a tap cannot reach the repeat", "delay(HOLD_START_MS)" in legacy,
+      "every tap would fire one arrow before the tap handler ran")
+check("lifting stops it", "tryAwaitRelease()" in legacy and "job.cancel()" in legacy,
+      "the cursor would run away")
+
+# NOTHING OPENS THE CURSOR PAD ANY MORE. The code is still in the tree — see the report — but both
+# doors are shut, and this check is what stops a third being opened by accident.
+for f in ("dictate/ui/LegacyDictateLayout.kt", "ime/text/keyboard/TextKeyboardLayout.kt"):
+    check(f"nothing in {f} opens the pad", "MaCursorPad.open()" not in code(SRC / f),
+          "the feature he asked to remove is reachable again")
 check("a positional key does not also fire onClick", "if (onClickAt == null) {" in legacy,
       "a tap would send a space AND an arrow")
 
