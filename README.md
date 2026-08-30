@@ -10,6 +10,22 @@ live oscilloscope, a braille spinner and a clock.
 Built from a fork of Dictate by DevEmperor, which is built on FlorisBoard.
 See [ATTRIBUTION.md](ATTRIBUTION.md). Apache License 2.0.
 
+## Which document to open
+
+**This file is the door, not the summary.** Its only job is to stop anybody reading the wrong file
+first.
+
+| File | For |
+|---|---|
+| [`HANDOFF.md`](HANDOFF.md) | **Start here.** The finished state: what the app does now, how to build it, and what has never been proven. Nothing historical. |
+| [`DEVELOPMENT.md`](DEVELOPMENT.md) | Every bug, grouped by shape, and every decision with what it rejected. Open it before reversing anything. |
+| [`DELIVERY_RECORD.md`](DELIVERY_RECORD.md) | What was measured for the current release, what failed on the way, and what was not tested. |
+| [`VOLUME_KEYS.md`](VOLUME_KEYS.md) | A **contract** for the hardware keys. If the code differs from it, the code is wrong. |
+| [`SECRETS.md`](SECRETS.md) | Read before touching a key file. |
+
+The structure follows `MANTRA_MANIFEST/modules/repository-documents.md`: state and history in
+separate files, because a document holding both is unusable for either.
+
 Builds are produced by GitHub Actions and published to
 [Releases](../../releases).
 

@@ -1,5 +1,13 @@
 # Archive index
 
+**These sections now live in [`DEVELOPMENT.md`](DEVELOPMENT.md), Part Three**, unchanged and in the
+same order. The bugs are re-grouped by shape above them, in Part One — read that first, because a bug
+that happened three times reads as three unrelated mistakes here and as one lesson there.
+
+**§9–§146 are listed below but their text is not in the repository.** It was trimmed before the split
+and is recoverable only from git history. That is a real loss and it is written down rather than
+glossed over.
+
 Every numbered section in `NEXT_DEFAULTS.md`, so a decision can be found without reading it end to
 end. **Later sections override earlier ones**, and several early entries describe features that have
 since been removed.
