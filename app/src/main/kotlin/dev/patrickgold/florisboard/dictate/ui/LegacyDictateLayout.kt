@@ -461,6 +461,10 @@ internal fun ThemedKey(
 ) {
     val feedback = LocalInputFeedbackController.current
     val interaction = remember { MutableInteractionSource() }
+    // For the hold-repeat on the spacebar. Scoped to this key's composition, so lifting the
+    // finger cancels it and so does the key leaving the screen — a repeat that outlived its key
+    // would type arrows into whatever came next.
+    val keyScope = rememberCoroutineScope()
     val pressed by interaction.collectIsPressedAsState()
     val style = rememberSnyggThemeQuery(
         FlorisImeUi.Key.elementName,

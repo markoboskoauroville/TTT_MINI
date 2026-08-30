@@ -8634,3 +8634,25 @@ that says a tap must not reach the repeat.
 
 Not tested: nothing ran on a phone, and the repeat has never been held. Whether 111ms is right, and
 whether 350ms is long enough not to fire on a slow tap, are both his and both one number to change.
+
+## §187a — The fifth silent no-op edit
+
+Build 323 went red on `keyScope`, unresolved. The edit that used it also declared it, anchored on the
+`val interaction = remember { … }` line — which appears TWICE in that file, so the assertion I wrote
+to guard the replace failed, the script exited, and **the half of the edit that had already been
+written stayed.** The use went in; the declaration did not.
+
+That is the fifth scripted edit this month that failed silently and the third distinct way of doing
+it: an anchor that did not exist, a range whose second end was too far down, and now a script that
+died between two halves of one change.
+
+**The common shape is that the edit is not atomic and nothing checks the result.** `verify.py` caught
+none of them because they are all "this file no longer compiles for a reason only a compiler knows".
+
+A guard was measured and **rejected**: flagging a bare name used but never declared in a file found
+**17 hits across the app**, essentially all false — `prefs` and `context` arrive by delegation and by
+receiver in ways a regex cannot see. Per the rule that has now saved this file twice, it is not
+shipped. The gap stays open and CI keeps it, at five minutes a time.
+
+What did work, and is worth keeping as the habit: after every scripted edit, **grep for the thing the
+edit was supposed to add** rather than trusting that no exception was raised.
