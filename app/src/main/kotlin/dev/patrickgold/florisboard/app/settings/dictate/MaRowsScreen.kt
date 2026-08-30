@@ -17,6 +17,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import kotlin.math.roundToInt
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -284,8 +286,51 @@ fun MaRowsScreen() = FlorisScreen {
             modifier = Modifier.onSizeChanged { tabWidth = (it.width / MaRows.ROW_COUNT).toFloat().coerceAtLeast(1f) },
         ) {
             (0 until MaRows.ROW_COUNT).forEach { i ->
+                // WHAT A DRAG LOOKS LIKE.
+                //
+                // He could reorder the tabs and could not see it happening: the long press armed
+                // silently, the finger moved, and nothing on screen changed until he let go and the
+                // row had moved. **A gesture with no feedback is a gesture he has to believe in.**
+                //
+                // Three signals, the same three the settings list uses for vertical reordering, laid
+                // on their side:
+                //
+                //   lifted   — the dragged tab is drawn brighter and slightly larger, so it reads as
+                //              picked up rather than merely selected
+                //   carried  — it moves with the finger, so what he is holding is under his thumb
+                //   landing  — the tab it would swap with dims, so he can see WHERE it will go
+                //              before he commits to it
+                //
+                // The last one is the one that was really missing. Lifting and carrying say "you are
+                // dragging"; only the landing mark says "and this is what will happen".
+                val isDragged = dragging == i
+                val landingIndex = if (dragging >= 0) {
+                    (dragging + (dragBy / tabWidth).roundToInt()).coerceIn(0, MaRows.ROW_COUNT - 1)
+                } else {
+                    -1
+                }
+                val isLanding = dragging >= 0 && !isDragged && landingIndex == i
                 Tab(
-                    modifier = Modifier.pointerInput(rows) {
+                    modifier = Modifier
+                        .graphicsLayer {
+                            // Carried: the offset is the raw drag, not the rounded target, so the
+                            // tab tracks the finger continuously rather than snapping between slots.
+                            translationX = if (isDragged) dragBy else 0f
+                            scaleX = if (isDragged) 1.08f else 1f
+                            scaleY = if (isDragged) 1.08f else 1f
+                            // The landing tab steps back rather than lighting up: two bright things
+                            // would compete, and the one he is holding must stay the brighter.
+                            alpha = when {
+                                isDragged -> 1f
+                                isLanding -> 0.45f
+                                else -> 1f
+                            }
+                        }
+                        // Drawn last so a lifted tab passes over its neighbours instead of under
+                        // them, which is what makes it read as lifted rather than as sliding
+                        // through a slot.
+                        .zIndex(if (isDragged) 1f else 0f)
+                        .pointerInput(rows) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = { dragging = i; dragBy = 0f },
                             onDragEnd = {

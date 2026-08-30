@@ -21,7 +21,13 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 321.** The last stretch, newest first:
+**Build 322.** The last stretch, newest first:
+
+- **Dragging a tab now shows what it is doing**: the held tab lifts and moves with the finger, and
+  the tab it would swap with dims so he can see where it lands before letting go. The landing mark
+  is computed by the same expression as the drop, so it cannot promise a different result.
+- **The APK is 40 MB because 25.8 MB of it is `libonnxruntime.so`** — the on-device speech engine.
+  See §186 for the full breakdown and what could be done about it.
 
 - **The spacebar has three zones**: left quarter is ←, right quarter is →, the middle half is space.
   A boundary press is a space, so the wider target wins a tie. Long press still opens the cursor pad.

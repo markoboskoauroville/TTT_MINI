@@ -8512,3 +8512,69 @@ resolving to arrows, and the positional key also firing `onClick`. Red on three.
 
 Not tested: nothing ran on a phone. Whether a quarter of the bar is enough to hit reliably without
 looking is the question, and if it is not the answer is a narrower middle, not a different gesture.
+
+---
+
+# §186 — Drag feedback, and where the 40 MB is
+
+Build 322.
+
+## The drag was invisible
+
+He could reorder the tabs and could not see it happening: the long press armed silently, the finger
+moved, nothing changed until he let go and the row had moved. **A gesture with no feedback is a
+gesture he has to believe in.**
+
+Three signals, the settings list's vertical ones laid on their side:
+
+- **lifted** — brighter and 8% larger, so it reads as picked up rather than merely selected;
+- **carried** — it moves with the finger, using the RAW drag rather than the rounded target, so it
+  tracks continuously instead of snapping between slots;
+- **landing** — the tab it would swap with dims, so he sees WHERE it goes before committing.
+
+The third is the one that was really missing. Lifting and carrying say *you are dragging*; only the
+landing mark says *and this is what will happen*.
+
+The landing tab steps back rather than lighting up, because two bright things compete and the one
+under his thumb must stay the brighter. And the lifted tab is drawn last, so it passes over its
+neighbours rather than sliding under them — which is the difference between reading as lifted and
+reading as sliding through a slot.
+
+**The mark and the drop share their expression**, and the test asserts all three parts of it. A
+highlight computed one way and a drop computed another would point at a tab the drop does not use,
+which is worse than no highlight at all.
+
+## Where the 40 MB goes — measured, not guessed
+
+    30.6 MB  lib/          of which 25.8 MB is libonnxruntime.so
+     3.9 MB  classes.dex   all of the app's own code
+     3.2 MB  resources.arsc
+     2.2 MB  assets/       silero_vad 0.5, dictionaries ~1.2
+     0.1 MB  res/
+
+**76% of the app is one file**, and it is not ours: `libonnxruntime.so`, the runtime the on-device
+speech engine needs, plus `libsherpa-onnx-jni.so` at 4.7 MB. Everything TTT mini does — every key,
+every row, the reader, the buckets, the settings — is the 3.9 MB dex.
+
+It is already built as leanly as it can be without a decision from him:
+
+- **one ABI only.** `abiFilters += listOf("arm64-v8a")`, so there is one copy rather than four. A
+  universal APK would be roughly 120 MB.
+- **the JNI bridge is extracted rather than vendored whole**, avoiding a second copy of
+  libonnxruntime per ABI — that note is already in `build.gradle.kts`.
+
+**What would actually shrink it**, and both are his call rather than mine:
+
+1. **Drop on-device transcription.** Nothing else needs onnxruntime, and it would take the app from
+   40 MB to about 9. The cost is the one provider that costs nothing per minute and works with no
+   network — which the cost work in §166 leaned on as the free tier for notes.
+2. **Download the engine on first use** instead of shipping it. Same 9 MB install, on-device still
+   available, at the cost of a first-run download and code to manage it.
+
+Not done in this pass. Both change what the app can do offline, and that is not a decision to make
+inside a build about drag feedback.
+
+## Tested
+
+Test 1: 15,644 checks, 0 failed. Eight new. Broken by removing the landing mark: red on the check
+that names it.

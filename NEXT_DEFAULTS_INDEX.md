@@ -186,3 +186,4 @@ since been removed.
 - **§183** — The bucket row becomes a row
 - **§184** — The same setting in two windows
 - **§185** — Three zones, and messages that stop covering the keys
+- **§186** — Drag feedback, and where the 40 MB is

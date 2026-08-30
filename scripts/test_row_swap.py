@@ -209,6 +209,30 @@ check("the drag needs a long press first", "detectDragGesturesAfterLongPress(" i
 check("and no bare drag detector", "\n            detectDragGestures(" not in screen,
       "a drag that starts on the first pixel of movement")
 check("the target is rounded", "roundToInt()" in screen, "needs 51% of a tab to register")
+
+# ---------------------------------------------------------------- what a drag looks like
+#
+# He could reorder the tabs and could not see it happening. A gesture with no feedback is a gesture
+# he has to believe in.
+check("the dragged tab is lifted", "scaleX = if (isDragged) 1.08f else 1f" in screen,
+      "nothing says the tab has been picked up")
+check("it moves with the finger", "translationX = if (isDragged) dragBy else 0f" in screen,
+      "what he is holding would not be under his thumb")
+check("it tracks continuously", "translationX = if (isDragged) dragBy" in screen and
+      "translationX = if (isDragged) (dragBy / tabWidth)" not in screen,
+      "snapping between slots rather than following the finger")
+check("the landing tab is marked", "isLanding -> 0.45f" in screen,
+      "he can see he is dragging but not where it will land — the signal that was missing")
+check("the lifted tab passes over its neighbours", "zIndex(if (isDragged) 1f else 0f)" in screen,
+      "it would slide under them and read as sliding through a slot")
+
+# The landing index is computed the same way the DROP is, or the mark would promise one thing and
+# the drop would do another.
+land = screen[screen.index("val landingIndex"):][:260]
+drop = screen[screen.index("val moved = (dragBy / tabWidth)"):][:260]
+for expr in ("dragBy / tabWidth", "roundToInt()", "coerceIn(0, MaRows.ROW_COUNT - 1)"):
+    check(f"the mark and the drop agree on {expr}", expr in land and expr in drop,
+          "the highlight would point at a tab the drop does not use")
 check("it writes through commit", "commit(MaRows.moveRow" in screen,
       "a path that updates the state without the preference")
 check("the tab follows the keys", "tab = target" in screen,
