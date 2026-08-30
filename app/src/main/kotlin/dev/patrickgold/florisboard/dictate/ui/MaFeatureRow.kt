@@ -502,7 +502,15 @@ fun MaFeatureRow(
       // Shown only while something is being read: it is a set of dials for a thing in motion, and a
       // dashboard for silence would just be a settings screen in the wrong place. Closing itself
       // when the reading stops also means he can never be left with a panel he has to dismiss.
-      if (drawChrome && maDashboardOpen && MaReader.currentIndex >= 0) {
+      // THE DASHBOARD OPENS WHETHER OR NOT ANYTHING IS BEING READ.
+      //
+      // It was gated on `currentIndex >= 0` — a reading in progress — so a long press before he
+      // started reading did nothing at all. **The settings he wants are the ones he wants BEFORE he
+      // presses play**: the speed, the effect, where the line sits. Set them first, then read.
+      //
+      // The gate was never a decision. The dashboard was built while a reading was running and the
+      // condition described the only state anybody had tried it in.
+      if (drawChrome && maDashboardOpen) {
         MaReaderDashboard(onClose = { maDashboardOpen = false })
       }
 

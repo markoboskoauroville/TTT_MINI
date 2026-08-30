@@ -8402,3 +8402,56 @@ unconditional: red.
 Not tested: nothing ran on a phone. Whether six keys at smartbar height under the copy row leaves
 enough screen is the question, and if it does not the answer is fewer keys in the default, not a
 smaller row.
+
+---
+
+# §184 — The same setting in two windows
+
+Build 320.
+
+## The alignment bug
+
+Top alignment worked in the small box and did nothing in full screen. **The box was aligned
+correctly both times.** Two different things were wrong underneath it:
+
+**The small box found a page rather than cutting one.** `paginate` chopped the passage into fixed
+pages and the code then looked for the one containing the current word — so aligning the PAGE to the
+top says nothing about where the WORD is. It is also why the highlight leapt: crossing a page
+boundary replaced the whole block and the marked word jumped from the bottom of one page to the top
+of the next.
+
+Now the page is cut around the word. Top starts at it, bottom ends at it, middle grows both ways.
+The page therefore moves with the reading rather than in jumps, and consecutive words always give
+overlapping pages — which is the property the test asserts, because it is what stops the leaping.
+
+**The scrolling full-screen view ignored the setting entirely**, always scrolling the live line to
+the top. That path was written before alignment existed and nobody went back to it. It counts in
+LINES rather than pixels, because that is the unit the list moves in and a pixel offset would drift
+as the font size changed.
+
+`paginate` survives, and should: the scrolling view needs every line at once. What changed is that
+the small box no longer uses it.
+
+## The dashboard was gated on a reading
+
+`maDashboardOpen && MaReader.currentIndex >= 0`, so a long press before pressing play did nothing at
+all. **The settings he wants are the ones he wants BEFORE he reads** — the speed, the effect, where
+the line sits. The gate was never a decision: the dashboard was built while a reading was running,
+and the condition described the only state anybody had tried it in.
+
+## The test found a bug in the fix
+
+Middle never grew backwards. The generic `takeAfter` branch caught every step after the first, so
+middle grew forward for ever and **behaved exactly like top** — the setting it exists to differ from.
+Both middle branches come first now.
+
+Also corrected: my first check asserted middle was centred to within one word, which asserts the
+loop's step order rather than anything he can see. It asserts the word is not at an edge and that
+there is text on both sides.
+
+## Tested
+
+Test 1: 1,217 checks, 0 failed, 360 walked cuts — every alignment against every index at three page
+sizes, asserting the word is always on the page, the page never leaves the passage, and consecutive
+pages overlap. Broken two ways — full screen ignoring the setting, and middle not growing backwards —
+and confirmed red on three.

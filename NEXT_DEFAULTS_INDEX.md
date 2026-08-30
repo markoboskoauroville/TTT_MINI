@@ -184,3 +184,4 @@ since been removed.
 - **§181** — The choice that should not have existed
 - **§182** — The other direction
 - **§183** — The bucket row becomes a row
+- **§184** — The same setting in two windows

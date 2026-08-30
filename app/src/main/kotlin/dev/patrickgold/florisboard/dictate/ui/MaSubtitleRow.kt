@@ -138,6 +138,8 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // reader scrolls line by line and a "page" there is the unit that jumps to the top. Scaled by
     // the font, since a bigger type fits fewer letters across the same width.
     val perPage = if (full) (LINE_CHARS * 17 / fontSp).coerceIn(14, 90) else PAGE_CHARS
+    // Fixed lines, for the SCROLLING full-screen view below, which needs them all at once. The
+    // small box does not use these — it cuts a page around the current word further down.
     val pages = remember(words, perPage) { paginate(words.map { it.text }, perPage) }
     // No page yet — the first chunk is still coming, or one has just ended. The box is drawn empty
     // and keeps its place. Returning here is what made it blink.
@@ -160,7 +162,62 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
     // "am I hearing this for the second time?" — does not depend on which effect he picked.
     val mark = MaReader.passageMark
 
-    val live = pages.firstOrNull { index in it.range }
+    // THE PAGE IS BUILT AROUND THE CURRENT WORD, NOT FOUND CONTAINING IT.
+    //
+    // The bug he photographed: top alignment works in the small box and does nothing in full screen.
+    // The box was aligned correctly both times — but a full-screen page holds many lines, and the
+    // current word can be anywhere inside it, so aligning the PAGE to the top says nothing about
+    // where the WORD is. It also made the highlight jump: as the reading crossed a page boundary the
+    // whole block was replaced and the marked word leapt from the bottom of one page to the top of
+    // the next.
+    //
+    // So the page is cut to put the current word where he asked for it:
+    //
+    //   top    — the page STARTS at the current word, and what follows is underneath
+    //   bottom — the page ENDS at it, and what came before is above
+    //   middle — it sits in the middle, with as much either side as fits
+    //
+    // The page therefore moves with the reading rather than in jumps of a page, which is what stops
+    // the highlight leaping. In the small box, where a page is a line or two, this is the same
+    // answer the old code gave — so the setting means one thing in both windows, which is what he
+    // was actually complaining about.
+    val alignNow by prefs.dictate.maReaderAlign.collectAsState()
+    val live = remember(words, index, perPage, alignNow) {
+        if (index !in words.indices) {
+            null
+        } else {
+            var used = 0
+            var from = index
+            var to = index
+            // Grow outwards from the current word, in the direction the alignment allows, until the
+            // page is full. Never past the ends of the passage.
+            while (true) {
+                val takeAfter = alignNow != "bottom" && to + 1 < words.size
+                val takeBefore = alignNow != "top" && from - 1 >= 0
+                val next = when {
+                    // Middle grows both ways, one at a time, so the word stays near the centre
+                    // rather than drifting to whichever side had room.
+                    //
+                    // BOTH middle branches come first. Written with only the forward one, the
+                    // generic `takeAfter` below caught every subsequent step and middle grew
+                    // forward for ever — behaving exactly like top, which is the setting it exists
+                    // to differ from. The walked test found it before the build: "the word is not
+                    // at an edge" failed with the page starting at the word.
+                    alignNow == "middle" && takeAfter && (to - index) <= (index - from) -> to + 1
+                    alignNow == "middle" && takeBefore -> from - 1
+                    takeAfter -> to + 1
+                    takeBefore -> from - 1
+                    else -> -1
+                }
+                if (next < 0) break
+                val cost = words[next].text.length + 1
+                if (used + cost > perPage && to > from) break
+                used += cost
+                if (next > to) to = next else from = next
+            }
+            Page(words.subList(from, to + 1).map { it.text }, from..to)
+        }
+    }
     // Keyed on the passage, not on the index: a new reading starts with nothing held, so the last
     // sentence of the previous one cannot appear under the first second of the next.
     var held by remember(words) { mutableStateOf<Page?>(null) }
@@ -351,7 +408,24 @@ fun MaSubtitleRow(modifier: Modifier = Modifier) {
             }
         }
         val line = lineOf.getOrElse(index) { 0 }
-        LaunchedEffect(line) { runCatching { listState.scrollToItem(line) } }
+        // WHERE THE LIVE LINE SITS, from his setting rather than always the top.
+        //
+        // This view always scrolled the spoken line to the TOP, whatever the alignment said — which
+        // is the bug he photographed. The small box obeyed him and the full screen did not, so the
+        // setting appeared to work until he opened it out.
+        //
+        // Top scrolls the line to the top edge. Middle and bottom scroll a few lines EARLIER, so the
+        // live line sits that far down the box with what came before it above. Counted in lines
+        // rather than pixels because that is the unit this list moves in, and a pixel offset would
+        // drift as the font size changed.
+        val alignLines = when (alignNow) {
+            "middle" -> 3
+            "bottom" -> 6
+            else -> 0
+        }
+        LaunchedEffect(line, alignLines) {
+            runCatching { listState.scrollToItem((line - alignLines).coerceAtLeast(0)) }
+        }
 
         SubtitleBox(modifier, full) {
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
@@ -557,13 +631,11 @@ private fun SubtitleBox(
 private data class Page(val words: List<String>, val range: IntRange)
 
 /**
- * Splits a passage into pages that fit the box.
+ * Cuts the passage into fixed lines of about [perPage] characters.
  *
- * By characters rather than by words, because what fills three lines is a number of letters, not a
- * number of words — "a" and "responsibility" occupy very different amounts of it.
- *
- * A word is never split across pages: a page takes whole words until the next one would not fit.
- * Computed once per passage and remembered, so scrolling the highlight costs nothing.
+ * Still used, and only by the SCROLLING full-screen view, which needs every line at once because it
+ * scrolls between them. The small box no longer uses it — that one cuts a page around the current
+ * word instead, which is what makes alignment mean the same thing in both windows.
  */
 private fun paginate(words: List<String>, perPage: Int): List<Page> {
     if (words.isEmpty()) return emptyList()
@@ -580,7 +652,7 @@ private fun paginate(words: List<String>, perPage: Int): List<Page> {
             length += add
         }
     }
-    if (start < words.size) pages.add(Page(words.subList(start, words.size), start until words.size))
+    pages.add(Page(words.subList(start, words.size), start until words.size))
     return pages
 }
 

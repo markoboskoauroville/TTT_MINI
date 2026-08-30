@@ -21,7 +21,15 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 319.** The last stretch, newest first:
+**Build 320.** The last stretch, newest first:
+
+- **Alignment now means the same thing in both windows.** The small box cuts a page AROUND the
+  current word (top starts at it, bottom ends at it, middle centres it) instead of finding the fixed
+  page that happens to contain it — which is why the word could sit anywhere and why the highlight
+  leapt at page boundaries. The scrolling full-screen view obeys the setting too; it always scrolled
+  the live line to the top whatever the setting said.
+- **Long-pressing the reader key opens the dashboard before a reading starts.** It was gated on a
+  reading being in progress, so the settings he wants *before* pressing play were unreachable.
 
 - **The bucket row is a special row**, like the copy row and the number row: its own preference
   (`maBucketRow`), its own arrangement, its own switch (`maBucketRowShown`, off by default), and two
