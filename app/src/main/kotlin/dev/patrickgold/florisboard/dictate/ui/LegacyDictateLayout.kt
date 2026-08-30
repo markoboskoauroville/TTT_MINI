@@ -21,6 +21,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -420,6 +421,13 @@ fun LegacyDictateLayout(
 internal fun ThemedKey(
     code: Int,
     modifier: Modifier = Modifier,
+    /**
+     * A click that knows WHERE along the key it landed, as a fraction of the width from 0 to 1.
+     *
+     * Only the spacebar uses it. When given, it replaces [onClick] entirely — a key cannot have two
+     * answers to one tap, and a key that ran both would send a space AND an arrow.
+     */
+    onClickAt: ((Float) -> Unit)? = null,
     /** Draws the switcher ring. See [ThemedIconKey]. */
     switcher: Boolean = false,
     /**
@@ -469,11 +477,33 @@ internal fun ThemedKey(
                     else -> Modifier
                 },
             )
-            .combinedClickable(
-                interactionSource = interaction,
-                indication = ripple(),
-                onClick = { feedback.keyPress(); onClick() },
-                onLongClick = onLongClick?.let { { feedback.keyPress(); it() } },
+            .then(
+                if (onClickAt == null) {
+                    Modifier.combinedClickable(
+                        interactionSource = interaction,
+                        indication = ripple(),
+                        onClick = { feedback.keyPress(); onClick() },
+                        onLongClick = onLongClick?.let { { feedback.keyPress(); it() } },
+                    )
+                } else {
+                    // The positional path. `detectTapGestures` gives the offset that
+                    // `combinedClickable` throws away, and it carries the long press itself so the
+                    // spacebar keeps its cursor pad.
+                    //
+                    // No ripple here: an indication would need an interaction source fed by hand,
+                    // and a half-fed one leaves a key stuck looking pressed. The haptic tick is the
+                    // feedback, and it is the one he feels rather than sees.
+                    Modifier.pointerInput(onClickAt, onLongClick) {
+                        detectTapGestures(
+                            onTap = { offset ->
+                                feedback.keyPress()
+                                val width = size.width.toFloat().coerceAtLeast(1f)
+                                onClickAt((offset.x / width).coerceIn(0f, 1f))
+                            },
+                            onLongPress = onLongClick?.let { { _ -> feedback.keyPress(); it() } },
+                        )
+                    }
+                },
             ),
         contentAlignment = Alignment.Center,
     ) {
@@ -711,6 +741,30 @@ internal fun LegacyActionKey(
             // longest. The same hold does the same thing on both keyboards, which is the only way a
             // gesture becomes something the hand does without deciding to.
             onLongClick = { MaCursorPad.open() },
+            // THREE ZONES ACROSS THE SPACEBAR: left arrow, space, right arrow.
+            //
+            // The spacebar is the widest key on the keyboard and it does the least — one character,
+            // and no ambiguity about which one. **The width is the opportunity**: the two things he
+            // reaches for most while dictating are the space and the cursor, and the cursor keys are
+            // the smallest targets on the row.
+            //
+            // Zones by WIDTH, not by separate keys: three keys would need three shapes, three gaps
+            // and a decision about which of them wears the spacebar glyph. One key with a wide middle
+            // stays the spacebar it has always been, and the arrows are room that was there anyway.
+            //
+            // The middle is HALF the width and the arrows a quarter each. A quarter of a spacebar is
+            // still a bigger target than a key on the letter row, and half is still the widest thing
+            // on the keyboard — so nothing he already does gets harder.
+            //
+            // The long press is unchanged and belongs to the whole key: the cursor pad is what the
+            // zones are a shortcut for, and it must not depend on where along the bar he pressed.
+            onClickAt = { fraction ->
+                when {
+                    fraction < 0.25f -> keyboardManager.tapKey(KeyCode.ARROW_LEFT)
+                    fraction > 0.75f -> keyboardManager.tapKey(KeyCode.ARROW_RIGHT)
+                    else -> keyboardManager.tapKey(KeyCode.SPACE)
+                }
+            },
             onClick = { keyboardManager.tapKey(KeyCode.SPACE) },
         ) { fg ->
             Text(

@@ -8455,3 +8455,60 @@ Test 1: 1,217 checks, 0 failed, 360 walked cuts — every alignment against ever
 sizes, asserting the word is always on the page, the page never leaves the passage, and consecutive
 pages overlap. Broken two ways — full screen ignoring the setting, and middle not growing backwards —
 and confirmed red on three.
+
+---
+
+# §185 — Three zones, and messages that stop covering the keys
+
+Build 321.
+
+## The spacebar
+
+Left quarter ←, right quarter →, middle half space. **The width was the opportunity**: the spacebar
+is the widest key on the keyboard and does the least, and the two things he reaches for most while
+dictating are the space and the cursor — where the cursor keys are the smallest targets on the row.
+
+Zones by width rather than three keys. Three keys would need three shapes, three gaps and a decision
+about which wears the spacebar glyph. One key with a wide middle stays the spacebar it has always
+been, and the arrows are room that was there anyway. A quarter of a spacebar is still a bigger target
+than a letter key.
+
+**A boundary press is a space**, so the wider target wins a tie. The reverse would move his cursor
+when he meant to type, and the test walks all 1,001 points across the bar to hold it.
+
+`onClickAt` replaces `onClick` when given rather than joining it — a key cannot have two answers to
+one tap, and a key that ran both would send a space AND an arrow. The positional path uses
+`detectTapGestures`, which gives the offset `combinedClickable` throws away, and carries the long
+press itself so the cursor pad survives.
+
+## The toasts
+
+He called them rude, and he is right: they land over the keys while he is using them.
+
+**The obvious fix does not exist.** `Toast.setGravity` has been ignored for ordinary text toasts
+since Android 11 — asking the system to put one at the top does nothing, and the platform puts it
+near the bottom, which is where the keyboard is. So it had to stop being a toast.
+
+It is a line the keyboard draws itself, at the top of its own area, above every row. Nothing it
+covers is a key. Drawn with the chrome, so two feature rows cannot each show a copy.
+
+Three things that follow from owning it, none of which a toast could do:
+
+- it disappears when the keyboard does, instead of outliving the thing it was about and landing over
+  another app;
+- **a new message replaces the old** rather than queueing behind it — three quick presses used to
+  mean six seconds of stale text;
+- 2.5 seconds, one timer. A toast's SHORT is not quite enough to read a sentence at his speed and
+  LONG is still there when he has moved on.
+
+Cleared by time or by the next message, never by a tap. A message he has to dismiss has taken a press
+away from what he was doing.
+
+## Tested
+
+Test 1: 20 checks, 0 failed, 1,001 walked points across the bar — the middle is half, each arrow a
+quarter, the zones are contiguous, and both boundaries are space. Broken two ways: boundaries
+resolving to arrows, and the positional key also firing `onClick`. Red on three.
+
+Not tested: nothing ran on a phone. Whether a quarter of the bar is enough to hit reliably without
+looking is the question, and if it is not the answer is a narrower middle, not a different gesture.

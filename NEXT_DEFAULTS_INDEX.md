@@ -185,3 +185,4 @@ since been removed.
 - **§182** — The other direction
 - **§183** — The bucket row becomes a row
 - **§184** — The same setting in two windows
+- **§185** — Three zones, and messages that stop covering the keys

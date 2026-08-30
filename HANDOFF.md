@@ -21,7 +21,13 @@ reasoning behind one particular decision — it is a 4,000-line log, not a brief
 
 ## Where it is now
 
-**Build 320.** The last stretch, newest first:
+**Build 321.** The last stretch, newest first:
+
+- **The spacebar has three zones**: left quarter is ←, right quarter is →, the middle half is space.
+  A boundary press is a space, so the wider target wins a tie. Long press still opens the cursor pad.
+- **Messages are drawn by the keyboard, above every row, not by the system.** `Toast.setGravity` has
+  been ignored since Android 11, so a toast could not be moved off his keys — it had to stop being a
+  toast. A new message replaces the old rather than queueing behind it.
 
 - **Alignment now means the same thing in both windows.** The small box cuts a page AROUND the
   current word (top starts at it, bottom ends at it, middle centres it) instead of finding the fixed

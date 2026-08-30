@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.SwapHoriz
 import dev.patrickgold.florisboard.dictate.overlay.MaAppSwitcher
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
-import android.widget.Toast
 import dev.patrickgold.florisboard.dictate.overlay.MaScreenTargets
 import androidx.compose.material.icons.filled.History
 import dev.patrickgold.florisboard.dictate.MaReader
@@ -369,6 +368,31 @@ fun MaFeatureRow(
       // button, and then asking before storing what it caught: he presses the thing, and the
       // keyboard asks whether that was the one. Before this the wand did its work in silence, which
       // is indistinguishable from doing nothing.
+      // THE MESSAGE STRIP, above every row, where it covers no key.
+      //
+      // With the chrome, because it is chrome: one instance on the keyboard, drawn by the same
+      // composable that owns the wand bar, so two feature rows cannot each show their own copy.
+      if (drawChrome) {
+          val messageText = MaMessage.text.value
+          val messageSerial = MaMessage.serial.value
+          LaunchedEffect(messageSerial) {
+              if (messageText.isNotBlank()) {
+                  delay(MaMessage.SHOW_MS)
+                  MaMessage.clear()
+              }
+          }
+          if (messageText.isNotBlank()) {
+              Text(
+                  text = messageText,
+                  color = MaSand,
+                  fontSize = 13.sp,
+                  maxLines = 2,
+                  modifier = Modifier
+                      .fillMaxWidth()
+                      .padding(horizontal = 12.dp, vertical = 4.dp),
+              )
+          }
+      }
       if (drawChrome) MaWandBar(
           state = learn,
           onCopyDump = {
@@ -376,11 +400,7 @@ fun MaFeatureRow(
               // phone and its whole purpose is to be pasted somewhere else.
               val dump = DictateAccessibilityService.dumpScreen()
               clipboardManager.addNewPlaintext(dump)
-              Toast.makeText(
-                  context,
-                  context.getString(R.string.ma__wand_copied),
-                  Toast.LENGTH_SHORT,
-              ).show()
+              MaMessage.show(context.getString(R.string.ma__wand_copied))
           },
           onDismiss = { MaScreenTargets.Learn.cancel() },
           onEdit = {
@@ -856,17 +876,9 @@ fun MaFeatureRow(
                     if (DictateAccessibilityService.isRunning) {
                         val dump = DictateAccessibilityService.dumpScreen()
                         clipboardManager.addNewPlaintext(dump)
-                        Toast.makeText(
-                            context,
-                            "Screen copied \u2014 ${dump.length} characters",
-                            Toast.LENGTH_SHORT,
-                        ).show()
+                        MaMessage.show("Screen copied \u2014 ${dump.length} characters")
                     } else {
-                        Toast.makeText(
-                            context,
-                            "Turn on the accessibility service to read the screen",
-                            Toast.LENGTH_SHORT,
-                        ).show()
+                        MaMessage.show("Turn on the accessibility service to read the screen")
                     }
                 }
 
@@ -884,7 +896,7 @@ fun MaFeatureRow(
                     // about the reader still lives in settings, reachable from there.
                     onOpenSettings = { maDashboardOpen = !maDashboardOpen },
                     onMessage = { message ->
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        MaMessage.show(message)
                     },
                 )
 
@@ -932,15 +944,11 @@ fun MaFeatureRow(
                                 val free = visibleClipSlots.count {
                                     MaClipCapture.at(capturedSlots, it) == null
                                 }
-                                Toast.makeText(
-                                    context,
-                                    if (here == 0) {
+                                MaMessage.show(if (here == 0) {
                                         "No code block on this screen"
                                     } else {
                                         "$here code block(s) on screen, $free bucket(s) free"
-                                    },
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                    })
                             }
                         },
                     ) {
@@ -951,11 +959,7 @@ fun MaFeatureRow(
                                 val inView = DictateAccessibilityService
                                     .countScreenTargetsInView(listOf("copy code"))
                                 if (inView == 0) {
-                                    Toast.makeText(
-                                        context,
-                                        "No code block on this screen",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    MaMessage.show("No code block on this screen")
                                     return@launch
                                 }
                                 var landed = false
@@ -994,15 +998,11 @@ fun MaFeatureRow(
                                         val slot = after.indices.firstOrNull {
                                             after[it] != null && before.getOrNull(it) == null
                                         }
-                                        Toast.makeText(
-                                            context,
-                                            if (slot != null) {
+                                        MaMessage.show(if (slot != null) {
                                                 "Code block \u2192 C${slot + 1}"
                                             } else {
                                                 "Copied"
-                                            },
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
+                                            })
                                         break
                                     }
                                     // Nothing changed. Either this block is already in a bucket, or
@@ -1018,17 +1018,13 @@ fun MaFeatureRow(
                                         }
                                     val held = clipboardManager.primaryClip?.text?.toString()
                                         ?.let { MaClipCapture.slotFor(capturedSlots, it) }
-                                    Toast.makeText(
-                                        context,
-                                        when {
+                                    MaMessage.show(when {
                                             full -> "Every bucket is full \u2014 empty them with the bin"
                                             held != null -> "Already copied \u2014 this block is in C$held"
                                             alreadyHeld > 0 ->
                                                 "Every code block on this screen is already in a bucket"
                                             else -> "Nothing was copied"
-                                        },
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                        })
                                 }
                             }
                         }
@@ -1079,11 +1075,7 @@ fun MaFeatureRow(
                         } else if (!MaAppSwitcher.switchViaRecents(scope) &&
                             !MaAppSwitcher.switchToPrevious(context)
                         ) {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.ma__app_switch_none),
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                            MaMessage.show(context.getString(R.string.ma__app_switch_none))
                         }
                     }
                 }
@@ -1157,11 +1149,7 @@ fun MaFeatureRow(
                             scope.launch {
                                 val service = DictateAccessibilityService.gestureService()
                                 if (service == null || !MaScreenTargets.scrollBy(service, scrollPages)) {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.ma__scroll_none),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    MaMessage.show(context.getString(R.string.ma__scroll_none))
                                 }
                             }
                         }
@@ -1372,11 +1360,7 @@ fun MaFeatureRow(
                         } else if (MaMagicTargets.pressSend() == null) {
                             // Nothing was found, and silence here is indistinguishable from a key
                             // that does nothing — the failure this whole app keeps meeting.
-                            Toast.makeText(
-                                context,
-                                "No Send button found on this screen",
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                            MaMessage.show("No Send button found on this screen")
                         }
                     }
                 }
@@ -1605,15 +1589,11 @@ fun MaFeatureRow(
                             // Said out loud as well as shown. The keys themselves cannot report
                             // being switched off — a dead key looks exactly like a broken one, which
                             // is the whole history of this feature.
-                            Toast.makeText(
-                                context,
-                                if (volumeLive) {
+                            MaMessage.show(if (volumeLive) {
                                     "Volume keys off \u2014 volume only"
                                 } else {
                                     "Volume keys on \u2014 record and read"
-                                },
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                                })
                         },
                     ) { fg ->
                         // THE ROCKER, NOT A SPEAKER.
@@ -1814,11 +1794,7 @@ internal fun maOpenAccessibilitySettings(context: android.content.Context) {
                 .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }
-    Toast.makeText(
-        context,
-        context.getString(R.string.ma__accessibility_needed),
-        Toast.LENGTH_LONG,
-    ).show()
+    MaMessage.show(context.getString(R.string.ma__accessibility_needed))
 }
 
 /**
