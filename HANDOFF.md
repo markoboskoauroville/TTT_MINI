@@ -170,6 +170,11 @@ dims. `F1`–`F6` show and hide a row from the keyboard itself, green ring when 
 - **the bucket row** — `bin · C1 · C2 · C3 · A↑ · swap`, off by default, switched by the `Cs` key or
   the switchboard
 
+**Recording and sending are chosen by which key you press, not by a mode.** `● H` records Croatian,
+`● E` records English; `→H` and `→E` send in that language. The key IS the choice, so there is
+nothing to set beforehand and nothing to check afterwards. The status line says **Sending Croatian**
+or **Sending English**, and the badge shows the language THIS request was sent in.
+
 **The spacebar**: tap left quarter ←, right quarter →, middle half space. **Hold** a half and that
 arrow repeats every 111ms after 350ms. No seam is drawn.
 

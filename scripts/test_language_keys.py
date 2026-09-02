@@ -112,6 +112,19 @@ check("the language is set before recording starts",
 check("it confirms in words", '"Sending "' in rec and '"Recording "' in rec,
       "no confirmation of which language it went in")
 
+# The three faults CI found in the first version of these keys. Each is a type or a parameter the
+# compiler knows about and no static check here could — recorded so the shapes are recognisable.
+check("the send key does not pass tint to ThemedKey", "tint = if (sendHere) null else MaDim" not in row,
+      "ThemedKey has no tint parameter; only ThemedIconKey does")
+check("dimming is applied to the content", "val ink = if (sendHere) fg else" in row,
+      "a key that draws its own content dims that content, not a parameter it does not have")
+check("both halves dim together", row.count("color = ink") >= 1 and row.count("tint = ink") >= 1,
+      "half a key dimmed reads as a rendering fault rather than a state")
+check("pressSend is treated as a String?", "if (sent != null) {" in row,
+      "it returns the term it pressed, not a Boolean")
+check("sendVisible is polled, not read in composition", "delay(700L)" in row,
+      "it reads preferences and parses the target list on every recomposition")
+
 print(f"language keys, test 1: {checks} checks, {len(failures)} failed ({walked} steps walked)")
 for f in failures:
     print(f"  FAIL  {f}")

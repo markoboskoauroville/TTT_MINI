@@ -8892,3 +8892,32 @@ edit was supposed to add** rather than trusting that no exception was raised.
   before assuming a file is live.
 
 ---
+
+---
+
+## §189 — Three compile faults in the language keys, and the sixth silent edit
+
+Build 327 fixes what build 326's push left red.
+
+**Three faults, all of them things the compiler knows and no check here could:**
+
+- `tint = …` passed to `ThemedKey`, which has no such parameter. Only `ThemedIconKey` does, and the
+  plain send key dims through it. A key that draws its own content dims **the content**, not a
+  parameter it does not have.
+- `MaMagicTargets.pressSend()` treated as a `Boolean`. It returns the **term it pressed**, or null —
+  and that term is worth showing, because when the wrong thing gets pressed the word it found is the
+  whole diagnosis.
+- `sendVisible()` called during composition. It reads preferences and parses the target list; it is
+  polled now, like the plain send key.
+
+All three are recorded as checks in `test_language_keys.py`. They cannot fail again silently, though
+a fourth of the same kind will still need CI.
+
+**And the sixth silent scripted edit.** The line dimming the letter beside the arrow was written by a
+`str.replace` that matched nothing — the anchor had a different indentation than I assumed. The
+arrow dimmed; the letter did not. **The check that caught it is one I had written ten minutes
+earlier, in the same commit**, asserting both halves dim together.
+
+That is the argument for writing the check with the fix rather than after it. The habit from §187a —
+grep for what the edit was supposed to add — worked here only because the grep was already written
+down as a check.

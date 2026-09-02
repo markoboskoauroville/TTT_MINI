@@ -1314,19 +1314,33 @@ fun MaFeatureRow(
                 MaFeatureKey.SEND_HR, MaFeatureKey.SEND_EN -> {
                     // An arrow and a letter. Written once for the two, as the record pair is.
                     val language = if (button.key == MaFeatureKey.SEND_HR) MaLanguage.HR else MaLanguage.EN
-                    val sendHere = MaMagicTargets.sendVisible()
+                    // `sendVisible()` reads preferences and parses the target list, so it is polled
+                    // like the plain send key rather than called during composition — a read that
+                    // touches storage on every recomposition is a read that will one day be slow.
+                    var sendHere by remember { mutableStateOf(true) }
+                    LaunchedEffect(Unit) {
+                        while (true) {
+                            sendHere = runCatching { MaMagicTargets.sendVisible() }.getOrDefault(false)
+                            delay(700L)
+                        }
+                    }
                     ThemedKey(
                         code = KeyCode.NOOP,
                         modifier = keyMod,
-                        // Dim when there is no Send button on screen, exactly as the plain send key
-                        // is: a key that looks alive and does nothing is indistinguishable from a
-                        // broken one.
-                        tint = if (sendHere) null else MaDim,
+                        // THEMEDKEY HAS NO `tint`. The plain send key dims through ThemedIconKey,
+                        // which does; this one draws its own content, so the dimming belongs to the
+                        // content and is applied to `fg` below.
+                        //
+                        // Dim rather than hidden, for the reason the plain send key gives: a key that
+                        // disappears takes its neighbours' places with it, and this row is pressed
+                        // from memory.
                         onClick = {
                             MaLanguage.set(context, language)
                             val sent = MaMagicTargets.pressSend()
+                            // pressSend returns the TERM it pressed, or null. Not a Boolean —
+                            // the first version of this treated it as one and CI said so.
                             MaMessage.show(
-                                if (sent) {
+                                if (sent != null) {
                                     "Sending " + if (language == MaLanguage.HR) "Croatian" else "English"
                                 } else {
                                     "No send button on this screen"
@@ -1334,17 +1348,20 @@ fun MaFeatureRow(
                             )
                         },
                     ) { fg ->
+                        val ink = if (sendHere) fg else MaSand.copy(alpha = 0.3f)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = null,
-                                tint = fg,
+                                tint = ink,
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(Modifier.width(3.dp))
                             Text(
                                 text = if (language == MaLanguage.HR) "H" else "E",
-                                color = fg,
+                                // The letter dims with the arrow. Half a key dimmed reads as a
+                                // rendering fault rather than as a state.
+                                color = ink,
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold,
                             )
