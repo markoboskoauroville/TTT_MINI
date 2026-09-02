@@ -171,7 +171,12 @@ def code(path: Path) -> str:
 
 
 ctrl = code(SRC / "dictate/DictateController.kt")
-check("the in-flight audio is kept", "inFlight = InFlight(audioFile" in ctrl, "nothing to resend")
+# The constructor moved onto several lines when it gained the language field. The claim is unchanged
+# — the audio is kept so it can be resent — and checking for the one-line spelling was checking the
+# formatter, not the behaviour. Fifth of these; the pattern is always a check quoting the easiest
+# thing to grep on the day it was written.
+check("the in-flight audio is kept", "inFlight = InFlight(" in ctrl and "audioFile," in ctrl,
+      "nothing to resend")
 check("the resend exists", "fun retranscribeInLanguage" in ctrl, "the badge would do nothing")
 
 # INSIDE the function, not anywhere in the file.
@@ -225,8 +230,21 @@ ui = code(SRC / "dictate/ui/DictateSmartbarUi.kt")
 # 1. The badge was read once, so it never changed on screen. Observed now.
 check("the badge is observed", "maLanguageMode.collectAsState()" in ui,
       "read once — the tap works and the letters never change")
-check("the badge is derived from what the tap writes", 'if (languageMode == MaLanguage.EN)' in ui,
-      "two sources for one letter")
+# SUPERSEDED, and deliberately rewritten rather than deleted.
+#
+# This check said the badge must be derived from the PREFERENCE, which was right when it was written:
+# the bug then was a badge read once at composition that never updated. It became wrong when the next
+# bug arrived — the preference is what the NEXT dictation will use, and reading it relabelled a
+# request already on the wire, which he reported as "sending English, status says Croatian".
+#
+# **A check written for one bug can be the thing that holds the next one in place.** CI caught this
+# one because the new fix made it fail; the claim is the same — one source for the letter — and only
+# the source has changed.
+check("the badge is derived from the request, not the setting",
+      "DictateController.inFlightLanguage" in ui, "two sources for one letter")
+check("the preference is still observed, so the line updates",
+      "maLanguageMode.collectAsState()" in ui,
+      "Compose would never be told anything changed and the letters would freeze again")
 
 # 2. Brackets, and room between three controls with asymmetric costs.
 for part in ('"[$badge]"', '"[\\u00D7]"', '"["'):

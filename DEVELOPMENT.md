@@ -90,6 +90,23 @@ Twice, the same line, two different wrong sources:
 **A label on a thing in flight must come from the thing, not from the setting that started it.** The
 request carries its own language now, captured when it leaves.
 
+## SHAPE 3c — A check written for one bug, holding the next one in place.
+
+**§188.** `test_sending_badge.py` asserted the badge must be derived from the PREFERENCE. That was
+right when it was written — the bug then was a badge read once at composition that never updated.
+
+It became **wrong** when the next bug arrived on the same line: the preference is what the next
+dictation will use, so reading it relabelled a request already on the wire.
+
+**CI caught it because the fix made the old check fail**, which is the system working. The check was
+restated rather than deleted — the claim is unchanged, *one source for the letter*, and only the
+source moved.
+
+Related, and now five occurrences: **a check that quotes a line rather than a behaviour breaks when
+the line is reformatted.** `"inFlight = InFlight(audioFile"` broke because the constructor gained a
+field and went multi-line. Nothing was wrong. The pattern is always the same — the check quoted the
+easiest thing to grep on the day it was written.
+
 ## SHAPE 4 — Ordering, in a list a model reads.
 
 **Symptom:** the instruction is correct and the output is wrong.
