@@ -74,6 +74,22 @@ code it models.
 - **The language rule** (§179). Present in the proofread prompt for months, buried mid-list, in
   English. Naming the language and putting the rule LAST is what made it work.
 
+## SHAPE 3b — A label read from the setting rather than from the thing it labels.
+
+**Symptom:** *"When I'm sending English text, the status line says Croatian."*
+
+**Cause:** the sending line displayed `maLanguageMode` — the current SETTING. A request already on
+the wire was sent in whatever it was sent in; when the setting moved on for the next dictation, the
+line relabelled the old request.
+
+Twice, the same line, two different wrong sources:
+
+1. it read `MaLanguage.badge()` once at composition, so it never updated at all (§179);
+2. it read the preference as state, so it updated — **to the wrong thing** (§188).
+
+**A label on a thing in flight must come from the thing, not from the setting that started it.** The
+request carries its own language now, captured when it leaves.
+
 ## SHAPE 4 — Ordering, in a list a model reads.
 
 **Symptom:** the instruction is correct and the output is wrong.
@@ -153,6 +169,7 @@ A decision without its rejected alternative is a decision that gets re-litigated
 | **Two automatic buckets, not one with a mode** | a direction toggle | a mode means remembering which way it points before every press, and being wrong collects from the wrong end (§182) |
 | **One voice, no style chooser** | Marko / Yshai options | `prose-voice.md` §3 names Yshai's lowercase as the one thing we do NOT copy — the chooser offered to copy it (§181) |
 | **The word-classification gate asks only about new words** | classify every word | his rule: a word already in a model is already in the right place. Turns a per-word cost into one that decays to zero (§160) |
+| **Two record keys and two send keys, no language mode** | one key plus a setting | every recording began with a question he could only answer by looking, and getting it wrong was invisible until the words came back in the wrong language. **A mode you have to check before every use is not a setting, it is a trap** (§188) |
 | **The hold repeats in `onPress`** | `onLongPress` | it fires once; this must continue until he lifts, and `tryAwaitRelease` is only available in `onPress` (§187) |
 | **Two halves on the hold, three zones on the tap** | one rule for both | a tap must leave room for the space; a hold need not, because nobody holds a spacebar to type spaces (§187) |
 | **Messages drawn by the keyboard** | `Toast.setGravity(TOP)` | **it does not work** — ignored for text toasts since Android 11 (§185) |

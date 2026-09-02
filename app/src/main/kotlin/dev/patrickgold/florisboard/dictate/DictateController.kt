@@ -1032,6 +1032,18 @@ object DictateController {
         val isReplay: Boolean,
         val source: String,
         val replayHistoryId: Long?,
+        /**
+         * The language THIS REQUEST WAS SENT IN, captured when it left.
+         *
+         * The sending line used to show `maLanguageMode` — the current SETTING — so the moment the
+         * setting changed for the next dictation, the line relabelled a request already on the wire.
+         * He reported it as "sending English, status says Croatian", and it was: the request was
+         * English and the label was reading a preference that had moved on.
+         *
+         * **A label on a thing in flight must come from the thing, not from the setting that
+         * started it.**
+         */
+        val language: String,
     )
 
     private var inFlight: InFlight? = null
@@ -1157,6 +1169,16 @@ object DictateController {
             replayHistoryId = current.replayHistoryId,
         )
     }
+
+    /**
+     * The language the request in flight was sent in, or the current setting when nothing is flying.
+     *
+     * State, not a plain read, because the line showing it is a composable and Compose cannot know a
+     * field changed. The fallback matters: before a request exists the setting IS the answer, and a
+     * blank badge would be worse than an early one.
+     */
+    val inFlightLanguage: String
+        get() = inFlight?.language ?: MaLanguage.active()
 
     fun cancelTranscription() {
         // Same reason as cancelRecording: an abandoned transcription must not leave a send armed
@@ -1472,7 +1494,10 @@ object DictateController {
         // upload and there is no way to change it mid-flight. So the file and its metadata are held
         // here rather than being reconstructed later from the history, which would only have them
         // after the request finished, which is exactly when they are no longer wanted.
-        inFlight = InFlight(audioFile, recordedSeconds, gate, forceLocal, isReplay, source, replayHistoryId)
+        inFlight = InFlight(
+            audioFile, recordedSeconds, gate, forceLocal, isReplay, source, replayHistoryId,
+            language = MaLanguage.active(),
+        )
         val account = if (forceLocal) MaProviders.localTranscriptionAccount() else MaProviders.transcriptionAccount()
         val apiKey = account.apiKey
         val preset = MaProviders.presetFor(account)

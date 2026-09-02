@@ -1,9 +1,9 @@
 # TTT mini — the finished state
 
-**Build 326.** A dictation keyboard for Marko Boško.
+**Build 327.** A dictation keyboard for Marko Boško.
 
 **Repo:** `markoboskoauroville/TTT_MINI` (Apache-2.0) · **Package:** `com.mantraproductions.tttlight`
-**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-326/ttt-mini-build-326.apk
+**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-327/ttt-mini-build-327.apk
 
 > **This file is the present state and nothing else.** Every reason, every bug and every rejected
 > alternative is in [`DEVELOPMENT.md`](DEVELOPMENT.md), grouped by shape. If you are about to reverse
@@ -172,6 +172,10 @@ dims. `F1`–`F6` show and hide a row from the keyboard itself, green ring when 
 
 **The spacebar**: tap left quarter ←, right quarter →, middle half space. **Hold** a half and that
 arrow repeats every 111ms after 350ms. No seam is drawn.
+
+**Recording and sending name their language.** `● H` and `● E` record in Croatian and English;
+`➤ H` and `➤ E` send in each. The key is the answer to *which language is this*, so there is nothing
+to check before pressing. Each confirms in words — *Recording Croatian*, *Sending English*.
 
 **Buckets.** Ten slots. `A↑` takes the lowest code block in the frame and works upward, `A↓` the
 highest downward. **A block already in any bucket is never taken again**, at any slot, in either

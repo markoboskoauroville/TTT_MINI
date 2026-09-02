@@ -56,6 +56,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.KeyboardCapslock
@@ -1310,6 +1311,47 @@ fun MaFeatureRow(
                     }
                 }
 
+                MaFeatureKey.SEND_HR, MaFeatureKey.SEND_EN -> {
+                    // An arrow and a letter. Written once for the two, as the record pair is.
+                    val language = if (button.key == MaFeatureKey.SEND_HR) MaLanguage.HR else MaLanguage.EN
+                    val sendHere = MaMagicTargets.sendVisible()
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        // Dim when there is no Send button on screen, exactly as the plain send key
+                        // is: a key that looks alive and does nothing is indistinguishable from a
+                        // broken one.
+                        tint = if (sendHere) null else MaDim,
+                        onClick = {
+                            MaLanguage.set(context, language)
+                            val sent = MaMagicTargets.pressSend()
+                            MaMessage.show(
+                                if (sent) {
+                                    "Sending " + if (language == MaLanguage.HR) "Croatian" else "English"
+                                } else {
+                                    "No send button on this screen"
+                                },
+                            )
+                        },
+                    ) { fg ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = null,
+                                tint = fg,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(Modifier.width(3.dp))
+                            Text(
+                                text = if (language == MaLanguage.HR) "H" else "E",
+                                color = fg,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                }
+
                 MaFeatureKey.SEND -> {
                     // Lit only when there is a Send button on the screen.
                     //
@@ -1361,6 +1403,61 @@ fun MaFeatureRow(
                             // Nothing was found, and silence here is indistinguishable from a key
                             // that does nothing — the failure this whole app keeps meeting.
                             MaMessage.show("No Send button found on this screen")
+                        }
+                    }
+                }
+
+                MaFeatureKey.RECORD_HR, MaFeatureKey.RECORD_EN -> {
+                    // RECORD IN A LANGUAGE. The key is the answer to "which language is this".
+                    //
+                    // Written once for the two: they differ by one string, and two copies would be
+                    // two places for the order of "set the language, then record" to drift — which
+                    // is the one thing here that must not.
+                    val language = if (button.key == MaFeatureKey.RECORD_HR) MaLanguage.HR else MaLanguage.EN
+                    val rec = DictateController.state.collectAsState().value as?
+                        DictateController.UiState.Recording
+                    val recording = rec != null
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        // The ring says a recording is running, as it does on the plain record key.
+                        // It does NOT say which language: both keys ring, because what is running is
+                        // one recording and lighting only one of them would suggest the other could
+                        // start a second.
+                        ring = if (recording) onGreen else null,
+                        onClick = {
+                            // THE LANGUAGE IS SET FIRST, AND SET SYNCHRONOUSLY.
+                            //
+                            // `MaLanguage.set` writes with runBlocking precisely so a press followed
+                            // immediately by a recording cannot race it. Started first, the audio
+                            // would exist before the language did and `transcribe` would capture
+                            // whatever the previous setting was — which is the bug he has been
+                            // living with, arriving by a different road.
+                            if (!recording) MaLanguage.set(context, language)
+                            DictateController.onMicClick(context)
+                            MaMessage.show(
+                                if (recording) {
+                                    "Sending " + if (language == MaLanguage.HR) "Croatian" else "English"
+                                } else {
+                                    "Recording " + if (language == MaLanguage.HR) "Croatian" else "English"
+                                },
+                            )
+                        },
+                    ) { fg ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(9.dp)
+                                    .clip(CircleShape)
+                                    .background(MaRecordRed),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = if (language == MaLanguage.HR) "H" else "E",
+                                color = fg,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                     }
                 }

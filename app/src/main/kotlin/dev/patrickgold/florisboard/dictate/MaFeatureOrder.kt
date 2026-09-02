@@ -334,6 +334,22 @@ enum class MaFeatureKey(val id: String, val label: String) {
     SEND("send", "Send"),
 
     /**
+     * SEND IN CROATIAN, AND SEND IN ENGLISH.
+     *
+     * The same shape as the two record keys and for the same reason: the language is decided by
+     * which key he presses, not by a setting he has to remember to check. He asked for both arrows
+     * in the magic-finger layer, so a dictation typed into another app can be sent in the language
+     * it was written in.
+     *
+     * Each sets the language and then presses Send. The language is set even though the text is
+     * already written, because **the setting is what the next dictation and every rewording will
+     * use**, and pressing "send Croatian" while the app believes it is in English is exactly the
+     * mismatch these keys exist to end.
+     */
+    SEND_HR("sendhr", "Send in Croatian"),
+    SEND_EN("senden", "Send in English"),
+
+    /**
      * Record: start, and stop.
      *
      * `DictateController.onMicClick`, the same call volume-up makes and the same one the mic on the
@@ -344,6 +360,25 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * the only route to the view. This is a fourth route that takes nothing away.
      */
     RECORD("record", "Record"),
+
+    /**
+     * RECORD IN CROATIAN, AND RECORD IN ENGLISH. Two keys, no mode.
+     *
+     * He asked for language switching to be removed outright, and he is right that it was the
+     * problem rather than its presentation. A single record key plus a language setting means every
+     * recording begins with a question — *which language is it on?* — that he can only answer by
+     * looking, and getting it wrong is not visible until the words come back in the wrong language.
+     *
+     * **A mode you have to check before every use is not a setting, it is a trap.** Two keys answer
+     * the question by being pressed: H records Croatian, E records English, and there is nothing to
+     * check because the key IS the answer.
+     *
+     * Each sets the language and then starts the recording, in that order, so the language is
+     * settled before any audio exists. Both are the same call the mic and volume-up make; nothing
+     * else about recording changes.
+     */
+    RECORD_HR("recordhr", "Record in Croatian"),
+    RECORD_EN("recorden", "Record in English"),
 
     VOLUME_KEYS("volume_keys", "Volume keys"),
 
@@ -583,7 +618,11 @@ val MaFeatureKey.group: MaFeatureGroup
         // start and stop recordings, which is a dictation question wearing a hardware button.
         MaFeatureKey.VOLUME_KEYS,
         MaFeatureKey.RECORD,
+        MaFeatureKey.RECORD_HR,
+        MaFeatureKey.RECORD_EN,
         MaFeatureKey.SEND,
+        MaFeatureKey.SEND_HR,
+        MaFeatureKey.SEND_EN,
         -> MaFeatureGroup.DICTATION
 
         MaFeatureKey.READER,

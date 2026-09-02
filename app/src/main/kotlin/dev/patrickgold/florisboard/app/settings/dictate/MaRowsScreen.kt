@@ -741,6 +741,13 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             MaFeatureKey.AUTO_BUCKET_DOWN -> letters("A\u2193")
             // The row it reveals, as a word. "C" would collide with the buckets themselves.
             MaFeatureKey.BUCKET_ROW -> letters("Cs")
+            // A red dot and the letter, the same face the keys draw. The dot says "records", the
+            // letter says "in this language" — and the letter is the whole point, so it is the
+            // larger of the two.
+            MaFeatureKey.RECORD_HR -> letters("\u25CF H")
+            MaFeatureKey.RECORD_EN -> letters("\u25CF E")
+            MaFeatureKey.SEND_HR -> letters("\u27A4 H")
+            MaFeatureKey.SEND_EN -> letters("\u27A4 E")
             MaFeatureKey.PASTE ->
                 Icon(Icons.Default.ContentPaste, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CUT ->

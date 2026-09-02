@@ -577,8 +577,19 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
     //
     // Reading the preference as state fixes it at the source: the letters are derived from the
     // thing the tap writes, so they cannot disagree with it.
+    // AND IT IS THE REQUEST'S LANGUAGE, NOT THE SETTING'S.
+    //
+    // Reading the preference fixed one bug and left a worse one. The preference is what the NEXT
+    // dictation will use; a request already on the wire was sent in whatever it was sent in, and
+    // relabelling it when the setting moves is how "sending English" came to say Croatian.
+    //
+    // `maLanguageMode` is still collected, because a composable has to be told when something
+    // changes and this is the only thing here that Compose can observe — but what it displays comes
+    // from the request. The preference is the trigger; the request is the truth.
     val languageMode by prefs.dictate.maLanguageMode.collectAsState()
-    val badge = if (languageMode == MaLanguage.EN) "ENG" else "HR"
+    val badge = remember(languageMode, state) {
+        if (DictateController.inFlightLanguage == MaLanguage.EN) "ENG" else "HR"
+    }
 
     // ENG or HR, first, where his thumb already goes.
     Text(
