@@ -57,16 +57,41 @@ check("the switcher never moves", all(f.startswith("view_") for f in firsts.valu
 # A reorder that drops a key is a reorder that deletes a feature, and the keys here include ctrl,
 # which he uses for Ctrl+P and Ctrl+F.
 for mod, expected in (
-    ("charactersMod", {"ctrl", "language_switch", "view_symbols2", "space", ".", "enter",
-                       "view_symbols", "shift", "delete"}),
-    ("symbolsMod", {"ctrl", "language_switch", "view_symbols2", "space", ".", "enter",
-                    "view_characters"}),
-    ("symbols2Mod", {"ctrl", "language_switch", "view_symbols", "space", ".", "enter",
-                     "view_characters"}),
+    # Updated for SwiftKey's row: language_switch is gone on purpose and view_symbols2 moved to the
+    # 123 popup. What must still be present is everything he presses.
+    ("charactersMod", {"ctrl", "space", ".", ",", "enter", "view_symbols", "shift", "delete"}),
+    ("symbolsMod", {"ctrl", "space", ".", ",", "enter", "view_characters"}),
+    ("symbols2Mod", {"ctrl", "space", ".", ",", "enter", "view_characters"}),
 ):
     got = set(l for l in labels_all(mod) if l)
     missing = expected - got
     check(f"{mod}: no key was dropped", not missing, f"missing {missing}")
+
+# ---------------------------------------------------------------- SwiftKey's row, applied
+#
+# From his screenshot: 123 | , | space | . | enter, with a DEDICATED COMMA left of space and the
+# period carrying ,!? on its popup. Five keys where his had seven.
+#
+# **This is a removal, so it is the part to be careful about.** `language_switch` went and should
+# have: the language is chosen by the record and send keys now, so a key that switches it is the
+# mode this app spent three builds deleting. `view_symbols2` went from the ROW and is still on the
+# 123 key's popup — moved, not removed.
+#
+# `ctrl` STAYED, against the screenshot. SwiftKey has no Ctrl+P and no Ctrl+F; he uses both hourly,
+# and copying a layout is not a reason to delete a feature that layout never had.
+for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
+    row = bottom(mod)
+    check(f"{mod}: six keys, not seven", len(row) == 6, str(row))
+    check(f"{mod}: a dedicated comma", "," in row, "the comma is still hidden on a popup")
+    check(f"{mod}: the comma sits left of space", row.index(",") < row.index("space"), str(row))
+    check(f"{mod}: no language switcher", "language_switch" not in row,
+          "a key that switches a mode the record keys already decide")
+    check(f"{mod}: enter is last", row[-1] == "enter", str(row))
+
+# What the removed keys offered must still be reachable, or the tidy-up deleted a panel.
+chars_rows = json.loads((LAYOUTS / "charactersMod" / "default.json").read_text())
+sw_popup = [p.get("label") for p in chars_rows[-1][0].get("popup", {}).get("relevant", [])]
+check("the second symbol panel is still reachable", "view_symbols2" in sw_popup, str(sw_popup))
 
 # Ctrl survives, and it is the one whose loss he would feel first.
 for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
@@ -76,7 +101,9 @@ for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
 chars = json.loads((LAYOUTS / "charactersMod" / "default.json").read_text())
 period = next(k for row in chars for k in row if k.get("label") == ".")
 popup = [p.get("label") for p in period.get("popup", {}).get("relevant", [])]
-check("comma is still on the period's popup", "," in popup, str(popup))
+# The comma has its own key now, so the period's popup carries ! and ? — which is what SwiftKey
+# prints above that key as ",!?".
+check("the period offers ! and ?", "!" in popup and "?" in popup, str(popup))
 
 # ---------------------------------------------------------------- the files still parse
 for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):

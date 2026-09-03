@@ -9103,3 +9103,51 @@ labels now.
 
 That is the seventh check this month that looked wider than its claim, and it is the same cure every
 time: extract what the claim is about, then assert against that.
+
+---
+
+## §194 — SwiftKey's bottom row, applied
+
+Build 337. He sent the screenshot and said it is better than his layout. It is, and the reason is
+subtraction.
+
+    SwiftKey:  123 |  ,  | space |  .  | enter
+    His was:   123 | ctrl | lang | sy2 | space | . | enter
+
+**Seven keys doing what five do.** Two of the seven were switches, and switches on the letter
+keyboard are the thing this app has spent three builds removing.
+
+### What went, and why each was safe
+
+**`language_switch` — gone, and good riddance.** The language is chosen by `● H`, `● E`, `→H` and
+`→E` now. A key that switches it is the mode §190 deleted the badge for, sitting one row lower. It
+was the last one.
+
+**`view_symbols2` — moved, not removed.** It is on the `123` key's popup, where it already was. The
+test asserts that popup still carries it, because a tidy-up that quietly deletes a panel is worse
+than a cluttered row.
+
+### What stayed, against the screenshot
+
+**`ctrl`.** SwiftKey has no Ctrl+P and no Ctrl+F; he uses both hourly. **Copying a layout is not a
+reason to delete a feature that layout never had** — the screenshot is a model, not a specification,
+and the difference between them is exactly the keys that exist because of how he works.
+
+So the row is six keys, not five, and the one extra is the one he would notice within a minute.
+
+### What arrived
+
+**A dedicated comma**, left of space, where SwiftKey has it. It was on the period's popup — reachable
+by long press, which is a gesture for something rare, and a comma is not rare.
+
+The period now offers **! and ?** on its popup, which is what SwiftKey prints above that key as
+`,!?`. The comma left the popup because it has its own key; the other two stayed.
+
+### Tested
+
+Test 1: 57 checks, 0 failed — six keys on all three panels, the comma left of space, enter last, no
+language switcher anywhere, the second symbol panel still reachable from the popup, `ctrl` present by
+name, and every file still parsing. Sabotaged by dropping `view_symbols2` from the popup as well as
+the row: red.
+
+Still zero Kotlin files. Three JSON assets, again.
