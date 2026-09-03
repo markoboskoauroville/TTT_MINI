@@ -125,6 +125,20 @@ check("pressSend is treated as a String?", "if (sent != null) {" in row,
 check("sendVisible is polled, not read in composition", "delay(700L)" in row,
       "it reads preferences and parses the target list on every recomposition")
 
+# ---------------------------------------------------------------- the badge is gone
+#
+# It showed the language and cycled it on a tap. That was right while the language was a MODE; the
+# record and send keys carry their own language now, so it reported a mode nobody sets — and it was
+# still tappable, which made it the last route by which the language could be wrong again.
+ui3 = code(SRC / "dictate/ui/DictateSmartbarUi.kt")
+check("no language badge on the sending line", '"[$badge]"' not in ui3, "a control with nothing to control")
+check("its computation went with it", "val badge = remember(" not in ui3,
+      "a value read, cached and observed for a control that does not exist")
+check("nothing on that line cycles the language", "MaLanguage.cycleMode(context)" not in ui3,
+      "the last route by which the language could be set behind the keys")
+check("the line still REPORTS the language", '"Sending Croatian"' in ui3 and '"Sending English"' in ui3,
+      "removing the control removed the report as well")
+
 print(f"language keys, test 1: {checks} checks, {len(failures)} failed ({walked} steps walked)")
 for f in failures:
     print(f"  FAIL  {f}")

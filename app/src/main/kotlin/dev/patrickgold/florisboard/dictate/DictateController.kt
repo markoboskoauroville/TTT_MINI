@@ -96,6 +96,9 @@ import dev.patrickgold.florisboard.dictate.audio.MaResample
 import dev.patrickgold.florisboard.dictate.provider.MaKeyRing
 import dev.patrickgold.florisboard.dictate.provider.MaKeys
 import dev.patrickgold.florisboard.dictate.nlp.MaWordLanguage
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 
 /**
  * Orchestrates the dictation flow that fuses the recording, the provider layer and the editor: tap
@@ -1171,14 +1174,19 @@ object DictateController {
     }
 
     /**
-     * The language the request in flight was sent in, or the current setting when nothing is flying.
+     * THE LANGUAGE THIS REQUEST IS USING, and now genuinely Compose state.
      *
-     * State, not a plain read, because the line showing it is a composable and Compose cannot know a
-     * field changed. The fallback matters: before a request exists the setting IS the answer, and a
-     * blank badge would be worse than an early one.
+     * The comment here read "State, not a plain read, because the line showing it is a
+     * composable" — and the code beneath it was a plain `get()` over an ordinary field. Compose
+     * could not see it change, so **the line showed whatever had been true at the last
+     * recomposition**: usually the language of the previous request. That is exactly what he
+     * reported — sending English, status line saying Croatian.
+     *
+     * A comment describing the fix rather than the code is worse than no comment, because it
+     * stops the next reader looking.
      */
-    val inFlightLanguage: String
-        get() = inFlight?.language ?: MaLanguage.active()
+    var inFlightLanguage: String by mutableStateOf(MaLanguage.active())
+        private set
 
     fun cancelTranscription() {
         // Same reason as cancelRecording: an abandoned transcription must not leave a send armed
@@ -1498,6 +1506,9 @@ object DictateController {
             audioFile, recordedSeconds, gate, forceLocal, isReplay, source, replayHistoryId,
             language = MaLanguage.active(),
         )
+        // Written where the request BEGINS, so a language changed afterwards cannot relabel a send
+        // already on the wire.
+        inFlightLanguage = MaLanguage.active()
         val account = if (forceLocal) MaProviders.localTranscriptionAccount() else MaProviders.transcriptionAccount()
         val apiKey = account.apiKey
         val preset = MaProviders.presetFor(account)

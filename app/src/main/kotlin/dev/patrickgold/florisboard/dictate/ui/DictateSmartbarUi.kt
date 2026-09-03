@@ -568,52 +568,21 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
     val retrying = state.attempt > 1
     val prefs by FlorisPreferenceStore
 
-    // THE BADGE IS OBSERVED, NOT READ ONCE.
-    //
-    // `MaLanguage.badge()` is a plain function call. Compose has no way to know the preference
-    // behind it changed, so the tap wrote HR and the letters on screen stayed ENG — a control that
-    // looked dead while working perfectly. **The same fault as the wand bar: the bar has to be told,
-    // not asked.**
-    //
-    // Reading the preference as state fixes it at the source: the letters are derived from the
-    // thing the tap writes, so they cannot disagree with it.
-    // AND IT IS THE REQUEST'S LANGUAGE, NOT THE SETTING'S.
-    //
-    // Reading the preference fixed one bug and left a worse one. The preference is what the NEXT
-    // dictation will use; a request already on the wire was sent in whatever it was sent in, and
-    // relabelling it when the setting moves is how "sending English" came to say Croatian.
-    //
-    // `maLanguageMode` is still collected, because a composable has to be told when something
-    // changes and this is the only thing here that Compose can observe — but what it displays comes
-    // from the request. The preference is the trigger; the request is the truth.
-    val languageMode by prefs.dictate.maLanguageMode.collectAsState()
-    val badge = remember(languageMode, state) {
-        if (DictateController.inFlightLanguage == MaLanguage.EN) "ENG" else "HR"
-    }
+    // The badge's computation went with the badge. A value read, cached and observed for a
+    // control that no longer exists is three things to keep working for nothing.
 
-    // ENG or HR, first, where his thumb already goes.
-    Text(
-        text = "[$badge]",
-        color = MaRecordInk,
-        fontSize = MaStatusFontSize,
-        fontFamily = MaStatusFontFamily,
-        fontWeight = FontWeight.Bold,
-        maxLines = 1,
-        modifier = Modifier
-            .clickable {
-                MaLanguage.cycleMode(context)
-                // Sending: throw it away and send again in the new language. Held: just set it —
-                // see retranscribeInLanguage, which is where that difference lives rather than here.
-                DictateController.retranscribeInLanguage(context, MaLanguage.active())
-            }
-            // ROOM BETWEEN THE THREE, because he told me he was missing them.
-            //
-            // These are three separate decisions — which language, throw it away, hold or send —
-            // and two of them are irreversible in opposite directions. Packed tight, a thumb aimed
-            // at the hold lands on the X. **Where the cost of a miss is asymmetric, the gap is not
-            // decoration.**
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-    )
+    // THE LANGUAGE BADGE IS GONE FROM THIS LINE.
+    //
+    // It showed the language and cycled it on a tap, and it was right while the language was a
+    // MODE. It is not one now: `● H` and `● E` record, `→H` and `→E` send, and the press is the
+    // choice. A badge reporting a mode nobody sets is a control with nothing to control.
+    //
+    // **And it was still tappable**, so it could cycle a setting the keys had already decided —
+    // the last route by which the language could go wrong behind his back.
+    //
+    // The status text further down still NAMES the language in words. That is a report of what
+    // this request is doing, not a control over it, and he asked to be told.
+
 
     // X: kill it, audio and all. The one irreversible control on the line.
     Text(
@@ -665,7 +634,16 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
             text = when {
                 state.held -> "held \u2014 tap to send"
                 retrying -> stringRes(R.string.dictate__status_retrying, "attempt" to state.attempt)
-                else -> maLine.ifBlank { stringRes(R.string.dictate__status_transcribing) }
+                // Named in words, because he asked to be told which language is going out. The
+                // badge that used to say it in two letters is gone; this stays, because it reports
+                // rather than controls.
+                else -> maLine.ifBlank {
+                    if (DictateController.inFlightLanguage == MaLanguage.EN) {
+                        "Sending English"
+                    } else {
+                        "Sending Croatian"
+                    }
+                }
             },
             color = MaRecordInk,
             fontSize = MaStatusFontSize,

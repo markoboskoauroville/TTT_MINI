@@ -218,18 +218,27 @@ ui = code(SRC / "dictate/ui/DictateSmartbarUi.kt")
 # The badge is derived from the observed preference now, not from a one-shot MaLanguage.badge().
 # That IS the fix for the dead badge, so the check has to look for the new spelling — the old string
 # would have kept passing on exactly the code he reported as broken.
-check("the badge is on the sending line", '"[$badge]"' in ui, "no badge while sending")
-check("and it is tappable", "retranscribeInLanguage(context, MaLanguage.active())" in ui,
-      "readable but not changeable, which is the frustrating half")
-check("it cycles the same way the key does", "MaLanguage.cycleMode(context)" in ui,
-      "two ideas of what next means")
+# THE BADGE IS GONE, and these two invert rather than disappear. It existed to show and change a
+# MODE; the record and send keys carry their own language now, so a badge would report a mode
+# nobody sets — and a tappable one would be the last route by which the language could go wrong.
+check("no language badge on the sending line", '"[$badge]"' not in ui,
+      "a control with nothing to control")
+check("and nothing there resends in another language",
+      "retranscribeInLanguage(context, MaLanguage.active())" not in ui,
+      "a tap could cycle a setting the keys had already decided")
+# The badge that cycled is gone; the claim inverts. Nothing on this line may set the language, because
+# the record and send keys decide it at the moment of the press.
+check("nothing on the line cycles the language", "MaLanguage.cycleMode(context)" not in ui,
+      "the last route by which the language could be set behind the keys")
 
 # ---------------------------------------------------------------- the three bugs he found
 ui = code(SRC / "dictate/ui/DictateSmartbarUi.kt")
 
 # 1. The badge was read once, so it never changed on screen. Observed now.
-check("the badge is observed", "maLanguageMode.collectAsState()" in ui,
-      "read once — the tap works and the letters never change")
+# Also superseded by the badge's removal. Kept as the claim that outlived it: nothing on this line
+# may cycle the language, because the record and send keys decide it now.
+check("nothing on the line cycles the language", "MaLanguage.cycleMode(context)" not in ui,
+      "the last route by which the language could be set behind the keys")
 # SUPERSEDED, and deliberately rewritten rather than deleted.
 #
 # This check said the badge must be derived from the PREFERENCE, which was right when it was written:
@@ -242,14 +251,23 @@ check("the badge is observed", "maLanguageMode.collectAsState()" in ui,
 # the source has changed.
 check("the badge is derived from the request, not the setting",
       "DictateController.inFlightLanguage" in ui, "two sources for one letter")
-check("the preference is still observed, so the line updates",
-      "maLanguageMode.collectAsState()" in ui,
-      "Compose would never be told anything changed and the letters would freeze again")
+# SUPERSEDED BY REMOVAL. This asserted a workaround — observing a neighbouring preference because
+# `inFlightLanguage` could not be observed — and then the badge it served was deleted outright. What
+# survives from it is the claim underneath: the language shown must be told, not asked.
+check("the language shown is Compose state",
+      "var inFlightLanguage: String by mutableStateOf" in ctrl,
+      "Compose would never be told anything changed and the line would freeze again")
 
 # 2. Brackets, and room between three controls with asymmetric costs.
-for part in ('"[$badge]"', '"[\\u00D7]"', '"["'):
+# The badge is gone, so there are two bracketed controls now, not three. Its entry is removed rather
+# than the check, because the claim — every control on this line is bracketed — still holds and is
+# still worth holding.
+for part in ('"[\\u00D7]"', '"["'):
     check(f"bracketed: {part}", part in ui, "not in brackets")
-check("room between the controls", ui.count("horizontal = 12.dp") >= 3,
+# TWO controls now, not three. The reasoning is unchanged and matters more with fewer of them: the
+# kill and the hold are irreversible in opposite directions, so the gap between them is not
+# decoration. The badge's own padding went with the badge.
+check("room between the controls", ui.count("padding(horizontal = 12.dp") >= 1,
       "packed tight, and a thumb aimed at hold lands on X")
 
 # 3. Release must not re-run the gate, and must send the copy.

@@ -1,9 +1,9 @@
 # TTT mini — the finished state
 
-**Build 327.** A dictation keyboard for Marko Boško.
+**Build 328.** A dictation keyboard for Marko Boško.
 
 **Repo:** `markoboskoauroville/TTT_MINI` (Apache-2.0) · **Package:** `com.mantraproductions.tttlight`
-**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-327/ttt-mini-build-327.apk
+**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-328/ttt-mini-build-328.apk
 
 > **This file is the present state and nothing else.** Every reason, every bug and every rejected
 > alternative is in [`DEVELOPMENT.md`](DEVELOPMENT.md), grouped by shape. If you are about to reverse
@@ -172,8 +172,8 @@ dims. `F1`–`F6` show and hide a row from the keyboard itself, green ring when 
 
 **Recording and sending are chosen by which key you press, not by a mode.** `● H` records Croatian,
 `● E` records English; `→H` and `→E` send in that language. The key IS the choice, so there is
-nothing to set beforehand and nothing to check afterwards. The status line says **Sending Croatian**
-or **Sending English**, and the badge shows the language THIS request was sent in.
+nothing to set beforehand and nothing to check afterwards. The status line says **Sending Croatian** or **Sending English**. There is no language badge and
+nothing on that line changes the language: the keys decide it.
 
 **The spacebar**: tap left quarter ←, right quarter →, middle half space. **Hold** a half and that
 arrow repeats every 111ms after 350ms. No seam is drawn.

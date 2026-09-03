@@ -8921,3 +8921,54 @@ earlier, in the same commit**, asserting both halves dim together.
 That is the argument for writing the check with the fix rather than after it. The habit from §187a —
 grep for what the edit was supposed to add — worked here only because the grep was already written
 down as a check.
+
+---
+
+## §190 — The badge goes, and what SwiftKey actually does
+
+Build 328.
+
+### The badge
+
+Removed from the sending line, along with its computation. It showed the language and cycled it on a
+tap, and that was right **while the language was a mode**. It is not one: `● H` and `● E` record,
+`→H` and `→E` send, and the press is the choice.
+
+**A badge reporting a mode nobody sets is a control with nothing to control** — and it was still
+tappable, which made it the last route by which the language could go wrong behind him.
+
+The status text still names the language in words. **That is a report, not a control**, and he asked
+to be told.
+
+Five checks inverted rather than deleted: no badge, nothing cycles the language, nothing resends in
+another language. **A deleted feature whose checks are quietly removed is how a feature comes back by
+accident.**
+
+### `inFlightLanguage` was never actually made state
+
+§189 records this as fixed. It was not — the change was lost with a sandbox restart, and the tree
+still had a plain `get()` under a comment claiming otherwise. Done properly now, and the check
+asserts the declaration rather than the behaviour it enables, so it cannot be recorded as done again
+while missing.
+
+### SwiftKey, researched
+
+What the sources actually say, so the next session does not re-research it:
+
+- **`123` sits in the lower left, directly below shift**, and `abc` returns from the symbol and emoji
+  layouts in the same corner. Microsoft's own accessibility page describes exactly that navigation.
+- **The emoji key is lower right.**
+- **Symbols are two panels deep**: `123`, then a symbols key for the rarer characters.
+- **The number row and the arrow keys are OPTIONAL**, both switched on in settings. SwiftKey's arrow
+  keys sit at the bottom.
+
+### What that means here, and what was NOT done
+
+TTT mini already has the arrow keys — `ARROW_LEFT/RIGHT/UP/DOWN` in the catalogue, droppable on any
+row — and a number row on zone 1. **So the two things he asked me to build if missing already exist**,
+and the honest answer is where to find them rather than a second copy.
+
+**The bottom-row layout change is not done.** Moving `123` to the lower left under shift is a change
+to the letter keyboard's own layout files, inherited from FlorisBoard and shared by every language
+subtype. That is a different kind of edit from anything this session has touched, and starting it in
+the tail of a build about a badge is how the six silent edits happened. Named here, not attempted.
