@@ -209,6 +209,28 @@ check("a failure is silent", "}.getOrNull()" in ctrl, "an error box on a picker"
 search = code(SRC / "dictate/MaKeySearch.kt")
 check("the search is pure", "import android" not in search, "Android in the logic, untestable here")
 
+# ---------------------------------------------------------------- findable by the words he uses
+#
+# He searched "feature row" and found nothing: the six keys were labelled "show row 3", and the
+# phrase he uses for the thing was not the phrase they were named with. **A key nobody can find by
+# its own name is a key that does not exist.**
+order_src = (SRC / "dictate/MaFeatureOrder.kt").read_text()
+
+
+def fold(t):
+    return " ".join("".join(c if c.isalnum() else " " for c in t.lower()).split())
+
+
+for n in range(1, 7):
+    label = f"F{n}, show feature row {n}"
+    check(f"F{n} is labelled with 'feature row'", f'"{label}"' in order_src, "still 'show row N'")
+    hay = fold(label)
+    check(f"F{n} matches 'feature row'", all(w in hay for w in fold("feature row").split()),
+          f"searching what he calls it finds nothing: {hay}")
+    check(f"F{n} still matches 'F{n}'", fold(f"F{n}") in hay, "the key face is what he sees first")
+    check(f"F{n} matches 'row {n}'", all(w in hay for w in fold(f"row {n}").split()),
+          "the old phrasing must keep working")
+
 print(f"key search, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

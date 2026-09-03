@@ -1437,11 +1437,26 @@ fun MaFeatureRow(
                     ThemedKey(
                         code = KeyCode.NOOP,
                         modifier = keyMod,
-                        // The ring says a recording is running, as it does on the plain record key.
-                        // It does NOT say which language: both keys ring, because what is running is
-                        // one recording and lighting only one of them would suggest the other could
-                        // start a second.
-                        ring = if (recording) onGreen else null,
+                        // ONLY THE KEY THAT STARTED IT RINGS.
+                        //
+                        // Both rang, on the reasoning that one recording is running and lighting one
+                        // key would suggest the other could start a second. **That argument protects
+                        // a misunderstanding nobody has and destroys the answer he actually needs.**
+                        // He photographed it: press E, both light, and the row no longer tells him
+                        // which language is being captured.
+                        //
+                        // Which language is recording is the ONE thing these two keys exist to make
+                        // visible. If both ring, they are a record key drawn twice.
+                        //
+                        // The other key going dark is the true statement anyway: while a recording is
+                        // running it cannot start one, and pressing it stops this one. A ring that
+                        // says "this is yours" is more use than a ring that says "something is
+                        // happening", which the timer above already says.
+                        //
+                        // `MaLanguage.active()` rather than `inFlightLanguage`: the latter is written
+                        // when a REQUEST starts, and this is a recording — it has not been sent yet.
+                        // Reading the wrong one would leave both keys dark until the upload began.
+                        ring = if (recording && MaLanguage.active() == language) onGreen else null,
                         onClick = {
                             // THE LANGUAGE IS SET FIRST, AND SET SYNCHRONOUSLY.
                             //

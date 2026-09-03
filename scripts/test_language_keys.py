@@ -139,6 +139,29 @@ check("nothing on that line cycles the language", "MaLanguage.cycleMode(context)
 check("the line still REPORTS the language", '"Sending Croatian"' in ui3 and '"Sending English"' in ui3,
       "removing the control removed the report as well")
 
+# ---------------------------------------------------------------- only one key rings
+#
+# Both rang. The reasoning written at the time was that one recording is running and lighting one key
+# would suggest the other could start a second — an argument that protects a misunderstanding nobody
+# has and destroys the answer he needs. He photographed it: press E, both light, and the row stops
+# telling him which language is being captured.
+check("the ring is per language", "recording && MaLanguage.active() == language" in row,
+      "both keys light and they become a record key drawn twice")
+check("it reads the ACTIVE language, not the request's", "inFlightLanguage == language" not in row,
+      "inFlightLanguage is written when a REQUEST starts — both keys would stay dark until upload")
+
+# The two keys must disagree about the ring for any given language. Walked, because "they differ" is
+# the whole property and a single example proves nothing.
+for recording in (True, False):
+    for active in ("hr", "en"):
+        lit = {lang: recording and active == lang for lang in ("hr", "en")}
+        if recording:
+            check(f"rec={recording} active={active}: exactly one rings",
+                  sum(lit.values()) == 1, str(lit))
+            check(f"rec={recording} active={active}: it is the right one", lit[active], str(lit))
+        else:
+            check(f"rec={recording}: neither rings", sum(lit.values()) == 0, str(lit))
+
 print(f"language keys, test 1: {checks} checks, {len(failures)} failed ({walked} steps walked)")
 for f in failures:
     print(f"  FAIL  {f}")

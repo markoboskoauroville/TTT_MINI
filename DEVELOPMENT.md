@@ -9027,3 +9027,41 @@ popup, and every file still parsing with a code on every key. Sabotaged by putti
 
 Not tested: nothing ran on a phone. Whether the corner feels right, and whether `ctrl` in second
 place is where his thumb now expects it, are both his.
+
+---
+
+## §192 — Only one key rings, and six keys nobody could find
+
+Build 334.
+
+### Both record keys lit
+
+Press `● E` and both `● H` and `● E` ringed. The comment written at the time argued for it: one
+recording is running, and lighting a single key would suggest the other could start a second.
+
+**That argument protects a misunderstanding nobody has and destroys the answer he needs.** Which
+language is recording is the ONE thing these two keys exist to make visible. If both ring, they are a
+record key drawn twice — and he photographed exactly that.
+
+The dark key is the true statement anyway: while a recording runs it cannot start one, and pressing
+it stops this one. **A ring that says "this is yours" is worth more than a ring that says "something
+is happening"**, which the timer above already says.
+
+One detail that decides whether it works: it reads `MaLanguage.active()`, not `inFlightLanguage`. The
+latter is written when a REQUEST starts, and this is a RECORDING — not sent yet. Reading the wrong
+one would leave both keys dark until the upload began, which is a different wrong answer.
+
+Walked over recording × language: **exactly one rings while recording, and it is the right one.**
+
+### Six keys that could not be found
+
+He searched "feature row" in the key picker and got nothing. The six were labelled *"F3, show row
+3"* — and the phrase he uses for the thing was not the phrase they were named with.
+
+**A key nobody can find by its own name is a key that does not exist.** They read "show feature row
+3" now, with `F3` still in front because that is what the key face says and he will search for that
+too. The test asserts all three phrasings match: `F3`, `feature row`, and the old `row 3`.
+
+Worth generalising: the picker's search folds the label, the description, the letters and the id into
+one haystack, so **naming a key is naming its search terms**. A key whose label uses the developer's
+word for a thing rather than his is findable only by the person who wrote it.

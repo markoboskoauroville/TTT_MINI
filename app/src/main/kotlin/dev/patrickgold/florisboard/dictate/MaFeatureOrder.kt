@@ -308,12 +308,19 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * is on another row, or it is the last thing he sees before the row goes, and the same key on a
      * remaining row brings it back. `visibleRows` already refuses to leave him with nothing.
      */
-    ROW_1("row_1", "F1, show row 1"),
-    ROW_2("row_2", "F2, show row 2"),
-    ROW_3("row_3", "F3, show row 3"),
-    ROW_4("row_4", "F4, show row 4"),
-    ROW_5("row_5", "F5, show row 5"),
-    ROW_6("row_6", "F6, show row 6"),
+    // "feature row" IN THE LABEL, because the label is what the search matches on.
+    //
+    // They read "show row 3", and he searched "feature row" and found nothing — the phrase he uses
+    // for the thing is not the phrase the key was named with. **A key nobody can find by its own
+    // name is a key that does not exist**, and there are six of them.
+    //
+    // "F3" stays in front, because that is what the key face says and he will search for that too.
+    ROW_1("row_1", "F1, show feature row 1"),
+    ROW_2("row_2", "F2, show feature row 2"),
+    ROW_3("row_3", "F3, show feature row 3"),
+    ROW_4("row_4", "F4, show feature row 4"),
+    ROW_5("row_5", "F5, show feature row 5"),
+    ROW_6("row_6", "F6, show feature row 6"),
 
     /**
      * The four arrows: left, right, up, down.
