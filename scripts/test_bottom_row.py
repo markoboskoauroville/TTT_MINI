@@ -40,6 +40,48 @@ def labels_all(mod: str):
     return [k.get("label") for row in rows for k in row]
 
 
+# ---------------------------------------------------------------- one key, one cycle
+#
+# `sy1` and `sy2` are gone, replaced by ONE key that walks the views in a ring:
+#
+#     characters -> symbols -> symbols2 -> characters
+#
+# Two keys meant two orders to remember and one of them skipped a panel. **A ring has no order to
+# learn: press it again and you arrive somewhere new, and pressing it enough always brings you
+# home.** Its label is the view it goes TO, so the key says where the next press lands.
+#
+# The long press keeps all three on the popup, so a deadline does not mean walking the ring.
+# READ FROM THE FILES, not written here. The first version hardcoded this dict and the ring-walk
+# checks below then passed a sabotage that made symbols point back to characters — they were walking
+# the test's idea of the ring, not the keyboard's. **A model is not a witness to the code it models**,
+# and this is the second time that exact sentence has been earned this month.
+CYCLE = {m: bottom(m)[1] for m in ("charactersMod", "symbolsMod", "symbols2Mod")}
+EXPECTED = {"charactersMod": "view_symbols", "symbolsMod": "view_symbols2",
+            "symbols2Mod": "view_characters"}
+for _m, _t in EXPECTED.items():
+    check(f"{_m}: goes to {_t}", CYCLE.get(_m) == _t, f"{CYCLE.get(_m)}")
+for mod in EXPECTED:
+    row = bottom(mod)
+    check(f"{mod}: ctrl is on the far left", row[0] == "ctrl", str(row))
+    check(f"{mod}: one view key, not two", sum(1 for l in row if l.startswith("view_")) == 1, str(row))
+
+# THE RING CLOSES, and every panel is on it. Walked rather than eyeballed: three steps from any
+# starting panel must visit all three and return.
+for start in CYCLE:
+    seen, here = [], start
+    for _ in range(3):
+        here = {"view_characters": "charactersMod", "view_symbols": "symbolsMod",
+                "view_symbols2": "symbols2Mod"}[CYCLE[here]]
+        seen.append(here)
+    check(f"from {start}: the ring visits all three", set(seen) == set(CYCLE), str(seen))
+    check(f"from {start}: three presses come home", seen[-1] == start, str(seen))
+
+# The jump is still there for when he has no time to walk it.
+for mod in CYCLE:
+    rows = json.loads((LAYOUTS / mod / "default.json").read_text())
+    popup = [x.get("label") for x in rows[-1][1].get("popup", {}).get("relevant", [])]
+    check(f"{mod}: the long press offers all three", set(popup) == set(CYCLE.values()), str(popup))
+
 # ---------------------------------------------------------------- the corner
 # ---------------------------------------------------------------- ctrl far left, one switcher
 #
@@ -109,7 +151,7 @@ for mod, expected in (
 # and copying a layout is not a reason to delete a feature that layout never had.
 for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
     row = bottom(mod)
-    check(f"{mod}: six keys, not seven", len(row) == 6, str(row))
+    check(f"{mod}: six keys", len(row) == 6, str(row))
     check(f"{mod}: a dedicated comma", "," in row, "the comma is still hidden on a popup")
     check(f"{mod}: the comma sits left of space", row.index(",") < row.index("space"), str(row))
     check(f"{mod}: no language switcher", "language_switch" not in row,
