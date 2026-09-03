@@ -8972,3 +8972,58 @@ and the honest answer is where to find them rather than a second copy.
 to the letter keyboard's own layout files, inherited from FlorisBoard and shared by every language
 subtype. That is a different kind of edit from anything this session has touched, and starting it in
 the tail of a build about a badge is how the six silent edits happened. Named here, not attempted.
+
+---
+
+## §191 — SwiftKey's corner, and what it measured about FlorisBoard
+
+Build 332. The layout job, done as its own build, and it answers a bigger question than it was asked.
+
+### What SwiftKey does, measured from Microsoft's own documentation
+
+- **`123` sits in the lower left, directly below shift.**
+- **`abc` returns from the symbol and emoji layouts in that same corner.**
+- The emoji key is lower right; symbols are two panels deep (`123`, then a symbols key).
+
+**The corner is the whole point.** A layout switcher that moves between panels is a switcher he has
+to find twice, and finding it twice is what makes a keyboard feel foreign.
+
+### What changed
+
+The switcher moved to position one on all three layouts. It was second on the letters and second on
+both symbol panels, behind `ctrl` — so it was neither under shift nor in the same place as the key
+that comes back.
+
+**Nothing was removed.** `ctrl` in particular stays, and the test asserts it by name on all three
+layouts: he uses Ctrl+P and Ctrl+F constantly, and a reorder that drops a key is a reorder that
+deletes a feature. The comma stays on the period's popup, which is where it has always been.
+
+**Not done: a dedicated comma key.** SwiftKey has one, and adding it costs width that `space` and the
+three switchers are already using. That is a trade he should make, not me.
+
+### The finding that matters more than the layout
+
+**This took ZERO Kotlin files.** Three JSON assets, and the keyboard reads them.
+
+That is the real answer to *how tangled are we with FlorisBoard* — for layout, not at all. The layout
+engine consumes data, and the data is ours to write. The 30,367 lines of `ime/` are the engine, and
+this build never touched them.
+
+Which reframes the independence question. **The parts that feel like FlorisBoard are mostly
+configuration, and the parts that are genuinely theirs are the parts nobody wants to rewrite** — the
+event dispatcher, the geometry, the subtype system, the theming engine. A rename would change what
+the files say; it would not change who wrote the hard 30,000. And Apache-2.0 §4 attaches to
+derivative works regardless of how much is later replaced, so no amount of rewriting ends the
+attribution — only a clean-room implementation by somebody who has never read this code does that.
+
+Recorded here so the next session does not start the rewrite on a feeling.
+
+### Tested
+
+Test 1: 44 checks, 0 failed — the corner on all three layouts, the invariant that the switcher never
+moves between panels, no key dropped from any of them, ctrl present by name, the comma still on the
+popup, and every file still parsing with a code on every key. Sabotaged by putting `abc` back behind
+`ctrl` on one panel: red on two, including the invariant.
+
+Not tested: nothing ran on a phone. Whether the corner feels right, and whether `ctrl` in second
+place is where his thumb now expects it, are both his.
