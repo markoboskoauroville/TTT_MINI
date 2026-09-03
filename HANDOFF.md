@@ -1,9 +1,9 @@
 # TTT mini — the finished state
 
-**Build 335.** A dictation keyboard for Marko Boško.
+**Build 336.** A dictation keyboard for Marko Boško.
 
 **Repo:** `markoboskoauroville/TTT_MINI` (Apache-2.0) · **Package:** `com.mantraproductions.tttlight`
-**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-335/ttt-mini-build-335.apk
+**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-336/ttt-mini-build-336.apk
 
 > **This file is the present state and nothing else.** Every reason, every bug and every rejected
 > alternative is in [`DEVELOPMENT.md`](DEVELOPMENT.md), grouped by shape. If you are about to reverse

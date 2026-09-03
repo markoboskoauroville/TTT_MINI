@@ -120,7 +120,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * a private flag that happens to share a name — capitals still come out capital, and one press
      * still means one letter.
      */
-    SHIFT("shift", "Shift, for the feature row"),
+    SHIFT("shift", "Shift"),
 
     /**
      * Aa: through the four cases, one press at a time.
@@ -160,8 +160,8 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * held. **One key, one direction.** A single key with a mode would mean remembering which
      * way it was pointing before every press, and being wrong collects from the wrong end.
      */
-    AUTO_BUCKET("autobucket", "A-bucket, from the bottom up"),
-    AUTO_BUCKET_DOWN("autobucketdown", "A-bucket, from the top down"),
+    AUTO_BUCKET("autobucket", "A-bucket, bottom up"),
+    AUTO_BUCKET_DOWN("autobucketdown", "A-bucket, top down"),
 
     /**
      * Shows or hides the bucket row, the way the zone keys show or hide theirs.
@@ -183,7 +183,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * back. That is true and it is survivable: the same switch is in Settings under the keyboard,
      * so unticking the key here is inconvenient rather than a locked door.
      */
-    PIN("pin", "Pin, keep the keyboard up"),
+    PIN("pin", "Pin, keeps keyboard up"),
 
     /**
      * The reader: speak what is on screen, pause, resume.
@@ -201,7 +201,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * the row is wanted for a passage he is following closely and in the way for one he is only
      * half listening to. A trip into settings for that is a trip he would not make.
      */
-    SUBTITLE("subtitle", "S, show the reading subtitle"),
+    SUBTITLE("subtitle", "S, reading subtitle"),
 
     /**
      * Dump the accessibility tree of whatever is on screen, onto the clipboard.
@@ -214,7 +214,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * One key instead. Press it and the screen underneath is on the clipboard, ready to paste into
      * a chat where somebody can read it.
      */
-    DUMP("dump", "Dump the screen for diagnosis"),
+    DUMP("dump", "Screen dump"),
 
     /**
      * The dictation history: everything transcribed, ready to put back into a field.
@@ -224,7 +224,24 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * through a panel is exactly the wrong amount of effort at the moment somebody has just lost a
      * sentence they spoke.
      */
-    HISTORY("history", "History, what you dictated"),
+    /**
+     * The recordings, with their audio.
+     *
+     * It read "History, what you dictated", and on a two-line card in the picker that truncates to
+     * **"History, what you"** — which reads as a question and answers nothing. He photographed it
+     * beside "Clipboard history" and could not tell what the second one was.
+     *
+     * Two faults in one label. It was too long for the card it is drawn on, and it described the
+     * wrong thing: that screen keeps the AUDIO — playback, export, a retention budget, and recovery
+     * of failed sends. Calling it "what you dictated" names the transcript and hides the recordings.
+     *
+     * "Audio history" is short enough to survive the card and true about what is behind it. The
+     * neighbouring key is "Clipboard history", so the pair now reads as two histories of two things
+     * rather than one history and a sentence.
+     *
+     * **A label is written for the narrowest place it appears**, not for the source file.
+     */
+    HISTORY("history", "Audio history"),
 
     /**
      * HR / ENG, on the row rather than only in the recording bar.
@@ -251,7 +268,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * keyboard itself rather than walking the settings tree to reach a screen whose whole purpose
      * is to save that walk.
      */
-    SWITCHBOARD("switchboard", "Switchboard, rows on and off"),
+    SWITCHBOARD("switchboard", "Switchboard, rows on/off"),
 
     /**
      * Empty width. Draws nothing and does nothing.
@@ -263,7 +280,7 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * A spacer is the honest answer: a key that occupies room and no more, so a row can be pushed
      * toward whichever hand is holding the phone. Add several for a wider gap.
      */
-    SPACER("spacer", "Spacer, empty room on the row"),
+    SPACER("spacer", "Spacer, empty room"),
 
     ZONE_1("zone1", "n, the number row"),
     ZONE_2("zone2", "k, the keys"),

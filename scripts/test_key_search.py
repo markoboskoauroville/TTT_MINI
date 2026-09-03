@@ -231,6 +231,29 @@ for n in range(1, 7):
     check(f"F{n} matches 'row {n}'", all(w in hay for w in fold(f"row {n}").split()),
           "the old phrasing must keep working")
 
+# ---------------------------------------------------------------- labels must fit the card
+#
+# "History, what you dictated" truncated to **"History, what you"** on the picker's two-line card —
+# a question that answers nothing, sitting beside "Clipboard history". Two faults in one label: too
+# long for the place it is drawn, and describing the transcript when the screen keeps the AUDIO.
+#
+# **A label is written for the narrowest place it appears**, not for the source file. So this is a
+# check on every label, not a fix for one — seven others were longer than the one that broke.
+import re as _re
+_labels = _re.findall(r'^\s{4}[A-Z_0-9]+\("[a-z_0-9]+",\s*"([^"]+)"\)',
+                      (SRC / "dictate/MaFeatureOrder.kt").read_text(), _re.M)
+check("there are labels to check", len(_labels) > 40, str(len(_labels)))
+LIMIT = 24
+for _l in _labels:
+    check(f"fits the card: {_l!r}", len(_l) <= LIMIT, f"{len(_l)} characters, truncates like the one he found")
+
+check("the audio history says audio", '"Audio history"' in (SRC / "dictate/MaFeatureOrder.kt").read_text(),
+      "names the transcript and hides the recordings")
+# Against the LABELS, not the file: the comment recording the fix quotes the old label, and a check
+# reading raw text cannot tell code from prose. It failed on the sentence explaining why it exists.
+check("it is not the old sentence", "History, what you dictated" not in _labels,
+      "truncates to a question")
+
 print(f"key search, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

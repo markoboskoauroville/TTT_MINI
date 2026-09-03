@@ -9065,3 +9065,41 @@ too. The test asserts all three phrasings match: `F3`, `feature row`, and the ol
 Worth generalising: the picker's search folds the label, the description, the letters and the id into
 one haystack, so **naming a key is naming its search terms**. A key whose label uses the developer's
 word for a thing rather than his is findable only by the person who wrote it.
+
+---
+
+## §193 — A label written for the source file, not the card
+
+Build 336.
+
+**"History, what you dictated"** truncated to **"History, what you"** on the picker's two-line card —
+a question that answers nothing, sitting directly beneath "Clipboard history". He photographed the
+pair and could not tell what the second one was.
+
+**Two faults in one label.**
+
+It was too long for the place it is drawn. And it described the wrong thing: that screen keeps the
+**audio** — playback, export, a retention budget in megabytes, and recovery of failed sends. Calling
+it *what you dictated* names the transcript and hides the recordings, which are the reason to open it.
+
+It reads **"Audio history"** now. Short enough to survive the card, true about what is behind it, and
+beside "Clipboard history" the pair reads as two histories of two things rather than one history and
+a sentence.
+
+### The general rule, and the sweep
+
+**A label is written for the narrowest place it appears**, not for the source file where it is
+comfortable.
+
+So this is not a fix for one key. Measured across all 51 labels: **seven were longer than the one
+that broke.** All were shortened, and the test now asserts a 24-character ceiling on every label in
+the catalogue, so the next one cannot be written too long.
+
+### A check that could not tell code from prose
+
+The first version searched the whole file for the old sentence — and failed, on the comment recording
+why the label had changed. **The explanation of a fix is not the fix undone.** It reads the extracted
+labels now.
+
+That is the seventh check this month that looked wider than its claim, and it is the same cure every
+time: extract what the claim is about, then assert against that.
