@@ -9218,3 +9218,52 @@ body, and the sabotage fails on the guard by name.
 `test_model_healing.py`: 42 checks, including his actual migration by name, every status that must not
 probe, and the family rule in both directions. `test_bottom_row.py`: 73 checks — one switcher, the
 full cycle, the long-press menu carrying all three views.
+
+---
+
+## §195 — The bar that walked while he deleted
+
+Build 342.
+
+### The bug
+
+He held backspace. Suggestions empty at a word break, so the bar expands to the action row; one more
+character and a suggestion returns, so it collapses. Held down, that happens several times a second
+and **the whole keyboard walks up and down, taking the text above it with it.** His word: dizzy.
+
+### The fix was already written, and switched off
+
+`autoExpandCollapseSmartbarActions` had exactly this guard commented out above it, with a `TODO` and
+a note that it prevents "annoying UI changes". FlorisBoard found the problem, wrote the answer and
+disabled it.
+
+**Turned on rather than reinvented**, and narrowed: theirs also bailed while the overflow menu was
+open, which is a different problem. This asks one question — is a delete repeat running — because
+that is when the answer changes fastest and matters least.
+
+**Not a delay and not smoothing.** The bar does not move at all while the key is down, and settles
+once when he lets go, which is the moment he is ready to read it. A debounce would still move it,
+only later, and the test asserts the guard `return`s rather than deferring.
+
+Checked BEFORE the state is computed, because computing it and discarding it still writes the
+preference — and the preference write is what makes the bar move.
+
+### The other half was already there
+
+`Smartbar.kt` keeps the strip's HEIGHT when it has nothing to show, added when the same jump appeared
+after a caret move. **Two mechanisms for one symptom, in two files, months apart** — which is why the
+first fix did not end it: the strip stopped collapsing, and the bar kept switching.
+
+### A check that raised instead of failing. Again.
+
+Removing the guard made `fn.split(...)[1]` throw. The count never printed and every other result was
+lost — **§173 exactly, in a test written the same afternoon that section was being read.**
+
+Guarded with `find` and an index comparison. The sabotage now gives four clean failures.
+
+### The comma on the period
+
+He asked for it removed. It already was, in build 337: the period's popup carries `!` and `?`, and
+the comma has its own key. He is either on an older build or seeing the symbol HINT drawn above the
+key, which comes from the hinted-symbols setting rather than the popup. **Nothing was changed on a
+guess** — the layout is right, and if the hint is what he means it is one setting, not a layout edit.

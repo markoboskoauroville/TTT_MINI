@@ -51,6 +51,7 @@ import org.florisboard.lib.kotlin.guardedByLock
 import org.florisboard.lib.kotlin.collectLatestIn
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.properties.Delegates
+import dev.patrickgold.florisboard.ime.text.key.KeyCode
 
 private const val BLANK_STR_PATTERN = "^\\s*$"
 
@@ -400,6 +401,28 @@ class NlpManager(context: Context) {
             return // We do not auto switch if a repeatable action key was last pressed or if the actions overflow
                    // menu is visible to prevent annoying UI changes
         }*/
+        // WHILE DELETING, THE BAR HOLDS STILL.
+        //
+        // He deletes a word, the suggestions empty at the space, the bar expands to the action row;
+        // one more character and a suggestion returns, so it collapses again. Held down, backspace
+        // does that several times a second and **the whole keyboard walks up and down while the text
+        // above it jumps with it.** His words: it makes him dizzy.
+        //
+        // FlorisBoard wrote this exact guard and left it commented out above, with a TODO. The
+        // reasoning in it was right — do not auto-switch while a repeatable key is down, because the
+        // user is holding a key rather than finishing a word — so it is turned on rather than
+        // reinvented.
+        //
+        // Narrower than theirs: theirs also bailed while the overflow menu was open, which is a
+        // different problem and not one he has. This asks one question — is a repeat running — and
+        // a repeat is exactly when the answer changes fastest and matters least.
+        //
+        // Not a delay or a smoothing. **The bar does not move at all while the key is down**, and it
+        // settles once when he lets go, which is the moment he is ready to read it.
+        val dispatcher = keyboardManager.inputEventDispatcher
+        if (dispatcher.isPressed(KeyCode.DELETE) || dispatcher.isPressed(KeyCode.FORWARD_DELETE)) {
+            return
+        }
         val isSelection = editorInstance.activeContent.selection.isSelectionMode
         val isExpanded = list1.isNullOrEmpty() && list2.isNullOrEmpty() || isSelection
         // Only write when the expanded state actually changes. This runs on every keystroke (via
