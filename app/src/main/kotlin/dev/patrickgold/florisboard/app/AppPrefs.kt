@@ -1445,6 +1445,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = "marko",
         )
 
+        /**
+         * Models that have been retired and what replaced them, as `old=new` pairs.
+         *
+         * Written by MaModelHealing when a request fails because of the model and the provider's own
+         * list offers a successor. Read before every request, so the repair happens once in the life
+         * of the model rather than once a day.
+         */
+        val maModelRewires = string(
+            key = "dictate__ma_model_rewires",
+            default = "",
+        )
+
         val maNgramPending = string(
             key = "dictate__ma_ngram_pending",
             default = "",

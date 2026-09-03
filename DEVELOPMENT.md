@@ -9151,3 +9151,70 @@ name, and every file still parsing. Sabotaged by dropping `view_symbols2` from t
 the row: red.
 
 Still zero Kotlin files. Three JSON assets, again.
+
+---
+
+## §195 — Self-repairing models, and one switcher that cycles
+
+Build 339.
+
+### The keyboard
+
+`ctrl` is far left. **One view switcher, not two.** The second `sy` key is gone — two keys that both
+change the view are two orders to remember, and he had to learn which one skipped what.
+
+The one that remains **cycles with no skipping**: letters → symbols → symbols² → letters. Each panel's
+key goes to the next, so pressing it repeatedly walks every view and comes back. Before this, two keys
+each jumped to a fixed panel and neither visited all three in order.
+
+**Long press offers all three**, on every panel, for when he has no time to cycle. That popup is
+FlorisBoard's own long-press menu: it opens and stays, and a second tap chooses — which is exactly the
+behaviour he described.
+
+One thing I did not do as asked: **the key still shows where it GOES, not where he IS.** A key
+labelled with the panel he is already looking at tells him something he can see; the destination is
+the thing he cannot. If it still feels wrong on the phone, it is one field per layout to change.
+
+### Model self-repair
+
+Speechify retire `simba-english` and `simba-multilingual` on 21 November 2026. Both are named
+explicitly in `MaSpeechify` — eleven times — because **the model follows the voice**, so the notice's
+"leave the field out and you are fine" escape does not apply here.
+
+The app repairs itself now. `MaModelHealing` is pure and walked; the wiring is four lines in the
+request path.
+
+**Three decisions worth keeping:**
+
+**Probe only after a failure, and only a failure about the MODEL.** 410 outright; 404 or 400 when the
+body names it. Never 401, 403 or 429 — those are the key ring's. Never a plain 400: *input too long*
+is not a retired model, and **a probe at the wrong failure can write a wrong name into the settings
+and make tomorrow fail as well.** The cost of over-eagerness is not a wasted call, it is a corrupted
+setting.
+
+**Never invent a name.** The successor must be on the provider's own list. Bumping the number and
+hoping is what turns one broken model into two.
+
+**Write it down.** In memory only, he would pay the failed request, the probe and the retry every
+morning, and never be told why the first reading of the day is slow.
+
+### The bug the test found, and the one it did not
+
+`family()` dropped a trailing word as well as a trailing version, so `whisper-large` collapsed to
+`whisper` — and **a large model could have been replaced by a tiny one.** My own comment three lines
+above said that must not happen.
+
+Fixed by keeping the word, which then broke `simba-english → simba-3.2`, the migration this exists
+for. The answer is a second, narrower fallback: match on the leading segment, **only for a model with
+no version of its own.** Applied to `whisper-large-v2` the leading segment is `whisper` and the tiny
+model qualifies again.
+
+And the one the test did not find, at first: **sabotaging the Kotlin left every check green**, because
+they all walked the Python port. §178 exactly, met again. Five checks now read the real function's
+body, and the sabotage fails on the guard by name.
+
+### Tested
+
+`test_model_healing.py`: 42 checks, including his actual migration by name, every status that must not
+probe, and the family rule in both directions. `test_bottom_row.py`: 73 checks — one switcher, the
+full cycle, the long-press menu carrying all three views.

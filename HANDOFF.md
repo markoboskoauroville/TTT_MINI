@@ -1,9 +1,9 @@
 # TTT mini — the finished state
 
-**Build 338.** A dictation keyboard for Marko Boško.
+**Build 339.** A dictation keyboard for Marko Boško.
 
 **Repo:** `markoboskoauroville/TTT_MINI` (Apache-2.0) · **Package:** `com.mantraproductions.tttlight`
-**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-338/ttt-mini-build-338.apk
+**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-339/ttt-mini-build-339.apk
 
 > **This file is the present state and nothing else.** Every reason, every bug and every rejected
 > alternative is in [`DEVELOPMENT.md`](DEVELOPMENT.md), grouped by shape. If you are about to reverse
@@ -175,10 +175,13 @@ dims. `F1`–`F6` show and hide a row from the keyboard itself, green ring when 
 nothing to set beforehand and nothing to check afterwards. The status line says **Sending Croatian** or **Sending English**. There is no language badge and
 nothing on that line changes the language: the keys decide it.
 
-**The bottom row is SwiftKey's**: `123 · ctrl · , · space · . · enter` on all three panels. The
-switcher is lower-left and never moves; the comma has its own key; the period offers ! and ? The
-language switcher is gone — the record and send keys decide the language. `ctrl` stays, against the
-model, because Ctrl+P and Ctrl+F are used hourly and SwiftKey has neither.
+**The bottom row**: `ctrl · view · , · space · . · enter`. One view switcher that CYCLES with no
+skipping — letters, symbols, symbols², letters — and a long press offers all three for jumping
+straight there. The comma has its own key; the period offers ! and ?
+
+**Models repair themselves.** A request that fails because of the model asks the provider what exists,
+picks the successor by family and version, writes it down and retries once. See
+`MANTRA_MANIFEST/modules/model-self-repair.md`.
 
 **The spacebar**: tap left quarter ←, right quarter →, middle half space. **Hold** a half and that
 arrow repeats every 111ms after 350ms. No seam is drawn.

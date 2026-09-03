@@ -41,16 +41,41 @@ def labels_all(mod: str):
 
 
 # ---------------------------------------------------------------- the corner
-check("letters: 123 is bottom-left", bottom("charactersMod")[0] == "view_symbols",
-      str(bottom("charactersMod")))
-check("symbols: abc returns in the same corner", bottom("symbolsMod")[0] == "view_characters",
-      str(bottom("symbolsMod")))
-check("symbols2: abc returns in the same corner", bottom("symbols2Mod")[0] == "view_characters",
-      str(bottom("symbols2Mod")))
+# ---------------------------------------------------------------- ctrl far left, one switcher
+#
+# He asked for SwiftKey's corner to be set aside here: `ctrl` on the far left, then a SINGLE view
+# switcher. The second `sy` key is gone — two keys that both change the view are two orders to
+# remember, and he had to learn which one skipped what.
+for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
+    row = bottom(mod)
+    check(f"{mod}: ctrl is far left", row[0] == "ctrl", str(row))
+    check(f"{mod}: exactly one view switcher", sum(1 for k in row if k.startswith("view_")) == 1, str(row))
+    check(f"{mod}: the switcher is second", row[1].startswith("view_"), str(row))
 
-# THE ONE INVARIANT: the switcher does not move between panels. If it does, he finds it twice.
-firsts = {m: bottom(m)[0] for m in ("charactersMod", "symbolsMod", "symbols2Mod")}
-check("the switcher never moves", all(f.startswith("view_") for f in firsts.values()), str(firsts))
+# THE CYCLE, with no skipping: letters -> symbols -> symbols2 -> letters.
+#
+# Each panel's key goes to the NEXT panel, so pressing it repeatedly walks every view and returns.
+# Before this, two keys each jumped to a fixed panel and neither visited all three in order.
+CYCLE = {"charactersMod": "view_symbols",
+         "symbolsMod": "view_symbols2",
+         "symbols2Mod": "view_characters"}
+for mod, expected in CYCLE.items():
+    check(f"{mod}: goes to {expected}", bottom(mod)[1] == expected, str(bottom(mod)))
+
+# It must be a CYCLE, not a chain: every view reachable, and every view left.
+targets = set(CYCLE.values())
+check("every view is a destination", targets == {"view_characters", "view_symbols", "view_symbols2"},
+      str(targets))
+check("no view points at itself", all(CYCLE[m] != {"charactersMod": "view_characters",
+                                                   "symbolsMod": "view_symbols",
+                                                   "symbols2Mod": "view_symbols2"}[m] for m in CYCLE),
+      "a key that goes where it already is does nothing")
+
+# THE SHORTCUT: a long press offers all three, so he can jump when he has no time to cycle.
+for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
+    rows = json.loads((LAYOUTS / mod / "default.json").read_text())
+    popup = [x.get("label") for x in rows[-1][1].get("popup", {}).get("relevant", [])]
+    check(f"{mod}: long press offers every view", set(popup) == targets, str(popup))
 
 # ---------------------------------------------------------------- nothing was lost
 #
@@ -60,7 +85,10 @@ for mod, expected in (
     # Updated for SwiftKey's row: language_switch is gone on purpose and view_symbols2 moved to the
     # 123 popup. What must still be present is everything he presses.
     ("charactersMod", {"ctrl", "space", ".", ",", "enter", "view_symbols", "shift", "delete"}),
-    ("symbolsMod", {"ctrl", "space", ".", ",", "enter", "view_characters"}),
+    # The switcher on each panel is now the NEXT view, not always "back to letters" — so what must be
+    # present is "a switcher", checked above, rather than one particular destination. Letters remain
+    # reachable from every panel: by cycling, and immediately from the long-press menu.
+    ("symbolsMod", {"ctrl", "space", ".", ",", "enter", "view_symbols2"}),
     ("symbols2Mod", {"ctrl", "space", ".", ",", "enter", "view_characters"}),
 ):
     got = set(l for l in labels_all(mod) if l)
@@ -86,11 +114,13 @@ for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
     check(f"{mod}: the comma sits left of space", row.index(",") < row.index("space"), str(row))
     check(f"{mod}: no language switcher", "language_switch" not in row,
           "a key that switches a mode the record keys already decide")
+    check(f"{mod}: no second view key", sum(1 for k in row if k.startswith("view_")) == 1,
+          "two keys changing the view is two orders to remember")
     check(f"{mod}: enter is last", row[-1] == "enter", str(row))
 
 # What the removed keys offered must still be reachable, or the tidy-up deleted a panel.
 chars_rows = json.loads((LAYOUTS / "charactersMod" / "default.json").read_text())
-sw_popup = [p.get("label") for p in chars_rows[-1][0].get("popup", {}).get("relevant", [])]
+sw_popup = [p.get("label") for p in chars_rows[-1][1].get("popup", {}).get("relevant", [])]
 check("the second symbol panel is still reachable", "view_symbols2" in sw_popup, str(sw_popup))
 
 # Ctrl survives, and it is the one whose loss he would feel first.

@@ -36,6 +36,11 @@
   ],
   [
     {
+      "code": -1,
+      "label": "ctrl",
+      "type": "modifier"
+    },
+    {
       "code": -201,
       "label": "view_characters",
       "type": "system_gui",
@@ -58,11 +63,6 @@
           }
         ]
       }
-    },
-    {
-      "code": -1,
-      "label": "ctrl",
-      "type": "modifier"
     },
     {
       "code": 44,

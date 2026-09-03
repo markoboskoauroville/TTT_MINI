@@ -17,6 +17,11 @@
   ],
   [
     {
+      "code": -1,
+      "label": "ctrl",
+      "type": "modifier"
+    },
+    {
       "code": -202,
       "label": "view_symbols",
       "type": "system_gui",
@@ -39,11 +44,6 @@
           }
         ]
       }
-    },
-    {
-      "code": -1,
-      "label": "ctrl",
-      "type": "modifier"
     },
     {
       "code": 44,

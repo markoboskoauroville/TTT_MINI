@@ -20,6 +20,7 @@ import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import kotlinx.coroutines.runBlocking
 
 /**
  * Speaking, through Speechify.
@@ -308,7 +309,17 @@ object MaSpeechify {
     }.getOrDefault(-1)
 
     /** One request with one key. Returns the HTTP status; writes [dest] only on 200. */
-    private fun speakOnce(text: String, voice: Voice, key: String, dest: File): Int {
+    /**
+     * One request. [overrideModel] is used by the self-repair to retry with a successor without
+     * writing the new name into the voice table, which is data rather than state.
+     */
+    private fun speakOnce(
+        text: String,
+        voice: Voice,
+        key: String,
+        dest: File,
+        overrideModel: String? = null,
+    ): Int {
         val conn = (URL(BASE).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             doOutput = true
@@ -323,11 +334,29 @@ object MaSpeechify {
             put("audio_format", "mp3")
             // The model follows the voice. A global default would break Lesya, who does not exist
             // on simba-english, and simba-3.2 answers 400 for anything outside the curated set.
-            put("model", voice.model)
+            // The stored repair, applied before the request. If this model was retired and a
+            // successor was found on a previous run, that happened once and this run never notices.
+            put("model", overrideModel ?: modelFor(voice))
         }
         conn.outputStream.use { it.write(body.toString().toByteArray()) }
         val code = conn.responseCode
-        if (code != 200) return code
+        if (code != 200) {
+            // THE REPAIR, and only here — after a request has already failed.
+            //
+            // A working setup makes no extra calls, ever. Probing on every run to check the model
+            // still exists would spend a request a day to prevent one failure a year, and a check
+            // that costs something every time is a check that gets switched off.
+            val body = runCatching { conn.errorStream?.bufferedReader()?.readText() }.getOrNull().orEmpty()
+            val used = modelFor(voice)
+            if (MaModelHealing.isModelFailure(code, body, used)) {
+                val fixed = healModel(used, key)
+                // Retried ONCE, with the new name. Not a loop: if the successor fails too, the
+                // provider has changed something this cannot reason about, and he needs to be told
+                // rather than have the keyboard sit there trying names.
+                if (fixed != null) return speakOnce(text, voice, key, dest, overrideModel = fixed)
+            }
+            return code
+        }
         val payload = conn.inputStream.bufferedReader().use { it.readText() }
         val json = JSONObject(payload)
         val audio = json.optString("audio_data")
@@ -336,5 +365,64 @@ object MaSpeechify {
         lastWords = parseWords(json.optJSONObject("speech_marks"))
         dest.writeBytes(Base64.decode(audio, Base64.DEFAULT))
         return 200
+    }
+
+    /**
+     * The model for a voice, after any repair already learned.
+     *
+     * Read on every request and costing nothing: it is a preference lookup, not a network call.
+     */
+    private fun modelFor(voice: Voice): String {
+        val prefs by FlorisPreferenceStore
+        return MaModelHealing.apply(voice.model, MaModelHealing.parseRewires(prefs.dictate.maModelRewires.get()))
+    }
+
+    /**
+     * Asks the provider what models it has, picks the successor to [model], and writes it down.
+     *
+     * Returns the new name, or null when nothing qualifies — and **null means stop**. A model that
+     * cannot be matched to a successor from the provider's own list is not guessed at: the voices
+     * would not exist on a stranger's model, and a reading in an unexpected voice is worse than a
+     * reading that did not happen.
+     */
+    private fun healModel(model: String, key: String): String? {
+        val prefs by FlorisPreferenceStore
+        // The key is passed in rather than fetched: this is called from inside a request that has
+        // just proved this key works, and going back to the ring could pick a different one.
+        val available = runCatching { listModels(key) }.getOrDefault(emptyList())
+        if (available.isEmpty()) return null
+        val next = MaModelHealing.successor(model, available) ?: return null
+        val rewires = MaModelHealing.parseRewires(prefs.dictate.maModelRewires.get()).toMutableMap()
+        rewires[model] = next
+        runBlocking { prefs.dictate.maModelRewires.set(MaModelHealing.serializeRewires(rewires)) }
+        MaLog.add("tts", "model $model retired, rewired to $next")
+        return next
+    }
+
+    /** The provider's own list of model ids. The only evidence that a name works. */
+    private fun listModels(key: String): List<String> {
+        val conn = (URL("$BASE/v1/models").openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = TIMEOUT_MS
+            readTimeout = TIMEOUT_MS
+            setRequestProperty("Authorization", "Bearer $key")
+        }
+        if (conn.responseCode != 200) return emptyList()
+        val payload = conn.inputStream.bufferedReader().use { it.readText() }
+        val out = mutableListOf<String>()
+        runCatching {
+            val root = JSONObject(payload)
+            val arr = root.optJSONArray("models") ?: root.optJSONArray("data")
+            for (i in 0 until (arr?.length() ?: 0)) {
+                val item = arr!!.opt(i)
+                val id = when (item) {
+                    is String -> item
+                    is JSONObject -> item.optString("id").ifBlank { item.optString("name") }
+                    else -> ""
+                }
+                if (id.isNotBlank()) out.add(id)
+            }
+        }
+        return out
     }
 }
