@@ -9506,3 +9506,23 @@ long session to save a round trip. The next special row does the enum first and 
 Test 1: 36 checks, 0 failed — every command present in the catalogue AND drawn, play/pause as one key
 delegating to the reader, the row off by default, both switches on one preference, the plain reader
 key surviving, and the speed clamped at both ends. Sabotaged by making the row unconditional: red.
+
+## §199a — Seven keys with no section, and seven keys nobody asked for
+
+Build 347 pushed red, and the check that caught it was one of ours rather than the compiler.
+
+**`check_when_coverage`'s counterpart in `test_key_groups.py`**: every key must belong to a group, and
+the seven new reader commands belonged to none. In the picker they would have fallen through into
+nothing — present in the catalogue, invisible in the list, findable only by search.
+
+They are all **Reading** now. That is the one question somebody asks when looking for them; "which row
+is this on" is not.
+
+**And the same edit had put them in the DEFAULT feature row**, which would have dealt every new
+install seven transport keys it never asked for, on rows he would then have to clear. They live on the
+reader row, which has its own arrangement and is off by default. Removed.
+
+Both faults came from one anchor: the insert went into the first `MaFeatureKey.READER,` in the file,
+which is the default ROW, when the group branch further down was what needed it. **Two lists of the
+same names in one file, and the edit chose the wrong one** — the same shape as §179a's missing anchor,
+inverted: there the anchor did not exist, here it existed twice.

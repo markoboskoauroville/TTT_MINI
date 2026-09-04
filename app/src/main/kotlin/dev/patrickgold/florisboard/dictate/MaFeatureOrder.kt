@@ -506,14 +506,9 @@ object MaFeatureOrder {
         MaFeatureKey.CHANGE_CASE,
         MaFeatureKey.PIN,
         MaFeatureKey.READER,
-        MaFeatureKey.READER_ROW,
-        MaFeatureKey.READ_PLAY,
-        MaFeatureKey.READ_PREV,
-        MaFeatureKey.READ_NEXT,
-        MaFeatureKey.READ_STOP,
-        MaFeatureKey.READ_WATCH,
-        MaFeatureKey.READ_SLOWER,
-        MaFeatureKey.READ_FASTER,
+        // The seven reader commands are NOT here. They live on the reader row, which has its own
+        // arrangement — putting them in the default feature row too would deal every new install
+        // seven keys it did not ask for, on rows he then has to clear.
         MaFeatureKey.SUBTITLE,
         MaFeatureKey.DUMP,
         MaFeatureKey.SPACER,
@@ -679,6 +674,16 @@ val MaFeatureKey.group: MaFeatureGroup
 
         MaFeatureKey.READER,
         MaFeatureKey.SUBTITLE,
+        // The reader row's switch and its seven commands. All Reading, because that is the one
+        // question somebody asks when looking for them — not "which row is this on".
+        MaFeatureKey.READER_ROW,
+        MaFeatureKey.READ_PLAY,
+        MaFeatureKey.READ_PREV,
+        MaFeatureKey.READ_NEXT,
+        MaFeatureKey.READ_STOP,
+        MaFeatureKey.READ_WATCH,
+        MaFeatureKey.READ_SLOWER,
+        MaFeatureKey.READ_FASTER,
         -> MaFeatureGroup.READING
 
         MaFeatureKey.APP_SWITCH,
