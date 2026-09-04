@@ -9267,3 +9267,57 @@ He asked for it removed. It already was, in build 337: the period's popup carrie
 the comma has its own key. He is either on an older build or seeing the symbol HINT drawn above the
 key, which comes from the hinted-symbols setting rather than the popup. **Nothing was changed on a
 guess** — the layout is right, and if the hint is what he means it is one setting, not a layout edit.
+
+---
+
+## §196 — Watch mode: reading text that has not been written yet
+
+Build 343. He reads Claude while it is still answering. The reader reached the bottom and stopped,
+and everything written after that was never spoken.
+
+### The problem is that the screen GROWS, it does not CHANGE
+
+Compare whole screens and every poll looks like a brand new passage, because the old text is still in
+it. The loop guard from §176 then refuses it, correctly, and nothing is ever read.
+
+**So read the difference, not the screen.** `newTail(before, now)`: if what is on screen now begins
+with what was there before, the reading is everything after that point; if it does not — he scrolled,
+or switched conversation — it is a new passage and all of it is read.
+
+Compared on the NORMALISED forms, so a ticking clock does not make a still screen look like it grew.
+Cut from the RAW text, so what gets spoken keeps its punctuation.
+
+**Cut on a word boundary.** The first version sliced the raw string by a normalised offset — the two
+have different lengths, and it cut words in half. It walks words now.
+
+### Why a poll and not a listener
+
+The accessibility service can report window content changes, and a streaming answer fires those
+several times a second, each carrying a few more characters. Reading on every event would speak
+half-words. **A poll asks the question at a speed a voice can answer at**, which is 1.8 seconds — long
+enough for a sentence to accumulate, short enough that the wait after the writing stops is not felt.
+
+### It never stops by itself
+
+No timeout, no ceiling. `MAX_SCREENS` bounds a runaway scroll; **watching is not runaway, it is
+waiting**. A watch that ended after five quiet minutes would end during the one long pause he stepped
+away for, which is exactly when he was relying on it.
+
+`stop()` is the only thing that clears the flag, and the test asserts there is exactly one place that
+does — a second would be a second way to end a watch he did not ask to end.
+
+### Two of my own faults, both found by sabotage
+
+**A test expectation that was wrong while the code was right.** I asserted the tail of
+`"well" → "well, that is done."` should be `", that is done."` — which would require cutting
+mid-word, the bug the implementation avoids. The expectation was the claim that was wrong.
+
+**A wiring check that found a line inside `if (false)`.** Searching for `watchForMore(...)` anywhere
+in the file passed a sabotage that made the branch unreachable. **A check that finds a line does not
+know whether the line runs** — it asserts the condition now, and the call within it.
+
+### Tested
+
+Test 1: 21 checks, 0 failed — a six-frame stream where every word must be spoken exactly once in
+order, a different screen read whole, a blank poll silent, a ticking clock ignored, the word-boundary
+cut, and only one place clearing the flag.

@@ -193,6 +193,10 @@ object MaReader {
             onMessage("Nothing to read on this screen")
             return
         }
+        // Watching is decided when the reading starts, from his setting, and lasts until he stops.
+        // Not a separate key: the reader key already means "read this", and "read this and keep
+        // reading" is the same intention with the screen still moving. One key, one intention.
+        watching = prefs.dictate.maReaderWatch.get()
         scope.launch { speak(context, text, onMessage) }
     }
 
@@ -434,6 +438,21 @@ object MaReader {
         val screenStuck = normalisedForCompare(before) == normalisedForCompare(next)
         val seenBefore = passagesRead.contains(normalisedForCompare(cleaned))
         if (cleaned.isBlank() || screenStuck || seenBefore || passagesRead.size >= MAX_SCREENS) {
+            // WATCH MODE: the end of the text is not the end of the reading.
+            //
+            // He reads Claude while it is still writing. The old behaviour was right for a finished
+            // page and wrong for a live one: it reached the bottom and stopped, and everything
+            // written after that was never spoken.
+            //
+            // Watching, it waits here instead — polling the screen and reading whatever has been
+            // ADDED, until he stops it. **Only he ends a watch.** That is the whole ask, and it is
+            // why the ceiling below does not apply: MAX_SCREENS bounds a runaway scroll, and
+            // watching is not runaway, it is waiting.
+            if (watching && !cleaned.isBlank()) {
+                MaLog.add("read", "reached the end \u2014 watching for more")
+                watchForMore(context, onMessage)
+                return
+            }
             state = State.IDLE
             MaLog.add(
                 "read",
@@ -475,6 +494,103 @@ object MaReader {
      * differently for the same words. What is left is the words, which is what "the same screen"
      * means to him.
      */
+    /**
+     * THE NEW TAIL OF A GROWING SCREEN.
+     *
+     * Watch mode's whole problem in one function. He reads a chat while an answer is still being
+     * written: the screen does not CHANGE, it GROWS. Compare whole screens and every poll looks like
+     * a brand new passage, because the old text is still in it.
+     *
+     * **So read the difference, not the screen.** If what is on screen now begins with what was
+     * there before, the reading is everything after that point. If it does not — he scrolled, or
+     * switched conversation — it is a new passage and the whole thing is read.
+     *
+     * Compared on the NORMALISED forms, for the same reason the loop guard is: a clock in the status
+     * bar and a re-wrapped line would otherwise make a growing screen look like a different one. The
+     * text returned is cut from the RAW string, because that is what gets spoken and it should
+     * arrive with its punctuation intact.
+     *
+     * Returns null when nothing was added, which is the common case: he is watching a screen that is
+     * not moving yet, and the poll must be cheap and silent.
+     */
+    /**
+     * Whether this reading keeps watching after the text runs out.
+     *
+     * Set when the reading starts and cleared by [stop], so it belongs to one reading rather than
+     * being a mode he has to remember. There is no way to be watching and not reading.
+     */
+    var watching: Boolean = false
+        private set
+
+    /**
+     * Waits for more text, reads what arrives, and repeats until he stops.
+     *
+     * ### Why a poll and not a listener
+     *
+     * The accessibility service can be told about window content changes, and that sounds better
+     * until you watch a chat: a streaming answer fires those events several times a second, each
+     * carrying a few more characters. Reading on every event would speak half-words. **A poll asks
+     * the question at a speed a voice can answer at**, which is the speed that matters here.
+     *
+     * ### Why it never gives up
+     *
+     * No timeout, no maximum. He said it: it never stops automatically. A watch that ended after
+     * five quiet minutes would end during the one long pause he stepped away for, which is exactly
+     * when he was relying on it.
+     *
+     * The loop exits on `stop()` alone — `watching` goes false and the coroutine's own check ends
+     * it. The scope is the reader's, so the keyboard going away ends it too.
+     */
+    private fun watchForMore(context: Context, onMessage: (String) -> Unit) {
+        state = State.PAUSED
+        scope.launch {
+            var seen = DictateAccessibilityService.readableScreenText()
+            while (watching) {
+                kotlinx.coroutines.delay(WATCH_POLL_MS)
+                if (!watching) return@launch
+                val now = DictateAccessibilityService.readableScreenText()
+                val tail = newTail(seen, now) ?: continue
+                // The loop guard still applies, and here it earns its keep twice over: a screen that
+                // re-renders identically must not be read again just because it arrived again.
+                if (passagesRead.contains(normalisedForCompare(tail))) {
+                    seen = now
+                    continue
+                }
+                seen = now
+                speak(context, tail, onMessage)
+                return@launch
+            }
+        }
+    }
+
+    /**
+     * How often a watching reader looks for new text.
+     *
+     * Slow enough that a streaming answer accumulates a sentence between polls rather than a word —
+     * reading three words at a time would be worse than not reading at all. Fast enough that he does
+     * not notice the wait after the writing stops.
+     */
+    private const val WATCH_POLL_MS = 1_800L
+
+    fun newTail(before: String, now: String): String? {
+        val a = normalisedForCompare(before)
+        val b = normalisedForCompare(now)
+        if (b.isBlank() || a == b) return null
+        if (!b.startsWith(a) || a.isBlank()) {
+            // Not a continuation. A different screen, so all of it is new.
+            return now.trim().ifBlank { null }
+        }
+        // The tail, measured in normalised words and then taken from the raw text by walking words
+        // rather than characters — the raw and the normalised have different lengths, and slicing
+        // the raw by a normalised offset is how the first version cut a word in half.
+        val added = b.removePrefix(a).trim()
+        if (added.isBlank()) return null
+        val wordsAdded = added.split(' ').size
+        val rawWords = now.trim().split(Regex("\\s+"))
+        if (wordsAdded >= rawWords.size) return now.trim()
+        return rawWords.takeLast(wordsAdded).joinToString(" ").ifBlank { null }
+    }
+
     private fun normalisedForCompare(text: String): String =
         // Every non-letter becomes a SPACE rather than being dropped.
         //
@@ -642,6 +758,10 @@ object MaReader {
         // The record of what has been read belongs to one reading. Kept across a stop, the next
         // reading of the same screen would find it "already read" and refuse to start — the fix
         // becoming the bug, which is how the loop got here in the first place.
+        // A stop ends the watch. This is the ONLY thing that does — no timeout, no ceiling. He said
+        // it never stops automatically, and a watch that ended after five quiet minutes would end
+        // during the one long pause he stepped away for.
+        watching = false
         passagesRead.clear()
         passageMark = ""
         state = State.IDLE

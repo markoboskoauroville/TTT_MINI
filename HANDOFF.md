@@ -199,6 +199,10 @@ whole screen. Six effects (`Hi Ty Kar Sp Vo Mx`), alignment top/middle/bottom wh
 thing in both windows, and a filled square marking the head of every passage. On the window: swipe
 **either way** kills, **down** next sentence, **up** previous, **pinch** full screen.
 
+**The reader watches by default.** When the text runs out it waits, polls every 1.8s, and speaks
+whatever has been ADDED — so a Claude answer still being written is read as it arrives. **Only a stop
+ends it**: no timeout, no ceiling.
+
 **Messages** are drawn by the keyboard above every row — not system toasts, which cannot be moved off
 the keys on Android 11 and later.
 

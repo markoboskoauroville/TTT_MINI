@@ -1409,6 +1409,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * Top by default, because the line he is listening to should be where the eye lands first
          * and because it leaves the space below for what is coming.
          */
+        /**
+         * Whether the reader keeps watching for new text after the screen runs out.
+         *
+         * On by default: he reads live chats, and a reader that stops at the bottom of a growing
+         * answer has stopped in the middle of the thing he asked it to read.
+         */
+        val maReaderWatch = boolean(
+            key = "dictate__ma_reader_watch",
+            default = true,
+        )
+
         val maReaderAlign = string(
             key = "dictate__ma_reader_align",
             default = "top",
