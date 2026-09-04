@@ -9464,3 +9464,45 @@ that is when it becomes a file, and it would then also have to survive being wro
 Test 1: 24 checks, 0 failed — the scroll-up he reported, modelled directly: three sentences read, a
 window scrolled up by one, and only the unheard line spoken. Sabotaged by synthesising the screen
 instead of the filtered list, and by remembering cues: red on four.
+
+---
+
+## §199 — The reader gets a row
+
+Build 347. Reading has grown from one key into a thing with a speed, an effect, an alignment, a watch
+and a place in the text. **One key cannot carry that**, and the dashboard behind a long press is a
+panel he has to open, read and close for presses that should take no thought.
+
+    ▶/⏸ · ⏮ · ⏭ · ■ · 👁 · − · +
+
+Transport first, because that is what a hand reaches for mid-listening. The two settings last,
+because they are decided once and then left. **The stop sits between them** — it ends the reading AND
+the wait, and it belongs beside the keys that started them rather than at the far end where a thumb
+arrives by accident.
+
+**The plain READER key is unchanged.** One press, read this screen: that is the common case and it
+must not need a row. `Rr` opens the row, which is the uncommon one. A row rather than a panel because
+it does not cover the text he is listening to.
+
+Play and pause are one key, as he asked, and it calls `MaReader.toggle` rather than deciding for
+itself — **one definition of what a press means, not two.** The stop calls `MaReader.stop()`, which
+clears the watching flag, so "stop waiting" and "stop reading" are one key because from where he sits
+they are one thing he wants ended.
+
+Two ways to switch the row on, one preference behind them: the `Rr` key and the switchboard.
+
+### A debt, named rather than left to be found
+
+This is the THIRD `xRowOnly` boolean. The comment on the second said two were honest about being two
+callers each asking for one row, and that a fourth would be the moment for an enum. **Three is close
+enough that pretending otherwise is rules-lawyering my own note.**
+
+It is a boolean today anyway, and that is a decision: the refactor touches four call sites in three
+files, and §150a and §187a are both what happens when a structural change is made in the tail of a
+long session to save a round trip. The next special row does the enum first and adds itself second.
+
+### Tested
+
+Test 1: 36 checks, 0 failed — every command present in the catalogue AND drawn, play/pause as one key
+delegating to the reader, the row off by default, both switches on one preference, the plain reader
+key surviving, and the speed clamped at both ends. Sabotaged by making the row unconditional: red.

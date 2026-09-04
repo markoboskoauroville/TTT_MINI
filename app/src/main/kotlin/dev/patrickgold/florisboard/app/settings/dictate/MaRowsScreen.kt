@@ -51,6 +51,11 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.Layers
@@ -741,6 +746,22 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             MaFeatureKey.AUTO_BUCKET_DOWN -> letters("A\u2193")
             // The row it reveals, as a word. "C" would collide with the buckets themselves.
             MaFeatureKey.BUCKET_ROW -> letters("Cs")
+            // The reader row and its commands. Letters and arrows rather than icons: they are read
+            // in a list here, and a column of similar transport glyphs is harder to tell apart than
+            // words.
+            MaFeatureKey.READER_ROW -> letters("Rr")
+            MaFeatureKey.READ_PLAY ->
+                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.READ_PREV ->
+                Icon(Icons.Default.SkipPrevious, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.READ_NEXT ->
+                Icon(Icons.Default.SkipNext, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.READ_STOP ->
+                Icon(Icons.Default.Stop, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.READ_WATCH ->
+                Icon(Icons.Default.Visibility, contentDescription = null, tint = tint, modifier = size)
+            MaFeatureKey.READ_SLOWER -> letters("\u2212")
+            MaFeatureKey.READ_FASTER -> letters("+")
             // A red dot and the letter, the same face the keys draw. The dot says "records", the
             // letter says "in this language" — and the letter is the whole point, so it is the
             // larger of the two.

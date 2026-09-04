@@ -186,6 +186,18 @@ fun TextInputLayout(
             //
             // Its own switch rather than sharing the copy row's: they are shown at different times.
             // The copy row is on nearly always; this one is on while he is collecting.
+            // The reader row, above the bucket row: the reading is what he is listening to, and the
+            // controls for it should be nearer the text than the clipboard is.
+            val readerRowShown by prefs.dictate.maReaderRowShown.collectAsState()
+            if (readerRowShown) {
+                MaFeatureRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    rowHeight = FlorisImeSizing.smartbarHeight,
+                    readerRowOnly = true,
+                    drawChrome = false,
+                )
+            }
+
             val bucketRowShown by prefs.dictate.maBucketRowShown.collectAsState()
             if (bucketRowShown) {
                 MaFeatureRow(

@@ -132,6 +132,34 @@ object MaRows {
         enabled = true,
     )
 
+    /**
+     * The reader row: everything reading needs, in the order he does it.
+     *
+     * play/pause · previous · next · stop · watch · slower · faster
+     *
+     * Transport first because that is what a hand reaches for mid-listening, and the two settings
+     * last because they are decided once and then left. The stop sits between them: it ends both the
+     * reading and the wait, and it belongs beside the keys that started them rather than at the far
+     * end where a thumb arrives by accident.
+     */
+    fun defaultReaderRow(): Row = Row(
+        listOf(
+            MaFeatureKey.READ_PLAY,
+            MaFeatureKey.READ_PREV,
+            MaFeatureKey.READ_NEXT,
+            MaFeatureKey.READ_STOP,
+            MaFeatureKey.READ_WATCH,
+            MaFeatureKey.READ_SLOWER,
+            MaFeatureKey.READ_FASTER,
+        ).map { Entry(Button.Builtin(it)) },
+        enabled = true,
+    )
+
+    fun parseReaderRow(raw: String): Row =
+        if (raw.isBlank()) defaultReaderRow() else parse(raw).firstOrNull() ?: defaultReaderRow()
+
+    fun serializeReaderRow(row: Row): String = serialize(listOf(row))
+
     fun parseBucketRow(raw: String): Row =
         if (raw.isBlank()) defaultBucketRow() else parse(raw).firstOrNull() ?: defaultBucketRow()
 

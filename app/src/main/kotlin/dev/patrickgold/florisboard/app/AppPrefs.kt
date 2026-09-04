@@ -1194,6 +1194,23 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         /** The bucket row's arrangement. Its own row, like the copy row. */
+        /** The reader row's arrangement. Its own row, like the copy row and the bucket row. */
+        val maReaderRow = string(
+            key = "dictate__ma_reader_row",
+            default = "",
+        )
+
+        /**
+         * Whether the reader row is showing.
+         *
+         * Off by default. It is the controls for a thing he is doing, not a thing he is always
+         * doing, and a row of transport keys on a keyboard that is not reading is six dead keys.
+         */
+        val maReaderRowShown = boolean(
+            key = "dictate__ma_reader_row_shown",
+            default = false,
+        )
+
         val maBucketRow = string(
             key = "dictate__ma_bucket_row",
             default = "",

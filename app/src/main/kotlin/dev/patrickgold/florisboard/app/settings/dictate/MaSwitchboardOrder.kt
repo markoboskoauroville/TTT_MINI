@@ -52,6 +52,7 @@ object MaSwitchboardOrder {
         // and appends anything it did not know about, so a new entry arrives at the bottom of his
         // arrangement instead of shuffling it.
         BUCKET_ROW("bucket_row"),
+        READER_ROW("reader_row"),
         // BUCKETS is gone: the C keys on the row are the switch. parse drops the stored id.
         MAGIC_ROW("magic_row"),
         SUBTITLE("subtitle"),

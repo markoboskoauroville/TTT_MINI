@@ -57,6 +57,12 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.KeyboardCapslock
@@ -192,6 +198,21 @@ fun MaFeatureRow(
      */
     bucketRowOnly: Boolean = false,
     /**
+     * Draw the reader row instead of the feature rows.
+     *
+     * **THE THIRD OF THESE, AND THE ENUM IS NOW DUE.** The comment on `bucketRowOnly` said two
+     * booleans were honest about being two callers each asking for one row, and that a fourth
+     * special row would be the moment to introduce an enum. Three is close enough that pretending
+     * otherwise is rules-lawyering my own note.
+     *
+     * It is a boolean anyway, today, and that is a decision rather than an oversight: the refactor
+     * touches four call sites in three files at the end of a long build, and §150a and §187a are
+     * both what happens when a structural change is done in the tail of a session to save a round
+     * trip. **The debt is named here rather than left to be discovered.** The next special row does
+     * the enum first and adds itself second.
+     */
+    readerRowOnly: Boolean = false,
+    /**
      * Draw the things that sit ABOVE the rows: the wand bar, the magic row, the reader dashboard.
      *
      * True everywhere except the typing keyboard's copy row, which is a second instance of this
@@ -308,9 +329,14 @@ fun MaFeatureRow(
     val bucketRow = remember(bucketRaw) { MaRows.parseBucketRow(bucketRaw) }
     val bucketButtons = if (bucketRow.enabled) bucketRow.visibleButtons else emptyList()
 
+    val readerRaw by prefs.dictate.maReaderRow.collectAsState()
+    val readerRow = remember(readerRaw) { MaRows.parseReaderRow(readerRaw) }
+    val readerButtons = if (readerRow.enabled) readerRow.visibleButtons else emptyList()
+
     val rows = when {
         copyRowOnly -> if (copyButtons.isNotEmpty()) listOf(copyButtons) else emptyList()
         bucketRowOnly -> if (bucketButtons.isNotEmpty()) listOf(bucketButtons) else emptyList()
+        readerRowOnly -> if (readerButtons.isNotEmpty()) listOf(readerButtons) else emptyList()
         else -> MaRows.visibleRows(storedRows)
     }
     // The buckets this user actually has, and whether they are all holding something. Derived from
@@ -1659,6 +1685,104 @@ fun MaFeatureRow(
                             color = fg,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+
+                MaFeatureKey.READER_ROW -> {
+                    // Shows or hides the reader row, ringed while it is up, like every other row
+                    // switch in this app.
+                    val readerShown by prefs.dictate.maReaderRowShown.collectAsState()
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        ring = if (readerShown) onGreen else MaSwitcherRingOff,
+                        onClick = { scope.launch { prefs.dictate.maReaderRowShown.set(!readerShown) } },
+                    ) { fg ->
+                        Text(text = "Rr", color = fg, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
+                MaFeatureKey.READ_PLAY -> {
+                    // ONE KEY FOR PLAY AND PAUSE, as he asked. The reader already treats a press as
+                    // "do the opposite of what you are doing"; this is the same call the reader key
+                    // makes, so there is one definition of what a press means and not two.
+                    val st = MaReader.state
+                    ThemedIconKey(
+                        imageVector = if (st == MaReader.State.SPEAKING) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (st == MaReader.State.SPEAKING) "Pause" else "Play",
+                        modifier = keyMod,
+                        tint = if (st == MaReader.State.IDLE) null else MaSand,
+                    ) {
+                        MaReader.toggle(context) { MaMessage.show(it) }
+                    }
+                }
+
+                MaFeatureKey.READ_PREV -> ThemedIconKey(
+                    imageVector = Icons.Default.SkipPrevious,
+                    contentDescription = "Previous sentence",
+                    modifier = keyMod,
+                ) { MaReader.previousSentence() }
+
+                MaFeatureKey.READ_NEXT -> ThemedIconKey(
+                    imageVector = Icons.Default.SkipNext,
+                    contentDescription = "Next sentence",
+                    modifier = keyMod,
+                ) { MaReader.skipSentence() }
+
+                MaFeatureKey.READ_STOP -> ThemedIconKey(
+                    imageVector = Icons.Default.Stop,
+                    contentDescription = "Stop reading",
+                    modifier = keyMod,
+                ) {
+                    // Stops the reading AND the watch — `stop()` clears the watching flag, which is
+                    // the "stop waiting" he asked for. One key, because from where he sits a reading
+                    // that is waiting and a reading that is speaking are one thing he wants ended.
+                    MaReader.stop()
+                    MaMessage.show("Reading stopped")
+                }
+
+                MaFeatureKey.READ_WATCH -> {
+                    // The watch, as a setting he can see. Ringed when on, so the row says whether
+                    // the next reading will wait at the end or finish.
+                    val watch by prefs.dictate.maReaderWatch.collectAsState()
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        ring = if (watch) onGreen else MaSwitcherRingOff,
+                        onClick = {
+                            scope.launch { prefs.dictate.maReaderWatch.set(!watch) }
+                            MaMessage.show(if (watch) "Will stop at the end" else "Will wait for new text")
+                        },
+                    ) { fg ->
+                        Icon(
+                            imageVector = Icons.Default.Visibility,
+                            contentDescription = null,
+                            tint = fg,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+
+                MaFeatureKey.READ_SLOWER, MaFeatureKey.READ_FASTER -> {
+                    // Speed, in the same steps the dashboard uses, and clamped where it clamps.
+                    // Two keys and one body: the only difference is the sign.
+                    val faster = button.key == MaFeatureKey.READ_FASTER
+                    val speed by prefs.dictate.maReaderSpeed.collectAsState()
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        onClick = {
+                            val next = (speed + if (faster) 10 else -10).coerceIn(50, 300)
+                            scope.launch { prefs.dictate.maReaderSpeed.set(next) }
+                            MaMessage.show("Reading speed ${next / 100f}\u00D7")
+                        },
+                    ) { fg ->
+                        Text(
+                            text = if (faster) "+" else "\u2212",
+                            color = fg,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }

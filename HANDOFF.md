@@ -169,6 +169,8 @@ dims. `F1`–`F6` show and hide a row from the keyboard itself, green ring when 
 - **the copy row** — `select all · paste · copy · cut · clipboard history · AP · AC · pin`
 - **the bucket row** — `bin · C1 · C2 · C3 · A↑ · swap`, off by default, switched by the `Cs` key or
   the switchboard
+- **the reader row** — `▶/⏸ · ⏮ · ⏭ · ■ · watch · − · +`, off by default, switched by the `Rr` key or
+  the switchboard. The plain reader key still just reads.
 
 **Recording and sending are chosen by which key you press, not by a mode.** `● H` records Croatian,
 `● E` records English; `→H` and `→E` send in that language. The key IS the choice, so there is

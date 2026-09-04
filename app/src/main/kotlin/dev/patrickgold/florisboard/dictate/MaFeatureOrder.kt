@@ -195,6 +195,26 @@ enum class MaFeatureKey(val id: String, val label: String) {
     READER("reader", "Reader, speak the screen"),
 
     /**
+     * THE READER'S OWN ROW, and the keys on it.
+     *
+     * Reading has grown from one key into a thing with a speed, an effect, an alignment, a watch and
+     * a place in the text. **One key cannot carry that**, and the dashboard behind a long press is a
+     * panel he has to open, read and close for a press that should take no thought.
+     *
+     * So: the READER key still just reads, unchanged, because that is the common case. `Rr` opens a
+     * row of the commands, which is the uncommon one — and a row is better than a panel here because
+     * it does not cover the text he is listening to.
+     */
+    READER_ROW("reader_row", "Rr, the reader row"),
+    READ_PLAY("read_play", "Play or pause reading"),
+    READ_PREV("read_prev", "Previous sentence"),
+    READ_NEXT("read_next", "Next sentence"),
+    READ_STOP("read_stop", "Stop reading"),
+    READ_WATCH("read_watch", "Watch for new text"),
+    READ_SLOWER("read_slower", "Read slower"),
+    READ_FASTER("read_faster", "Read faster"),
+
+    /**
      * S: show or hide the subtitle row.
      *
      * A key rather than only a setting, because it is the kind of thing he changes while reading —
@@ -486,6 +506,14 @@ object MaFeatureOrder {
         MaFeatureKey.CHANGE_CASE,
         MaFeatureKey.PIN,
         MaFeatureKey.READER,
+        MaFeatureKey.READER_ROW,
+        MaFeatureKey.READ_PLAY,
+        MaFeatureKey.READ_PREV,
+        MaFeatureKey.READ_NEXT,
+        MaFeatureKey.READ_STOP,
+        MaFeatureKey.READ_WATCH,
+        MaFeatureKey.READ_SLOWER,
+        MaFeatureKey.READ_FASTER,
         MaFeatureKey.SUBTITLE,
         MaFeatureKey.DUMP,
         MaFeatureKey.SPACER,
