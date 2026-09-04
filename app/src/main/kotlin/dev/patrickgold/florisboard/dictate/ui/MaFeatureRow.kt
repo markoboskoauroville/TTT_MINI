@@ -1709,7 +1709,11 @@ fun MaFeatureRow(
                     // makes, so there is one definition of what a press means and not two.
                     val st = MaReader.state
                     ThemedIconKey(
-                        imageVector = if (st == MaReader.State.SPEAKING) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        // `code` and `icon`, not `imageVector`. I wrote this from memory of what a
+                        // Compose Icon takes; the app's own key composable has its own names, and
+                        // CI said so four times in one file.
+                        code = KeyCode.NOOP,
+                        icon = if (st == MaReader.State.SPEAKING) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (st == MaReader.State.SPEAKING) "Pause" else "Play",
                         modifier = keyMod,
                         tint = if (st == MaReader.State.IDLE) null else MaSand,
@@ -1719,19 +1723,22 @@ fun MaFeatureRow(
                 }
 
                 MaFeatureKey.READ_PREV -> ThemedIconKey(
-                    imageVector = Icons.Default.SkipPrevious,
+                    code = KeyCode.NOOP,
+                    icon = Icons.Default.SkipPrevious,
                     contentDescription = "Previous sentence",
                     modifier = keyMod,
                 ) { MaReader.previousSentence() }
 
                 MaFeatureKey.READ_NEXT -> ThemedIconKey(
-                    imageVector = Icons.Default.SkipNext,
+                    code = KeyCode.NOOP,
+                    icon = Icons.Default.SkipNext,
                     contentDescription = "Next sentence",
                     modifier = keyMod,
                 ) { MaReader.skipSentence() }
 
                 MaFeatureKey.READ_STOP -> ThemedIconKey(
-                    imageVector = Icons.Default.Stop,
+                    code = KeyCode.NOOP,
+                    icon = Icons.Default.Stop,
                     contentDescription = "Stop reading",
                     modifier = keyMod,
                 ) {

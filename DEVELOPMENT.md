@@ -9526,3 +9526,20 @@ Both faults came from one anchor: the insert went into the first `MaFeatureKey.R
 which is the default ROW, when the group branch further down was what needed it. **Two lists of the
 same names in one file, and the edit chose the wrong one** — the same shape as §179a's missing anchor,
 inverted: there the anchor did not exist, here it existed twice.
+
+## §199b — A signature written from memory
+
+Build 347's second red: `imageVector = …` passed to `ThemedIconKey`, four times in one file. It takes
+`code` and `icon`.
+
+**I wrote it from memory of what a Compose `Icon` takes.** The app's own key composable has its own
+names, twenty lines away in a file I had read that afternoon, and I did not look.
+
+A guard was measured and **rejected**: flagging `ThemedIconKey(` calls without a named `icon =`
+argument found **13 hits**, nearly all of them positional calls — `ThemedIconKey(KeyCode.UNDO,
+action.icon, label, …)` — which are correct Kotlin and correct style. A check that fires on thirteen
+correct calls to catch one wrong one is the shape `check_property_call` was deleted for.
+
+So the gap stays open and CI keeps it, at five minutes a time. **The habit that would have prevented
+it costs nothing: read the signature before calling it, especially the ones in this repository, and
+most especially the ones that look like a library's.**
