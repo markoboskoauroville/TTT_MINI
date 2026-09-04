@@ -9321,3 +9321,41 @@ know whether the line runs** — it asserts the condition now, and the call with
 Test 1: 21 checks, 0 failed — a six-frame stream where every word must be spoken exactly once in
 order, a different screen read whole, a blank poll silent, a ticking clock ignored, the word-boundary
 cut, and only one place clearing the flag.
+
+## §196a — Correct and unreachable
+
+Build 344. He asked for watch mode a second time, because build 343 did not do it.
+
+He was right. The code was correct and **it could not run.**
+
+Watch mode's decision was written at ONE of the routes by which a reading ends — the branch after the
+scroll succeeds. The route he actually takes is the other one:
+
+    val moved = DictateAccessibilityService.scrollScreenDown()
+    if (!moved) {
+        state = State.IDLE     // <- returns HERE, above the watch branch
+        return
+    }
+
+**At the bottom of a chat the scroll cannot move**, because there is nothing below. So `continueBelow`
+returned before ever reaching the watch decision — and the bottom of a chat is precisely where he
+wants it to wait.
+
+### This is §176 again, in the same file
+
+The reader loop was reported twice for the same reason: a guard written at one route, on a path the
+bug did not take. The cure then was to move the decision to the door. **The cure now is the same
+shape:** one `endOfText()` that asks the watch question, called from every exit.
+
+Twice in one file, six weeks apart, is not a coincidence. `MaReader` has ten places that set
+`State.IDLE`, and the difference between "the text ran out" and "something went wrong" is not visible
+at any of them. Naming it in a function is what makes it visible.
+
+### The checks were about behaviour, not reachability
+
+The first suite asserted the branch existed and that the call inside it was the right one. Both were
+true. **Neither asked whether anything reaches it.**
+
+They ask now: one place decides, the scroll-failed exit calls it by name, and `continueBelow` sets
+`IDLE` nowhere at all. Sabotaged by restoring the direct `IDLE` on that one exit: three failures,
+where the old suite gave none.

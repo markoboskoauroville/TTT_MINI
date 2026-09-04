@@ -405,7 +405,9 @@ object MaReader {
         val before = DictateAccessibilityService.readableScreenText()
         val moved = DictateAccessibilityService.scrollScreenDown()
         if (!moved) {
-            state = State.IDLE
+            // THE BOTTOM OF A CHAT, and the route watch mode was missing. The scroll cannot move
+            // because there is nothing below — which is exactly when he wants it to wait.
+            endOfText(context, onMessage, "the screen would not scroll")
             return
         }
         // The list needs a moment to build the rows it just scrolled into place. Reading instantly
@@ -448,14 +450,9 @@ object MaReader {
             // ADDED, until he stops it. **Only he ends a watch.** That is the whole ask, and it is
             // why the ceiling below does not apply: MAX_SCREENS bounds a runaway scroll, and
             // watching is not runaway, it is waiting.
-            if (watching && !cleaned.isBlank()) {
-                MaLog.add("read", "reached the end \u2014 watching for more")
-                watchForMore(context, onMessage)
-                return
-            }
-            state = State.IDLE
-            MaLog.add(
-                "read",
+            endOfText(
+                context,
+                onMessage,
                 when {
                     cleaned.isBlank() -> "reached the end — nothing left to read"
                     screenStuck -> "reached the end — the screen did not move"
@@ -541,6 +538,34 @@ object MaReader {
      * The loop exits on `stop()` alone — `watching` goes false and the coroutine's own check ends
      * it. The scope is the reader's, so the keyboard going away ends it too.
      */
+    /**
+     * THE END OF THE TEXT, WHICH IS NOT THE END OF THE READING.
+     *
+     * Every route by which a reading runs out of text comes here, and here decides: watch, or idle.
+     *
+     * ### Why this exists at all
+     *
+     * Watch mode shipped in build 343 with the decision written at ONE of those routes — the one
+     * below the scroll — and he reported it not working. He was right, and the reason is the same
+     * one §176 records about the loop guard: **a decision at one exit is a decision at one exit.**
+     *
+     * The route he actually takes is the other one. At the bottom of a chat `scrollScreenDown`
+     * cannot move, so `continueBelow` returns BEFORE reaching the watch branch — and the bottom of a
+     * chat is precisely where he wants it to wait. The feature was correct and unreachable.
+     *
+     * So the question is asked in one function and called from every exit, which is the only shape
+     * that cannot grow a third exit that forgets.
+     */
+    private fun endOfText(context: Context, onMessage: (String) -> Unit, why: String) {
+        if (watching) {
+            MaLog.add("read", "$why \u2014 watching for more")
+            watchForMore(context, onMessage)
+            return
+        }
+        MaLog.add("read", why)
+        state = State.IDLE
+    }
+
     private fun watchForMore(context: Context, onMessage: (String) -> Unit) {
         state = State.PAUSED
         scope.launch {

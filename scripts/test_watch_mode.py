@@ -109,11 +109,25 @@ check("watching is a flag on the reading", "var watching: Boolean" in reader, "a
 # The CONDITION, not just the call. Searching for `watchForMore(...)` anywhere passed a sabotage that
 # wrapped it in `if (false)` — the call was still in the file, doing nothing. **A check that finds a
 # line does not know whether the line runs.**
-check("the end waits instead of stopping", "if (watching && !cleaned.isBlank()) {" in reader,
-      "it still stops at the bottom of a growing answer")
-check("and the wait is what it does there",
-      "watchForMore(context, onMessage)" in reader.split("if (watching && !cleaned.isBlank()) {")[-1][:200],
-      "the branch exists but leads somewhere else")
+# EVERY EXIT, NOT ONE. Watch mode shipped with the decision written at a single route — the one below
+# the scroll — and the route he actually takes is the other: at the bottom of a chat the scroll cannot
+# move, so `continueBelow` returns BEFORE reaching it. The feature was correct and unreachable.
+#
+# **A decision at one exit is a decision at one exit.** These checks are about reachability, which is
+# what the first version of them failed to ask.
+check("there is one place that decides", "private fun endOfText(" in reader,
+      "each exit decides for itself and one of them will forget")
+check("the scroll-failed exit asks it", 'endOfText(context, onMessage, "the screen would not scroll")'
+      in reader, "the bottom of a chat still stops, which is where he reads")
+check("the end-of-text exit asks it", reader.count("endOfText(") >= 3,
+      "an exit that goes straight to IDLE")
+
+# No natural exit may set IDLE directly any more. The error and stop paths still may — they are not
+# the end of the TEXT, they are the end of the reading.
+tail_fn = reader[reader.index("private suspend fun continueBelow"):]
+tail_fn = tail_fn[:tail_fn.index("private fun endOfText")]
+check("continueBelow never idles directly", "state = State.IDLE" not in tail_fn,
+      "a natural end that skips the watch decision")
 check("only stop ends it", "watching = false" in reader, "no way out")
 check("nothing else ends it", reader.count("watching = false") == 1,
       "a timeout would end the watch during the pause he stepped away for")
