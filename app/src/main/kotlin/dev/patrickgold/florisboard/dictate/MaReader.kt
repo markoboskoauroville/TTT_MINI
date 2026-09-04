@@ -266,15 +266,43 @@ object MaReader {
         // `passagesRead` is cleared by `stop`, and stopping is what the reader key does — so
         // pressing read, stopping, and pressing read again on the same text works exactly as before.
         // Only an unasked-for repeat inside one reading is refused.
-        val key = normalisedForCompare(text)
+        // SENTENCE BY SENTENCE, because a scroll gives a different WINDOW onto the same words.
+        //
+        // The passage guard below refuses a screen it has read before. He scrolled up while watching
+        // and heard old text anyway: half a screen he has heard plus half he has not is a passage
+        // nobody has seen, and the passage guard waves it through.
+        //
+        // **The unit of memory has to be the unit of speech.** So the text is cut into sentences,
+        // the ones already spoken are dropped, and the waiting cues — "Thought process", "Still
+        // working on it" — are dropped with them. What is left is what he has not heard.
+        //
+        // Before the passage check rather than after: on a scroll, the passage IS new and only the
+        // sentences say otherwise.
+        val allSentences = MaReadChunks.sentences(text)
+        val fresh = MaReadMemory.unheard(text, allSentences)
+        if (fresh.isEmpty()) {
+            // Nothing he has not heard. Not an error and not the end — if this reading is watching,
+            // it goes back to waiting, which is exactly what a screen of cues should do.
+            MaLog.add("read", "nothing new on this screen (${allSentences.size} sentences, all heard or cues)")
+            endOfText(context, onMessage, "nothing new to read")
+            return
+        }
+        val speakText = fresh.joinToString(" ")
+
+        val key = normalisedForCompare(speakText)
         if (key.isNotBlank() && passagesRead.contains(key)) {
             MaLog.add("read", "refused to read the same passage twice in one reading")
             state = State.IDLE
             onMessage("Already read this \u2014 stopping")
             return
         }
-        lastPassage = text
+        lastPassage = speakText
         passagesRead.add(key)
+        // Remembered when it is about to be spoken. Not on success of the synthesis: a failed
+        // synthesis leaves him having heard nothing, and forgetting it would be right — but the
+        // retry path re-enters here, and a sentence remembered twice is harmless while a sentence
+        // read twice is the complaint.
+        MaReadMemory.remember(fresh)
         // The marker he asked for: a filled square at the head of each passage.
         //
         // His idea, and a good one — he asked for it as a fallback in case the loop could not be
@@ -290,7 +318,10 @@ object MaReader {
         val voice = MaSpeechify.chosenVoice(MaLanguage.active())
         state = State.LOADING
 
-        val sentences = MaReadChunks.sentences(text)
+        // The FILTERED sentences, not the screen's. Synthesising `text` here would send everything
+        // he has already heard to Speechify and speak it — the filter above would have decided what
+        // to read and this line would have ignored it.
+        val sentences = fresh
         val plan = MaReadChunks.plan(sentences.size)
         if (plan.isEmpty()) {
             state = State.IDLE
@@ -811,6 +842,10 @@ object MaReader {
         // during the one long pause he stepped away for.
         watching = false
         passagesRead.clear()
+        // The sentence memory has the same lifetime: one reading. Kept across a stop, pressing read
+        // again on the same screen would be met with silence, and silence is indistinguishable from
+        // a broken reader.
+        MaReadMemory.clear()
         passageMark = ""
         state = State.IDLE
     }

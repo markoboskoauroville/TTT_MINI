@@ -9411,3 +9411,56 @@ evidence. Deleted, and the distinction stated as prose.
 
 Test 1: 30 checks, 0 failed. Sabotaged back to PAUSED and to the unexempted heal: red on three,
 including the one that says a real state must not be healed away.
+
+---
+
+## §198 — Scrolling back re-read what he had already heard
+
+Build 346. Watch mode works — it waits instead of stopping. Two faults showed up the moment it did.
+
+### The passage guard could not see it
+
+He scrolled up while watching and heard old text again. The guard refuses a PASSAGE it has read, and
+a scroll gives a different WINDOW onto the same words: **half a screen he has heard plus half he has
+not is a passage nobody has seen**, and it goes straight through.
+
+**The unit of memory has to be the unit of speech.** A sentence is what gets spoken, so a sentence is
+what gets remembered. The text is cut into sentences, the heard ones dropped, and what is left is
+synthesised — so scrolling back over read text is silent and a new paragraph halfway up the screen is
+read on its own.
+
+Filtered BEFORE the passage check, because on a scroll the passage is genuinely new and only the
+sentences say otherwise.
+
+One line decided whether it worked: the synthesis reads `sentences`, which had to become the FILTERED
+list. Left pointing at the screen's sentences, the filter would have decided what to read and the
+next line would have ignored it — **a fix that computes the right answer and then discards it**, which
+is the shape of §162a and §179 both.
+
+### The cues are a signal, not text
+
+*Thought process*, *Still working on it…*, *Identifying each image in the sequence*, *Running
+command*. Reading them aloud is noise. Treating them as the end of the text is worse — **they are the
+strongest possible evidence that it is not the end.**
+
+They are dropped from the reading and, when a screen holds nothing else, it goes back to waiting
+rather than stopping.
+
+Matched on a normalised CONTAINS, because they arrive with a chevron, a spinner or a count beside
+them. And **never remembered as spoken**, or a sentence legitimately containing those words later
+would be silenced for the wrong reason.
+
+**The list is deliberately four entries.** Every one is a phrase this app refuses to read, and a
+careless addition silences something he wanted. The test asserts it stays short.
+
+### In memory, not in a file
+
+He asked for a temporary file. This is a set with exactly a temporary file's lifetime — cleared by
+`stop` — and one fewer thing to clean up. If a reading should ever survive the keyboard being killed,
+that is when it becomes a file, and it would then also have to survive being wrong.
+
+### Tested
+
+Test 1: 24 checks, 0 failed — the scroll-up he reported, modelled directly: three sentences read, a
+window scrolled up by one, and only the unheard line spoken. Sabotaged by synthesising the screen
+instead of the filtered list, and by remembering cues: red on four.
