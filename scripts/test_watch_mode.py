@@ -136,6 +136,39 @@ check("the loop guard still applies", "passagesRead.contains(normalisedForCompar
 check("it polls slowly enough to hear", "WATCH_POLL_MS = 1_800L" in reader,
       "three words at a time is worse than not reading")
 
+# ---------------------------------------------------------------- WATCHING is its own state
+#
+# It waited in PAUSED, which is a state with a paused PLAYER behind it — and while watching there is
+# none. Two mechanisms written for a different problem both fired: the self-heal called PAUSED with
+# no player a lie and reset to IDLE, so the next press started a SECOND reading beside the running
+# watch; and the PAUSED branch of toggle called player?.start() on null and set SPEAKING, which is
+# the dead-key state the heal exists to prevent.
+check("watching has its own state", "PAUSED, WATCHING }" in reader,
+      "borrowed from a state that means audio is paused")
+check("it enters WATCHING, not PAUSED", "state = State.WATCHING" in reader,
+      "the self-heal would reset it to IDLE")
+check("the heal exempts it", "state != State.WATCHING && player == null" in reader,
+      "a state that is supposed to have no player would be called a lie")
+check("a press while watching stops it", "State.WATCHING -> stop()" in reader,
+      "pause is the wrong verb when nothing is playing")
+
+# A check that asserts True is not a check. Four of them sat here "documenting" which states need a
+# player, which is what the comment above already does — and they inflated the count, which is the
+# number this file reports as evidence.
+#
+#     SPEAKING, PAUSED   have a player
+#     IDLE, WATCHING     do not
+#
+# The distinction the bug came from, stated as prose rather than as four checks that cannot fail.
+check("only LOADING and WATCHING are exempt from the heal",
+      "state != State.LOADING && state != State.WATCHING" in reader,
+      "either a real state gets healed away or a lying one survives")
+
+keys = code(SRC / "dictate/ui/MaKeyModules.kt")
+check("the key shows stop while watching", "MaReader.State.WATCHING -> Icons.Default.Stop" in keys,
+      "the face would say play and the press would stop")
+check("and says so", "Watching for new text" in keys, "no way to tell a watch from a dead reader")
+
 print(f"watch mode, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

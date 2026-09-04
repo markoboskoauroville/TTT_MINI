@@ -56,7 +56,23 @@ import java.io.File
  */
 object MaReader {
 
-    enum class State { IDLE, LOADING, SPEAKING, PAUSED }
+    /**
+     * WATCHING is its own state, and it has to be.
+     *
+     * The first version sat in PAUSED while it waited. That is a state with a paused PLAYER behind
+     * it, and while watching there is none — so two mechanisms written for a different problem both
+     * fired:
+     *
+     *  - the self-heal at the top of `toggle` sees PAUSED with no player, calls that a lie, and
+     *    resets to IDLE. The next press then starts a NEW reading while the old watch coroutine is
+     *    still running.
+     *  - the PAUSED branch of `toggle` calls `player?.start()` on null and sets SPEAKING, which is
+     *    the dead-key state the heal exists to prevent.
+     *
+     * **A state that means "waiting for text" cannot be borrowed from a state that means "audio is
+     * paused".** They differ in whether a player exists, and every mechanism here keys on that.
+     */
+    enum class State { IDLE, LOADING, SPEAKING, PAUSED, WATCHING }
 
     var state by mutableStateOf(State.IDLE)
         private set
@@ -157,7 +173,10 @@ object MaReader {
         // claims. **The player is the truth; `state` is a claim about it.** No player means idle,
         // whatever the machine believes, and pressing the key always does something again.
         val live = runCatching { player?.isPlaying }.getOrNull()
-        if (state != State.LOADING && player == null) {
+        // WATCHING is exempt from the heal. It is the one state that is SUPPOSED to have no player:
+        // the audio finished and it is waiting for more text. Healed, it would reset to IDLE and the
+        // next press would start a second reading while the watch coroutine was still running.
+        if (state != State.LOADING && state != State.WATCHING && player == null) {
             if (state != State.IDLE) MaLog.add("read", "state said $state with no player, reset")
             state = State.IDLE
         } else if (state == State.SPEAKING && live == false) {
@@ -178,6 +197,10 @@ object MaReader {
             // A press while it is still fetching is taken as "stop", not as a second request. The
             // alternative is two syntheses racing for the same speaker.
             State.LOADING -> stop()
+            // A press while watching STOPS it. He asked for a watch that only he ends, and this is
+            // the end he reaches for: the same key that started the reading. Pause would be the
+            // wrong verb — there is nothing playing to pause.
+            State.WATCHING -> stop()
             State.IDLE -> start(context, onMessage)
         }
     }
@@ -567,7 +590,7 @@ object MaReader {
     }
 
     private fun watchForMore(context: Context, onMessage: (String) -> Unit) {
-        state = State.PAUSED
+        state = State.WATCHING
         scope.launch {
             var seen = DictateAccessibilityService.readableScreenText()
             while (watching) {

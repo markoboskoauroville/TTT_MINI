@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.KeyboardTab
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.PushPin
@@ -169,11 +170,15 @@ fun MaReaderKey(
         icon = when (state) {
             MaReader.State.SPEAKING -> Icons.Default.Pause
             MaReader.State.PAUSED -> Icons.Default.PlayArrow
+            // Watching shows the stop square: pressing it ends the watch, and the face should say
+            // what the press does rather than what the reader is doing.
+            MaReader.State.WATCHING -> Icons.Default.Stop
             else -> Icons.AutoMirrored.Filled.VolumeUp
         },
         contentDescription = when (state) {
             MaReader.State.SPEAKING -> "Pause reading"
             MaReader.State.PAUSED -> "Continue reading"
+            MaReader.State.WATCHING -> "Watching for new text \u2014 stop"
             MaReader.State.LOADING -> "Stop"
             else -> "Read this screen"
         },

@@ -9359,3 +9359,55 @@ true. **Neither asked whether anything reaches it.**
 They ask now: one place decides, the scroll-failed exit calls it by name, and `continueBelow` sets
 `IDLE` nowhere at all. Sabotaged by restoring the direct `IDLE` on that one exit: three failures,
 where the old suite gave none.
+
+---
+
+## §197 — Watch mode was correct, unreachable, and then in the wrong state
+
+Build 344. He asked for this a second time. Both times the reasoning was right and the mechanism
+never ran.
+
+### The first miss: one exit, several ways out
+
+§196 put the wait inside `continueBelow`'s end-of-text branch. At the bottom of a chat the reader
+does not reach that branch — `scrollScreenDown` fails first and returns straight to IDLE. **A guard
+on one route is a guard on one route**, which is the same sentence §176 earned, about the same
+function, five builds earlier.
+
+Every end-of-text exit calls `endOfText()` now, and it asks the watch question once.
+
+### The second miss: waiting in a state that means something else
+
+It then waited in **PAUSED** — a state with a paused PLAYER behind it. While watching there is none,
+and two mechanisms written for a different problem both fired:
+
+- the self-heal at the top of `toggle` sees PAUSED with no player, correctly calls that a lie, and
+  resets to IDLE. **The next press then starts a second reading beside the running watch.**
+- the PAUSED branch calls `player?.start()` on null and sets SPEAKING — the dead-key state the heal
+  exists to prevent.
+
+**A state meaning "waiting for text" cannot be borrowed from a state meaning "audio is paused".** They
+differ in whether a player exists, and every mechanism here keys on exactly that.
+
+`WATCHING` is its own state now, exempt from the heal alongside LOADING, stopping on a press, and
+wearing the stop square so the face says what the press does.
+
+    SPEAKING, PAUSED   have a player
+    IDLE, WATCHING     do not
+
+### Why it was invisible twice
+
+Nothing failed. No red build, no exception, no wrong output — the reader simply stopped, which is
+what it used to do. **A feature that silently does not run looks exactly like a feature that was
+never asked for**, and the only thing that catches it is him telling me a second time.
+
+### A check that asserted True
+
+Four of the new checks were `check(f"{st}: player expected = {needs}", True)`. They cannot fail, they
+document nothing the comment above them did not, and they inflate the count this file reports as
+evidence. Deleted, and the distinction stated as prose.
+
+### Tested
+
+Test 1: 30 checks, 0 failed. Sabotaged back to PAUSED and to the unexempted heal: red on three,
+including the one that says a real state must not be healed away.
