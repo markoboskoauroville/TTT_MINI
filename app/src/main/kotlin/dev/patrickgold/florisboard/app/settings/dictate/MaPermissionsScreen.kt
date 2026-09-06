@@ -57,6 +57,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
 
 /**
  * Every permission this keyboard needs, numbered, in the order they have to be granted.

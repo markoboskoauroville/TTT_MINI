@@ -9598,3 +9598,20 @@ written the same hour as the section documenting the previous one. `find` now.
 `preset.defaultChatModel ?: account.chatModel` — how the pinning happened to be written — and broke
 the moment the mechanism improved. Nothing was wrong. **A check on an expression fails when the
 expression changes; a check on the promise does not.** It asserts the model is small.
+
+## §200a — Icon and Icons, and a closed list that had to ask what the name meant
+
+Build 350 red on `Icon` and `Icons`, unresolved — a composable drawing an icon, added to a file that
+had never drawn one.
+
+`check_layout_imports` covers them now, which makes four groups it guards: `foundation.layout`,
+`compose.runtime`, this app's `dictate.nlp`, and `material3`/`icons`.
+
+The measurement found **one** hit: `ThemeManager.kt`, which imports `android.graphics.drawable.Icon`.
+A different `Icon` entirely, and demanding the Compose one there would have been wrong.
+
+So the check now skips a file that imports the name from ANY package. **A closed list still has to ask
+whether the name means what you think it means in that file** — the list bounds which names are
+checked, not which meanings exist.
+
+Re-measured at zero across the app, and it names the real broken file.

@@ -706,6 +706,13 @@ def check_layout_imports(path: Path, text: str) -> None:
     # two hits across the app, `MaLivePrompts.remember` and `MaAiPredict.remember`, both of them
     # functions those files DECLARE. The declaration skip below already handles that, and the sweep
     # went to zero.
+    # Compose's Icon and Icons. Added after build 350 went red on both, in a composable added to a
+    # file that had never drawn one.
+    #
+    # Measured first: one hit across the app, `ThemeManager.kt`, which imports
+    # `android.graphics.drawable.Icon` — a DIFFERENT Icon entirely. So a file that already imports
+    # the name from anywhere is skipped, and the sweep went to zero. **A closed list still has to ask
+    # whether the name means what you think in that file.**
     groups = {
         # This app's own nlp package. Added after build 314 went red on `MaWordLanguage` used with
         # no import — the edit that added the reference used an anchor that did not exist in that
@@ -715,6 +722,8 @@ def check_layout_imports(path: Path, text: str) -> None:
         "dev.patrickgold.florisboard.dictate.nlp": [
             "MaWordLanguage", "MaNgram", "MaNgramModel", "MaAiPredict",
         ],
+        "androidx.compose.material3": ["Icon"],
+        "androidx.compose.material.icons": ["Icons"],
         "androidx.compose.foundation.layout": ["Column", "Row", "Box", "Spacer", "Arrangement", "BoxWithConstraints"],
         "androidx.compose.runtime": [
             "mutableStateOf", "mutableIntStateOf", "mutableLongStateOf", "remember",
@@ -746,6 +755,10 @@ def _check_group(path: Path, code: str, imports: set[str], package: str, names: 
         # A file that declares the name means its own thing by it. Both hits the runtime sweep found
         # were exactly this: a `fun remember(...)` of their own.
         if re.search(rf"\b(?:class|interface|object|data class|fun|suspend fun)\s+{name}\b", code):
+            continue
+        # Imported from somewhere ELSE under the same name: ThemeManager's `Icon` is
+        # android.graphics.drawable.Icon, and demanding the Compose one there would be wrong.
+        if any(i.endswith(f".{name}") and not i.endswith(f"{package}.{name}") for i in imports):
             continue
         if re.search(rf"(?<![.\w]){name}\s*[({{<.]", code) and f"import {package}.{name}" not in imports:
             fail(path.name, f"`{name}` used but not imported from {package}")
