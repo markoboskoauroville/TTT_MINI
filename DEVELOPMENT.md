@@ -9615,3 +9615,48 @@ whether the name means what you think it means in that file** — the list bound
 checked, not which meanings exist.
 
 Re-measured at zero across the app, and it names the real broken file.
+
+---
+
+## §201 — The three dots that arrive hours late
+
+Build 353. He waits hours, sometimes days, for *Allow restricted settings* to appear in App info, and
+asked whether the app can force a refresh.
+
+**It cannot, and that is the point of the restriction.** The gate exists so a sideloaded app cannot
+grant itself accessibility. Anything here claiming to force a refresh would be an app asking the
+system to stop restricting it, which is the attack it was built to stop.
+
+### But the delay is not random
+
+Since Android 13 a sideloaded app has `ACCESS_RESTRICTED_SETTINGS` set to errored, and the overflow
+item appears **only once the system has seen the app refused at that gate.** It is a response to an
+attempt, not a property of the phone — which is exactly why it turns up "suddenly, after hours":
+something tripped the gate in the background.
+
+**The old instruction made this worse.** It read *"Skip if your phone does not offer it"* — sending
+him away from the one action that makes it appear. It now says to go and be refused first,
+deliberately, then come back.
+
+### The two levers, on the screen, copyable
+
+    appops set com.mantraproductions.tttlight ACCESS_RESTRICTED_SETTINGS allow
+    pm install -i com.android.vending -r ttt-mini.apk
+
+The first clears it for this install; the second names an installer the restriction does not apply
+to, so it never arises again — for that install and every update over it. Both need Shizuku or a
+computer, and neither is a workaround for a bug: **they are the mechanisms the three-dot menu drives,
+reached directly.**
+
+**Copyable rather than printed.** He dictates rather than types, and a package name with two dots is
+the sort of string mistyped once and debugged for twenty minutes. The test asserts the package in the
+command matches `applicationId` in the build file — **a command with the wrong package name does
+nothing and says nothing**, which is the worst possible failure for an instruction.
+
+And the second command's consequence is stated on screen rather than left to be discovered: it
+changes what every future update inherits, which is worth knowing before running it.
+
+### Tested
+
+Test 1: 56 checks, 0 failed. Sabotaged by changing the package name in the command: red on the check
+that compares it with the build file.

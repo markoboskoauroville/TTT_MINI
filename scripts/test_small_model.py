@@ -96,6 +96,28 @@ keys_ui = code(SRC / "app/settings/dictate/DictateKeysScreen.kt")
 check("the button says what it does", '"TEST KEYS"' in keys_ui, "still describing the algorithm")
 check("not what it walks", '"FIND A WORKING KEY"' not in keys_ui)
 
+# ---------------------------------------------------------------- restricted settings
+#
+# The three-dot menu is not a property of the phone. Since Android 13 a sideloaded app has
+# ACCESS_RESTRICTED_SETTINGS errored, and the item appears only once the system has SEEN the app
+# refused at that gate. The old instruction — "skip if your phone does not offer it" — sent him away
+# from the one action that makes it appear.
+check("the instruction says to be refused first", "let it refuse you" in perms,
+      "skip if your phone does not offer it, which is the opposite of what works")
+check("the old instruction is gone", "Skip if your phone does not offer it" not in perms)
+
+# Both commands, with the REAL package name. A package name mistyped once is debugged for twenty
+# minutes, which is why they are copyable rather than printed for typing.
+check("the appops command is there", "ACCESS_RESTRICTED_SETTINGS allow" in perms, "no way past without the menu")
+check("it names the real package", "com.mantraproductions.tttlight" in perms, "a command that does nothing")
+check("the package matches the build", "com.mantraproductions.tttlight" in
+      (ROOT / "app/build.gradle.kts").read_text(), "the screen and the app disagree")
+check("the install command is there", "pm install -i com.android.vending" in perms,
+      "the permanent fix is missing")
+check("both are copyable", perms.count('Text("COPY")') >= 1, "he would have to type them")
+check("the app does not claim to force it", "force" not in perms.lower(),
+      "an app that claims to lift its own restriction is claiming the impossible")
+
 print(f"small model, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

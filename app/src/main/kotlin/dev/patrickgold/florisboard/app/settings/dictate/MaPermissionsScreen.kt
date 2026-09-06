@@ -29,6 +29,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -109,6 +113,9 @@ fun MaPermissionsScreen() = FlorisScreen {
         // seven-step setup — a number that says "do this once, in order", which is the opposite of
         // what they are.
         MaKeysHeaderRow(onClick = { navController.navigate(Routes.Settings.DictateKeys) })
+
+        Spacer(Modifier.height(20.dp))
+        MaRestrictedSettingsHelp()
 
         Spacer(Modifier.height(24.dp))
 
@@ -240,7 +247,18 @@ private fun maPermissionSteps(context: Context): List<MaPermissionStep> {
 
     steps += MaPermissionStep(
         title = "Allow restricted settings",
-        detail = "Three dots at the top right of App info. Skip if your phone does not offer it",
+        // "SKIP IF YOUR PHONE DOES NOT OFFER IT" was wrong, and wrong in the way that costs hours.
+        //
+        // The three dots are not a property of the phone. Since Android 13 a sideloaded app has
+        // `ACCESS_RESTRICTED_SETTINGS` set to errored, and the overflow item appears only once the
+        // system has SEEN the app blocked at that gate. It is a response to an attempt, not a
+        // feature of the model — which is why it turns up "suddenly, after hours": something tripped
+        // the gate in the background.
+        //
+        // So the instruction is now the one that works: be refused first, deliberately, and the menu
+        // arrives. The two commands underneath are the other two ways out.
+        detail = "Three dots in App info. Not there? Try to switch the accessibility service on, " +
+            "let it refuse you, then come back — that is what makes the menu appear",
         // Android exposes no flag for this one, so it is answered by its CONSEQUENCE instead.
         //
         // Restricted settings is the gate that stops a sideloaded app's accessibility service from
@@ -399,4 +417,72 @@ private fun MaKeysHeaderRow(onClick: () -> Unit) {
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * THE TWO WAYS PAST RESTRICTED SETTINGS THAT DO NOT NEED THE MENU.
+ *
+ * **The app cannot lift this restriction itself, and that is the point of it.** The gate exists so a
+ * sideloaded app cannot grant itself accessibility, and anything here that claimed to "force a
+ * refresh" would be an app asking the system to stop restricting it. So this screen does the only
+ * honest thing: it hands him the commands and gets out of the way.
+ *
+ * Both need Shizuku or a computer. Neither is a workaround for a bug — they are the mechanisms the
+ * three-dot menu drives, reached directly.
+ *
+ * The commands are COPYABLE rather than typed. He dictates rather than types, and a package name
+ * with two dots in it is exactly the sort of string that is mistyped once and then debugged for
+ * twenty minutes.
+ */
+@Composable
+private fun MaRestrictedSettingsHelp() {
+    val clipboard = LocalClipboardManager.current
+    Text(
+        text = "If the three dots are missing",
+        style = MaterialTheme.typography.titleSmall,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+    )
+    Text(
+        text = "The menu appears only after Android has refused this app once. Fastest: try to " +
+            "switch the accessibility service on, let it refuse, come back.\n\n" +
+            "These two do it without the menu. Both need Shizuku running, or a computer.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp),
+    )
+    for ((what, command) in listOf(
+        "Lift the restriction on this install" to
+            "appops set com.mantraproductions.tttlight ACCESS_RESTRICTED_SETTINGS allow",
+        "Install so it never applies" to
+            "pm install -i com.android.vending -r ttt-mini.apk",
+    )) {
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = what,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = command,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = { clipboard.setText(AnnotatedString(command)) }) { Text("COPY") }
+        }
+    }
+    Text(
+        // Said plainly, because the second one changes what every FUTURE build inherits and that is
+        // worth knowing before he runs it rather than after.
+        text = "The second names the Play Store as the installer, so the restriction never applies " +
+            "— to that install and every update over it. It does not make the app a Play app and " +
+            "grants nothing else.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }
