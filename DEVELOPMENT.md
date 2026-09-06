@@ -9543,3 +9543,58 @@ correct calls to catch one wrong one is the shape `check_property_call` was dele
 So the gap stays open and CI keeps it, at five minutes a time. **The habit that would have prevented
 it costs nothing: read the signature before calling it, especially the ones in this repository, and
 most especially the ones that look like a library's.**
+
+---
+
+## §200 — Haiku is a rule, and the keys come first
+
+Build 350.
+
+### The screen was ordered for the first day
+
+`Permissions and API keys`, seven numbered steps, and the keys as **step eight of a seven-step
+setup**. The permissions are granted once, on a new phone, and never touched again. The keys are
+edited, tested, imported and replaced constantly.
+
+**A screen ordered by the sequence a new install goes through is ordered wrongly for every day after
+it.** Keys first, with no number and no tick — a key is not a step, and it is never simply "done": it
+can be present and dead, present for one provider and missing for another, or working this morning
+and out of credit this afternoon.
+
+The entry is `API keys and permissions` now, because the name is what he scans for.
+
+`FIND A WORKING KEY` became **`TEST KEYS`**. The old label described the ALGORITHM — walk the ring
+until one answers — and he presses it to find out whether his keys work.
+
+### Haiku, enforced rather than defaulted
+
+Every language job here is small: proofread a sentence, reflow a paragraph, restyle a line, guess a
+word the local n-gram cannot. **None is improved by a larger model and all are billed by one.**
+
+The code trusted `preset.defaultChatModel`, under a comment asserting it is haiku, mini or flash "for
+every provider in the registry". **That was true when it was written and nothing kept it true.** A
+preset edited next year, or a provider renaming its default, silently promotes every rewording to an
+expensive model — and the only symptom is the bill, arriving a month later with nothing to point at.
+
+`MaSmallModel` names the small model per provider, checked FIRST, with the preset as fallback rather
+than source. Anthropic gets haiku by name.
+
+Two decisions inside it worth keeping:
+
+- **Matched on a contains**, because provider ids are not uniform — "anthropic", "anthropic_claude"
+  and similar have all appeared, and a lookup that misses returns silently to the expensive path.
+- **An unknown provider falls through** to the old behaviour. This is a list of promises kept, not a
+  gate; a provider nobody has thought about should keep working.
+
+The test asserts no named model contains `opus`, `sonnet`, `70b`, `405b`, `ultra` or `pro`.
+
+### Two checks, both wrong in the way this file keeps recording
+
+**One raised instead of failing.** `ctrl.index(...)` on a sabotage that removed the call: the count
+never printed and every other result was lost. **Third time this month**, and each time in a check
+written the same hour as the section documenting the previous one. `find` now.
+
+**One asserted an expression rather than a promise.** `test_key_search` checked for
+`preset.defaultChatModel ?: account.chatModel` — how the pinning happened to be written — and broke
+the moment the mechanism improved. Nothing was wrong. **A check on an expression fails when the
+expression changes; a check on the promise does not.** It asserts the model is small.

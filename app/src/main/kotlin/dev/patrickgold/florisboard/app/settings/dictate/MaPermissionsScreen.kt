@@ -26,6 +26,9 @@ import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -93,8 +96,27 @@ fun MaPermissionsScreen() = FlorisScreen {
         var generation by remember { mutableIntStateOf(0) }
         OnResume(lifecycleOwner) { generation++ }
 
+        // KEYS FIRST, PERMISSIONS SECOND, AND THE KEYS ARE NOT A STEP.
+        //
+        // The permissions are granted once, on a new phone, and then never touched again. The keys
+        // are edited, tested, imported and replaced constantly. **A screen ordered by the sequence a
+        // new install goes through is ordered wrongly for every day after it**, and this one put the
+        // thing he uses at the bottom, behind seven numbered steps he had finished months ago.
+        //
+        // The keys also lost their number. `steps.size + 1` made them the eighth step of a
+        // seven-step setup — a number that says "do this once, in order", which is the opposite of
+        // what they are.
+        MaKeysHeaderRow(onClick = { navController.navigate(Routes.Settings.DictateKeys) })
+
+        Spacer(Modifier.height(24.dp))
+
         Text(
-            text = "In this order. Each one opens the page that grants it.",
+            text = "Permissions",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+        )
+        Text(
+            text = "Granted once, on a new phone. In this order \u2014 each opens the page that grants it.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -112,33 +134,6 @@ fun MaPermissionsScreen() = FlorisScreen {
                 onClick = { runCatching { context.startActivity(step.intent()) } },
             )
         }
-
-        Spacer(Modifier.height(20.dp))
-
-        // API KEYS, in the same place.
-        //
-        // A permission and a key are the same kind of thing from where he stands: something the app
-        // needs granted before it can do its job, and something he has to go and set up after a
-        // reinstall. **They failed together and they were fixed in two different places.**
-        //
-        // The keys screen stays its own screen — it is long, it holds the ring, the tester and the
-        // importer — but it is reached from here, and it is no longer a separate entry in the
-        // settings list. One door to one room.
-        Text(
-            text = "Keys",
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
-        )
-        MaPermissionRow(
-            number = steps.size + 1,
-            title = "API keys",
-            detail = "Import, test and manage every key",
-            // Never ticked: this one is not a yes-or-no. A key can be present and dead, or present
-            // for one provider and missing for another, and a tick claiming "done" would be the kind
-            // of false reassurance that costs an afternoon.
-            granted = false,
-            onClick = { navController.navigate(Routes.Settings.DictateKeys) },
-        )
 
         Spacer(Modifier.height(24.dp))
     }
@@ -363,3 +358,43 @@ private val MaGranted = Color(0xFF56D364)
 private val MaGrantedBg = Color(0x2256D364)
 private val MaPending = Color(0xFFE8A64B)
 private val MaPendingBg = Color(0x22E8A64B)
+
+/**
+ * The keys, at the top, without a step number.
+ *
+ * Not a `MaPermissionRow`: that one carries a number and a tick, and neither is true here. **A key is
+ * not a step and it is never simply "done"** — it can be present and dead, present for one provider
+ * and missing for another, or working this morning and out of credit this afternoon. A tick claiming
+ * otherwise is the kind of false reassurance that costs an afternoon.
+ */
+@Composable
+private fun MaKeysHeaderRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Key,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = "API keys", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "Import, test and manage every key",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}

@@ -203,7 +203,12 @@ check("picking teaches the memory", "MaKeySearch.learn(" in screen, "it can neve
 
 ctrl = code(SRC / "dictate/DictateController.kt")
 check("the ask reuses the ring", "requestRewordRaw(prompt, cheapest = true)" in ctrl, "a second HTTP path")
-check("the cheap model is pinned", "preset.defaultChatModel ?: account.chatModel" in ctrl, "his expensive model")
+# The GUARANTEE, not the expression. This asserted `preset.defaultChatModel ?: account.chatModel`,
+# which was how the pinning happened to be written — and it broke the moment the small model was
+# named per provider instead of trusted to the preset. Nothing was wrong; the mechanism improved.
+#
+# **A check on an expression fails when the expression changes; a check on the promise does not.**
+check("the cheap model is small", "MaSmallModel.forProvider" in ctrl, "his expensive model")
 check("a failure is silent", "}.getOrNull()" in ctrl, "an error box on a picker")
 
 search = code(SRC / "dictate/MaKeySearch.kt")

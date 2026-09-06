@@ -414,7 +414,13 @@ fun DictateKeysScreen() = FlorisScreen {
                     }
                 },
             ) {
-                Text("FIND A WORKING KEY")
+                // "TEST KEYS", because that is what he presses it to do.
+                //
+                // It was "FIND A WORKING KEY", which describes the ALGORITHM — walk the ring until
+                // one answers — rather than the intention. He comes here to find out whether his
+                // keys work, and the answer he wants is about all of them, not about the first one
+                // that happens to reply.
+                Text("TEST KEYS")
             }
             OutlinedButton(
                 modifier = Modifier.weight(1f),

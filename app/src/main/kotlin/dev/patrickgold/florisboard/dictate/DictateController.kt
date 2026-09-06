@@ -3832,11 +3832,24 @@ object DictateController {
             throw DictateApiException(DictateApiException.Kind.INVALID_API_KEY, "No API key set")
         }
         val preset = MaProviders.presetFor(account)
+        // HAIKU IS THE RULE, AND IT IS A HARD ONE.
+        //
+        // Every language job in this keyboard — proofread, reflow, restyle, and the prediction the
+        // local n-gram cannot make — goes to the smallest model the provider has. He set that as a
+        // rule rather than a default, and a rule is enforced rather than suggested.
+        //
+        // The old code trusted `preset.defaultChatModel` to be the cheap one, with a comment saying
+        // it is haiku, mini or flash "for every provider in the registry". **That was true when it
+        // was written and nothing keeps it true.** A preset edited next year, or a provider that
+        // renames its default, silently promotes every rewording to an expensive model — and the
+        // only symptom is the bill.
+        //
+        // So the small model is NAMED, per provider, and the preset default is the fallback rather
+        // than the source. Anthropic gets haiku by name.
         val model = if (cheapest) {
-            // The preset default is the cheap one for every provider in the registry — haiku, mini,
-            // flash. His chosen chat model may be an expensive one and a picker suggestion is not
-            // worth it.
-            preset.defaultChatModel ?: account.chatModel.ifBlank { "gpt-4o-mini" }
+            MaSmallModel.forProvider(account.providerId)
+                ?: preset.defaultChatModel
+                ?: account.chatModel.ifBlank { "gpt-4o-mini" }
         } else {
             account.chatModel.ifBlank { preset.defaultChatModel ?: "gpt-4o-mini" }
         }
