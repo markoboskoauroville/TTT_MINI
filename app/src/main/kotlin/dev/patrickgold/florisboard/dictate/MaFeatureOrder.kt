@@ -688,7 +688,6 @@ val MaFeatureKey.group: MaFeatureGroup
         MaFeatureKey.SUBTITLE,
         // The reader row's switch and its seven commands. All Reading, because that is the one
         // question somebody asks when looking for them — not "which row is this on".
-        MaFeatureKey.SUGGESTIONS,
         MaFeatureKey.READER_ROW,
         MaFeatureKey.READ_PLAY,
         MaFeatureKey.READ_PREV,
@@ -712,6 +711,14 @@ val MaFeatureKey.group: MaFeatureGroup
 
         // The shape of the keyboard rather than anything typed with it: which zones show, whether it
         // stays up, and the gap that spaces a row out.
+        // The suggestion row's switch, beside the other row switches, which is what it is.
+        //
+        // It was under Reading aloud for one build. It reads as a reading key — "suggestion" is
+        // a word and the reader deals in words — and it is nothing of the kind: it shows and
+        // hides a row of the keyboard, exactly like n, k, c and F1 to F6.
+        //
+        // **The group answers what a key is a part of, not what its name sounds like.**
+        MaFeatureKey.SUGGESTIONS,
         MaFeatureKey.ZONE_1,
         MaFeatureKey.ZONE_2,
         MaFeatureKey.ZONE_3,

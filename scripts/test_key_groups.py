@@ -224,6 +224,33 @@ check("the go-arrow is gone from both", "ContentPasteGo" not in row_hist and "Co
 check("the mark is the History arrow", "Icons.Default.History" in row_hist,
       "a second drawing of the same idea")
 
+# ---------------------------------------------------------------- the group is what it IS
+#
+# `Sg` landed under "Reading aloud" for one build. It reads as a reading key — "suggestion" is a
+# word, the reader deals in words — and it is nothing of the kind: it shows and hides a row of the
+# keyboard, exactly like n, k, c and F1 to F6. He found it there and said so.
+#
+# **The group answers what a key is a part of, not what its name sounds like.**
+_order = (SRC / "dictate/MaFeatureOrder.kt").read_text()
+_grp = _order[_order.index("val MaFeatureKey.group"):]
+
+
+def group_of(key):
+    """Which -> MaFeatureGroup.X branch a key falls into."""
+    i = _grp.find(f"MaFeatureKey.{key},")
+    if i < 0:
+        return None
+    m = re.search(r"-> MaFeatureGroup\.(\w+)", _grp[i:])
+    return m.group(1) if m else None
+
+
+check("Sg is a keyboard key", group_of("SUGGESTIONS") == "KEYBOARD", group_of("SUGGESTIONS"))
+check("and sits with the other row switches", group_of("SUGGESTIONS") == group_of("ZONE_1"),
+      "it shows and hides a row, exactly as the zone keys do")
+check("F keys are there too", group_of("ROW_1") == "KEYBOARD", "the row switches would be split")
+check("the reader row switch stays with reading", group_of("READER_ROW") == "READING",
+      "that one IS the reader's, and its commands are beside it")
+
 # NOTE, PAID FOR ONCE: this block was appended to the END of the file, after the exit, and reported
 # a happy total having run none of it. The count went up by two for an unrelated reason and hid it.
 # **Anything added to a test goes ABOVE the summary line**, and the summary is the last thing in the

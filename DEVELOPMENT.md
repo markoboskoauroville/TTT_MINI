@@ -9759,3 +9759,35 @@ Test 1: 29 checks, 0 failed — the key exists, is drawn, toggles the same prefe
 hides the row and never writes the preference; and the state machine walked over both settings,
 asserting that stopping restores exactly what he chose. Sabotaged twice — the record row not taking
 over, and the recorder writing the preference — red once each.
+
+---
+
+## §204 — Sg was filed by what its name sounds like
+
+Build 359. He found the suggestion-row switch under **Reading aloud** and said it belongs in **The
+keyboard itself**. He is right, and the reason is worth keeping.
+
+`Sg` reads as a reading key — "suggestion" is a word, the reader deals in words — and it is nothing
+of the kind. It shows and hides a row of the keyboard, exactly like `n`, `k`, `c` and F1–F6.
+
+> **The group answers what a key is a part of, not what its name sounds like.**
+
+It sits with the zone keys now, and the test asserts it by GROUP rather than by position:
+`group_of("SUGGESTIONS") == group_of("ZONE_1")`. A check on the line it appears on would pass while
+the key was in the wrong section, which is exactly how it got there.
+
+### Two lists of the same names, again
+
+The move took three attempts.
+
+The first `str.replace` matched nothing — the anchor spanned a comment I had reformatted — and only
+the test edit landed, so the suite went red against unchanged code.
+
+The second inserted beside `MaFeatureKey.ZONE_1,` and hit **the DEFAULT ROW at line 511** rather than
+the group branch at 721. Same names, two lists, and the edit chose the first. **That is §199a exactly,
+in the same file, about the same pair of lists** — and it was found the same way, by the group check
+returning `None` instead of the wrong answer.
+
+Third attempt anchors after `val MaFeatureKey.group`, which is the only unambiguous way to name that
+branch. **When a file contains two lists of the same identifiers, an anchor must name the section
+before it names the line.**
