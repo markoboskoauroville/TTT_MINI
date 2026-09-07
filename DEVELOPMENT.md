@@ -9660,3 +9660,57 @@ changes what every future update inherits, which is worth knowing before running
 
 Test 1: 56 checks, 0 failed. Sabotaged by changing the package name in the command: red on the check
 that compares it with the build file.
+
+---
+
+## §202 — The bar stops moving. Third report, and the first real fix.
+
+Build 355. He reported the jumping suggestion bar three times. The third time he described it as
+seasickness and asked me not to build apps like this.
+
+### What I got wrong twice
+
+**§195** guarded the switching while a delete key was held. That was the case he had described, and
+it was too narrow: the bar switches on ordinary typing too — a space empties the suggestions, the
+next letter refills them, and the bar moves both times.
+
+**A narrow fix for a symptom already reported twice is worse than no fix**, because it looks
+addressed. He then has to notice it is still happening, decide it is worth saying again, and say it
+again. That is three rounds of his time for one problem, and the second round was spent on my
+half-measure.
+
+### What the fix is now
+
+**The automatic switching is gone, not narrowed.** `autoExpandCollapseSmartbarActions` does nothing.
+The bar opens when he opens it and stays open until he long-presses it.
+
+**What is lost, stated plainly:** a row of actions no longer appears by itself when there is nothing
+to suggest. That is what the feature did, and it buys a few pixels of screen when the suggestions are
+empty. **A few pixels are not worth a moving keyboard**, and the actions are one long press away.
+
+The function is kept rather than deleted: it is called from three places on the typing path, and
+removing three call sites at the end of a session is §150a. An empty function with the reasoning in
+it is also the one place somebody will look when they ask why the bar never moves.
+
+### His gesture
+
+**Long press the bar to close it.** On the whole row, so nothing has to be aimed at while a word is
+under his thumb; a long press rather than a tap, because a tap picks a word and the two cannot share.
+
+`pointerInput` sits BEFORE the horizontal scroll modifier — after it, a drag would win the gesture
+and swallow the press on exactly the crowded rows where he most wants it gone. And no animation on
+the toggle, because a bar that slides is the movement he is complaining about.
+
+### Three checks that had to be retired or bounded
+
+Two asserted the shape of the delete guard — a guard inside a function that now does nothing. The
+claim that replaced them is stronger: **nothing sets the expanded state automatically, and nothing
+even computes it.** A decision computed is a decision that will be acted on again one day.
+
+One compared modifier positions by searching the whole file, and found the `florisHorizontalScroll`
+IMPORT at the top — comparing a use against an import, and failing on correct code. **A position
+check has to bound the region it is talking about.**
+
+### Tested
+
+Test 1: 16 checks, 0 failed. Sabotaged by restoring the switching: red on two.

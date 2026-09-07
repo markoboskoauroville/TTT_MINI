@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -119,6 +120,28 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
         elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
         modifier = modifier
             .fillMaxSize()
+            // LONG PRESS THE BAR TO CLOSE IT. His gesture, and the only thing that moves this row
+            // now that the automatic switching is gone.
+            //
+            // On the ROW rather than on a key: the whole strip is the target, so he does not have to
+            // aim at anything while a word is under his thumb. And a long press rather than a tap,
+            // because a tap on this row picks a word — the two gestures cannot share.
+            //
+            // `pointerInput` before the scroll modifier, so a long press is seen even where the row
+            // scrolls. After it, a horizontal drag would win the gesture and the press would be
+            // swallowed on exactly the crowded rows where he most wants it gone.
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onLongPress = {
+                        scope.launch {
+                            prefs.smartbar.sharedActionsExpandWithAnimation.set(false)
+                            prefs.smartbar.sharedActionsExpanded.set(
+                                !prefs.smartbar.sharedActionsExpanded.get(),
+                            )
+                        }
+                    },
+                )
+            }
             .conditional(displayMode == CandidatesDisplayMode.DYNAMIC_SCROLLABLE && candidates.size > 1) {
                 florisHorizontalScroll(scrollbarHeight = CandidatesRowScrollbarHeight)
             },

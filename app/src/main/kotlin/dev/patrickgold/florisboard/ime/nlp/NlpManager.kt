@@ -388,53 +388,36 @@ class NlpManager(context: Context) {
         }
     }
 
+    /**
+     * THIS NO LONGER MOVES ANYTHING, AND THAT IS THE WHOLE POINT.
+     *
+     * It expanded the bar when the suggestions emptied and collapsed it when they came back. On a
+     * live screen that is several times a second: a space empties them, the next letter refills
+     * them, a backspace empties them again. **The bar walked up and down and took the text above it
+     * with it**, and he told me three times, in the end describing it as seasickness.
+     *
+     * The last attempt guarded only a held delete key. That was too narrow — the switching happens on
+     * ordinary typing too — and a narrow fix for a symptom he had already reported twice is worse
+     * than none, because it looks addressed.
+     *
+     * **So the automatic switching is gone, not narrowed.** The bar opens when he opens it and stays
+     * open until he long-presses it. Nothing else moves it.
+     *
+     * ### What is lost, honestly
+     *
+     * A row of actions no longer appears by itself when there is nothing to suggest. That was the
+     * feature this implemented, and it is worth exactly one thing: a few pixels of screen when the
+     * suggestions are empty. **A few pixels are not worth a moving keyboard**, and he can reach the
+     * actions with one long press whenever he wants them.
+     *
+     * The function is kept rather than deleted, because it is called from three places on the
+     * typing path and a signature that exists and does nothing is a smaller change than three call
+     * sites removed at the end of a session — see §150a for what that costs. It is now the one place
+     * to look when somebody asks why the bar never moves.
+     */
+    @Suppress("UNUSED_PARAMETER")
     fun autoExpandCollapseSmartbarActions(list1: List<*>?, list2: List<*>?) {
-        if (!prefs.smartbar.enabled.get()) {// || !prefs.smartbar.sharedActionsAutoExpandCollapse.get()) {
-            return
-        }
-        // TODO: this is a mess and needs to be cleaned up in v0.5 with the NLP development
-        /*if (keyboardManager.inputEventDispatcher.isRepeatableCodeLastDown()
-            && !keyboardManager.inputEventDispatcher.isPressed(KeyCode.DELETE)
-            && !keyboardManager.inputEventDispatcher.isPressed(KeyCode.FORWARD_DELETE)
-            || keyboardManager.activeState.isActionsOverflowVisible
-        ) {
-            return // We do not auto switch if a repeatable action key was last pressed or if the actions overflow
-                   // menu is visible to prevent annoying UI changes
-        }*/
-        // WHILE DELETING, THE BAR HOLDS STILL.
-        //
-        // He deletes a word, the suggestions empty at the space, the bar expands to the action row;
-        // one more character and a suggestion returns, so it collapses again. Held down, backspace
-        // does that several times a second and **the whole keyboard walks up and down while the text
-        // above it jumps with it.** His words: it makes him dizzy.
-        //
-        // FlorisBoard wrote this exact guard and left it commented out above, with a TODO. The
-        // reasoning in it was right — do not auto-switch while a repeatable key is down, because the
-        // user is holding a key rather than finishing a word — so it is turned on rather than
-        // reinvented.
-        //
-        // Narrower than theirs: theirs also bailed while the overflow menu was open, which is a
-        // different problem and not one he has. This asks one question — is a repeat running — and
-        // a repeat is exactly when the answer changes fastest and matters least.
-        //
-        // Not a delay or a smoothing. **The bar does not move at all while the key is down**, and it
-        // settles once when he lets go, which is the moment he is ready to read it.
-        val dispatcher = keyboardManager.inputEventDispatcher
-        if (dispatcher.isPressed(KeyCode.DELETE) || dispatcher.isPressed(KeyCode.FORWARD_DELETE)) {
-            return
-        }
-        val isSelection = editorInstance.activeContent.selection.isSelectionMode
-        val isExpanded = list1.isNullOrEmpty() && list2.isNullOrEmpty() || isSelection
-        // Only write when the expanded state actually changes. This runs on every keystroke (via
-        // assembleCandidates); the state usually stays the same while typing a word, so the guard avoids
-        // two redundant pref writes per character that would otherwise bounce the Smartbar flows into a
-        // recomposition (and schedule a datastore persist) each time — a contributor to the typing jank.
-        if (prefs.smartbar.sharedActionsExpanded.get() != isExpanded) {
-            scope.launch {
-                prefs.smartbar.sharedActionsExpandWithAnimation.set(false)
-                prefs.smartbar.sharedActionsExpanded.set(isExpanded)
-            }
-        }
+        // Deliberately empty. See above.
     }
 
     fun addToDebugOverlay(word: String, info: SpellingResult) {

@@ -68,20 +68,49 @@ fn = fn[:fn.index("fun addToDebugOverlay")]
 # split and the index throw, the count never printed and every other result was lost — §173 exactly,
 # in a test written the same afternoon it is documented in. **A check that raises is not a check that
 # fails**, and the sabotage is the only thing that ever proves the difference.
-_del = fn.find("isPressed(KeyCode.DELETE)")
-_fwd = fn.find("isPressed(KeyCode.FORWARD_DELETE)")
-_exp = fn.find("val isExpanded")
-check("the guard is in the function", _del >= 0, "the bar still thrashes")
-check("forward delete too", _fwd >= 0, "one of the two keys is unguarded")
-check("it returns rather than smoothing", _del >= 0 and "return" in fn[_del:_del + 200],
-      "a delay still moves the bar, only later")
-check("it is checked BEFORE the state is computed", 0 <= _del < _exp,
-      "computing then discarding still writes the preference")
+# The delete guard is gone with everything else in that function. Nothing to find, and nothing to
+# check for — the absence of ALL switching is what is asserted now.
+# SUPERSEDED by removal. These asserted the shape of a guard inside a function that now does
+# nothing: there is no delete check because there is no switching to guard. The claim that survives
+# is the one above — nothing sets the expanded state automatically — and it is stronger than both.
 
 # The strip keeps its height when empty — the other half of not moving, fixed earlier.
 bar = code(SRC / "ime/smartbar/Smartbar.kt")
 check("an empty bucket strip keeps its slot", "maBucketStripHasContent()" in bar,
       "the strip would collapse and the text above would jump")
+
+# ---------------------------------------------------------------- nothing moves it automatically
+#
+# The guard on a held delete key was too narrow: the switching happens on ordinary typing too, and a
+# narrow fix for a symptom already reported twice is worse than none, because it looks addressed. He
+# reported it a third time and called it seasickness.
+#
+# The automatic switching is GONE, not narrowed.
+fn2 = nlp[nlp.index("fun autoExpandCollapseSmartbarActions"):]
+fn2 = fn2[:fn2.index("fun addToDebugOverlay")]
+check("nothing sets the expanded state automatically", "sharedActionsExpanded.set" not in fn2,
+      "the bar can still move on its own")
+check("nothing reads the candidate lists either", "isNullOrEmpty()" not in fn2,
+      "a decision computed is a decision that will be acted on again one day")
+check("the function still exists", "fun autoExpandCollapseSmartbarActions" in nlp,
+      "three call sites on the typing path would need removing at the end of a session")
+
+# The one thing that DOES move it, and it is his.
+cand = code(SRC / "ime/smartbar/CandidatesRow.kt")
+check("a long press toggles the bar", "onLongPress = {" in cand, "no way to close it")
+check("it toggles rather than closing", "!prefs.smartbar.sharedActionsExpanded.get()" in cand,
+      "one-way: closed and no way back")
+check("it is on the whole row", "pointerInput(Unit)" in cand, "he would have to aim at a key")
+# Compared inside the MODIFIER CHAIN. Searching the whole file found the `florisHorizontalScroll`
+# IMPORT at the top, which is before everything — the check compared a use against an import and
+# failed on correct code. **A position check has to bound the region it is talking about.**
+_chain = cand[cand.index("elementName = FlorisImeUi.SmartbarCandidatesRow"):]
+_chain = _chain[:_chain.index("horizontalArrangement")]
+check("and before the scroll modifier",
+      _chain.find("pointerInput(Unit)") < _chain.find("florisHorizontalScroll"),
+      "a horizontal drag would swallow the press on exactly the crowded rows he wants gone")
+check("no animation on the toggle", "sharedActionsExpandWithAnimation.set(false)" in cand,
+      "the bar would slide, which is the movement he is complaining about")
 
 print(f"smartbar still, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
