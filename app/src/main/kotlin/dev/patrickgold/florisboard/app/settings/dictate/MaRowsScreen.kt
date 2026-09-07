@@ -768,8 +768,6 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             // larger of the two.
             MaFeatureKey.RECORD_HR -> letters("\u25CF H")
             MaFeatureKey.RECORD_EN -> letters("\u25CF E")
-            MaFeatureKey.SEND_HR -> letters("\u27A4 H")
-            MaFeatureKey.SEND_EN -> letters("\u27A4 E")
             MaFeatureKey.PASTE ->
                 Icon(Icons.Default.ContentPaste, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.CUT ->

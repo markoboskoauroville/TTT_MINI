@@ -99,11 +99,20 @@ check("the line reads the request", "DictateController.inFlightLanguage" in ui,
 check("and not the setting directly", 'if (languageMode == MaLanguage.EN) "ENG"' not in ui,
       "the setting relabels a request already on the wire")
 
-for k in ("RECORD_HR", "RECORD_EN", "SEND_HR", "SEND_EN"):
+for k in ("RECORD_HR", "RECORD_EN"):
     check(f"{k} is a key", f'{k}("' in order, "not in the catalogue")
 check("the record pair is written once", "MaFeatureKey.RECORD_HR, MaFeatureKey.RECORD_EN ->" in row,
       "two places for the set-then-record order to drift")
-check("the send pair is written once", "MaFeatureKey.SEND_HR, MaFeatureKey.SEND_EN ->" in row)
+
+# THE SEND PAIR IS GONE, and these invert rather than disappear. Recording in a language is the
+# choice he needs, because the language must be decided BEFORE the audio exists. Sending is not:
+# by then the language is already settled and a per-language send key is a second way to pick
+# something already picked.
+for k in ("SEND_HR", "SEND_EN"):
+    check(f"{k} is gone from the catalogue", f'{k}("' not in order, "a key he asked to have removed")
+check("and gone from the keyboard", "MaFeatureKey.SEND_HR" not in row, "in the row, not in the list")
+check("the plain send key survives", 'SEND("send"' in order,
+      "removing the pair must not remove sending")
 
 rec = row[row.index("MaFeatureKey.RECORD_HR, MaFeatureKey.RECORD_EN ->"):][:1600]
 check("the language is set before recording starts",
@@ -112,18 +121,27 @@ check("the language is set before recording starts",
 check("it confirms in words", '"Sending "' in rec and '"Recording "' in rec,
       "no confirmation of which language it went in")
 
-# The three faults CI found in the first version of these keys. Each is a type or a parameter the
-# compiler knows about and no static check here could — recorded so the shapes are recognisable.
+# The faults CI found in the first version of those keys are recorded in DEVELOPMENT.md §189 rather
+# than here: the code they described is deleted, and a check that asserts the shape of deleted code
+# fails for a reason that has nothing to do with the shape.
+#
+# The one that OUTLIVES the deletion is the type of pressSend, because the plain send key still calls
+# it.
 check("the send key does not pass tint to ThemedKey", "tint = if (sendHere) null else MaDim" not in row,
       "ThemedKey has no tint parameter; only ThemedIconKey does")
-check("dimming is applied to the content", "val ink = if (sendHere) fg else" in row,
-      "a key that draws its own content dims that content, not a parameter it does not have")
-check("both halves dim together", row.count("color = ink") >= 1 and row.count("tint = ink") >= 1,
-      "half a key dimmed reads as a rendering fault rather than a state")
-check("pressSend is treated as a String?", "if (sent != null) {" in row,
+# These three described the deleted send pair: its two-part dimming, its handling of pressSend's
+# return, and its polling of sendVisible. **A check that asserts the shape of deleted code fails for a
+# reason that has nothing to do with the shape**, and keeping it would mean re-adding the key to make
+# the suite green.
+#
+# What survives is one claim that is still true of the PLAIN send key, and it is the one that cost a
+# red build: pressSend returns the term it pressed, not a Boolean.
+# Compared against null in EITHER spelling. The deleted pair wrote `val sent = pressSend()` then
+# `if (sent != null)`; the plain key writes `if (pressSend() == null)`. Both are correct and my check
+# knew only the first — it failed on the survivor for using the shorter form.
+check("pressSend is treated as a String?",
+      "sent != null" in row or "pressSend() == null" in row or "pressSend()" not in row,
       "it returns the term it pressed, not a Boolean")
-check("sendVisible is polled, not read in composition", "delay(700L)" in row,
-      "it reads preferences and parses the target list on every recomposition")
 
 # ---------------------------------------------------------------- the badge is gone
 #

@@ -402,8 +402,6 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * use**, and pressing "send Croatian" while the app believes it is in English is exactly the
      * mismatch these keys exist to end.
      */
-    SEND_HR("sendhr", "Send in Croatian"),
-    SEND_EN("senden", "Send in English"),
 
     /**
      * Record: start, and stop.
@@ -680,8 +678,6 @@ val MaFeatureKey.group: MaFeatureGroup
         MaFeatureKey.RECORD_HR,
         MaFeatureKey.RECORD_EN,
         MaFeatureKey.SEND,
-        MaFeatureKey.SEND_HR,
-        MaFeatureKey.SEND_EN,
         -> MaFeatureGroup.DICTATION
 
         MaFeatureKey.READER,

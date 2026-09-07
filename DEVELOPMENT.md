@@ -9791,3 +9791,43 @@ returning `None` instead of the wrong answer.
 Third attempt anchors after `val MaFeatureKey.group`, which is the only unambiguous way to name that
 branch. **When a file contains two lists of the same identifiers, an anchor must name the section
 before it names the line.**
+
+---
+
+## §205 — The send pair goes, and why the record pair stays
+
+Build 361. `→H` and `→E` are deleted — the keys, the branch that drew them, the picker glyphs and the
+catalogue entries.
+
+### The asymmetry is the whole point, and I missed it
+
+`● H` and `● E` are right, and he confirmed it. `→H` and `→E` are wrong. They look like a matching
+pair and they are not:
+
+**Recording in a language is a choice that must be made BEFORE the audio exists.** The recorder reads
+the language when it starts; there is no later moment at which it can be supplied. The key IS the
+choice, which is what killed the mode.
+
+**Sending happens after all that.** By then the language is settled — chosen when the recording began
+and carried on the request. A per-language send key is a second way to pick something already
+picked, and a second way to pick is a second way to pick wrongly.
+
+I built the pair because he described two record keys and two send arrows in one sentence, and I
+matched the shape instead of asking what each one decides. **Symmetry in a request is not evidence of
+symmetry in the problem.**
+
+The plain SEND key is untouched.
+
+### Four checks retired, one inverted, one repaired
+
+Two asserted the deleted pair's dimming and its polling of `sendVisible`. **A check that asserts the
+shape of deleted code fails for a reason unrelated to the shape** — keeping them would mean re-adding
+the key to make the suite green.
+
+Two inverted rather than disappearing: `SEND_HR` and `SEND_EN` must now be ABSENT from the catalogue,
+so the pair cannot return by accident. Sabotaged by re-adding one: red.
+
+And one was repaired. `pressSend` returns a `String?`, and the check tested for `sent != null` — the
+deleted pair's spelling. The surviving plain key writes `pressSend() == null`, which is equally
+correct, and the check failed on the survivor for using the shorter form. **A check that knows one
+spelling of a correct thing will fail on the other.**
