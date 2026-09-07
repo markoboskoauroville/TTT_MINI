@@ -749,6 +749,7 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             // The reader row and its commands. Letters and arrows rather than icons: they are read
             // in a list here, and a column of similar transport glyphs is harder to tell apart than
             // words.
+            MaFeatureKey.SUGGESTIONS -> letters("Sg")
             MaFeatureKey.READER_ROW -> letters("Rr")
             MaFeatureKey.READ_PLAY ->
                 Icon(Icons.Default.PlayArrow, contentDescription = null, tint = tint, modifier = size)

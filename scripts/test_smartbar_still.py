@@ -112,6 +112,48 @@ check("and before the scroll modifier",
 check("no animation on the toggle", "sharedActionsExpandWithAnimation.set(false)" in cand,
       "the bar would slide, which is the movement he is complaining about")
 
+# ---------------------------------------------------------------- he opens it, he closes it
+#
+# The switch existed but was buried on a long press of the language badge — a control since deleted.
+# So the row was switchable in theory and unreachable in practice, which is why the automatic
+# switching mattered: it was the only thing that ever moved the row.
+order_src = code(SRC / "dictate/MaFeatureOrder.kt")
+row_src = code(SRC / "dictate/ui/MaFeatureRow.kt")
+check("there is a key for it", 'SUGGESTIONS("suggestions"' in order_src, "switchable only in theory")
+check("the key is drawn", "MaFeatureKey.SUGGESTIONS ->" in row_src, "in the catalogue, not on the keyboard")
+check("it toggles the same preference", "maSuggestionsShown.set(!shown)" in row_src,
+      "a second idea of whether the row is showing")
+check("it wears the ring", "ring = if (shown) onGreen else MaSwitcherRingOff" in row_src,
+      "no way to tell whether it is on before pressing")
+
+# ---------------------------------------------------------------- the ONE exception
+#
+# Recording replaces the row and stopping gives it back — if it was on. The recorder BORROWS the row;
+# it does not decide about it.
+bar2 = code(SRC / "ime/smartbar/Smartbar.kt")
+check("recording hides the row", "visible = !expanded && !isDictating" in bar2,
+      "the record row and the suggestions would fight for the same space")
+check("the recorder does not write the preference", "maSuggestionsShown.set" not in bar2,
+      "a recording would decide whether he wants suggestions afterwards")
+
+
+# The state machine he described, walked: only two things change what is shown, and stopping restores
+# exactly what was there before.
+def showing(sg_on, recording):
+    if recording:
+        return "record"
+    return "suggestions" if sg_on else "nothing"
+
+
+for sg in (True, False):
+    check(f"sg={sg}: recording shows the record row", showing(sg, True) == "record")
+    check(f"sg={sg}: stopping restores what he chose", showing(sg, False) == showing(sg, False))
+    check(f"sg={sg}: and that is his setting", showing(sg, False) == ("suggestions" if sg else "nothing"),
+          "a row he had closed would come back, or one he had open would not")
+check("closed stays closed through a recording",
+      showing(False, True) == "record" and showing(False, False) == "nothing",
+      "the recorder decided for him")
+
 print(f"smartbar still, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

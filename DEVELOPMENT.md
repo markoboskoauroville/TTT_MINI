@@ -9714,3 +9714,48 @@ check has to bound the region it is talking about.**
 ### Tested
 
 Test 1: 16 checks, 0 failed. Sabotaged by restoring the switching: red on two.
+
+---
+
+## §203 — He opens it, he closes it, and the recorder borrows it
+
+Build 357. The approach he asked for, and it is simpler than everything that came before it.
+
+    Sg key           opens and closes the suggestion row. Nothing else does.
+    record           borrows the row for the recording row.
+    stop recording   gives it back — IF it was on.
+
+### The switch existed and was unreachable
+
+`maSuggestionsShown` has been there all along, toggled by a **long press on the language badge** — a
+control deleted three builds ago. So the row was switchable in theory and not in practice, and that
+is why the automatic switching mattered so much: **it was the only thing that ever moved the row, and
+it moved it constantly.**
+
+Now it has a key, `Sg`, on a row he arranges, wearing the green ring while the row is up.
+
+### The recorder borrows, it does not decide
+
+The one automatic change he asked for, and the clause that makes it safe: **`maSuggestionsShown` is
+never written by the recorder.** A row he had closed stays closed when the recording ends; one he had
+open comes back. The recorder takes the space and returns it, and has no opinion about whether he
+wants suggestions afterwards.
+
+That is the difference between borrowing and deciding, and it is one line — the absence of a
+`set(...)` — so the test asserts the absence rather than the behaviour.
+
+### Why this is the right shape and the earlier ones were not
+
+Every previous attempt had the app inferring what he wanted from what was on screen: suggestions
+empty, so show actions; suggestions back, so hide them. **Inference is what made it move**, and no
+amount of narrowing the inference fixes a design that infers.
+
+This has no inference in it. Two switches, both his, and one bounded exception tied to an action he
+starts and ends deliberately.
+
+### Tested
+
+Test 1: 29 checks, 0 failed — the key exists, is drawn, toggles the same preference; the recorder
+hides the row and never writes the preference; and the state machine walked over both settings,
+asserting that stopping restores exactly what he chose. Sabotaged twice — the record row not taking
+over, and the recorder writing the preference — red once each.

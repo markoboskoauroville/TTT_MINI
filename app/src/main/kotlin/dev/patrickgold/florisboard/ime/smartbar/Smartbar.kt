@@ -268,6 +268,17 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
         ) {
             val enterTransition = if (shouldAnimate) HorizontalEnterTransition else NoEnterTransition
             val exitTransition = if (shouldAnimate) HorizontalExitTransition else NoExitTransition
+            // THE RECORDER IS THE ONLY THING THAT MOVES THIS ROW NOW.
+            //
+            // He asked for exactly one exception: pressing record replaces the suggestion row with
+            // the recording row, and stopping gives it back — **if it was on.** That last clause is
+            // the whole design: the recorder BORROWS the row, it does not decide about it.
+            // `maSuggestionsShown` is untouched by any of this, so a row he had closed stays closed
+            // when the recording ends, and one he had open comes back.
+            //
+            // Everything else that used to move it is gone (§202). This is not a leftover; it is the
+            // one automatic change he asked for, and it is safe because it is bounded by an action
+            // he takes deliberately and ends deliberately.
             val isDictating = dictateState !is DictateController.UiState.Idle
             this@CenterContent.AnimatedVisibility(
                 visible = !expanded && !isDictating,

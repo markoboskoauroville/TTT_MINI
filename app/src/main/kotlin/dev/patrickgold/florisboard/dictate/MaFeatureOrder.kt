@@ -205,6 +205,18 @@ enum class MaFeatureKey(val id: String, val label: String) {
      * row of the commands, which is the uncommon one — and a row is better than a panel here because
      * it does not cover the text he is listening to.
      */
+    /**
+     * The suggestion row, on and off, and NOTHING ELSE MOVES IT.
+     *
+     * The switch already existed, buried on a long press of the language badge — a gesture on a
+     * control that has since been deleted. So the row he wanted was switchable in theory and
+     * unreachable in practice, which is why the automatic switching mattered so much: it was the only
+     * thing that ever moved the row, and it moved it constantly.
+     *
+     * A key of its own, on a row he arranges. **He opens it, he closes it, and the app does neither.**
+     */
+    SUGGESTIONS("suggestions", "Sg, the suggestion row"),
+
     READER_ROW("reader_row", "Rr, the reader row"),
     READ_PLAY("read_play", "Play or pause reading"),
     READ_PREV("read_prev", "Previous sentence"),
@@ -676,6 +688,7 @@ val MaFeatureKey.group: MaFeatureGroup
         MaFeatureKey.SUBTITLE,
         // The reader row's switch and its seven commands. All Reading, because that is the one
         // question somebody asks when looking for them — not "which row is this on".
+        MaFeatureKey.SUGGESTIONS,
         MaFeatureKey.READER_ROW,
         MaFeatureKey.READ_PLAY,
         MaFeatureKey.READ_PREV,

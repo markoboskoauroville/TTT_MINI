@@ -1689,6 +1689,23 @@ fun MaFeatureRow(
                     }
                 }
 
+                MaFeatureKey.SUGGESTIONS -> {
+                    // The suggestion row, on and off. Ringed while it is showing.
+                    //
+                    // This is the only control over that row now. Nothing opens it and nothing closes
+                    // it except this key and the recorder — which is the whole point: a row that the
+                    // app moves is a row that moves while he is reading the text above it.
+                    val shown by prefs.dictate.maSuggestionsShown.collectAsState()
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        ring = if (shown) onGreen else MaSwitcherRingOff,
+                        onClick = { scope.launch { prefs.dictate.maSuggestionsShown.set(!shown) } },
+                    ) { fg ->
+                        Text(text = "Sg", color = fg, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
                 MaFeatureKey.READER_ROW -> {
                     // Shows or hides the reader row, ringed while it is up, like every other row
                     // switch in this app.
