@@ -173,7 +173,7 @@ dims. `F1`–`F6` show and hide a row from the keyboard itself, green ring when 
   the switchboard. The plain reader key still just reads.
 
 **Recording and sending are chosen by which key you press, not by a mode.** `● H` records Croatian,
-`● E` records English; `→H` and `→E` send in that language. The key IS the choice, so there is
+`● E` records English. The key IS the choice, so there is
 nothing to set beforehand and nothing to check afterwards. The status line says **Sending Croatian** or **Sending English**. There is no language badge and
 nothing on that line changes the language: the keys decide it.
 
