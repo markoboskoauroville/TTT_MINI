@@ -78,8 +78,10 @@ fun MaReaderDashboard(onClose: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     val language = MaLanguage.active()
-    val voices = MaSpeechify.voicesFor(language)
-    val chosenVoice = MaSpeechify.chosenVoice(language)
+    // Every voice, not the ones matching a language. There is one choice now, and the dashboard is
+    // one of the two places it can be made.
+    val voices = MaSpeechify.ALL_VOICES
+    val chosenVoice = MaSpeechify.chosenVoice()
     val speed by prefs.dictate.maReaderSpeed.collectAsState()
     val hex by prefs.dictate.maReaderHighlightHex.collectAsState()
 
@@ -94,7 +96,9 @@ fun MaReaderDashboard(onClose: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (language == MaLanguage.EN) "Reading English" else "Reading Croatian",
+                // The VOICE, not the language. The language no longer decides anything about the
+                // reading, so naming it here would describe a setting that does nothing.
+                text = "Reading with " + chosenVoice.name,
                 color = MaDashDim,
                 fontSize = 13.sp,
                 modifier = Modifier.weight(1f),

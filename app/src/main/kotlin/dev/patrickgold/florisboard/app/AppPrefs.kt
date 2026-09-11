@@ -1363,6 +1363,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         /** The voice that reads English. */
+        /**
+         * The one reading voice, by id. Empty means the first in [MaSpeechify.ALL_VOICES].
+         *
+         * Replaces the per-language pair, which are left declared and unread so a phone that stored
+         * them reads back harmlessly rather than tripping a missing preference.
+         */
+        val maReaderVoice = string(
+            key = "dictate__ma_reader_voice",
+            default = "",
+        )
+
         val maReaderVoiceEn = string(
             key = "dictate__ma_reader_voice_en",
             default = "beatrice_32",

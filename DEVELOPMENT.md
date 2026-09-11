@@ -9831,3 +9831,46 @@ And one was repaired. `pressSend` returns a `String?`, and the check tested for 
 deleted pair's spelling. The surviving plain key writes `pressSend() == null`, which is equally
 correct, and the check failed on the survivor for using the shorter form. **A check that knows one
 spelling of a correct thing will fail on the other.**
+
+---
+
+## §206 — One voice, and the last automatic decision in the reader
+
+Build 364. He picks a voice and that voice reads, whatever the text is in.
+
+### What was there and why it looked right
+
+Two lists, two selections, and `chosenVoice(language)` picking between them. English text got the
+English voice and Croatian text got the Croatian one.
+
+**That sounds obviously correct and it is the thing this month has been spent deleting.** It means the
+app decides, from a language that is itself a guess, and when the guess is wrong the reading comes
+out in a voice he did not choose with nothing on screen explaining why.
+
+> **A voice chosen for him by a language detector is a choice he cannot see being made.**
+
+A Ukrainian voice reading English is a choice he can hear and correct in one tap. A voice silently
+swapped because a detector called his sentence Croatian is not.
+
+### The shape now
+
+One preference. One `ALL_VOICES` list, English first because that is what he reads most, Croatian
+after with its note about why they all sound foreign. **Both sections write the same preference**, so
+lighting a voice anywhere darkens the one that was lit, wherever it was.
+
+The headings stay — they tell him what he is choosing between. What is gone is the idea that a
+heading OWNS a selection.
+
+`chosenVoice()` takes no argument and the test asserts `MaLanguage` does not appear in its body:
+**the absence is the rule**, and a check for the absence is the only kind that can hold it.
+
+The fallback is the head of the list rather than "the first of the matching language", because there
+is no matching language any more.
+
+`maReaderVoiceEn` and `maReaderVoiceHr` stay declared and unread, so a phone that stored them reads
+back harmlessly.
+
+### Tested
+
+Test 1: 15 checks, 0 failed. Sabotaged by pointing the Croatian group back at its own preference: red
+on two — two selections, and something would have to choose between them.

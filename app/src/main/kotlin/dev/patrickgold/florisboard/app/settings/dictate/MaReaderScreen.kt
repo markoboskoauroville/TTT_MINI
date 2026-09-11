@@ -350,19 +350,31 @@ fun MaReaderScreen() = FlorisScreen {
             checked = litUnderline,
         ) { on -> scope.launch { prefs.dictate.maReaderHighlightUnderline.set(on) } }
 
+        // ONE RADIO GROUP ACROSS BOTH SECTIONS. English first.
+        //
+        // Two groups meant two selections, and two selections meant something had to choose between
+        // them — the language, guessed from the text. **That is the last automatic decision in the
+        // reader and he asked for it gone.**
+        //
+        // The headings stay, because they tell him what he is choosing between. What is gone is the
+        // idea that a heading OWNS a selection: both lists write the same preference, so lighting a
+        // voice anywhere darkens the one that was lit, wherever it was.
+        //
+        // English first because it is what he reads most. The Croatian note stays with the Croatian
+        // voices, where it explains why they all sound foreign.
+        VoiceGroup(
+            heading = "English",
+            note = "One voice reads everything, whatever language the text is in. Pick it here.",
+            voices = MaSpeechify.ENGLISH_VOICES,
+            pref = prefs.dictate.maReaderVoice,
+        )
+
         VoiceGroup(
             heading = "Croatian",
             note = "Speechify has no Croatian voice \u2014 none exists on any model. These read " +
                 "Croatian with a foreign accent, best first.",
             voices = MaSpeechify.CROATIAN_VOICES,
-            pref = prefs.dictate.maReaderVoiceHr,
-        )
-
-        VoiceGroup(
-            heading = "English",
-            note = null,
-            voices = MaSpeechify.ENGLISH_VOICES,
-            pref = prefs.dictate.maReaderVoiceEn,
+            pref = prefs.dictate.maReaderVoice,
         )
 
         Spacer(Modifier.height(24.dp))

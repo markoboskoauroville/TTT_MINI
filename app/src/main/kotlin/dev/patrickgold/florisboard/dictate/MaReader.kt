@@ -315,7 +315,9 @@ object MaReader {
         // sent the passage, not the marker.
         passageMark = "\u25A0"
         
-        val voice = MaSpeechify.chosenVoice(MaLanguage.active())
+        // The voice he chose, whatever the text is in. No language is consulted — see
+        // MaSpeechify.chosenVoice for why that is the rule and not an oversight.
+        val voice = MaSpeechify.chosenVoice()
         state = State.LOADING
 
         // The FILTERED sentences, not the screen's. Synthesising `text` here would send everything

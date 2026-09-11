@@ -199,15 +199,36 @@ object MaSpeechify {
         if (language == MaLanguage.EN) ENGLISH_VOICES else CROATIAN_VOICES
 
     /** The voice chosen for [language], falling back to that language's default. */
-    fun chosenVoice(language: String): Voice {
+    /**
+     * EVERY VOICE, ENGLISH FIRST, AS ONE LIST.
+     *
+     * One list because there is one choice. The English voices come first because that is what he
+     * reads most; the Croatian ones follow, and the section headings stay so he can see which is
+     * which — but the radio group spans both, and exactly one can be lit.
+     */
+    val ALL_VOICES: List<Voice> = ENGLISH_VOICES + CROATIAN_VOICES
+
+    /**
+     * THE VOICE. One, chosen by hand, used for everything.
+     *
+     * **No language is consulted, and that is the rule rather than an optimisation.**
+     *
+     * It used to pick per language: English text got the English voice, Croatian text got the
+     * Croatian one. That sounds obviously right and it is the thing he has spent this month deleting
+     * — it means the app decides, from a language that is itself a guess, and when the guess is wrong
+     * the reading comes out in a voice he did not choose with no way to see why.
+     *
+     * Now: he picks a voice and that voice reads. A Ukrainian voice reading English is a choice he
+     * can hear and correct in one tap. **A voice chosen for him by a language detector is a choice he
+     * cannot see being made.**
+     *
+     * The fallback is the first English voice rather than the first of the matching language,
+     * because there is no matching language any more — there is a list, and its head is the default.
+     */
+    fun chosenVoice(): Voice {
         val prefs by FlorisPreferenceStore
-        val stored = if (language == MaLanguage.EN) {
-            prefs.dictate.maReaderVoiceEn.get()
-        } else {
-            prefs.dictate.maReaderVoiceHr.get()
-        }
-        val list = voicesFor(language)
-        return list.firstOrNull { it.id == stored } ?: list.first()
+        val stored = prefs.dictate.maReaderVoice.get()
+        return ALL_VOICES.firstOrNull { it.id == stored } ?: ALL_VOICES.first()
     }
 
     /**
