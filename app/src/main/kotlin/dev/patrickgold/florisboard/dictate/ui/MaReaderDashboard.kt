@@ -98,7 +98,10 @@ fun MaReaderDashboard(onClose: () -> Unit) {
             Text(
                 // The VOICE, not the language. The language no longer decides anything about the
                 // reading, so naming it here would describe a setting that does nothing.
-                text = "Reading with " + chosenVoice.name,
+                // `label`, not `name`. Guessed from memory of what a voice object "should" have, in the
+                // same session that recorded doing exactly this to ThemedIconKey (§199b). The type
+                // is eight lines long and two files away.
+                text = "Reading with " + chosenVoice.label,
                 color = MaDashDim,
                 fontSize = 13.sp,
                 modifier = Modifier.weight(1f),

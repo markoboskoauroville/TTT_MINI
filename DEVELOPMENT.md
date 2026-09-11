@@ -9874,3 +9874,20 @@ back harmlessly.
 
 Test 1: 15 checks, 0 failed. Sabotaged by pointing the Croatian group back at its own preference: red
 on two — two selections, and something would have to choose between them.
+
+## §206a — `name` for `label`, in the session that recorded doing it
+
+Build 364 red on `chosenVoice.name`. The field is `label`. `Voice` is eight lines long, two files
+away, and I had read it in this same build to write `ALL_VOICES`.
+
+**This is §199b, one day later, in the same session that documented it.** There I passed
+`imageVector` to a composable that takes `icon`, from memory of what a Compose `Icon` takes. Here I
+wrote `.name` from memory of what a voice object "should" have.
+
+No check is possible: a property that does not exist is a compiler question, and the guard measured
+for §199b found thirteen false positives. **The only defence is the habit, and writing the habit down
+twice has not yet installed it.** What CI costs is five minutes; what it protects against is shipping
+a build that does not compile, which it does reliably.
+
+Recorded again rather than quietly fixed, because two occurrences a day apart is a pattern and the
+third will be cheaper to recognise than to diagnose.

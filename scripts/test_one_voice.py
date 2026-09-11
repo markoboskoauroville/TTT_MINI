@@ -69,7 +69,7 @@ check("neither writes a per-language one", "maReaderVoiceHr" not in screen and "
 # ---------------------------------------------------------------- the callers
 check("the reader asks for the one voice", "MaSpeechify.chosenVoice()" in reader, "still passing a language")
 check("the dashboard shows every voice", "MaSpeechify.ALL_VOICES" in dash, "only the matching ones")
-check("the dashboard names the voice, not the language", 'text = "Reading with " + chosenVoice.name' in dash,
+check("the dashboard names the voice, not the language", 'chosenVoice.label' in dash,
       "it would name a setting that decides nothing")
 check("no caller passes a language", "chosenVoice(MaLanguage" not in reader + dash,
       "one caller left deciding by language is the bug, unfixed")
