@@ -1,9 +1,9 @@
 # TTT mini — the finished state
 
-**Build 367.** A dictation keyboard for Marko Boško.
+**Build 369.** A dictation keyboard for Marko Boško.
 
 **Repo:** `markoboskoauroville/TTT_MINI` (Apache-2.0) · **Package:** `com.mantraproductions.tttlight`
-**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-367/ttt-mini-build-367.apk
+**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-369/ttt-mini-build-369.apk
 
 > **This file is the present state and nothing else.** Every reason, every bug and every rejected
 > alternative is in [`DEVELOPMENT.md`](DEVELOPMENT.md), grouped by shape. If you are about to reverse
@@ -204,6 +204,10 @@ thing in both windows, and a filled square marking the head of every passage. On
 **The reader watches by default.** When the text runs out it waits, polls every 1.8s, and speaks
 whatever has been ADDED — so a Claude answer still being written is read as it arrives. **Only a stop
 ends it**: no timeout, no ceiling.
+
+**The cloud reader** keeps what it reads. While the reader is watching, the screen text is appended
+to a per-chat log in `filesDir/cloud_logs`; Settings → Cloud reader lists them, opens one, and reads
+from any sentence you tap. Off by default.
 
 **Messages** are drawn by the keyboard above every row — not system toasts, which cannot be moved off
 the keys on Android 11 and later.
