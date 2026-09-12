@@ -9891,3 +9891,69 @@ a build that does not compile, which it does reliably.
 
 Recorded again rather than quietly fixed, because two occurrences a day apart is a pattern and the
 third will be cheaper to recognise than to diagnose.
+
+---
+
+## §207 — The cloud reader: what it read, kept
+
+Build 367. The reader speaks a chat once and it is gone — scrolled past, or lost when the chat
+closes. **A conversation he listened to is a conversation he cannot go back to**, and the answers are
+often the only place a decision was explained.
+
+### Capture rides the reading's own poll
+
+Not a second loop. A capture on its own timer would be a second thing reading the screen every two
+seconds, and **it would disagree with the reader about what is new** — so the file would hold
+sentences he never heard and miss ones he did. One poll, one idea of what arrived.
+
+It runs BEFORE the cue filter and the already-read check: those decide what is worth SPEAKING, and
+the log wants everything the chat said. A "Still working on it" he does not need read aloud is still
+part of the conversation.
+
+### What decides a "chat", and how it fails
+
+Nothing tells this app which conversation is on screen. A log is keyed by **the first text seen when
+capture started**, folded to eight words — enough to survive a re-wrap and a ticking clock, enough to
+separate two real conversations.
+
+The failure modes are stated in the source rather than discovered later: two chats opening with the
+same words share a log; a reopened chat continues its own. **A wrong guess costs a merged file. It
+never costs text** — nothing in the capture path deletes, and the test asserts there is no `delete()`
+in it at all.
+
+Off by default, because it writes files to internal storage without being asked.
+
+### Reading a log back
+
+Tap a sentence and it reads **from there to the end**, not that sentence alone: he is looking for an
+answer, and an answer is a paragraph. Stopping is one press away at the top.
+
+`MaReader.speakText` shares everything with the screen reader — voice, speed, effects, chunking —
+because **a second reading engine for saved text would drift from the live one within a month.** It
+clears the sentence memory first, or a passage he heard live this morning would be silently skipped
+when he opens the log this afternoon.
+
+The sentence splitter is deliberately NOT `MaReadChunks.sentences`: that one splits for synthesis,
+where a chunk too long costs latency. This splits for TAPPING, where a chunk too short is a target he
+cannot hit. One rule serving both would be tuned for neither.
+
+### Two checks that were wrong about their own subject
+
+**An ordering check compared first appearances** — and `captureToLog` appears in its own function
+definition further down the file, so it was comparing a definition against a call. The sabotage
+passed. It compares the two CALLS now, guarded with `find`.
+
+**A count-based check broke on a legitimate addition.** `watching = false` appeared once, so the test
+asserted exactly one — a proxy for "no timer ends a watch". `speakText` added a second, correctly,
+because a file does not grow. **A proxy fails the first time something legitimate is added**, so it
+now asserts the thing itself.
+
+### What is NOT done
+
+**Capture only runs while the reader is watching.** A chat he reads with his eyes is not logged. That
+is a real limit and the honest one to ship: capturing continuously means a second always-on poll of
+another app's screen, which is a battery and privacy decision he should make deliberately rather than
+inherit from a build about reading.
+
+Nothing has been captured on a phone. The key, the append and the splitter are walked; the file has
+never been written.
