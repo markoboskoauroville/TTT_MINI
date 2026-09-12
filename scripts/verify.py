@@ -682,6 +682,36 @@ def check_suspend_in_lock(path: Path, text: str) -> None:
             fail(path.name, "a suspending `.set(` inside synchronized: decide in the lock, write outside")
 
 
+def check_settings_default(path: Path, text: str) -> None:
+    """Every MaSettingsEntry must appear in DEFAULT.
+
+    `MaSettingsOrder.parse` builds its answer from the stored order plus `DEFAULT`, and returns
+    nothing else. **An entry missing from DEFAULT can therefore never be shown**, however correctly
+    it is declared, iconed and routed.
+
+    That is what happened to the cloud reader: the enum entry existed, the icon existed, the route
+    existed and was registered, the screen compiled — and the menu item was simply absent, with
+    nothing anywhere to say why. `check_when_coverage` was satisfied, because every `when` had its
+    branch; the missing thing was membership of a list, which no exhaustiveness check looks at.
+
+    KEYS is exempt: `parse` filters it out deliberately, because it is a section inside PERMISSIONS
+    and two doors to one room is one too many.
+    """
+    if path.name != "MaSettingsOrder.kt":
+        return
+    entries = set(re.findall(r"^\s{4}([A-Z_0-9]+)\(\"", text, re.M))
+    m = re.search(r"val DEFAULT: List<MaSettingsEntry> = listOf\((.*?)\n    \)", text, re.S)
+    if not m:
+        problems.append(f"{path.name}: DEFAULT list not found — this check is not running")
+        return
+    listed = set(re.findall(r"MaSettingsEntry\.([A-Z_0-9]+)", m.group(1)))
+    missing = entries - listed - {"KEYS"}
+    for name in sorted(missing):
+        problems.append(
+            f"{path.name}: `{name}` is a settings entry but is not in DEFAULT — it can never be shown"
+        )
+
+
 def check_route_deeplink(path: Path, text: str) -> None:
     """Every route handed to composableWithDeepLink must carry @Deeplink.
 
@@ -919,6 +949,7 @@ def main() -> int:
         check_nullable_args(path, text)
         check_prefs_collect_import(path, text)
         check_layout_imports(path, text)
+        check_settings_default(path, text)
         check_route_deeplink(path, text)
         check_preference_collect(path, text)
         check_suspend_in_lock(path, text)

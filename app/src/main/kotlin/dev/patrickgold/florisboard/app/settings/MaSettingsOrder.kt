@@ -85,6 +85,7 @@ object MaSettingsOrder {
         MaSettingsEntry.PROMPTS,
         MaSettingsEntry.VOICE_FORMAT,
         MaSettingsEntry.READER,
+        MaSettingsEntry.CLOUD_READER,
         MaSettingsEntry.COPY_ROW,
         MaSettingsEntry.PROFILES,
         MaSettingsEntry.FEATURE_ROW,

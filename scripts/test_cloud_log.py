@@ -159,6 +159,17 @@ check("the settings entry points at it", "MaSettingsEntry.CLOUD_READER -> Routes
       in (SRC / "app/settings/MaSettingsOrderScreen.kt").read_text(),
       "a menu entry that goes nowhere")
 
+# AND IT MUST BE IN DEFAULT, or it can never be shown.
+#
+# parse() returns the stored order plus DEFAULT and nothing else. The entry existed, the icon
+# existed, the route existed and was registered, it all compiled — and the menu item was simply
+# absent, with nothing anywhere to say why. **Membership of a list is not something an
+# exhaustiveness check looks at.**
+order_src = (SRC / "app/settings/MaSettingsOrder.kt").read_text()
+check("the entry exists", 'CLOUD_READER("cloud_reader"' in order_src, "no menu entry at all")
+check("and is in DEFAULT", "MaSettingsEntry.CLOUD_READER," in order_src,
+      "parse can never return it, so the menu item never appears")
+
 print(f"cloud log, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

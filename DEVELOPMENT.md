@@ -10072,3 +10072,27 @@ caught, and correct code with a comment among the annotations is not reported.
 That last one is **not new and not mine**: `MaPrompts` and `DictatePrompts` have shared a path since
 long before this session. Recorded rather than fixed — changing a deeplink is a change to something
 outside this build, and an audit finding is not a licence to edit whatever it touches.
+
+## §209a — The menu entry that could never appear
+
+Build 376. He opened settings and the cloud reader was not there.
+
+Everything was right except one thing: the enum entry existed, the icon branch existed, the route
+existed and was registered with its annotation, the screen compiled, `check_route_deeplink` passed
+and so did the agreement sweep — which checks that every entry HAS an icon and a route, and never
+asked whether the list that produces entries contains it.
+
+`MaSettingsOrder.parse` returns the stored order plus `DEFAULT`, **and nothing else**. An entry
+missing from `DEFAULT` can never be returned, however correct it is everywhere else.
+
+> **Membership of a list is not something an exhaustiveness check looks at.** Every `when` had its
+> branch. `check_when_coverage` was satisfied. The gap was in a `listOf(...)`, which has no
+> compiler opinion at all.
+
+This is the same class as §208 one day later: **something right on the page, absent at runtime, with
+no error anywhere.** The 208 version killed the app and was obvious within seconds of launching it.
+This one is quieter and would have survived much longer — he had to notice a thing that was not
+there, which is the hardest kind of bug for a person to report.
+
+`check_settings_default` requires every entry to be in `DEFAULT`, with `KEYS` exempted because
+`parse` filters it deliberately. Zero false positives, and it names the entry when it is removed.
