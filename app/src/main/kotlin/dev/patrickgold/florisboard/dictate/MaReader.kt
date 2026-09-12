@@ -656,6 +656,40 @@ object MaReader {
      * him reading, and a toast about a capture he did not ask for would be the app complaining about
      * its own homework.
      */
+    /**
+     * CAPTURES THE SCREEN INTO THE LOG NOW, whether or not anything is being read.
+     *
+     * The `Log` key. Until this existed, capture only happened while the reader was WATCHING — so a
+     * chat he read with his eyes was never kept, which was the honest limitation named in §207 and
+     * the one he asked to remove.
+     *
+     * It goes through `captureToLog`, the same function the reading poll uses. **One capture path**,
+     * so the file cannot end up with two ideas of what "already logged" means: the session's
+     * `logFile` and `logSeen` are shared, and pressing this mid-reading appends to the same log
+     * rather than opening a rival one.
+     *
+     * Returns what to tell him, because a capture is silent by nature — a press that writes a file
+     * and says nothing is indistinguishable from a press that did nothing.
+     */
+    fun captureNow(context: Context): String {
+        val prefs by FlorisPreferenceStore
+        if (!prefs.dictate.maCloudLogEnabled.get()) return "Turn the Claude.ai reader on in settings"
+        if (!DictateAccessibilityService.isRunning) return "Turn on the accessibility service to read the screen"
+        val screen = DictateAccessibilityService.readableScreenText()
+        if (screen.isBlank()) return "Nothing on this screen to log"
+        val before = logFile?.length() ?: 0L
+        captureToLog(context, screen)
+        val file = logFile ?: return "Could not write the log"
+        val added = (file.length() - before).coerceAtLeast(0L)
+        // The file NAME, not "saved". He has many logs and the only question a message can usefully
+        // answer is WHICH one this went into — that is what tells him a rename was followed.
+        return if (added == 0L) {
+            "Already logged: " + MaCloudLog.titleOf(file.name)
+        } else {
+            "Logged $added characters to " + MaCloudLog.titleOf(file.name)
+        }
+    }
+
     private fun captureToLog(context: Context, screen: String) {
         val prefs by FlorisPreferenceStore
         if (!prefs.dictate.maCloudLogEnabled.get()) return

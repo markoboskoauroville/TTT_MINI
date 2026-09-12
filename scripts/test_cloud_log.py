@@ -125,7 +125,12 @@ check("before the cue filter", 0 <= _cap < _tail,
       "the log would miss what the reader chose not to speak")
 check("it is off by default", 'maCloudLogEnabled = boolean(\n            key = "dictate__ma_cloud_log",\n            default = false,' in prefs,
       "it writes files without being asked")
-check("a failed write never stops the reading", "runCatching {" in reader.split("captureToLog")[1][:600],
+# Split on the DEFINITION, not the first mention. `captureNow` calls `captureToLog` and now appears
+# above it, so splitting on the bare name read the wrong function — the check was looking inside the
+# caller for a guard that lives in the callee. **A name is not a location when more than one thing
+# uses it.**
+_body = reader.split("private fun captureToLog(")[1][:900]
+check("a failed write never stops the reading", "runCatching {" in _body,
       "a full disk would end the reading")
 check("nothing in the capture path deletes", "delete()" not in log_kt, "a wrong key would cost text")
 
@@ -221,6 +226,28 @@ screen_src = (SRC / "app/settings/dictate/MaCloudLogScreen.kt").read_text()
 check("the screen is not doubly scrollable", "scrollable = false" in screen_src,
       "a LazyColumn inside FlorisScreen's scroller throws the moment the screen opens")
 check("it is named for what it reads", '"Claude.ai reader"' in screen_src, "still called the cloud")
+
+# ---------------------------------------------------------------- the Log key
+#
+# Capture used to happen only while the reader was WATCHING, so a chat he read with his eyes was
+# never kept. This is the press that keeps it.
+order_src2 = (SRC / "dictate/MaFeatureOrder.kt").read_text()
+check("the key exists", 'CLOUD_LOG("cloud_log"' in order_src2, "no way to log by hand")
+_row = code(SRC / "dictate/ui/MaFeatureRow.kt")
+check("it is drawn", "MaFeatureKey.CLOUD_LOG ->" in _row, "in the catalogue and not on the keyboard")
+check("it goes through the one capture path", "MaReader.captureNow(context)" in _row,
+      "a second capture would disagree with the reader about what is already logged")
+check("captureNow reuses captureToLog", "captureToLog(context, screen)" in
+      reader.split("fun captureNow")[1][:900],
+      "two ideas of what already-logged means, in one file")
+check("it says something", "MaMessage.show(MaReader.captureNow" in _row,
+      "a press that writes a file and says nothing looks like a press that did nothing")
+check("it names the log it wrote to", "MaCloudLog.titleOf(file.name)" in reader,
+      "the only useful thing a message can say is WHICH log — that is what shows a rename was followed")
+check("it refuses politely when switched off", '"Turn the Claude.ai reader on in settings"' in reader,
+      "a silent no-op")
+check("and when the service is off", "Turn on the accessibility service" in
+      reader.split("fun captureNow")[1][:900], "it would log a blank screen")
 
 print(f"cloud log, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:

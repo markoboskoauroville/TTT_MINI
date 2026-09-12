@@ -218,6 +218,14 @@ enum class MaFeatureKey(val id: String, val label: String) {
     SUGGESTIONS("suggestions", "Sg, the suggestion row"),
 
     READER_ROW("reader_row", "Rr, the reader row"),
+
+    /**
+     * Logs this chat now, without waiting for the reader to be watching.
+     *
+     * Capture used to happen only while a reading was in progress, so a chat he read with his
+     * eyes was never kept. This is the press that keeps it.
+     */
+    CLOUD_LOG("cloud_log", "Log this chat"),
     READ_PLAY("read_play", "Play or pause reading"),
     READ_PREV("read_prev", "Previous sentence"),
     READ_NEXT("read_next", "Next sentence"),
@@ -685,6 +693,7 @@ val MaFeatureKey.group: MaFeatureGroup
         // The reader row's switch and its seven commands. All Reading, because that is the one
         // question somebody asks when looking for them — not "which row is this on".
         MaFeatureKey.READER_ROW,
+        MaFeatureKey.CLOUD_LOG,
         MaFeatureKey.READ_PLAY,
         MaFeatureKey.READ_PREV,
         MaFeatureKey.READ_NEXT,

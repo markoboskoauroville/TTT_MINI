@@ -751,6 +751,7 @@ private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.S
             // words.
             MaFeatureKey.SUGGESTIONS -> letters("Sg")
             MaFeatureKey.READER_ROW -> letters("Rr")
+            MaFeatureKey.CLOUD_LOG -> letters("Log")
             MaFeatureKey.READ_PLAY ->
                 Icon(Icons.Default.PlayArrow, contentDescription = null, tint = tint, modifier = size)
             MaFeatureKey.READ_PREV ->

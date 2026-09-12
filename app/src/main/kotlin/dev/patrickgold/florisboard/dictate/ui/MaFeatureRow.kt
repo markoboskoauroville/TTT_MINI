@@ -1648,6 +1648,21 @@ fun MaFeatureRow(
                     }
                 }
 
+                MaFeatureKey.CLOUD_LOG -> {
+                    // Logs this chat now. Ringed while the Claude.ai reader is switched on, because
+                    // a press with it off does nothing and the ring is what says so before the
+                    // press rather than after it.
+                    val logOn by prefs.dictate.maCloudLogEnabled.collectAsState()
+                    ThemedKey(
+                        code = KeyCode.NOOP,
+                        modifier = keyMod,
+                        ring = if (logOn) onGreen else MaSwitcherRingOff,
+                        onClick = { MaMessage.show(MaReader.captureNow(context)) },
+                    ) { fg ->
+                        Text(text = "Log", color = fg, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
                 MaFeatureKey.READER_ROW -> {
                     // Shows or hides the reader row, ringed while it is up, like every other row
                     // switch in this app.

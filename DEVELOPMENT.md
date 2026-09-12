@@ -10173,3 +10173,35 @@ logged yesterday would append its whole visible screen a second time.
 ### Tested
 
 Test 1: 49 checks, 0 failed. Sabotaged by removing `scrollable = false`: red.
+
+---
+
+## §211 — The Log key
+
+Build 381. Capture happened only while the reader was WATCHING, so a chat he read with his eyes was
+never kept. That was the honest limitation named in §207 and he asked for the press that removes it.
+
+`Log` on any feature row. It captures the screen into the log immediately.
+
+**Through `captureToLog`, the same function the reading poll uses.** One capture path, so the file
+cannot end up with two ideas of what "already logged" means — the session's `logFile` and `logSeen`
+are shared, and pressing it mid-reading appends to the same log rather than opening a rival one.
+
+**It says which log it wrote to**, not "saved". He has many logs, and the only question a message can
+usefully answer is WHICH — that is also what tells him a rename was followed. A press that writes a
+file and says nothing is indistinguishable from a press that did nothing.
+
+**Ringed while the Claude.ai reader is switched on**, because a press with it off does nothing, and a
+ring says so before the press rather than after it. It also refuses in words when the reader is off
+or the accessibility service is not running.
+
+### A check that read the wrong function
+
+`reader.split("captureToLog")[1]` found the FIRST mention — which is now inside `captureNow`, the new
+caller. So the check looked in the caller for a guard that lives in the callee, and failed on correct
+code. It splits on `private fun captureToLog(` now.
+
+**A name is not a location when more than one thing uses it.** That is the same shape as the
+first-appearance ordering check in §207 and the import-versus-use position check in §202 — three
+variants of one mistake in a fortnight, each time because the cheapest thing to grep for was a bare
+identifier.
