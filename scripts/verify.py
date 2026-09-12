@@ -712,6 +712,38 @@ def check_settings_default(path: Path, text: str) -> None:
         )
 
 
+def check_settings_entry_reachable(path: Path, text: str) -> None:
+    """Every settings entry must appear in DEFAULT, or nothing ever shows it.
+
+    `MaSettingsOrder.parse` returns his stored order plus `DEFAULT.filterNot { it in wanted }`. An
+    entry that is in the enum and NOT in DEFAULT is therefore invisible on any phone that has ever
+    saved an order — which is his phone, and every phone that has opened this screen once.
+
+    It compiles, it has an icon, it has a route, `verify.py` was clean and 34 checks passed. **The
+    entry simply never appeared**, and the only symptom was him saying he could not see it.
+
+    This is the second time in three days that a feature shipped complete and unreachable: build 369
+    crashed on a missing annotation, and the cloud reader's menu entry was missing from one list.
+    Both compiled. **Neither was a logic error — both were a thing not added to a second place.**
+    """
+    if path.name != "MaSettingsOrder.kt":
+        return
+    code = re.sub(r"^\s*//.*$", "", text, flags=re.M)
+    entries = set(re.findall(r"^\s{4}([A-Z_0-9]+)\(\"", code, re.M))
+    m = re.search(r"val DEFAULT[^=]*=\s*listOf\((.*?)\n\s*\)", code, re.S)
+    if not m or not entries:
+        problems.append(f"{path.name}: could not read the entries or DEFAULT — this check ran nothing")
+        return
+    in_default = set(re.findall(r"MaSettingsEntry\.([A-Z_0-9]+)", m.group(1)))
+    # KEYS is deliberately excluded by parse: it is a section inside PERMISSIONS now.
+    missing = entries - in_default - {"KEYS"}
+    for name in sorted(missing):
+        problems.append(
+            f"{path.name}: settings entry `{name}` is not in DEFAULT — it will never appear for "
+            f"anyone who has saved an order"
+        )
+
+
 def check_route_deeplink(path: Path, text: str) -> None:
     """Every route handed to composableWithDeepLink must carry @Deeplink.
 
@@ -950,6 +982,7 @@ def main() -> int:
         check_prefs_collect_import(path, text)
         check_layout_imports(path, text)
         check_settings_default(path, text)
+        check_settings_entry_reachable(path, text)
         check_route_deeplink(path, text)
         check_preference_collect(path, text)
         check_suspend_in_lock(path, text)

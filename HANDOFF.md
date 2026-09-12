@@ -1,13 +1,13 @@
 # TTT mini — the finished state
 
-**Build 377.** A dictation keyboard for Marko Boško.
+**Build 379.** A dictation keyboard for Marko Boško.
 
 **Repo:** `markoboskoauroville/TTT_MINI` (Apache-2.0) · **Package:** `com.mantraproductions.tttlight`
 > **The artefact link above rots.** CI keeps the two newest releases, so a build named here is
 > unreachable within a few pushes. The tag is the durable part; take the newest release rather than
 > this number if it 404s.
 
-**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-377/ttt-mini-build-377.apk
+**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-379/ttt-mini-build-379.apk
 
 > **This file is the present state and nothing else.** Every reason, every bug and every rejected
 > alternative is in [`DEVELOPMENT.md`](DEVELOPMENT.md), grouped by shape. If you are about to reverse

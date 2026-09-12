@@ -10096,3 +10096,26 @@ there, which is the hardest kind of bug for a person to report.
 
 `check_settings_default` requires every entry to be in `DEFAULT`, with `KEYS` exempted because
 `parse` filters it deliberately. Zero false positives, and it names the entry when it is removed.
+
+## §209a — Complete, compiling, and invisible
+
+Build 379. He opened the settings list and the cloud reader was not in it.
+
+`MaSettingsOrder.parse` returns his stored order plus `DEFAULT.filterNot { it in wanted }`. The entry
+was in the enum, had an icon, had a registered route — **and was not in `DEFAULT`**, so it could only
+appear on a phone that had never saved an order. His has.
+
+`verify.py` was clean. 34 checks passed, five of them written for this feature's wiring. The only
+symptom was him saying he could not see it.
+
+**Second time in three days that a feature shipped complete and unreachable.** Build 369 crashed on a
+missing `@Deeplink`; this one vanished for a missing line in a list. Both compiled, both passed every
+test, and **neither was a logic error — both were a thing not added to a second place.**
+
+That is now a shape with a name, and it has a gate: `check_settings_entry_reachable` requires every
+entry to be in `DEFAULT`. Measured at zero false positives, and it names the entry when the line is
+removed.
+
+The check also refuses to pass silently if it cannot find the entries or the `DEFAULT` block —
+**a check that runs nothing must look like a failure**, per `four-tests.md`, because it otherwise
+reads exactly like a pass.
