@@ -682,6 +682,24 @@ def check_suspend_in_lock(path: Path, text: str) -> None:
             fail(path.name, "a suspending `.set(` inside synchronized: decide in the lock, write outside")
 
 
+def check_preference_collect(path: Path, text: str) -> None:
+    """A preference's `collectAsState` is jetpref's, not Compose's.
+
+    Both are called `collectAsState`, both are importable, and only one works on a `PreferenceData` —
+    so the wrong import gives four errors on one line, none of which names the real cause. Build 367
+    spent a CI round on it.
+
+    Measured at zero across the app before shipping.
+    """
+    code = strip_code(text)
+    if not re.search(r"prefs\.\w+\.\w+\.collectAsState\(\)", code):
+        return
+    if "import dev.patrickgold.jetpref.datastore.model.collectAsState" not in text:
+        problems.append(
+            f"{path.name}: reads a preference with collectAsState but imports only Compose's"
+        )
+
+
 def check_layout_imports(path: Path, text: str) -> None:
     """
     RED BUILD 283: `Column` used with no `import androidx.compose.foundation.layout.Column`.
@@ -859,6 +877,7 @@ def main() -> int:
         check_nullable_args(path, text)
         check_prefs_collect_import(path, text)
         check_layout_imports(path, text)
+        check_preference_collect(path, text)
         check_suspend_in_lock(path, text)
         check_modifier_clip_import(path, text)
         check_weight_scope(path, text)

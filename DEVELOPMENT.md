@@ -9957,3 +9957,29 @@ inherit from a build about reading.
 
 Nothing has been captured on a phone. The key, the append and the splitter are walked; the file has
 never been written.
+
+## §207a — A screen written from memory of a screen
+
+Build 367 red twice in one file, and both are the same fault: **I wrote a settings screen from memory
+of what one looks like instead of opening one that compiles.**
+
+**`previewFieldVisible = false`** — no such property on `FlorisScreen`. Invented from the shape of
+other screens.
+
+**`collectAsState` imported from Compose.** A preference's `collectAsState` is jetpref's. Both are
+called the same thing, both are importable, and only one works on a `PreferenceData` — so the wrong
+one gives four errors on one line, **none of which names the real cause.** That is the expensive kind
+of mistake: not hard to fix, hard to read.
+
+### A check, measured and shipped
+
+`check_preference_collect`: a file that reads `prefs.x.y.collectAsState()` must import jetpref's.
+**Zero false positives across the app**, and it names the file that broke.
+
+This one is worth having where the `ThemedIconKey` and `Voice.name` guards were not: those needed to
+know a type's members, which a regex cannot; this needs to know which of two identically-named
+imports is present, which is exactly what a regex can see. **The difference between a check worth
+writing and one worth rejecting is whether the mistake is visible in the text.**
+
+Three guesses-from-memory in three builds — `imageVector`, `.name`, and now a whole screen. Two were
+uncheckable. This third one was not, and the check exists now.
