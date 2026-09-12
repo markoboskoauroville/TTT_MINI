@@ -697,6 +697,14 @@ def check_route_deeplink(path: Path, text: str) -> None:
     """
     if path.name != "Routes.kt":
         return
+    # Comments stripped FIRST. A comment between the annotations and the object breaks the run of
+    # `@Thing` tokens the pattern walks, so an annotated route reads as unannotated — and worse, a
+    # route whose @Deeplink is separated from it by a comment would read as annotated when the
+    # annotation is actually attached to nothing.
+    #
+    # Found by writing a comment between @Serializable and @Deeplink on the very route this check was
+    # written for. **The check was blind to the shape its own author produced ten minutes later.**
+    text = re.sub(r"^\s*//.*$", "", text, flags=re.M)
     registered = set(re.findall(r"composableWithDeepLink\(Settings\.(\w+)::class", text))
     for name in sorted(registered):
         # The object's declaration and whatever annotations sit above it.

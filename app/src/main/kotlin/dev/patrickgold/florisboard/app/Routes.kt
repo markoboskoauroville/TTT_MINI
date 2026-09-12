@@ -71,6 +71,7 @@ import dev.patrickgold.florisboard.app.settings.dictate.MaCopyRowScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaProfilesScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPromptsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPermissionsScreen
+import dev.patrickgold.florisboard.app.settings.dictate.MaCloudLogScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaReaderScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaVoiceFormatScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPredictionsScreen
@@ -182,6 +183,19 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictate/reader")
         object MaReader
+
+        @Serializable
+        // WITHOUT THIS LINE THE APP DOES NOT START.
+        //
+        // `composableWithDeepLink` does `requireNotNull` on this annotation, so a route missing it
+        // throws while the nav graph is built — which is while the app is launching. Build 369
+        // shipped exactly that: it compiled, every test passed, CI was green, and the keyboard died
+        // at launch with nothing on screen.
+        //
+        // `check_route_deeplink` in verify.py refuses the build now, and it refused this one before
+        // it was pushed.
+        @Deeplink("settings/dictate/cloud-reader")
+        object MaCloudLog
 
         @Serializable
         @Deeplink("settings/dictate/copy-row")
@@ -445,6 +459,7 @@ object Routes {
             composableWithDeepLink(Settings.MaLog::class) { MaLogScreen() }
             composableWithDeepLink(Settings.MaVoiceFormat::class) { MaVoiceFormatScreen() }
             composableWithDeepLink(Settings.MaReader::class) { MaReaderScreen() }
+            composableWithDeepLink(Settings.MaCloudLog::class) { MaCloudLogScreen() }
             composableWithDeepLink(Settings.MaCopyRow::class) { MaCopyRowScreen() }
             composableWithDeepLink(Settings.MaProfiles::class) { MaProfilesScreen() }
             composableWithDeepLink(Settings.MaPrompts::class) { MaPromptsScreen() }

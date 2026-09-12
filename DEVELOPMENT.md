@@ -10030,3 +10030,45 @@ that gap cost him rather than being a line in a delivery record.
 
 Every "it works" in this repository still means "it compiled, and its logic was walked". That sentence
 has been in `HANDOFF.md` for weeks. Today it had a price.
+
+---
+
+## §209 — The cloud reader, again, with the annotation
+
+Build 374. The feature from §207 restored unchanged, plus the one line whose absence stopped the app
+starting.
+
+**Restored by reverting the revert**, not rewritten. The code was reviewed once and the fault was
+never in it — it was in a line that was missing beside it. Retyping it would have invented new bugs
+to fix an old one.
+
+### The gate worked before the build
+
+`check_route_deeplink` refused the restored feature on the first run, naming the route. That is the
+whole point of yesterday's section: the crash that cost him a keyboard is now a five-second refusal
+at my desk.
+
+### And then the gate was blind to me
+
+I wrote a comment between `@Serializable` and `@Deeplink` explaining why the annotation matters. The
+check walks a run of `@Thing` tokens above the object, and **a comment breaks the run** — so an
+annotated route read as unannotated, and the feature's own test failed on correct code.
+
+Worse in the other direction: a route whose `@Deeplink` was separated from it by a comment would have
+read as annotated while the annotation attached to nothing.
+
+**The check was blind to the shape its own author produced ten minutes later.** Comments are stripped
+first now, in both the gate and the test, and both cases are proven: the annotation removed is
+caught, and correct code with a comment among the annotations is not reported.
+
+### The sweep, re-run against the restored feature
+
+    registered without @Deeplink   none
+    entries without an icon        none
+    entries without a route        none
+    entry targets unregistered     none
+    duplicate deeplink paths       settings/dictate/prompts
+
+That last one is **not new and not mine**: `MaPrompts` and `DictatePrompts` have shared a path since
+long before this session. Recorded rather than fixed — changing a deeplink is a change to something
+outside this build, and an audit finding is not a licence to edit whatever it touches.
