@@ -700,7 +700,15 @@ def check_route_deeplink(path: Path, text: str) -> None:
     registered = set(re.findall(r"composableWithDeepLink\(Settings\.(\w+)::class", text))
     for name in sorted(registered):
         # The object's declaration and whatever annotations sit above it.
-        m = re.search(rf"((?:\s*@\w+(?:\([^)]*\))?\s*)*)\bobject {name}\b", text)
+        # `object` OR `data class` OR `class`. The first version matched only `object`, so five
+        # routes declared as data classes were silently unchecked — the check would have passed a
+        # data-class route missing its annotation, which crashes exactly the same way.
+        #
+        # Found by a sweep, not by the check: the sweep's own regex had the identical blind spot and
+        # reported those five as broken. **Confirming a sweep hit against the source is what turned a
+        # false positive into a real gap in the shipped check.**
+        m = re.search(
+            rf"((?:\s*@\w+(?:\([^)]*\))?\s*)*)\b(?:object|data class|class) {name}\b", text)
         if m and "@Deeplink" not in m.group(1):
             problems.append(
                 f"{path.name}: route `{name}` is registered with composableWithDeepLink but has no "
