@@ -9983,3 +9983,50 @@ writing and one worth rejecting is whether the mistake is visible in the text.**
 
 Three guesses-from-memory in three builds — `imageVector`, `.name`, and now a whole screen. Two were
 uncheckable. This third one was not, and the check exists now.
+
+---
+
+## §208 — The app would not start, and every gate was green
+
+Build 370. He installed 369 and the app would not open.
+
+### The cause
+
+`Routes.kt` registers a settings screen with `composableWithDeepLink`, which begins:
+
+    val deeplink = requireNotNull(kClass.annotations.firstOrNull { it is Deeplink } as? Deeplink)
+
+My route object had `@Serializable` and **no `@Deeplink`**. So the nav graph threw while it was being
+built — which is while the app is starting. It installs, launches, and dies with nothing on screen.
+
+### Why nothing caught it
+
+It compiled. `verify.py` was clean. Twenty-five Test 1 suites passed, including twenty-seven checks
+written for this very feature. CI was green and cut a release.
+
+**Every gate this project has was designed to check things that are wrong on the page.** This was
+right on the page and wrong at runtime, in the one code path no test here can reach — and the cheapest
+possible symptom, a hard crash at launch, was invisible to all of it.
+
+It is also invisible to the eye. The annotation sits three lines above the object, and every
+neighbouring route has one: **exactly the shape a reader completes for himself.**
+
+### What was done, in order
+
+**The feature was reverted first, before the cause was known.** His keyboard is how he writes, and a
+keyboard that will not start is not something to leave broken while I read code. Diagnosing with his
+only input method down is the wrong order, however much faster it feels.
+
+Then the cause, then the check: `check_route_deeplink` reads every
+`composableWithDeepLink(Settings.X::class)` and requires `@Deeplink` above `object X`. Measured at
+zero false positives on the real file, and it names the broken route when the annotation is removed
+from any existing one.
+
+### The lesson worth more than the check
+
+**A green CI proves the code compiles and the logic is walked. It does not prove the app runs.** Gates
+G6 through G8 — stress, upgrade, a phone — have never run in this project, and this is the first time
+that gap cost him rather than being a line in a delivery record.
+
+Every "it works" in this repository still means "it compiled, and its logic was walked". That sentence
+has been in `HANDOFF.md` for weeks. Today it had a price.

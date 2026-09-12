@@ -682,6 +682,32 @@ def check_suspend_in_lock(path: Path, text: str) -> None:
             fail(path.name, "a suspending `.set(` inside synchronized: decide in the lock, write outside")
 
 
+def check_route_deeplink(path: Path, text: str) -> None:
+    """Every route handed to composableWithDeepLink must carry @Deeplink.
+
+    `composableWithDeepLink` does `requireNotNull(... as? Deeplink)`, so a route object without the
+    annotation throws while the nav graph is being built — **which is while the app is starting.**
+    The app installs, launches, and dies, with nothing on screen to say why.
+
+    That is what build 367 did. The route had `@Serializable` and not `@Deeplink`, it compiled
+    cleanly, every test passed, CI was green, and the app would not open.
+
+    Cheap to check and impossible to see by eye: the annotation sits three lines above the object and
+    every neighbour has one, which is exactly the shape a reader's eye completes for itself.
+    """
+    if path.name != "Routes.kt":
+        return
+    registered = set(re.findall(r"composableWithDeepLink\(Settings\.(\w+)::class", text))
+    for name in sorted(registered):
+        # The object's declaration and whatever annotations sit above it.
+        m = re.search(rf"((?:\s*@\w+(?:\([^)]*\))?\s*)*)\bobject {name}\b", text)
+        if m and "@Deeplink" not in m.group(1):
+            problems.append(
+                f"{path.name}: route `{name}` is registered with composableWithDeepLink but has no "
+                f"@Deeplink — this throws at startup"
+            )
+
+
 def check_preference_collect(path: Path, text: str) -> None:
     """A preference's `collectAsState` is jetpref's, not Compose's.
 
@@ -877,6 +903,7 @@ def main() -> int:
         check_nullable_args(path, text)
         check_prefs_collect_import(path, text)
         check_layout_imports(path, text)
+        check_route_deeplink(path, text)
         check_preference_collect(path, text)
         check_suspend_in_lock(path, text)
         check_modifier_clip_import(path, text)
