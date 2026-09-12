@@ -1443,17 +1443,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * On by default: he reads live chats, and a reader that stops at the bottom of a growing
          * answer has stopped in the middle of the thing he asked it to read.
          */
-        /**
-         * Whether the cloud reader keeps a log of what it read.
-         *
-         * Off by default. It writes files to internal storage without being asked, and a feature
-         * that accumulates his conversations on disk should be one he switched on.
-         */
-        val maCloudLogEnabled = boolean(
-            key = "dictate__ma_cloud_log",
-            default = false,
-        )
-
         val maReaderWatch = boolean(
             key = "dictate__ma_reader_watch",
             default = true,

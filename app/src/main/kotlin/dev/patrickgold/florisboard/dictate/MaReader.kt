@@ -249,24 +249,6 @@ object MaReader {
      * how much audio that is. **The rest of the reader still sees one timeline**, which is the only
      * reason this change is small enough to trust.
      */
-    /**
-     * Reads text the caller already has, rather than the screen.
-     *
-     * For the cloud reader, which hands it a saved log. Everything else is shared with the screen
-     * reader — the voice, the speed, the effects, the chunking — because **a second reading engine
-     * for saved text would drift from the live one within a month.**
-     *
-     * Not watching: a file does not grow. And the sentence memory is cleared first, or a passage he
-     * heard live this morning would be silently skipped when he opens the log this afternoon.
-     */
-    fun speakText(context: Context, text: String, onMessage: (String) -> Unit) {
-        if (text.isBlank()) return
-        stop()
-        MaReadMemory.clear()
-        watching = false
-        scope.launch { speak(context, text, onMessage) }
-    }
-
     private suspend fun speak(context: Context, text: String, onMessage: (String) -> Unit) {
         val prefs by FlorisPreferenceStore
 
@@ -640,39 +622,6 @@ object MaReader {
         state = State.IDLE
     }
 
-    /** The log being written this session, or null when capture is off or not started. */
-    private var logFile: java.io.File? = null
-
-    /** What the log last saw, so only the tail is appended. */
-    private var logSeen: String = ""
-
-    /**
-     * Appends whatever is new to this session's log.
-     *
-     * The file is opened on the FIRST capture rather than when the reading starts, because the key
-     * comes from the first text seen and there is none before then.
-     *
-     * Failures are swallowed into the log-of-last-resort and never shown: a full disk must not stop
-     * him reading, and a toast about a capture he did not ask for would be the app complaining about
-     * its own homework.
-     */
-    private fun captureToLog(context: Context, screen: String) {
-        val prefs by FlorisPreferenceStore
-        if (!prefs.dictate.maCloudLogEnabled.get()) return
-        if (screen.isBlank()) return
-        runCatching {
-            val file = logFile ?: run {
-                val stamp = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-                    .format(java.util.Date())
-                val name = MaCloudLog.fileNameFor(MaCloudLog.keyFor(screen), stamp)
-                java.io.File(MaCloudLog.dir(context.filesDir), name).also { logFile = it }
-            }
-            val add = MaCloudLog.tailToAppend(logSeen, screen) ?: return
-            file.appendText(add.trim() + "\n\n")
-            logSeen = screen
-        }.onFailure { MaLog.add("read", "cloud log write failed: ${it.message}") }
-    }
-
     private fun watchForMore(context: Context, onMessage: (String) -> Unit) {
         state = State.WATCHING
         scope.launch {
@@ -681,19 +630,6 @@ object MaReader {
                 kotlinx.coroutines.delay(WATCH_POLL_MS)
                 if (!watching) return@launch
                 val now = DictateAccessibilityService.readableScreenText()
-                // THE LOG IS WRITTEN FROM THE SAME POLL THAT FEEDS THE READING.
-                //
-                // Not a second loop. A capture on its own timer would be a second thing reading the
-                // screen every two seconds, and it would disagree with the reader about what is new
-                // — so the file would hold sentences he never heard and miss ones he did.
-                //
-                // **One poll, one idea of what arrived**, and the log is what the reader saw.
-                //
-                // Written BEFORE the cue check and the already-read check below, because those two
-                // decide what is worth SPEAKING and the log wants everything the chat said. A cue he
-                // does not need read aloud is still part of the conversation.
-                captureToLog(context, now)
-
                 val tail = newTail(seen, now) ?: continue
                 // The loop guard still applies, and here it earns its keep twice over: a screen that
                 // re-renders identically must not be read again just because it arrived again.
@@ -908,11 +844,6 @@ object MaReader {
         // during the one long pause he stepped away for.
         watching = false
         passagesRead.clear()
-        // A new session gets a new key next time it captures. The FILE is not deleted — nothing in
-        // the capture path ever deletes — but the handle is dropped so a different conversation does
-        // not append to the last one's log.
-        logFile = null
-        logSeen = ""
         // The sentence memory has the same lifetime: one reading. Kept across a stop, pressing read
         // again on the same screen would be met with silence, and silence is indistinguishable from
         // a broken reader.

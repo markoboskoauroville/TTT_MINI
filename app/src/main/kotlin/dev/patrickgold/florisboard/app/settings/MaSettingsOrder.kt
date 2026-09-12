@@ -33,8 +33,6 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     PROMPTS("prompts", "Prompts", "Several wordings for Ctrl+P and Ctrl+F, one of them ticked"),
     VOICE_FORMAT("voice_format", "Voice formatting", "Marks you can speak, and how to say them"),
     READER("reader", "Reader", "The voice that reads the screen aloud"),
-    // Beside the reader, because it is the reader's memory. A chat he listened to and can go back to.
-    CLOUD_READER("cloud_reader", "Cloud reader", "Chats it read, kept so you can read them again"),
     COPY_ROW("copy_row", "Copy row", "The clipboard row, shown in the transcription view"),
     PROFILES("profiles", "Profiles", "Whole configurations, saved by name and swapped in one tap"),
     /**

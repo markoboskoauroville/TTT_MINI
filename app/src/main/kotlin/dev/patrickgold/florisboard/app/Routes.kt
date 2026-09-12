@@ -71,7 +71,6 @@ import dev.patrickgold.florisboard.app.settings.dictate.MaCopyRowScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaProfilesScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPromptsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPermissionsScreen
-import dev.patrickgold.florisboard.app.settings.dictate.MaCloudLogScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaReaderScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaVoiceFormatScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPredictionsScreen
@@ -183,9 +182,6 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictate/reader")
         object MaReader
-
-        @Serializable
-        object MaCloudLog
 
         @Serializable
         @Deeplink("settings/dictate/copy-row")
@@ -449,7 +445,6 @@ object Routes {
             composableWithDeepLink(Settings.MaLog::class) { MaLogScreen() }
             composableWithDeepLink(Settings.MaVoiceFormat::class) { MaVoiceFormatScreen() }
             composableWithDeepLink(Settings.MaReader::class) { MaReaderScreen() }
-            composableWithDeepLink(Settings.MaCloudLog::class) { MaCloudLogScreen() }
             composableWithDeepLink(Settings.MaCopyRow::class) { MaCopyRowScreen() }
             composableWithDeepLink(Settings.MaProfiles::class) { MaProfilesScreen() }
             composableWithDeepLink(Settings.MaPrompts::class) { MaPromptsScreen() }

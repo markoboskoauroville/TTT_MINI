@@ -129,18 +129,8 @@ tail_fn = tail_fn[:tail_fn.index("private fun endOfText")]
 check("continueBelow never idles directly", "state = State.IDLE" not in tail_fn,
       "a natural end that skips the watch decision")
 check("only stop ends it", "watching = false" in reader, "no way out")
-# TWO places clear it now, and the second is correct: `speakText` reads a file, and a file does not
-# grow — a watch there would wait for ever for text that cannot arrive.
-#
-# The claim was "only stop ends it", written when stop was the only caller. What it was PROTECTING
-# is narrower and still holds: **no timer and no ceiling ends a watch.** A count of assignments was a
-# proxy for that, and a proxy fails the first time something legitimate is added.
-check("no timer ends a watch", "delay" not in reader.split("watching = false")[0][-400:],
+check("nothing else ends it", reader.count("watching = false") == 1,
       "a timeout would end the watch during the pause he stepped away for")
-check("stop clears it", "watching = false" in reader.split("fun stop()")[1][:600],
-      "the reader key would not end a watch")
-check("reading a file does not watch", "watching = false" in reader.split("fun speakText")[1][:400],
-      "it would wait for ever for a file to grow")
 check("the loop guard still applies", "passagesRead.contains(normalisedForCompare(tail))" in reader,
       "a screen that re-renders identically would be read twice")
 check("it polls slowly enough to hear", "WATCH_POLL_MS = 1_800L" in reader,
