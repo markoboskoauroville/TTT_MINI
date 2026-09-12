@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 /**
- * THE CLOUD READER: the conversations it kept, and a way to read them back.
+ * THE CLAUDE.AI READER: the conversations it kept, and a way to read them back.
  *
  * The reader speaks a chat once and it is gone — scrolled past, or lost when the chat closes. **A
  * conversation he listened to is a conversation he cannot go back to**, and the answers are often
@@ -66,7 +66,19 @@ import java.io.File
  */
 @Composable
 fun MaCloudLogScreen() = FlorisScreen {
-    title = "Cloud reader"
+    title = "Claude.ai reader"
+
+    // SCROLLABLE = FALSE, OR THE SCREEN CRASHES THE MOMENT IT OPENS.
+    //
+    // `FlorisScreen` wraps its content in a vertical scroller by default. A `LazyColumn` inside a
+    // parent offering infinite height cannot measure itself and throws — so the app died on
+    // opening this screen, which is exactly what he reported.
+    //
+    // Every other screen here with a lazy list sets this: DictateHistoryScreen,
+    // DictatePromptsScreen, DictatePromptLibraryScreen. **Three neighbours had the answer and the
+    // screen was written without opening one of them** — the same fault as the ThemedIconKey
+    // signature and Voice.label, and the third time in a week.
+    scrollable = false
 
     content {
         val prefs by FlorisPreferenceStore

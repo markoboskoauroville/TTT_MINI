@@ -170,6 +170,58 @@ check("the entry exists", 'CLOUD_READER("cloud_reader"' in order_src, "no menu e
 check("and is in DEFAULT", "MaSettingsEntry.CLOUD_READER," in order_src,
       "parse can never return it, so the menu item never appears")
 
+# ---------------------------------------------------------------- renaming a chat
+#
+# He renames chats. A key taken from the first text then points at a file under the old name, and the
+# conversation splits in two. The rename is his; the split would be mine.
+def continuation_of(screen, logs, tail_chars=2000):
+    """logs is a list of (name, text)."""
+    now = norm(screen)
+    if len(now) < 40:
+        return None
+    probe = " ".join(now.split()[:12])
+    if len(probe) < 40:
+        return None
+    for name, text in logs:
+        if probe in norm(text[-tail_chars:]) or probe in norm(text):
+            return name
+    return None
+
+
+LONG = ("we were discussing the door shot and whether the close up belongs before "
+        "the wide or after it in the sequence")
+logs = [("2026-09-04--door-shot.txt", "earlier text " + LONG + " and more after that")]
+check("a renamed chat continues its log", continuation_of(LONG, logs) == "2026-09-04--door-shot.txt",
+      "the conversation would split in two")
+check("a different chat starts a new one",
+      continuation_of("a completely different conversation about the colour grade and nothing else at all", logs) is None,
+      "one chat would be appended to another")
+check("a short screen never matches", continuation_of("hello", logs) is None,
+      "two chats that both start with a greeting would merge")
+check("no logs means a new log", continuation_of(LONG, []) is None)
+check("an unreadable log is not a match", continuation_of(LONG, [("x.txt", "")]) is None,
+      "an empty file would swallow every chat")
+
+# The direction of the risk, asserted: a miss costs a second file, a wrong match costs a merge. The
+# short-screen guard is what keeps misses the common failure.
+for short in ("ok", "yes", "thanks", "one two three"):
+    check(f"{short!r} is too short to match", continuation_of(short, logs) is None)
+
+cloud = code(SRC / "dictate/MaCloudLog.kt")
+check("the matcher exists", "fun continuationOf(" in cloud, "a rename would split the log")
+check("it matches on the tail", "takeLast(tailChars)" in cloud,
+      "anywhere-in-file would match a quotation of one chat inside another")
+check("the reader asks it before making a file", "MaCloudLog.continuationOf(" in reader,
+      "it would open a second file for a renamed chat")
+check("a continued log seeds what it last saw", "logSeen = runCatching { file.readText()" in reader,
+      "opening a logged chat would append its visible screen a second time")
+
+# ---------------------------------------------------------------- the screen opens at all
+screen_src = (SRC / "app/settings/dictate/MaCloudLogScreen.kt").read_text()
+check("the screen is not doubly scrollable", "scrollable = false" in screen_src,
+      "a LazyColumn inside FlorisScreen's scroller throws the moment the screen opens")
+check("it is named for what it reads", '"Claude.ai reader"' in screen_src, "still called the cloud")
+
 print(f"cloud log, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

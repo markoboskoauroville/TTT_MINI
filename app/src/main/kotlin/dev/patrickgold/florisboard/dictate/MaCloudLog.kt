@@ -13,7 +13,7 @@ package dev.patrickgold.florisboard.dictate
 import java.io.File
 
 /**
- * THE CLOUD READER'S LOG: everything a chat said, kept as it arrives.
+ * THE CLAUDE.AI READER'S LOG: everything a chat said, kept as it arrives.
  *
  * He reads Claude on his phone while it writes. The reader speaks it once and it is gone — scrolled
  * past, or lost when the chat is closed. **A conversation he listened to is a conversation he cannot
@@ -64,6 +64,41 @@ object MaCloudLog {
             .filter { it.isNotBlank() }
             .take(8)
         return if (words.isEmpty()) "untitled" else words.joinToString("-")
+    }
+
+    /**
+     * MATCHES A LIVE SCREEN TO A LOG THAT IS ALREADY OPEN.
+     *
+     * He renames chats. A key taken from the title then points at a file that exists under the old
+     * name, and the conversation splits in two — half under "door shot", half under whatever he
+     * renamed it to. **The rename is his, the split is mine, and he would have to find both halves.**
+     *
+     * So the title is not trusted alone. Before starting a new log, the existing ones are asked
+     * whether they already CONTAIN this conversation: if a file ends with text the screen still
+     * shows, it is the same chat under a different name, and the log continues.
+     *
+     * Matched on the LAST part of the file rather than anywhere in it, because a chat grows at the
+     * end and its tail is what a returning screen overlaps with. Anywhere-in-the-file would match a
+     * quotation of one chat inside another.
+     *
+     * Returns null when nothing matches, and null means "start a new log" — the safe direction. **A
+     * wrong match appends one chat to another; a wrong miss makes a second file.** One of those is
+     * recoverable by reading, the other by nothing.
+     */
+    fun continuationOf(screen: String, logs: List<File>, tailChars: Int = 2_000): File? {
+        val now = normalise(screen)
+        if (now.length < 40) return null
+        // The first words of the screen, which is the part a returning chat shows again. Short
+        // enough to survive a re-render, long enough not to match by accident.
+        val probe = now.split(' ').take(12).joinToString(" ")
+        if (probe.length < 40) return null
+        return logs.firstOrNull { f ->
+            runCatching {
+                val text = f.readText()
+                val tail = normalise(text.takeLast(tailChars))
+                tail.contains(probe) || normalise(text).contains(probe)
+            }.getOrDefault(false)
+        }
     }
 
     /**

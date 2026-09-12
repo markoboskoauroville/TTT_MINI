@@ -10119,3 +10119,57 @@ removed.
 The check also refuses to pass silently if it cannot find the entries or the `DEFAULT` block —
 **a check that runs nothing must look like a failure**, per `four-tests.md`, because it otherwise
 reads exactly like a pass.
+
+---
+
+## §210 — Claude.ai reader: the name, the crash, and the rename
+
+Build 380.
+
+### The name
+
+"Cloud reader" was my word and it was wrong twice over: it reads **Claude.ai**, and "cloud" suggests
+something stored remotely when the whole point is a file on his phone. It is the **Claude.ai reader**
+everywhere now.
+
+### The crash
+
+Opening the screen killed the app. `FlorisScreen` wraps its content in a vertical scroller, and a
+`LazyColumn` inside a parent offering infinite height cannot measure itself — it throws.
+
+**Three sibling screens set `scrollable = false` for exactly this**: `DictateHistoryScreen`,
+`DictatePromptsScreen`, `DictatePromptLibraryScreen`. I wrote a screen with a lazy list without
+opening one of them.
+
+That is the same fault as `ThemedIconKey`'s parameter names (§199b) and `Voice.label` (§206a): **a
+thing written from memory of what such a thing looks like, with three working examples in the same
+folder.** Third time in a week.
+
+A gate was written and **rejected**: it flagged `SubtypeEditorScreen`, whose lazy list is inside a
+dialog with scrolling already disabled, and it failed to catch the real break reliably. One false
+positive and an unreliable catch — the rule is the rule. The feature's own test asserts it instead.
+
+### Renaming a chat
+
+He renames conversations. The key comes from the first text seen, so a rename would open a second
+file and split the conversation in two — half under the old name, half under the new. **The rename is
+his; the split would be mine.**
+
+So before starting a log, the existing ones are asked whether one already CONTAINS this conversation.
+A file whose text the screen still shows IS this chat, whatever it is called now, and the log
+continues into it.
+
+Three decisions inside that:
+
+- **Matched on the tail**, not anywhere in the file: a chat grows at the end, and anywhere-in-file
+  would match a quotation of one chat inside another.
+- **A short screen never matches.** Two chats that both open with "hello" would otherwise merge.
+- **No match means a new log**, which is the safe direction. **A wrong match appends one chat to
+  another; a wrong miss makes a second file.** One is recoverable by reading, the other by nothing.
+
+And when a log is continued, `logSeen` is seeded from the file's own tail — otherwise opening a chat
+logged yesterday would append its whole visible screen a second time.
+
+### Tested
+
+Test 1: 49 checks, 0 failed. Sabotaged by removing `scrollable = false`: red.

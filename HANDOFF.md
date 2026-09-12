@@ -1,13 +1,13 @@
 # TTT mini — the finished state
 
-**Build 379.** A dictation keyboard for Marko Boško.
+**Build 380.** A dictation keyboard for Marko Boško.
 
 **Repo:** `markoboskoauroville/TTT_MINI` (Apache-2.0) · **Package:** `com.mantraproductions.tttlight`
 > **The artefact link above rots.** CI keeps the two newest releases, so a build named here is
 > unreachable within a few pushes. The tag is the durable part; take the newest release rather than
 > this number if it 404s.
 
-**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-379/ttt-mini-build-379.apk
+**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-380/ttt-mini-build-380.apk
 
 > **This file is the present state and nothing else.** Every reason, every bug and every rejected
 > alternative is in [`DEVELOPMENT.md`](DEVELOPMENT.md), grouped by shape. If you are about to reverse
@@ -209,8 +209,8 @@ thing in both windows, and a filled square marking the head of every passage. On
 whatever has been ADDED — so a Claude answer still being written is read as it arrives. **Only a stop
 ends it**: no timeout, no ceiling.
 
-**The cloud reader** keeps what it reads. While the reader is watching, the screen text is appended
-to a per-chat log under `filesDir/cloud_logs`; Settings → Cloud reader lists them, opens one, and
+**The Claude.ai reader** keeps what it reads. While the reader is watching, the screen text is appended
+to a per-chat log under `filesDir/cloud_logs`; Settings → Claude.ai reader lists them, opens one, and
 reads from any sentence you tap. Off by default.
 
 **Messages** are drawn by the keyboard above every row — not system toasts, which cannot be moved off

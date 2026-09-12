@@ -662,10 +662,35 @@ object MaReader {
         if (screen.isBlank()) return
         runCatching {
             val file = logFile ?: run {
-                val stamp = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-                    .format(java.util.Date())
-                val name = MaCloudLog.fileNameFor(MaCloudLog.keyFor(screen), stamp)
-                java.io.File(MaCloudLog.dir(context.filesDir), name).also { logFile = it }
+                // A CHAT HE RENAMED IS STILL THE SAME CHAT.
+                //
+                // The key comes from the first text seen, so a renamed conversation would open a
+                // second file and split itself in two — half under the old name, half under the new,
+                // and he would have to find both halves. **The rename is his; the split would be
+                // mine.**
+                //
+                // So the existing logs are asked first whether one of them already contains this
+                // conversation. A file whose text the screen still shows IS this chat, whatever it
+                // is called now, and the log continues into it.
+                //
+                // No match means a new log, which is the safe direction: a wrong match appends one
+                // chat to another, a wrong miss makes a second file. One is recoverable by reading.
+                val existing = MaCloudLog.continuationOf(
+                    screen,
+                    MaCloudLog.logsIn(context.filesDir),
+                )
+                existing ?: run {
+                    val stamp = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                        .format(java.util.Date())
+                    val name = MaCloudLog.fileNameFor(MaCloudLog.keyFor(screen), stamp)
+                    java.io.File(MaCloudLog.dir(context.filesDir), name)
+                }.also { logFile = it }
+            }
+            // Seeded from the FILE when continuing one, not from nothing. Opening a chat he logged
+            // yesterday shows text already in it, and a blank `logSeen` would append the whole
+            // visible screen a second time.
+            if (logSeen.isBlank() && file.exists() && file.length() > 0) {
+                logSeen = runCatching { file.readText().takeLast(4_000) }.getOrDefault("")
             }
             val add = MaCloudLog.tailToAppend(logSeen, screen) ?: return
             file.appendText(add.trim() + "\n\n")
