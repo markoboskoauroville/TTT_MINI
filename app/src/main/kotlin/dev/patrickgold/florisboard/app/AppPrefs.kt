@@ -1456,6 +1456,24 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * same request, and it is the endpoint built for exactly this job. Croatian and anything
          * over two minutes ignore it entirely.
          */
+        /**
+         * Corrected text, or exactly what he said.
+         *
+         * On: filler removed, punctuation and capitals applied, self-corrections resolved to what he
+         * landed on. Off: the words as spoken, unpunctuated and lowercase.
+         *
+         * On by default, because that is what makes a dictation sendable — but it is a real choice
+         * and it is worth having, because **corrected text is a model deciding what he meant.** Say
+         * "meet at three, no, four" and it writes four. Usually right, and when it is wrong there is
+         * nothing on screen to show that anything was changed.
+         *
+         * Only the Dictation API returns both texts; every other provider ignores this.
+         */
+        val maCorrectedDictation = boolean(
+            key = "dictate__ma_corrected_dictation",
+            default = true,
+        )
+
         val maDictationApi = boolean(
             key = "dictate__ma_dictation_api",
             default = true,

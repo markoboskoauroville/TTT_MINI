@@ -10326,3 +10326,43 @@ is the first case; no dictation line at all is the second.
 The general shape, which this file has now met three times: **a correct fallback is still a silent
 one.** The reader's cue-skipping, the model healer's rewire and now this all choose a second-best
 answer without saying so. The healer logs it. The other two did not.
+
+---
+
+## §214 — Verbatim or corrected, as a switch
+
+Build 384. He asked for one switch in the recording settings, in those words.
+
+    Corrected dictation   ON   filler out, punctuation in, "three, no, four" becomes four
+                          OFF  exactly the words he said
+
+### It was never a choice, and that is what hid the bug
+
+The code PREFERRED the corrected text and fell back to the verbatim one. So a rewrite that failed
+produced exactly what a setting he had chosen would produce, and §213a was a day spent asking which
+of the two had happened.
+
+**A fallback and a preference that produce the same output are indistinguishable until one of them
+says so.** Now verbatim returns early because he asked for it, and the fallback logs that it is a
+fallback.
+
+### Named by the result, not the mechanism
+
+"Dictation API" is the name of an endpoint. **"Corrected" is the name of a result**, and the result is
+what he is choosing between. The other switch, which decides where the text comes from, stays below
+it and keeps its own name.
+
+### The summary admits what it does
+
+*"...and 'three, no, four' becomes four."*
+
+That is the part worth naming, because it is the part that is a judgement rather than a tidy-up.
+Usually right; and when it is wrong, nothing on screen shows that anything was changed. **A setting
+that silently changes his words should say so where it is switched on**, not in a document he would
+have to go and find.
+
+### Tested
+
+Test 1: 45 checks, 0 failed — all four combinations of the switch against a present and an absent
+rewrite, the choice carried on the request, the early return, and the fallback's log line. Sabotaged
+by deleting the early return: red.

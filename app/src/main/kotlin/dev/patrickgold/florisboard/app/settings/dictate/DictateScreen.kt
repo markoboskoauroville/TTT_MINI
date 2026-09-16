@@ -35,6 +35,7 @@ import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.BrightnessHigh
@@ -167,6 +168,23 @@ fun DictateRecordingScreen() = FlorisScreen {
     val prefs by FlorisPreferenceStore
 
     content {
+        // VERBATIM OR CORRECTED, in his words, above the switch that decides where it comes from.
+        //
+        // Named by what he GETS, not by the mechanism. "Dictation API" is the name of an endpoint;
+        // "corrected" is the name of a result, and the result is the thing he is choosing between.
+        //
+        // The summary says what correcting actually does, including the part that is a judgement —
+        // resolving "three, no, four" to four. **A setting that silently changes his words should
+        // say so where it is switched on**, not in a document he would have to go and find.
+        SwitchPreference(
+            prefs.dictate.maCorrectedDictation,
+            icon = Icons.Default.AutoFixHigh,
+            title = "Corrected dictation",
+            summary = "On: filler removed, punctuation and capitals added, and \"three, no, four\" " +
+                "becomes four. Off: exactly the words you said. English only \u2014 Croatian is " +
+                "unaffected either way.",
+        )
+
         // THE DICTATION API, and what it actually covers.
         //
         // The summary names the two conditions rather than promising a speed-up, because the

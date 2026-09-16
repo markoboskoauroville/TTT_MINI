@@ -1,13 +1,13 @@
 # TTT mini — the finished state
 
-**Build 382.** A dictation keyboard for Marko Boško.
+**Build 384.** A dictation keyboard for Marko Boško.
 
 **Repo:** `markoboskoauroville/TTT_MINI` (Apache-2.0) · **Package:** `com.mantraproductions.tttlight`
 > **The artefact link above rots.** CI keeps the two newest releases, so a build named here is
 > unreachable within a few pushes. The tag is the durable part; take the newest release rather than
 > this number if it 404s.
 
-**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-382/ttt-mini-build-382.apk
+**Latest artefact:** https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-384/ttt-mini-build-384.apk
 
 > **This file is the present state and nothing else.** Every reason, every bug and every rejected
 > alternative is in [`DEVELOPMENT.md`](DEVELOPMENT.md), grouped by shape. If you are about to reverse
@@ -211,7 +211,8 @@ ends it**: no timeout, no ceiling.
 
 **English dictations under two minutes** go to AssemblyAI's Dictation API, which returns cleaned-up
 text in the same request. Croatian is not one of its 32 languages, and anything longer than two
-minutes takes the old path — both unaffected. Switched in Settings → Recording.
+minutes takes the old path — both unaffected. Switched in Settings → Recording, where **Corrected dictation** also chooses between the cleaned
+text and exactly the words spoken.
 
 **The Claude.ai reader** keeps what it reads. While the reader is watching, the screen text is appended
 to a per-chat log under `filesDir/cloud_logs`; Settings → Claude.ai reader lists them, opens one, and

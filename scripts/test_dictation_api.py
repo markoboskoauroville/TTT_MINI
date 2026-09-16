@@ -124,6 +124,40 @@ check("the log names the error", "llmError=" in client, "no way to tell a timeou
 check("it counts both texts", "verbatim=" in client,
       "a cleaned length of zero is the whole diagnosis")
 
+# ---------------------------------------------------------------- verbatim or corrected
+#
+# His switch. Until now the code PREFERRED the corrected text and fell back to the verbatim one, so a
+# failed rewrite looked exactly like a setting he had chosen — which is how §213a happened. Making it
+# a choice is what lets the fallback say it is a fallback.
+def which_text(prefer_corrected, cleaned, verbatim):
+    if not prefer_corrected:
+        return verbatim
+    return cleaned or verbatim
+
+
+check("corrected on, rewrite present", which_text(True, "Four.", "four") == "Four.")
+check("corrected off, rewrite present", which_text(False, "Four.", "four") == "four",
+      "his choice would be overridden by a rewrite he did not want")
+check("corrected on, rewrite empty", which_text(True, "", "four") == "four",
+      "a failed rewrite must not lose the transcript")
+check("corrected off, rewrite empty", which_text(False, "", "four") == "four")
+check("nothing at all is nothing", which_text(True, "", "") == "")
+
+check("the request carries the choice", "val preferCorrected: Boolean = true," in
+      (ROOT / "lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/provider/ProviderModels.kt").read_text(),
+      "the transport cannot know what he picked")
+check("the controller sets it from the switch",
+      "preferCorrected = prefs.dictate.maCorrectedDictation.get()" in ctrl, "the switch would do nothing")
+check("verbatim returns early", "if (!request.preferCorrected) {" in client,
+      "the corrected text would be used anyway")
+check("the fallback announces itself", "dictation rewrite empty" in client,
+      "a failed rewrite is indistinguishable from a setting he chose — which is how this bug hid")
+check("there is a switch for it", "prefs.dictate.maCorrectedDictation," in screen, "no way to choose")
+check("named by the result, not the endpoint", '"Corrected dictation"' in screen,
+      "a setting named after a mechanism")
+check("the summary admits what it changes", "becomes four" in screen,
+      "a setting that silently changes his words must say so where it is switched on")
+
 print(f"dictation api, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")

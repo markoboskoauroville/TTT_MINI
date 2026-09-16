@@ -102,6 +102,21 @@ data class TranscriptionRequest(
     /** Optional style/punctuation prompt to bias recognition. */
     val prompt: String? = null,
     /**
+     * VERBATIM OR CORRECTED, for providers that return both.
+     *
+     * Only the Dictation API answers with two texts: `text` exactly as spoken, and `llm_response`
+     * with filler removed, punctuation and capitals applied, and self-corrections resolved to what
+     * the speaker landed on.
+     *
+     * **Which one he wants is a preference, not a fallback**, and it was neither until now: the code
+     * preferred the corrected text and fell back to the verbatim one, so a rewrite that failed
+     * looked exactly like a setting he had chosen. Making it explicit means the fallback can say it
+     * happened.
+     *
+     * A provider that returns one text ignores this.
+     */
+    val preferCorrected: Boolean = true,
+    /**
      * When [language] is auto-detect, the only languages detection may choose between.
      *
      * Unconstrained detection is not what "auto" means to someone who speaks exactly two languages:

@@ -666,7 +666,14 @@ class OpenAiCompatibleClient(
         val response = json.decodeFromString(AssemblyDictationDto.serializer(), body)
         // The cleaned text when there is one, the verbatim transcript when the rewrite failed. The
         // documentation is explicit that a null llm_response with text present is a success.
+        val verbatim = response.text.orEmpty().trim()
         val cleaned = response.llmResponse?.trim().orEmpty()
+
+        // VERBATIM, BECAUSE HE ASKED FOR IT. Not a fallback — a choice, and it returns here.
+        if (!request.preferCorrected) {
+            DictateHttpLog.info("dictation verbatim by choice, length=${verbatim.length}")
+            return TranscriptionResult(verbatim)
+        }
         // SAY WHICH TEXT CAME BACK, because the two are indistinguishable once they are on screen.
         //
         // He reported a dictation arriving with no punctuation and no capitals — which is exactly
@@ -678,7 +685,12 @@ class OpenAiCompatibleClient(
             "dictation cleaned=${cleaned.length} verbatim=${response.text.orEmpty().length} " +
                 "llmError=${response.llmError ?: "none"}",
         )
-        return TranscriptionResult(cleaned.ifBlank { response.text.orEmpty().trim() })
+        // The fallback SAYS it is one. Until now a failed rewrite was indistinguishable on screen
+        // from a setting he had chosen, which is how §213a happened.
+        if (cleaned.isBlank()) {
+            DictateHttpLog.warn("dictation rewrite empty, using verbatim instead")
+        }
+        return TranscriptionResult(cleaned.ifBlank { verbatim })
     }
 
     private suspend fun transcribeAssemblyAiSync(

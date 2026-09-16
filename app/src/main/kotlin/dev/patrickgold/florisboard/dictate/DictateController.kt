@@ -1708,6 +1708,8 @@ object DictateController {
                 val request = TranscriptionRequest(
                     audioFile = uploadFile,
                     model = model,
+                    // His switch: corrected text, or exactly what he said.
+                    preferCorrected = prefs.dictate.maCorrectedDictation.get(),
                     // Always an explicit language, never null. Null told the provider to detect, and
                     // detection is what this app stopped doing: the HR/ENG key says which language it
                     // is, so there is nothing left to guess. MaLanguage.active() answers hr or en and
