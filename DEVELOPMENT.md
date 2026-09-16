@@ -10205,3 +10205,44 @@ code. It splits on `private fun captureToLog(` now.
 first-appearance ordering check in §207 and the import-versus-use position check in §202 — three
 variants of one mistake in a fortnight, each time because the cheapest thing to grep for was a bare
 identifier.
+
+---
+
+## §212 — The AssemblyAI Dictation API, researched and not wired
+
+4.9.2026. He asked for the keyboard to use AssemblyAI's new Dictation API. **Researched first, and
+the research says it cannot carry this app's main job.**
+
+    POST https://dictation.assemblyai.com/v1/transcribe/live
+    multipart: `config` (JSON) FIRST, then `audio`
+    Authorization: <key>     — raw, no Bearer
+    returns: text (verbatim) + llm_response (cleaned) + llm_error
+
+### Three constraints, measured from the documentation
+
+**1. NO CROATIAN.** The endpoint accepts 32 language codes and `hr` is not one of them — a code
+outside the set is rejected with `400`. Half his dictation is Croatian. **This is not a limitation to
+work around; it is the feature not existing for him.**
+
+**2. 120 seconds of audio per call.** He dictates long. A cap that silently truncates would be worse
+than a refusal, so any wiring needs a length guard and a message.
+
+**3. WAV or raw PCM only.** Compressed formats are rejected with `415` because the endpoint decodes
+as it arrives. **This app compresses to Opus before upload** precisely to keep his mobile data down —
+using Dictation means sending uncompressed audio, which is roughly an order of magnitude more bytes.
+
+### What it is genuinely good at
+
+One call instead of two: `llm_response` comes back cleaned, which is what Ctrl+F does today in a
+separate request to a separate provider. p50 of 134 ms. $0.62 per hour, flat.
+
+For **English, short, on wifi**, that is a better shape than what this app does now.
+
+### The decision, which is his
+
+It belongs as **one more transcription provider he can pick**, never the default, with the language
+guard refusing Croatian before the request rather than after a `400`. That is a build, and it needs
+his answer first: a provider that handles half his dictation and refuses the other half is a thing he
+has to remember the state of, which is exactly the kind of mode this month has been spent deleting.
+
+**Not wired. Researched, recorded, and stopped at the point where the next step is his.**
