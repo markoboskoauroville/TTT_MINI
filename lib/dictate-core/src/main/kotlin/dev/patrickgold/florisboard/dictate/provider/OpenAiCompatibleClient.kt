@@ -667,6 +667,17 @@ class OpenAiCompatibleClient(
         // The cleaned text when there is one, the verbatim transcript when the rewrite failed. The
         // documentation is explicit that a null llm_response with text present is a success.
         val cleaned = response.llmResponse?.trim().orEmpty()
+        // SAY WHICH TEXT CAME BACK, because the two are indistinguishable once they are on screen.
+        //
+        // He reported a dictation arriving with no punctuation and no capitals — which is exactly
+        // what `text` looks like, since punctuation and capitalisation are applied BY the cleanup.
+        // So either the rewrite failed, or this path never ran, and **nothing in the result says
+        // which**. One line of log separates a provider that did not answer from a provider that was
+        // never called.
+        DictateHttpLog.info(
+            "dictation cleaned=${cleaned.length} verbatim=${response.text.orEmpty().length} " +
+                "llmError=${response.llmError ?: "none"}",
+        )
         return TranscriptionResult(cleaned.ifBlank { response.text.orEmpty().trim() })
     }
 

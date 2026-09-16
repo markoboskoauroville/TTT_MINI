@@ -10301,3 +10301,28 @@ transcript used when the rewrite fails. Sabotaged two ways: red on both.
 
 **Not tested: no request has ever been made.** The wire format is read from the documentation, not
 observed. The first English recording under two minutes is the test.
+
+## §213a — Verbatim text, and no way to tell why
+
+He dictated in English and got back text with no punctuation and no capitals.
+
+**That is precisely what `text` looks like.** Punctuation and capitalisation are applied by the
+CLEANUP, not by the transcription — so what he read is the verbatim fallback, which means
+`llm_response` came back null or blank.
+
+Two causes, and they have different fixes:
+
+1. **The rewrite failed** — a timeout or an error, which the service reports in `llm_error` while
+   still returning `200`. The fallback then did exactly what it should.
+2. **This path never ran**, and he was on Sync or async all along. Sync returns punctuated text, so
+   this is the less likely of the two — but "less likely" is not "ruled out".
+
+**Nothing in the result said which**, which is the actual defect. A fallback that is invisible is a
+fallback that cannot be diagnosed: the code did the right thing and told nobody.
+
+One line of log now reports the length of both texts and the `llm_error`. `cleaned=0 llmError=timeout`
+is the first case; no dictation line at all is the second.
+
+The general shape, which this file has now met three times: **a correct fallback is still a silent
+one.** The reader's cue-skipping, the model healer's rewire and now this all choose a second-best
+answer without saying so. The healer logs it. The other two did not.

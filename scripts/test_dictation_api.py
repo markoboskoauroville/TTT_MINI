@@ -112,6 +112,18 @@ check("there is a switch in settings", "prefs.dictate.maDictationApi," in screen
 check("the summary names the limits", "Croatian and" in screen,
       "a switch that promises speed and quietly excludes half his dictation")
 
+# ---------------------------------------------------------------- it says which text came back
+#
+# He reported a dictation with no punctuation and no capitals, which is exactly what `text` looks
+# like — punctuation and capitalisation are applied BY the cleanup, so what he saw is the verbatim
+# fallback. But nothing in the result said whether the rewrite failed or this path never ran, and
+# **those two have completely different fixes.**
+check("the outcome is logged", "dictation cleaned=" in client,
+      "a failed rewrite and an unused path look identical on screen")
+check("the log names the error", "llmError=" in client, "no way to tell a timeout from an error")
+check("it counts both texts", "verbatim=" in client,
+      "a cleaned length of zero is the whole diagnosis")
+
 print(f"dictation api, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print(f"  FAIL  {f}")
