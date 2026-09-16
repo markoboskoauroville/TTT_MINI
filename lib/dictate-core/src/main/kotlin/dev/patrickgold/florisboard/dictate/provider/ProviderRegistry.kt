@@ -384,6 +384,24 @@ object ProviderRegistry {
      * routing header rather than a body field. Both are verified against the OpenAPI schema, not
      * remembered.
      */
+    /**
+     * AssemblyAI Dictation. Same key and same bill as the other two AssemblyAI presets.
+     *
+     * No model list: the endpoint has one model and takes no model header, so offering a picker
+     * would be a control with one entry that does nothing.
+     */
+    val ASSEMBLYAI_DICTATION = ProviderPreset(
+        id = "assemblyai-dictation",
+        displayName = "AssemblyAI (dictation)",
+        baseUrl = "https://dictation.assemblyai.com/",
+        capabilities = STT_ONLY,
+        transcriptionApi = TranscriptionApi.ASSEMBLYAI_DICTATION,
+        supportsDynamicModels = false,
+        apiKeyUrl = "https://www.assemblyai.com/app/api-keys",
+        defaultTranscriptionModel = "",
+        curatedTranscriptionModels = emptyList(),
+    )
+
     val ASSEMBLYAI_SYNC = ProviderPreset(
         id = "assemblyai-sync",
         displayName = "AssemblyAI (fast)",

@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""
+Test 1 for the AssemblyAI Dictation API path.
+
+**Croatian is not one of the 32 languages this endpoint accepts.** A code outside the set is rejected
+with 400. So the rule is: English under two minutes goes here, everything else does not.
+
+    python3 scripts/test_dictation_api.py
+"""
+
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SRC = ROOT / "app/src/main/kotlin/dev/patrickgold/florisboard"
+LIB = ROOT / "lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/provider"
+
+failures: list[str] = []
+checks = 0
+# From the documentation, 4.9.2026. Recorded here because the whole design turns on it.
+SUPPORTED = {"en", "es", "de", "fr", "it", "pt", "tr", "nl", "sv", "no", "da", "fi", "hi", "vi",
+             "he", "ur", "ko", "ca", "gl", "ru", "ro", "et", "fa", "yue", "af", "mr", "zu", "xh",
+             "nn", "ar", "ja", "zh"}
+
+
+def check(name: str, ok: bool, detail: str = "") -> None:
+    global checks
+    checks += 1
+    if not ok:
+        failures.append(f"{name}: {detail}")
+
+
+def use_dictation(language, enabled=True):
+    """The port of maUseDictationPath. The length and format guards are maUseSyncPath's."""
+    if not enabled:
+        return False
+    return language == "en"
+
+
+# ---------------------------------------------------------------- the language rule
+check("croatian is genuinely unsupported", "hr" not in SUPPORTED,
+      "if this ever changes, the whole rule changes with it")
+check("english goes to dictation", use_dictation("en"))
+check("croatian does not", use_dictation("hr") is False, "a 400 on every Croatian recording")
+check("the switch turns it off", use_dictation("en", enabled=False) is False)
+for code in ("hr", "sr", "bs", "sl", ""):
+    check(f"{code!r} stays on the old path", use_dictation(code) is False,
+          "an unsupported code is rejected with 400, after the upload")
+
+# Every language the app can be in must reach a path that works.
+for lang in ("en", "hr"):
+    routed = "dictation" if use_dictation(lang) else "sync-or-async"
+    check(f"{lang} is routed somewhere", routed in ("dictation", "sync-or-async"))
+    if lang != "en":
+        check(f"{lang} is never sent to an endpoint that refuses it", routed != "dictation")
+
+
+def code(path: Path) -> str:
+    t = path.read_text()
+    t = re.sub(r"/\*.*?\*/", "", t, flags=re.S)
+    return re.sub(r"^\s*//.*$", "", t, flags=re.M)
+
+
+client = code(LIB / "OpenAiCompatibleClient.kt")
+prov = code(SRC / "dictate/MaProviders.kt")
+ctrl = code(SRC / "dictate/DictateController.kt")
+reg = code(LIB / "ProviderRegistry.kt")
+prefs = code(SRC / "app/AppPrefs.kt")
+screen = code(SRC / "app/settings/dictate/DictateScreen.kt")
+
+# ---------------------------------------------------------------- the request shape
+check("the endpoint path is right", '"v1/transcribe/live"' in client, "a 404")
+check("the host is the dictation one", "dictation.assemblyai.com" in reg, "wrong service entirely")
+check("the key is raw, no Bearer", 'header("Authorization", config.apiKey)' in client,
+      "a Bearer prefix is rejected")
+
+# CONFIG BEFORE AUDIO. The endpoint rejects the other order with a 400 that says nothing about
+# ordering, and Sync's config comes LAST — so the two siblings differ in exactly this.
+_body = client[client.index("transcribeAssemblyAiDictation"):]
+_body = _body[:_body.index("private suspend fun transcribeAssemblyAiSync")]
+_cfg = _body.find('addFormDataPart("config"')
+_aud = _body.find('addFormDataPart("audio"')
+check("config is sent before audio", 0 <= _cfg < _aud,
+      "the endpoint rejects an audio part that arrives first")
+check("the language is stated, not defaulted", '"language_codes":["en"]' in _body,
+      "the request would not say what it means")
+check("no llm_instruction is sent", "llm_instruction" not in _body,
+      "his prose rules would silently apply to every recording")
+
+# ---------------------------------------------------------------- the response
+check("the cleaned text is preferred", "llmResponse" in client, "the verbatim text would be used")
+check("and the transcript is the fallback", "cleaned.ifBlank {" in client,
+      "a failed rewrite returns 200 with text — throwing that away loses a good transcription")
+check("a rewrite error is not a failure", "llmError" in client and "throw" not in
+      client[client.index("AssemblyDictationDto"):client.index("AssemblyDictationDto") + 400],
+      "a non-null llm_error is documented as a success")
+
+# ---------------------------------------------------------------- the wiring
+check("the rule exists", "fun maUseDictationPath(" in prov, "nothing decides")
+check("it asks only the language", "language == MaLanguage.EN" in prov,
+      "restating guards that maUseSyncPath already applied")
+check("it is behind the switch", "maDictationApi.get()" in prov, "no way to turn it off")
+check("the controller consults it", "MaProviders.maUseDictationPath(MaLanguage.active())" in ctrl,
+      "the preset would never be used")
+check("it reads the chosen language, not a guess", "MaLanguage.active()" in ctrl,
+      "a detector saying English about Croatian turns a good recording into a 400")
+check("sync is still the other branch", "ProviderRegistry.ASSEMBLYAI_SYNC" in ctrl,
+      "Croatian would have no fast path at all")
+check("the preference exists", "maDictationApi = boolean(" in prefs)
+check("there is a switch in settings", "prefs.dictate.maDictationApi," in screen, "no way to change it")
+check("the summary names the limits", "Croatian and" in screen,
+      "a switch that promises speed and quietly excludes half his dictation")
+
+print(f"dictation api, test 1: {checks} checks, {len(failures)} failed")
+for f in failures:
+    print(f"  FAIL  {f}")
+sys.exit(1 if failures else 0)

@@ -10246,3 +10246,58 @@ his answer first: a provider that handles half his dictation and refuses the oth
 has to remember the state of, which is exactly the kind of mode this month has been spent deleting.
 
 **Not wired. Researched, recorded, and stopped at the point where the next step is his.**
+
+---
+
+## §213 — The Dictation API, English only
+
+Build 382. Wired per §212, with the constraint that decides everything: **Croatian is not one of the
+32 languages this endpoint accepts.**
+
+    English, under 2 minutes   ->  dictation.assemblyai.com/v1/transcribe/live
+    Croatian, any length       ->  the existing path, unchanged
+    anything over 2 minutes    ->  the existing path, unchanged. His rule: we go the old way, always.
+
+### It is a sibling, not a new mechanism
+
+`ASSEMBLYAI_SYNC` already exists with the same 2-minute cap, the same WAV/PCM requirement and the
+same caller-enforced eligibility. So **`maUseDictationPath` asks exactly one question — the language**
+— and everything else is `maUseSyncPath`'s five guards, already applied. Restating them would have
+been two places to keep in step.
+
+### Three details that decide whether it works
+
+**`config` comes FIRST.** The server transcribes as bytes arrive and cannot begin without it; an
+audio part that arrives first is rejected with `400`. **Sync's config is optional and last** — the two
+siblings differ in exactly this, which is the kind of thing that is obvious in the documentation and
+invisible in the code. The test asserts the order by index.
+
+**No `llm_instruction` is sent.** The default cleanup is what a dictation wants. His own voice
+belongs to Ctrl+F, a deliberate press against a model whose prompt he controls. **Putting his prose
+rules here would silently apply them to every recording** — and this month has been spent removing
+things that decide for him.
+
+**A failed rewrite is a successful request.** The service returns `200` with `llm_response: null` and
+an `llm_error`. The transcript is intact and is used. Treating the error as a failure would throw
+away a perfectly good transcription.
+
+### The language comes from the key he pressed
+
+`MaLanguage.active()`, set when he pressed `● E` or `● H`, before the audio existed. **There is no
+detector in this path and there must not be** — a detector saying "English" about a Croatian sentence
+turns a good recording into a 400 after the whole upload.
+
+### The switch says what it excludes
+
+"English recordings under two minutes… Croatian and anything longer are unaffected." A summary
+promising *faster dictation* would be a switch he turns on and then wonders about every time a
+Croatian recording behaves as before.
+
+### Tested
+
+Test 1: 30 checks, 0 failed — the full 32-code list recorded so a future change to it is visible,
+every Croatian-family code refused, `config` before `audio` by index, no instruction sent, the
+transcript used when the rewrite fails. Sabotaged two ways: red on both.
+
+**Not tested: no request has ever been made.** The wire format is read from the documentation, not
+observed. The first English recording under two minutes is the test.

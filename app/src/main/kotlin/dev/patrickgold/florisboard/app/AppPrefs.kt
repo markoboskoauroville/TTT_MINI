@@ -1449,6 +1449,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          * Off by default. It writes files to internal storage without being asked, and a feature
          * that accumulates his conversations on disk should be one he switched on.
          */
+        /**
+         * Whether English dictations under two minutes use AssemblyAI's Dictation API.
+         *
+         * On by default: it is the same key and the same provider, it returns cleaned-up text in the
+         * same request, and it is the endpoint built for exactly this job. Croatian and anything
+         * over two minutes ignore it entirely.
+         */
+        val maDictationApi = boolean(
+            key = "dictate__ma_dictation_api",
+            default = true,
+        )
+
         val maCloudLogEnabled = boolean(
             key = "dictate__ma_cloud_log",
             default = false,

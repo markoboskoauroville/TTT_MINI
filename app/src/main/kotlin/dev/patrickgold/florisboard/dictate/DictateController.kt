@@ -1807,7 +1807,14 @@ object DictateController {
                     try {
                         try {
                             if (maFast) {
-                                maSend(ProviderRegistry.ASSEMBLYAI_SYNC, OpenAiCompatibleClient.SYNC_MODEL, uploadFile, true)
+                                // English under two minutes goes to the Dictation endpoint, which
+                                // returns cleaned text in the same request. Everything else that
+                                // got this far goes to Sync. Over two minutes never gets here.
+                                if (MaProviders.maUseDictationPath(MaLanguage.active())) {
+                                    maSend(ProviderRegistry.ASSEMBLYAI_DICTATION, "", uploadFile, true)
+                                } else {
+                                    maSend(ProviderRegistry.ASSEMBLYAI_SYNC, OpenAiCompatibleClient.SYNC_MODEL, uploadFile, true)
+                                }
                             } else {
                                 maSend(preset, model, uploadFile, false)
                             }

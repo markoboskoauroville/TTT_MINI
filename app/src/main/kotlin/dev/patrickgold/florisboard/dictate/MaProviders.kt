@@ -152,6 +152,31 @@ object MaProviders {
      * always async. English may use Sync while the clip fits its window, and the length check below
      * turns that into "fast until about two minutes, then slow" without any timer of its own.
      */
+    /**
+     * WHICH FAST PATH: the Dictation API, or Sync.
+     *
+     * Called only when [maUseSyncPath] has already said yes, so every guard it applies is already
+     * true — under two minutes, under the byte cap, a WAV, not chat audio, an AssemblyAI account.
+     * **This function adds exactly one question**, and adding it anywhere else would mean restating
+     * the other five.
+     *
+     * The question is the language. The Dictation endpoint accepts 32 codes and **Croatian is not
+     * among them** — a code outside the set is rejected with `400`. So: English goes to Dictation,
+     * everything else stays on Sync.
+     *
+     * Checked against the language he CHOSE, not a guess: the record key decided it before the audio
+     * existed. There is no detector in this path and there must not be — a detector that says
+     * "English" about a Croatian sentence turns a good transcription into a 400.
+     *
+     * Over two minutes never reaches here at all: [maUseSyncPath] has already sent it to the async
+     * path, which is his rule — **over two minutes, we go the old way, always.**
+     */
+    fun maUseDictationPath(language: String): Boolean {
+        val prefs by FlorisPreferenceStore
+        if (!prefs.dictate.maDictationApi.get()) return false
+        return language == MaLanguage.EN
+    }
+
     fun maUseSyncPath(preset: ProviderPreset, chatAudio: Boolean, file: File): Boolean {
         // MaLanguage.active() and not the raw preference, deliberately. It answers hr or en and
         // nothing else, collapsing anything left over from an older install — including the auto

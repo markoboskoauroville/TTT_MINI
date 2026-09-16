@@ -167,6 +167,24 @@ fun DictateRecordingScreen() = FlorisScreen {
     val prefs by FlorisPreferenceStore
 
     content {
+        // THE DICTATION API, and what it actually covers.
+        //
+        // The summary names the two conditions rather than promising a speed-up, because the
+        // conditions are the whole truth of this setting: **Croatian is not one of the 32
+        // languages this endpoint accepts**, and anything over two minutes has already gone to
+        // the slow path before this is consulted.
+        //
+        // A switch whose summary says "faster dictation" would be a switch he turns on and then
+        // wonders about every time a Croatian recording behaves as before.
+        SwitchPreference(
+            prefs.dictate.maDictationApi,
+            icon = Icons.Default.Bolt,
+            title = "Dictation API for English",
+            summary = "English recordings under two minutes go to AssemblyAI's dictation " +
+                "endpoint, which returns cleaned-up text in the same request. Croatian and " +
+                "anything longer are unaffected.",
+        )
+
         SwitchPreference(
             prefs.dictate.pushToTalk,
             icon = Icons.Default.TouchApp,

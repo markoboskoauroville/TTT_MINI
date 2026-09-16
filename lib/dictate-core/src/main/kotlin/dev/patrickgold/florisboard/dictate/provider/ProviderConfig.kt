@@ -118,6 +118,20 @@ enum class TranscriptionApi {
     ASSEMBLYAI_SYNC,
 
     /**
+     * AssemblyAI Dictation: transcript AND cleaned-up text in one request, at
+     * `dictation.assemblyai.com/v1/transcribe/live`.
+     *
+     * The same hard limits as [ASSEMBLYAI_SYNC] — **2 minutes** and WAV/PCM only — enforced by the
+     * caller, plus one this endpoint adds: **32 languages, and Croatian is not among them.** A code
+     * outside the set is rejected with `400`, so the caller refuses non-English before the request
+     * rather than after it.
+     *
+     * The `config` part must arrive BEFORE the audio, which is the opposite of Sync. The response
+     * carries `text` (verbatim) and `llm_response` (cleaned); the cleanup runs by default.
+     */
+    ASSEMBLYAI_DICTATION,
+
+    /**
      * On-device transcription (issue #104): no network call at all. Handled by
      * [dev.patrickgold.florisboard.dictate.provider.LocalTranscriptionProvider] (sherpa-onnx), not by
      * [OpenAiCompatibleClient]; this value only marks a provider preset as local so the dictation flow

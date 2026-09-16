@@ -163,6 +163,7 @@ class OpenAiCompatibleClient(
         TranscriptionApi.DEEPGRAM -> transcribeDeepgram(request, onRetry)
         TranscriptionApi.ASSEMBLYAI_ASYNC -> transcribeAssemblyAi(request, onRetry)
         TranscriptionApi.ASSEMBLYAI_SYNC -> transcribeAssemblyAiSync(request, onRetry)
+        TranscriptionApi.ASSEMBLYAI_DICTATION -> transcribeAssemblyAiDictation(request, onRetry)
         // On-device transcription never uses this HTTP client; the dictation flow routes local providers
         // to LocalTranscriptionProvider before one is ever constructed.
         TranscriptionApi.LOCAL_ONDEVICE -> error("LOCAL_ONDEVICE is handled by LocalTranscriptionProvider")
@@ -615,6 +616,60 @@ class OpenAiCompatibleClient(
      * promise is that it answers immediately, so when it does not, the honest move is to hand back to the
      * async path rather than to pay twice more waiting.
      */
+    /**
+     * THE DICTATION API: transcript and cleaned-up text in one request.
+     *
+     * A sibling of [transcribeAssemblyAiSync] — same provider, same key, same 2-minute and WAV/PCM
+     * limits — with two differences that matter:
+     *
+     *  - **`config` comes FIRST and is required.** The server transcribes as the bytes arrive and
+     *    cannot start without it; an audio part before config is rejected with `400`. Sync's config
+     *    is optional and last. Getting this backwards is a 400 that says nothing about ordering.
+     *  - **The response carries two texts.** `text` is verbatim, `llm_response` is cleaned — filler
+     *    gone, self-corrections resolved. The cleanup runs by default, with no instruction sent.
+     *
+     * `llm_instruction` is deliberately NOT sent. The default cleanup is what he wants from a
+     * dictation; his own voice belongs to Ctrl+F, which is a separate deliberate press against a
+     * model whose prompt he controls. **Putting his prose rules here would silently apply them to
+     * every recording**, and he has spent this month removing things that decide for him.
+     *
+     * A failed rewrite is not a failed request: the service returns `200` with `llm_response: null`
+     * and an `llm_error`. The transcript is still there and is used.
+     */
+    private suspend fun transcribeAssemblyAiDictation(
+        request: TranscriptionRequest,
+        onRetry: (attempt: Int) -> Unit,
+    ): TranscriptionResult {
+        val audioBody = request.audioFile.asRequestBody(guessAudioMediaType(request.audioFile))
+        // English only, and the caller has already refused anything else — but the code is sent
+        // explicitly rather than relying on the default, so the request says what it means.
+        val configJson = """{"language_codes":["en"]}"""
+        val multipart = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            // CONFIG FIRST. Not a style choice: the endpoint rejects the request without it.
+            .addFormDataPart("config", null, configJson.toRequestBody(JSON_MEDIA_TYPE))
+            .addFormDataPart("audio", request.audioFile.name, audioBody)
+            .build()
+        val label = "AssemblyAI dictation audioBytes=${request.audioFile.length()}"
+        val httpRequest = Request.Builder()
+            .url(config.normalizedBaseUrl + "v1/transcribe/live")
+            .header("Authorization", config.apiKey)
+            .tag(HttpCallDiagnostics::class.java, HttpCallDiagnostics(label))
+            .post(multipart)
+            .build()
+        val body = executeForBody(
+            request = httpRequest,
+            maxRetries = SYNC_MAX_RETRIES,
+            onRetry = onRetry,
+            diagnosticLabel = label,
+        )
+        val response = json.decodeFromString(AssemblyDictationDto.serializer(), body)
+        // The cleaned text when there is one, the verbatim transcript when the rewrite failed. The
+        // documentation is explicit that a null llm_response with text present is a success.
+        val cleaned = response.llmResponse?.trim().orEmpty()
+        return TranscriptionResult(cleaned.ifBlank { response.text.orEmpty().trim() })
+    }
+
     private suspend fun transcribeAssemblyAiSync(
         request: TranscriptionRequest,
         onRetry: (attempt: Int) -> Unit,
@@ -1305,6 +1360,25 @@ class OpenAiCompatibleClient(
      * the two numbers worth having when Croatian turns out to be readable or not, and reading them costs
      * nothing. `words`, `session_id` and `request_time_ms` are ignored by the lenient decoder.
      */
+    /**
+     * The Dictation response. Only the two texts and the rewrite's error are read.
+     *
+     * `llm_response` is nullable BY DESIGN — a rewrite that fails or times out returns `200` with the
+     * transcript intact and an `llm_error` beside it. **A non-null `llm_error` is not a failed
+     * request**, and treating it as one would throw away a perfectly good transcript.
+     *
+     * Unknown fields are ignored here (the client's json is lenient), which is right for a response:
+     * the service adding a timing field must not break transcription. The REQUEST is the opposite —
+     * an unknown config field is rejected with 400 — which is why the config is built as a literal
+     * rather than serialised from a class that might grow one.
+     */
+    @Serializable
+    private data class AssemblyDictationDto(
+        val text: String? = null,
+        @SerialName("llm_response") val llmResponse: String? = null,
+        @SerialName("llm_error") val llmError: String? = null,
+    )
+
     @Serializable
     private data class AssemblySyncDto(
         val text: String? = null,
