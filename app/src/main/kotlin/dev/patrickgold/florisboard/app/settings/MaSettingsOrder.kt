@@ -34,6 +34,10 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     VOICE_FORMAT("voice_format", "Voice formatting", "Marks you can speak, and how to say them"),
     READER("reader", "Reader", "The voice that reads the screen aloud"),
     // Beside the reader, because it is the reader's memory. A chat he listened to and can go back to.
+    // The number row's second characters. Its editor has existed for weeks inside
+    // DictateLayoutScreen, which has no entry here — so the only way to reach it was a deep link
+    // nobody types, and he asked for it as a new feature because from where he sits it did not exist.
+    NUMBER_ROW("number_row", "Number row", "What each digit carries on a long press"),
     CLOUD_READER("cloud_reader", "Claude.ai reader", "Chats it read, kept so you can read them again"),
     COPY_ROW("copy_row", "Copy row", "The clipboard row, shown in the transcription view"),
     PROFILES("profiles", "Profiles", "Whole configurations, saved by name and swapped in one tap"),
@@ -85,6 +89,7 @@ object MaSettingsOrder {
         MaSettingsEntry.PROMPTS,
         MaSettingsEntry.VOICE_FORMAT,
         MaSettingsEntry.READER,
+        MaSettingsEntry.NUMBER_ROW,
         MaSettingsEntry.CLOUD_READER,
         MaSettingsEntry.COPY_ROW,
         MaSettingsEntry.PROFILES,

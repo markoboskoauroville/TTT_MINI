@@ -68,5 +68,14 @@ object MaNumericSecondary {
      * left exactly as typed.
      */
     fun sanitize(value: String): String =
-        value.replace("\n", "").replace("\r", "").replace(SEPARATOR.toString(), "").take(16)
+        value.replace("\n", "").replace("\r", "")
+            .replace(SEPARATOR.toString(), "")
+            // NO LETTERS AND NO DIGITS. His rule, and it is the right one: the key already IS a
+            // digit, and the letters are two rows below. A long press that produces a "7" or a "k"
+            // spends the only spare gesture this row has on something he can already reach.
+            //
+            // Filtered rather than refused, so a paste of "a/b" leaves the slash instead of leaving
+            // him with an error and an empty field. **The useful part of what he pasted survives.**
+            .filter { !it.isLetterOrDigit() }
+            .take(16)
 }

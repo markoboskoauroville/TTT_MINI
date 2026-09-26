@@ -72,6 +72,7 @@ import dev.patrickgold.florisboard.app.settings.dictate.MaProfilesScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPromptsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPermissionsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaCloudLogScreen
+import dev.patrickgold.florisboard.app.settings.dictate.MaNumberRowScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaReaderScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaVoiceFormatScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPredictionsScreen
@@ -183,6 +184,12 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictate/reader")
         object MaReader
+
+        @Serializable
+        // The @Deeplink is not optional: composableWithDeepLink does requireNotNull on it, and a
+        // route without one throws while the nav graph is built — which is while the app starts.
+        @Deeplink("settings/dictate/number-row")
+        object MaNumberRow
 
         @Serializable
         // WITHOUT THIS LINE THE APP DOES NOT START.
@@ -460,6 +467,7 @@ object Routes {
             composableWithDeepLink(Settings.MaVoiceFormat::class) { MaVoiceFormatScreen() }
             composableWithDeepLink(Settings.MaReader::class) { MaReaderScreen() }
             composableWithDeepLink(Settings.MaCloudLog::class) { MaCloudLogScreen() }
+            composableWithDeepLink(Settings.MaNumberRow::class) { MaNumberRowScreen() }
             composableWithDeepLink(Settings.MaCopyRow::class) { MaCopyRowScreen() }
             composableWithDeepLink(Settings.MaProfiles::class) { MaProfilesScreen() }
             composableWithDeepLink(Settings.MaPrompts::class) { MaPromptsScreen() }

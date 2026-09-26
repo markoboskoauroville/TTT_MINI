@@ -10453,3 +10453,49 @@ type error; it is an edit that did not know where its target ended.
 verified by reading a diff of 21 changed lines — I read them, and still missed half. The checks are
 here because they are cheap, but the thing that actually caught these was the compiler, and the only
 honest conclusion is that this edit should have been run past a compile before being pushed.
+
+---
+
+## §216 — The number row gets a door
+
+Build 390. He asked for a settings entry to customise the second character on each digit.
+
+**It already existed.** `MaNumericSecondary` and `MaNumericSecondarySetting` have been written and
+working for weeks — inside `DictateLayoutScreen`, which **has no entry in the settings list**. The
+only way to reach it was a deep link nobody types.
+
+So he asked for it as a new feature, because from where he sits it did not exist.
+
+> **A feature that compiles, passes its tests and cannot be opened is not a feature.**
+
+Third time this month. Build 369's route crashed for a missing annotation; the Claude.ai reader was
+missing from `DEFAULT`; this was built and never given a door. **All three were something not added
+to a second place**, and two of the three now have gates — `check_route_deeplink` and
+`check_settings_entry_reachable`, which both fired on this one during the build.
+
+### Its own entry, not "Layout"
+
+`DictateLayoutScreen` also holds the prompt-row count and the enter long-press characters, inherited
+settings he has never mentioned. Putting all of it in his menu to reach one of them would be three
+doors to find one room. **The number row is what he asked for, so the number row is the entry.**
+
+### Punctuation only, and filtered rather than refused
+
+His rule: anything but a number or a letter. He is right, and the reason is worth stating — **the key
+already IS a digit, and the letters are two rows below**, so a long press producing "7" or "k" spends
+the only spare gesture this row has on something he can already reach.
+
+`sanitize` drops letters and digits rather than rejecting the whole value, so pasting `a/b` leaves the
+slash. **The useful part of what he pasted survives**, which is better than an error and an empty
+field.
+
+The rule is stated in the editor, where he is typing. A field that silently drops what he types
+without saying why is a field he retries.
+
+### Tested
+
+Test 1: 54 checks, 0 failed — thirty punctuation marks accepted, letters and digits in several
+scripts dropped, the separator stripped so one field cannot become two, ten slots whatever is stored,
+and the whole reachability chain: entry, DEFAULT, icon, route, `@Deeplink`, registration, and the
+screen actually hosting the editor. Sabotaged by removing it from `DEFAULT`: red in the test and in
+`verify.py`.

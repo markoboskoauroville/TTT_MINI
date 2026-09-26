@@ -58,6 +58,8 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun MaNumericSecondarySetting() {
+    // The rule is enforced in MaNumericSecondary.sanitize and stated here, where he is typing.
+    // A field that silently drops what he types without saying why is a field he retries.
     val prefs by FlorisPreferenceStore
     val scope = rememberCoroutineScope()
     val stored by prefs.dictate.maNumericSecondary.collectAsState()
@@ -79,7 +81,8 @@ fun MaNumericSecondarySetting() {
             style = MaterialTheme.typography.titleMedium,
         )
         Text(
-            text = "What each digit types when you hold it. Leave a field empty for a key with " +
+            text = "Punctuation only \u2014 letters and numbers are dropped, since the digit and " +
+                "the letter rows already have them. Leave a field empty for a key with " +
                 "nothing behind it.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
