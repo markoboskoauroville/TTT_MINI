@@ -88,6 +88,18 @@ check("the prompts layout is still an enum", "default = DictatePromptsLayout.ROW
       'replaced by "ROW", which is a different type')
 check("the accent colour is still a Color", "default = Color(0xFFE8B15C)," in src,
       "replaced by its hex string, which is a different type")
+# Two MORE type changes got through to CI: both theme ids are ExtensionComponentName, and a quoted
+# string there compiles nowhere. **Four type changes in one mechanical edit** — every one a value
+# that was correct and a type that was not.
+for name in ("theme__day_theme_id", "theme__night_theme_id"):
+    m = re.search(rf'key = "{name}",\s*\n\s*default = ([^\n]+?),?\n', src)
+    check(f"{name} is still a component name", m is not None and m.group(1).startswith("extCoreTheme("),
+          "a quoted string where an ExtensionComponentName belongs")
+
+# And the settings order must be ONE string, not a replacement followed by the old continuation.
+_m = re.search(r'key = "dictate__ma_settings_order",\s*\n\s*default = ("(?:[^"\\]|\\.)*"),\s*\n\s*\)', src)
+check("the settings order is one complete string", _m is not None,
+      "a replaced default with the previous version's continuation lines dangling after it")
 
 print(f"shipped defaults, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:

@@ -880,13 +880,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         /** The Mantra settings list order, as comma separated ids. See MaSettingsOrder. */
         val maSettingsOrder = string(
             key = "dictate__ma_settings_order",
-            default =
-                // His own order, exported 21.8.2026. Shipping it means a fresh install already
-                // looks like the keyboard he uses, rather than like a starting point he has to
-                // rebuild every time he reinstalls — which he does several times a day.
-                "cloud_reader,feature_row,reader,switchboard,prompts,settings_order,magic,recording,history,buckets,mappings,output,permissions,recovered,vocabulary,predictions,voice_commands,shortcuts,voice_format,copy_row,profiles"
-                    "buckets,mappings,output,recovered,vocabulary,predictions,voice_commands," +
-                    "shortcuts,prompts,voice_format,reader,copy_row,profiles",
+            default = "cloud_reader,feature_row,reader,switchboard,prompts,settings_order,magic,recording,history,buckets,mappings,output,permissions,recovered,vocabulary,predictions,voice_commands,shortcuts,voice_format,copy_row,profiles",
         )
         // Zone two: the keyboard itself, everything from the number row down to the bottom row,
         // switched as one from the feature row. Zone one is the edit strip and rides on maEditRow,
@@ -2273,12 +2267,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // there and still selectable, which was always the deal.
         val dayThemeId = custom(
             key = "theme__day_theme_id",
-            default = "org.florisboard.themes:sunrise",
+            default = extCoreTheme("sunrise"),
             serializer = ExtensionComponentName.Serializer,
         )
         val nightThemeId = custom(
             key = "theme__night_theme_id",
-            default = "org.florisboard.themes:sunrise",
+            default = extCoreTheme("sunrise"),
             serializer = ExtensionComponentName.Serializer,
         )
         // Gold, not amber. This preference, not the stylesheet, is what actually paints the enter

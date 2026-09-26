@@ -10431,3 +10431,25 @@ the old value is just an argument I am having with him in a file he does not rea
 What survives is the claim underneath, which is the one that mattered all along: the switch must
 exist and be visible, so he can turn it off again on any install without editing anything. **On, with
 no visible control, is not a setting — it is a behaviour.**
+
+## §215b — Four type changes, not two
+
+Build 386 went red twice. The mechanical rewrite produced **four** type errors, not the two I caught
+by reading the diff:
+
+- `DictatePromptsLayout.ROW` → `"ROW"` — caught by reading
+- `Color(0xFFE8B15C)` → its hex — caught by reading, and not even a change
+- `extCoreTheme("sunrise")` → `"org.florisboard.themes:sunrise"` — **twice**, missed, caught by CI
+
+Every one is **the right value in the wrong type**. The export stores everything as a string, so a
+rewrite from it cannot know that two of these fields are `ExtensionComponentName` and one is a
+`Color`.
+
+And a fifth fault of a different shape: replacing a multi-line default left the PREVIOUS version's
+continuation lines dangling after the new one, so a string ended and two more began. That is not a
+type error; it is an edit that did not know where its target ended.
+
+**The lesson is not "add four checks".** It is that a mechanical edit across 49 sites cannot be
+verified by reading a diff of 21 changed lines — I read them, and still missed half. The checks are
+here because they are cheap, but the thing that actually caught these was the compiler, and the only
+honest conclusion is that this edit should have been run past a compile before being pushed.
