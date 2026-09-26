@@ -10366,3 +10366,52 @@ have to go and find.
 Test 1: 45 checks, 0 failed — all four combinations of the switch against a present and an absent
 rewrite, the choice carried on the request, the early return, and the fallback's log line. Sabotaged
 by deleting the early return: red.
+
+---
+
+## §215 — His settings become the defaults
+
+Build 386. He sent an export and asked for it to be built in.
+
+**82 entries came in. 49 shipped. 33 did not, and the 33 are the interesting part.**
+
+### What must never ship
+
+**His API keys.** The first line of that file held five AssemblyAI keys in plain text. They were
+never read, never printed and never stored — and `test_shipped_defaults.py` now refuses any
+key-shaped string in `AppPrefs.kt` for ever.
+
+**His content.** `last_dictation` held a paragraph he had just spoken. `ma_clip_captured` held his
+clipboard. `ma_ngram_pending` held words he had dictated. **A default carries to every install**, so
+shipping these would hand a stranger his sentences.
+
+**His usage.** `total_audio_seconds` was 60,620 — seventeen hours. A fresh install claiming that is a
+lie in the only direction that matters.
+
+**One-time flags.** Ten `*_applied` and `*_migrated` booleans that mean "this upgrade already ran".
+Shipping them true tells a fresh install it has already done work it has never done, and the
+migration is then skipped for ever.
+
+> An exported settings file is a mix of what he wants, what he did, and who he is. **Only the first
+> is a default.**
+
+### What shipped
+
+Rows, the settings order, macro slots, magic targets, paste delays, scroll pages, reader voice, speed
+and alignment, the theme, the keyboard switches, the provider ids, and the two new dictation
+switches. 21 defaults changed; the rest already matched from the 21.8 export.
+
+### Two type changes, caught by reading the diff
+
+The export stores everything as a string, so a mechanical rewrite turned
+`DictatePromptsLayout.ROW` into `"ROW"` and `Color(0xFFE8B15C)` into `"ffe8b15c00000000"`. **Neither
+compiles**, and the colour was not even a change — the hex is the same value in the export's format.
+
+Caught by reading every changed line, not by a check. The test asserts both types now, which is the
+cheap half of the lesson; **the expensive half is that a mechanical edit across 49 sites needs its
+diff read line by line**, and there is no substitute for that.
+
+### Tested
+
+Test 1: 22 checks, 0 failed. Sabotaged by putting his clipboard in a default and by re-breaking the
+enum: red on both.

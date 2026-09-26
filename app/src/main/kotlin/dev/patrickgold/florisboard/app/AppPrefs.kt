@@ -680,7 +680,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          */
         val activeInputLanguage = string(
             key = "dictate__active_input_language",
-            default = "hr",
+            default = "en",
         )
         // Guard so the one-time seeding of the device/system dictation language (added on top of the
         // default detect,en) runs only once on a fresh install. See
@@ -782,7 +782,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             // Undo and redo left the row. Undo is on the number row's editing set and was the
             // least reached for of the eight here; redo even less. Their places go to the two things
             // that had nowhere to live: the clipboard panel, and the replace-everything macro.
-            default = "CLIPBOARD_HISTORY,ALL_PASTE,SELECT_ALL,PASTE,CUT,COPY,HISTORY,KEYBOARD",
+            default = "SELECT_ALL,PASTE,CUT,COPY,HISTORY,CLIPBOARD_HISTORY,ALL_PASTE,KEYBOARD",
         )
         // Sticky panel: when on, whichever of the two main views was last used comes back the next
         // time the keyboard opens, instead of always landing on the typing keyboard. Marko is in the
@@ -818,7 +818,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val maExtraRow = boolean(
             key = "dictate__ma_extra_row",
-            default = true,
+            default = false,
         )
         /** "digits", "diacritics", "symbols", "arrows" or "editing". */
         val maExtraRowMode = string(
@@ -884,7 +884,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                 // His own order, exported 21.8.2026. Shipping it means a fresh install already
                 // looks like the keyboard he uses, rather than like a starting point he has to
                 // rebuild every time he reinstalls — which he does several times a day.
-                "permissions,settings_order,feature_row,switchboard,magic,recording,history," +
+                "cloud_reader,feature_row,reader,switchboard,prompts,settings_order,magic,recording,history,buckets,mappings,output,permissions,recovered,vocabulary,predictions,voice_commands,shortcuts,voice_format,copy_row,profiles"
                     "buckets,mappings,output,recovered,vocabulary,predictions,voice_commands," +
                     "shortcuts,prompts,voice_format,reader,copy_row,profiles",
         )
@@ -897,7 +897,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // when it comes back.
         val maZoneKeyboard = boolean(
             key = "dictate__ma_zone_keyboard",
-            default = true,
+            default = false,
         )
         val maCursorRow = boolean(
             key = "dictate__ma_cursor_row",
@@ -964,7 +964,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default =
                 // The row he actually uses, exported 21.8.2026: the three zone keys, the mic, the
                 // reader, the switchboard and settings.
-                "1\u001Cb\u001Dzone1\u001D1\u001Fb\u001Dzone2\u001D1\u001Fb\u001Dzone3\u001D1\u001Fb\u001Dmic\u001D1\u001Fb\u001Dreader\u001D1\u001Fb\u001Dswitchboard\u001D1\u001Fb\u001Dsettings\u001D1\u001E0\u001C\u001E0\u001C",
+                "1~default row\u001Cb\u001Dzone1\u001D1\u001Fb\u001Dzone2\u001D1\u001Fb\u001Dzone3\u001D1\u001Fb\u001Dhistory\u001D1\u001Fb\u001Drecorden\u001D1\u001Fb\u001Dcase\u001D1\u001Fb\u001Drow_2\u001D1\u001Fb\u001Dsettings\u001D1\u001E1~switch\u001Cb\u001Dundo\u001D1\u001Fb\u001Darrow_left\u001D1\u001Fb\u001Darrow_right\u001D1\u001Fb\u001Darrow_down\u001D1\u001Fb\u001Darrow_up\u001D1\u001Fb\u001Dspace\u001D1\u001Fb\u001Denter\u001D1\u001Fb\u001Dbackspace\u001D1\u001Fb\u001Dsend\u001D1\u001E0~buckets\u001Cb\u001Dcclear\u001D1\u001Fc\u001D1\u001D1\u001Fc\u001D2\u001D1\u001Fc\u001D3\u001D1\u001Fb\u001Dautobucket\u001D1\u001Fb\u001Dtab\u001D1\u001E0~TTS\u001Cb\u001Dsubtitle\u001D1\u001Fb\u001Dread_faster\u001D1\u001Fb\u001Dread_slower\u001D1\u001Fb\u001Dread_watch\u001D1\u001Fb\u001Dread_stop\u001D1\u001Fb\u001Dread_next\u001D1\u001Fb\u001Dread_prev\u001D1\u001Fb\u001Dread_play\u001D1\u001Fb\u001Dreader\u001D1\u001E0\u001Cb\u001Darrow_left\u001D1\u001Fb\u001Darrow_right\u001D1\u001Fb\u001Darrow_up\u001D1\u001Fb\u001Darrow_down\u001D1\u001Fb\u001Dclip_history\u001D1\u001Fb\u001Dcopy\u001D1\u001Fb\u001Dbackspace\u001D1\u001Fb\u001Dpin\u001D1\u001E0\u001C",
         )
 
         /**
@@ -999,7 +999,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          */
         val maMacroSlots = string(
             key = "dictate__ma_macro_slots",
-            default = "",
+            default = "pst\u001D {Ctrl+V}\u001EM2\u001D\u001EM3\u001D\u001EM4\u001D\u001EM5\u001D\u001EM6\u001D\u001EM7\u001D\u001EM8\u001D\u001EM9\u001D\u001EM10\u001D",
         )
 
         /**
@@ -1058,7 +1058,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
         val maMagicTargets = string(
             key = "dictate__ma_magic_targets",
-            default = "",
+            default = "1\u001D_\u001D\u001D\u001E1\u001D_\u001D\u001D\u001E1\u001DSend\u001D\u001Dsend\u001E1\u001D__\u001D\u001D\u001E1\u001D__\u001D\u001D\u001E1\u001DUse Image URL\u001D\u001DUse Image URL",
         )
 
         /**
@@ -1247,7 +1247,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          */
         val maReaderPreviewVoices = boolean(
             key = "dictate__ma_reader_preview_voices",
-            default = true,
+            default = false,
         )
 
         /**
@@ -1295,7 +1295,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
         val maReaderStyle = string(
             key = "dictate__ma_reader_style",
-            default = "highlight",
+            default = "void",
         )
 
         /**
@@ -1354,7 +1354,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
         val maReaderSpeed = int(
             key = "dictate__ma_reader_speed_tenths",
-            default = 10,
+            default = 12,
         )
 
         val maReaderVoiceHr = string(
@@ -1371,7 +1371,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          */
         val maReaderVoice = string(
             key = "dictate__ma_reader_voice",
-            default = "",
+            default = "beatrice_32",
         )
 
         val maReaderVoiceEn = string(
@@ -1416,7 +1416,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          */
         val maVolumeKeysLive = boolean(
             key = "dictate__ma_volume_keys_live",
-            default = true,
+            default = false,
         )
 
         /**
@@ -1471,7 +1471,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          */
         val maCorrectedDictation = boolean(
             key = "dictate__ma_corrected_dictation",
-            default = true,
+            default = false,
         )
 
         val maDictationApi = boolean(
@@ -1481,12 +1481,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
         val maCloudLogEnabled = boolean(
             key = "dictate__ma_cloud_log",
-            default = false,
+            default = true,
         )
 
         val maReaderWatch = boolean(
             key = "dictate__ma_reader_watch",
-            default = true,
+            default = false,
         )
 
         val maReaderAlign = string(
@@ -2126,7 +2126,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val subtypes = string(
             key = "localization__subtypes",
-            default = "[]",
+            default = "[{\"id\":1786452815014,\"primaryLocale\":\"en-US\",\"secondaryLocales\":[],\"nlpProviders\":{\"spelling\":\"org.florisboard.nlp.providers.latin\",\"suggestion\":\"org.florisboard.nlp.providers.latin\"},\"composer\":\"org.florisboard.composers:appender\",\"currencySet\":\"org.florisboard.currencysets:dollar\",\"punctuationRule\":\"org.florisboard.localization:default\",\"popupMapping\":\"org.florisboard.localization:en\",\"layoutMap\":{\"characters\":\"org.florisboard.layouts:qwerty\",\"symbols\":\"org.florisboard.layouts:western\",\"symbols2\":\"org.florisboard.layouts:western\",\"numeric\":\"org.florisboard.layouts:western_arabic\",\"numericAdvanced\":\"org.florisboard.layouts:western_arabic\",\"numericRow\":\"org.florisboard.layouts:western_arabic\",\"phone\":\"org.florisboard.layouts:telpad\",\"phone2\":\"org.florisboard.layouts:telpad\"}}]",
         )
     }
 
@@ -2180,7 +2180,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val sharedActionsExpanded = boolean(
             key = "smartbar__shared_actions_expanded",
-            default = false,
+            default = true,
         )
         @Deprecated("Always enabled due to UX issues")
         val sharedActionsAutoExpandCollapse = boolean(
@@ -2225,7 +2225,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val enabled = boolean(
             key = "suggestion__enabled",
-            default = true,
+            default = false,
         )
         // Autocorrect the typed word on space/punctuation when it looks like a typo (issue #127). Gated by
         // [enabled]; on by default like other keyboards, with its own switch so suggestions can stay on
@@ -2273,12 +2273,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // there and still selectable, which was always the deal.
         val dayThemeId = custom(
             key = "theme__day_theme_id",
-            default = extCoreTheme("sunrise"),
+            default = "org.florisboard.themes:sunrise",
             serializer = ExtensionComponentName.Serializer,
         )
         val nightThemeId = custom(
             key = "theme__night_theme_id",
-            default = extCoreTheme("sunrise"),
+            default = "org.florisboard.themes:sunrise",
             serializer = ExtensionComponentName.Serializer,
         )
         // Gold, not amber. This preference, not the stylesheet, is what actually paints the enter
