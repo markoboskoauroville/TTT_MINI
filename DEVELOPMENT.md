@@ -10415,3 +10415,19 @@ diff read line by line**, and there is no substitute for that.
 
 Test 1: 22 checks, 0 failed. Sabotaged by putting his clipboard in a default and by re-breaking the
 enum: red on both.
+
+## §215a — A test that asserted my caution, not his choice
+
+Shipping his export turned the Claude.ai reader's log on, and `test_cloud_log.py` went red: it
+asserted `default = false`, with the reason that a feature writing files to internal storage should
+be one he switched on.
+
+**He did switch it on.** That is what the export is.
+
+The check was defending a decision I made on his behalf against the decision he actually made. **A
+default is his choice, not my caution about his choice** — and once he has stated it, a test holding
+the old value is just an argument I am having with him in a file he does not read.
+
+What survives is the claim underneath, which is the one that mattered all along: the switch must
+exist and be visible, so he can turn it off again on any install without editing anything. **On, with
+no visible control, is not a setting — it is a behaviour.**

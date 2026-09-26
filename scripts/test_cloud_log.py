@@ -123,8 +123,16 @@ _cap = reader.find("captureToLog(context, now)")
 _tail = reader.find("val tail = newTail(seen, now)")
 check("before the cue filter", 0 <= _cap < _tail,
       "the log would miss what the reader chose not to speak")
-check("it is off by default", 'maCloudLogEnabled = boolean(\n            key = "dictate__ma_cloud_log",\n            default = false,' in prefs,
-      "it writes files without being asked")
+# HE TURNED IT ON, so it ships on. The original reasoning was that a feature writing files to
+# internal storage should be one he switched on — and he did switch it on, in the export he asked to
+# become the defaults. **A default is his choice, not my caution about his choice.**
+#
+# What survives is the claim underneath: the switch must EXIST and be reachable, so he can turn it
+# off again on any install without editing anything.
+check("the switch exists", "maCloudLogEnabled = boolean(" in prefs, "no way to turn it off")
+check("and the screen shows it", "prefs.dictate.maCloudLogEnabled" in
+      code(SRC / "app/settings/dictate/MaCloudLogScreen.kt"),
+      "on with no visible control is not a setting, it is a behaviour")
 # Split on the DEFINITION, not the first mention. `captureNow` calls `captureToLog` and now appears
 # above it, so splitting on the bare name read the wrong function — the check was looking inside the
 # caller for a guard that lives in the callee. **A name is not a location when more than one thing
