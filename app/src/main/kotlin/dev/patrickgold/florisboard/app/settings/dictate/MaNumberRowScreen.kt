@@ -43,7 +43,6 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 @Composable
 fun MaNumberRowScreen() = FlorisScreen {
     title = "Number row"
-    previewFieldVisible = false
 
     content {
         Text(

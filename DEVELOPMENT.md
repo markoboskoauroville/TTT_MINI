@@ -10499,3 +10499,23 @@ scripts dropped, the separator stripped so one field cannot become two, ten slot
 and the whole reachability chain: entry, DEFAULT, icon, route, `@Deeplink`, registration, and the
 screen actually hosting the editor. Sabotaged by removing it from `DEFAULT`: red in the test and in
 `verify.py`.
+
+## §216a — A property copied from my own broken file
+
+Build 390 went red on `previewFieldVisible`, which `FlorisScreen` does not have.
+
+**I copied it from `MaCloudLogScreen`** — my own screen, where the same line caused the same error and
+was fixed in §207a's follow-up. The fixed version is in the repository; the line I copied was the one
+I had written from memory the first time, which I then reproduced from memory a second time.
+
+**Copying from a neighbour is the habit this file keeps recommending**, and it works — three sibling
+screens are what told me `scrollable = false` was needed. It fails when the neighbour is one I wrote
+badly. **"Read a working example" means read one that works**, not one that exists.
+
+A guard was measured and **rejected**: flagging a `FlorisScreen` property used by exactly one screen
+found **19 hits**, all legitimate — `numeric`, `symbols`, `prettyPrint` and the rest, from unrelated
+builders that share the shape. A check firing on nineteen correct lines to catch one wrong one is
+what `check_property_call` was deleted for.
+
+So CI keeps this one, at five minutes a time. Fourth signature-from-memory error in two weeks:
+`ThemedIconKey`, `Voice.label`, `scrollable`, and now this.
