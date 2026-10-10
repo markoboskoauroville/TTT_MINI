@@ -10519,3 +10519,24 @@ what `check_property_call` was deleted for.
 
 So CI keeps this one, at five minutes a time. Fourth signature-from-memory error in two weeks:
 `ThemedIconKey`, `Voice.label`, `scrollable`, and now this.
+
+## §217 — Symbols 2 in one press, and the number row found where he looks
+
+**He still could not find the number row editor** after §216 gave it an entry. Two reasons, both
+fixed. Builds before 391 do not have it at all. And on a phone with a saved settings order, `parse`
+appended any new entry **at the bottom**, under twenty entries he had arranged: never invisible,
+but not where anyone looks. A missing entry is now inserted straight after the entry `DEFAULT` puts
+before it — Number row lands after Reader — and the order he chose is otherwise untouched. The
+Switchboard's Number row line now opens the editor too, because that row is where he thinks of it.
+
+**Symbols 2 took two presses** (sy1, then sy2). The comma key right of sy1 on the letters panel is
+now the Symbols 2 key, with the same three-view hold as sy1. The comma moved to the period's hold
+(`main`), which the period already advertised with "," in its corner — before this, holding it
+offered only `!` and `?`, so the corner was a promise the key did not keep. The symbol panels keep
+their dedicated comma; from either one, the other symbol panel was already one press away.
+
+### Tested
+
+Bottom row, Test 1: 89 checks, 0 failed; sabotaged by restoring the old letters row, 5 red. Number
+row, Test 1: 59 checks, 0 failed, including the insertion walked over `DEFAULT` read from source.
+Not compiled locally (no Android SDK in the session); CI compiles it.

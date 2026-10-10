@@ -108,16 +108,26 @@ object MaSettingsOrder {
     /**
      * Parses a stored order and **always returns every entry**.
      *
-     * Unknown ids drop, duplicates collapse, and anything missing is appended in default order. That
-     * last clause is what makes a new settings screen safe to add later: it appears at the bottom for
-     * people who have already arranged the list, rather than being invisible to exactly them.
+     * Unknown ids drop, duplicates collapse, and anything missing is inserted **right after the entry
+     * DEFAULT puts before it**, which is what makes a new settings screen safe to add later.
+     *
+     * It used to be appended at the bottom. That was safe in the narrow sense — never invisible — and
+     * not in the sense that matters: Number row landed under twenty entries he had arranged, and he
+     * reported it as missing (10.10.2026). Beside its neighbour in DEFAULT is where it would be on a
+     * fresh install, so that is where someone who has moved other things looks for it. His own order
+     * is untouched: only entries absent from it are placed.
      */
     fun parse(raw: String?): List<MaSettingsEntry> {
         val wanted = raw.orEmpty()
             .split(',')
             .mapNotNull { MaSettingsEntry.byId(it.trim()) }
             .distinct()
-        val all = wanted + DEFAULT.filterNot { it in wanted }
+        val all = wanted.toMutableList()
+        DEFAULT.forEachIndexed { index, entry ->
+            if (entry in all) return@forEachIndexed
+            val anchor = DEFAULT.subList(0, index).lastOrNull { it in all }
+            all.add(if (anchor == null) 0 else all.indexOf(anchor) + 1, entry)
+        }
         // PERMISSIONS is first only because DEFAULT puts it first.
         //
         // It was pinned here — forced to the top on every read whatever he had arranged. That is a
