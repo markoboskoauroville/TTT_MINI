@@ -10569,3 +10569,20 @@ key shows its first character, and the hold types the whole box. **This replaces
   written text. Phantom space is decided the same way as for a typed character.
 
 Test 1: 39 checks, 0 failed; with the Kotlin changes stashed, 6 red.
+
+## §220 — Keys you cannot type, on the digit's hold
+
+His ask, 10.10.2026: in the number row editor, holding the digit opens a menu of keys that are not
+characters — Enter, Tab, the arrows and the rest — to put into a slot.
+
+**One syntax, not two.** The menu inserts MaMacroSyntax's AutoHotkey brace tokens (`{Enter}`,
+`{Tab}`, `{Left}`, `{Ctrl+V}`), the syntax the macro keys already use and he already knows from
+AutoHotkey. It inserts at the cursor, so `Regards,{Enter}Marko` is type, hold, pick, type.
+
+**On the keyboard**, a slot containing a token that resolves to a real key runs through
+`MaMacroSyntax.run`, so text and key presses arrive in order. A slot whose braces resolve to no key
+— a lone `{`, a `{}` — is still committed literally, so a bracket assigned as a symbol keeps
+working. A slot starting with a key shows that key's glyph in the corner (⏎ for Enter), not a brace.
+
+Test 1: 65 checks, 0 failed, including every offered token checked against the macro runner's own
+key table read from source; with the Kotlin changes stashed, 6 red.

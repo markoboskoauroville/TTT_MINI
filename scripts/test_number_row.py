@@ -97,6 +97,34 @@ check("the hold types the slot in one commit", "editorInstance.commitText(text)"
 check("the corner prints only the first character", "MaNumericSecondary.hint(it)" in row,
       "a sentence crammed into a corner")
 
+# ---------------------------------------------------------------- special keys (10.10.2026)
+#
+# Holding the digit in the editor offers keys that cannot be typed. Every token it offers must be one
+# MaMacroSyntax resolves, or picking it inserts text the key then types literally.
+macro = code(SRC / "dictate/MaMacroSyntax.kt")
+_named = set(re.findall(r'put\("([a-z0-9]+)", KeyEvent', macro)) | {f"f{i}" for i in range(1, 13)} \
+    | {chr(c) for c in range(ord("a"), ord("z") + 1)}
+_mods = set(re.findall(r'"([a-z]+)" to \(KeyEvent\.META', macro))
+_special = re.findall(r'SpecialKey\("\{([^}]+)\}", "([^"]+)", "([^"]+)"\)', core)
+check("the menu offers the keys he named", {t for t, _, _ in _special} >= {"Enter", "Tab", "Left", "Right", "Up", "Down"},
+      str([t for t, _, _ in _special]))
+for _t, _name, _glyph in _special:
+    *_ms, _k = _t.lower().split("+")
+    check(f"{{{_t}}} is a key the macro runner knows", _k in _named and all(m in _mods for m in _ms),
+          "picking it would type the braces instead of pressing the key")
+check("every special key has a glyph", all(g for _, _, g in _special))
+
+check("the digit opens the menu", "DropdownMenu(expanded = menuOpen" in editor and "onLongClick = { menuOpen = true }" in editor,
+      "no way to insert a key that cannot be typed")
+check("picking inserts at the cursor", "field.selection.min" in editor, "the token would land at the end")
+check("the editor says how to reach them", "Hold a digit here" in editor)
+check("a slot with a real key runs as a macro",
+      "MaMacroSyntax.parse(text).any { it is MaMacroSyntax.Step.Key }" in row and "MaMacroSyntax.run(text" in row,
+      "{Enter} would be typed as seven characters")
+check("plain text still goes in as one commit", "editorInstance.commitText(text)" in row)
+check("a slot starting with a key shows its glyph", "TOKEN_AT_START" in core and "it.glyph" in core,
+      "the corner would show a brace")
+
 # ---------------------------------------------------------------- it can actually be opened
 check("there is a settings entry", 'NUMBER_ROW("number_row"' in order, "unreachable, as before")
 check("it is in DEFAULT", "MaSettingsEntry.NUMBER_ROW," in order,
