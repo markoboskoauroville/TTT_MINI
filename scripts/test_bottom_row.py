@@ -63,7 +63,7 @@ for _m, _t in EXPECTED.items():
 for mod in EXPECTED:
     row = bottom(mod)
     check(f"{mod}: ctrl is on the far left", row[0] == "ctrl", str(row))
-    check(f"{mod}: one view key, not two", sum(1 for l in row if l.startswith("view_")) == 1, str(row))
+    check(f"{mod}: the ring key is second", row[1].startswith("view_"), str(row))
 
 # THE RING CLOSES, and every panel is on it. Walked rather than eyeballed: three steps from any
 # starting panel must visit all three and return.
@@ -91,7 +91,6 @@ for mod in CYCLE:
 for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
     row = bottom(mod)
     check(f"{mod}: ctrl is far left", row[0] == "ctrl", str(row))
-    check(f"{mod}: exactly one view switcher", sum(1 for k in row if k.startswith("view_")) == 1, str(row))
     check(f"{mod}: the switcher is second", row[1].startswith("view_"), str(row))
 
 # THE CYCLE, with no skipping: letters -> symbols -> symbols2 -> letters.
@@ -126,7 +125,9 @@ for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
 for mod, expected in (
     # Updated for SwiftKey's row: language_switch is gone on purpose and view_symbols2 moved to the
     # 123 popup. What must still be present is everything he presses.
-    ("charactersMod", {"ctrl", "space", ".", ",", "enter", "view_symbols", "shift", "delete"}),
+    # The comma key became the Symbols 2 key (10.10.2026); the comma itself is on the period's
+    # hold, checked below.
+    ("charactersMod", {"ctrl", "space", ".", "enter", "view_symbols", "view_symbols2", "shift", "delete"}),
     # The switcher on each panel is now the NEXT view, not always "back to letters" — so what must be
     # present is "a switcher", checked above, rather than one particular destination. Letters remain
     # reachable from every panel: by cycling, and immediately from the long-press menu.
@@ -149,7 +150,7 @@ for mod, expected in (
 #
 # `ctrl` STAYED, against the screenshot. SwiftKey has no Ctrl+P and no Ctrl+F; he uses both hourly,
 # and copying a layout is not a reason to delete a feature that layout never had.
-for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
+for mod in ("symbolsMod", "symbols2Mod"):
     row = bottom(mod)
     check(f"{mod}: six keys", len(row) == 6, str(row))
     check(f"{mod}: a dedicated comma", "," in row, "the comma is still hidden on a popup")
@@ -159,6 +160,25 @@ for mod in ("charactersMod", "symbolsMod", "symbols2Mod"):
     check(f"{mod}: no second view key", sum(1 for k in row if k.startswith("view_")) == 1,
           "two keys changing the view is two orders to remember")
     check(f"{mod}: enter is last", row[-1] == "enter", str(row))
+
+# ---------------------------------------------------------------- Symbols 2 in one press
+#
+# 10.10.2026, his ask: reaching Symbols 2 from the letters took two presses (sy1, then sy2) and that
+# is one too many. The comma key right of sy1 became a Symbols 2 key, so from the letters each
+# symbol panel is one press away: sy1 on the left, sy2 beside it. The comma moved to the period's
+# hold, which the period already advertised with a "," in its corner.
+row = bottom("charactersMod")
+check("charactersMod: six keys", len(row) == 6, str(row))
+check("charactersMod: sy1 then sy2, side by side", row[1:3] == ["view_symbols", "view_symbols2"], str(row))
+check("charactersMod: no comma key on the row", "," not in row, str(row))
+check("charactersMod: no language switcher", "language_switch" not in row, str(row))
+check("charactersMod: enter is last", row[-1] == "enter", str(row))
+_chars = json.loads((LAYOUTS / "charactersMod" / "default.json").read_text())
+_sy2 = [p.get("label") for p in _chars[-1][2].get("popup", {}).get("relevant", [])]
+check("charactersMod: sy2's hold offers every view too", set(_sy2) == targets, str(_sy2))
+_period = next(k for k in _chars[-1] if k.get("label") == ".")
+check("the period's hold types the comma", (_period.get("popup", {}).get("main") or {}).get("code") == 44,
+      "the comma would be unreachable from the letters")
 
 # What the removed keys offered must still be reachable, or the tidy-up deleted a panel.
 chars_rows = json.loads((LAYOUTS / "charactersMod" / "default.json").read_text())

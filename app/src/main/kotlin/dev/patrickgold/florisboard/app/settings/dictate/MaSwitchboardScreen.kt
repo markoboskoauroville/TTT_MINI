@@ -136,8 +136,10 @@ private fun MaSwitchRowFor(entry: MaSwitchboardOrder.Entry, lifted: Boolean) {
     when (entry) {
         MaSwitchboardOrder.Entry.KEYS ->
             MaSwitchRow("The keys", Icons.Default.Keyboard, prefs.dictate.maZoneKeyboard, null, modifier)
+        // A second door to the number row's long-press characters. He looked for them here, on the
+        // row's own switch, and the entry in the settings list alone was not enough to be found.
         MaSwitchboardOrder.Entry.NUMBER_ROW ->
-            MaSwitchRow("Number row", Icons.Default.Numbers, prefs.dictate.maExtraRow, null, modifier)
+            MaSwitchRow("Number row", Icons.Default.Numbers, prefs.dictate.maExtraRow, Routes.Settings.MaNumberRow, modifier)
         MaSwitchboardOrder.Entry.FEATURE_ROW ->
             MaSwitchRow("Feature row", Icons.Default.DragHandle, prefs.dictate.maFeatureRowShown, Routes.Settings.MaFeatureRow, modifier)
         MaSwitchboardOrder.Entry.SUGGESTIONS ->
@@ -228,8 +230,8 @@ private fun MaSwitchRowBase(
         Column(modifier = Modifier.weight(1f)) {
             // Sand means this takes you somewhere — the rule the wand's gear established. He built
             // this screen and still could not tell which half of a line was tappable, because a
-            // name that navigates looked exactly like a name that does not. The Number row has no
-            // screen, so its name stays ordinary: the colour has to be a promise or it is noise.
+            // name that navigates looked exactly like a name that does not. A row with no screen
+            // keeps an ordinary name: the colour has to be a promise or it is noise.
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,

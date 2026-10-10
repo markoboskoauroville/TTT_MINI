@@ -91,6 +91,35 @@ check("it has a route", "MaSettingsEntry.NUMBER_ROW -> Routes.Settings.MaNumberR
 _m = re.search(r"((?:\s*@\w+(?:\([^)]*\))?\s*)*)\bobject MaNumberRow\b", routes)
 check("the route carries @Deeplink", _m is not None and "@Deeplink" in _m.group(1),
       "the app would not start — this exact shape crashed build 369")
+# A second door, on the row's own switch, because the settings entry alone was not found.
+switchboard = code(SRC / "app/settings/dictate/MaSwitchboardScreen.kt")
+check("the Switchboard's Number row opens the editor",
+      re.search(r'"Number row",[^\n]*Routes\.Settings\.MaNumberRow', switchboard) is not None,
+      "the switch is a dead end and the editor has one door again")
+# A saved order must not bury it. Read DEFAULT from the source and walk the same insertion parse()
+# does: an order saved before NUMBER_ROW existed puts it straight after READER, not at the bottom.
+check("parse inserts beside the DEFAULT neighbour", "DEFAULT.subList(0, index).lastOrNull { it in all }" in order,
+      "a new entry is appended under everything he arranged, where he did not find it")
+_default = re.findall(r"MaSettingsEntry\.([A-Z_0-9]+)",
+                      re.search(r"val DEFAULT: List<MaSettingsEntry> = listOf\((.*?)\n    \)", order, re.S).group(1))
+
+
+def parse_order(wanted):
+    out = list(dict.fromkeys(wanted))
+    for i, e in enumerate(_default):
+        if e in out:
+            continue
+        anchor = next((d for d in reversed(_default[:i]) if d in out), None)
+        out.insert(0 if anchor is None else out.index(anchor) + 1, e)
+    return out
+
+
+_old = list(reversed([e for e in _default if e != "NUMBER_ROW"]))
+_got = parse_order(_old)
+check("an old saved order gets Number row after Reader",
+      _got.index("NUMBER_ROW") == _got.index("READER") + 1, str(_got))
+check("his order is otherwise untouched", [e for e in _got if e != "NUMBER_ROW"] == _old, str(_got))
+check("an empty order is DEFAULT", parse_order([]) == _default, str(parse_order([])))
 check("the route is registered", "composableWithDeepLink(Settings.MaNumberRow::class)" in routes)
 check("the screen hosts the editor", "MaNumericSecondarySetting()" in
       code(SRC / "app/settings/dictate/MaNumberRowScreen.kt"), "an empty screen")
