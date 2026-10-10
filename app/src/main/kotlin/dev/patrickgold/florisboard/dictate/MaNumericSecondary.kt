@@ -87,6 +87,47 @@ object MaNumericSecondary {
     fun hint(value: String): String? {
         val start = value.indexOfFirst { !it.isWhitespace() }
         if (start < 0) return null
+        // A slot that starts with a special key shows that key's glyph rather than a brace, so
+        // "{Enter}" marks its digit with ⏎ and not with "{", which would say nothing.
+        TOKEN_AT_START.find(value.substring(start))?.let { m ->
+            SPECIAL_KEYS.firstOrNull { it.token.equals(m.value, ignoreCase = true) }?.let { return it.glyph }
+        }
         return value.substring(start, value.offsetByCodePoints(start, 1))
     }
+
+    private val TOKEN_AT_START = Regex("^\\{[A-Za-z0-9+]+\\}")
+
+    /**
+     * One key that cannot be typed as a character, offered on the digit's long press in the editor.
+     *
+     * [token] is MaMacroSyntax's AutoHotkey brace form, the same syntax the macro keys already use,
+     * so there is one spelling of Enter in this app and not two. [glyph] is what the number row
+     * prints in a key's corner when its slot starts with this key.
+     */
+    data class SpecialKey(val token: String, val name: String, val glyph: String)
+
+    /**
+     * The menu, in the order a hand reaches for them: the keys that finish or move between fields,
+     * then the deletes, then the cursor, then the clipboard combos.
+     */
+    val SPECIAL_KEYS: List<SpecialKey> = listOf(
+        SpecialKey("{Enter}", "Enter", "\u23ce"),
+        SpecialKey("{Tab}", "Tab", "\u21e5"),
+        SpecialKey("{Esc}", "Escape", "\u238b"),
+        SpecialKey("{Backspace}", "Backspace", "\u232b"),
+        SpecialKey("{Del}", "Delete forwards", "\u2326"),
+        SpecialKey("{Left}", "Left arrow", "\u2190"),
+        SpecialKey("{Right}", "Right arrow", "\u2192"),
+        SpecialKey("{Up}", "Up arrow", "\u2191"),
+        SpecialKey("{Down}", "Down arrow", "\u2193"),
+        SpecialKey("{Home}", "Start of line", "\u21e4"),
+        SpecialKey("{End}", "End of line", "\u21e5"),
+        SpecialKey("{PgUp}", "Page up", "\u21de"),
+        SpecialKey("{PgDn}", "Page down", "\u21df"),
+        SpecialKey("{Ctrl+A}", "Select all", "A"),
+        SpecialKey("{Ctrl+C}", "Copy", "C"),
+        SpecialKey("{Ctrl+X}", "Cut", "X"),
+        SpecialKey("{Ctrl+V}", "Paste", "V"),
+        SpecialKey("{Ctrl+Z}", "Undo", "\u21b6"),
+    )
 }

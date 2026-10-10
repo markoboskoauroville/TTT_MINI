@@ -40,6 +40,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.FlorisImeService
+import dev.patrickgold.florisboard.dictate.MaMacroSyntax
 import dev.patrickgold.florisboard.dictate.MaNumericSecondary
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
@@ -138,7 +140,19 @@ private fun maLongPress(
         // so autocorrect and auto-capitalisation could rewrite the snippet word by word on its way
         // in, and an emoji split into two halves of a surrogate pair. commitText is the path
         // dictation takes, so undo and the word model see it like any other written text.
-        return { editorInstance.commitText(text) }
+        //
+        // SPECIAL KEYS: when the slot holds a brace token that is a real key ({Enter}, {Tab},
+        // {Left}...), it runs through MaMacroSyntax, the macro keys' runner, so text and key presses
+        // go in in order. Only then: a slot whose braces resolve to no key, a lone "{" or a "{}",
+        // is still typed literally, so a bracket assigned as a symbol keeps working.
+        return {
+            val isMacro = MaMacroSyntax.parse(text).any { it is MaMacroSyntax.Step.Key }
+            if (isMacro) {
+                MaMacroSyntax.run(text, FlorisImeService.currentInputConnection())
+            } else {
+                editorInstance.commitText(text)
+            }
+        }
     }
     if (key.cyclesOnLongPress) {
         return {
