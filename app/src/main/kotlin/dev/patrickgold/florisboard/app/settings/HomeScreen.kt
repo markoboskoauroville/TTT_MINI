@@ -29,6 +29,7 @@ import dev.patrickgold.florisboard.dictate.MaSettingsVault
 import dev.patrickgold.florisboard.dictate.MaVault
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -79,6 +80,7 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -140,22 +142,26 @@ fun HomeScreen() = FlorisScreen {
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .weight(1f)
-                // Straight to App info, not to the About page.
+                // TAP: the latest release on GitHub, one more tap from the APK. The Mantra Manifest
+                // rule across his apps (10.10.2026): the line that names the build is the door to
+                // the next build, so updating is tap, download, install, with nothing to search for.
+                // /releases/latest rather than /releases, because CI keeps two and he wants the newer.
                 //
-                // This line is the one place in the app that names the build, so it is where the
-                // hand goes when something about the install itself needs changing — permissions,
-                // storage access, force stop. It used to open About, which is a page about the
-                // version of an app whose version is already written on the line you tapped.
-                .clickable {
-                    runCatching {
-                        context.startActivity(
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.parse("package:" + context.packageName)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            },
-                        )
-                    }
-                }
+                // HOLD: App info, which is what a tap opened before — permissions, storage, force
+                // stop. Moved, not removed: it is still the one line that names the install.
+                .combinedClickable(
+                    onClick = { context.launchUrl(R.string.ma__latest_release_url) },
+                    onLongClick = {
+                        runCatching {
+                            context.startActivity(
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.parse("package:" + context.packageName)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                },
+                            )
+                        }
+                    },
+                )
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         )
         // Accessibility, one tap, from the top of the list.

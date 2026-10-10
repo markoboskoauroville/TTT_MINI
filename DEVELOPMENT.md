@@ -10540,3 +10540,14 @@ their dedicated comma; from either one, the other symbol panel was already one p
 Bottom row, Test 1: 89 checks, 0 failed; sabotaged by restoring the old letters row, 5 red. Number
 row, Test 1: 59 checks, 0 failed, including the insertion walked over `DEFAULT` read from source.
 Not compiled locally (no Android SDK in the session); CI compiles it.
+
+## §218 — The version line is the door to the next build
+
+Mantra Manifest rule, 10.10.2026: tapping an app's version opens its latest GitHub release, so
+updating is tap, download, install. The build line at the top of the settings now opens
+`/releases/latest` (not `/releases`: CI keeps two, and the newer is the one he wants).
+
+A tap used to open App info. **Moved to a hold, not removed** — it is the one line that names the
+install, and permissions, storage and force stop still need a door.
+
+Test 1: 7 checks, 0 failed; with the change stashed, 6 red.
