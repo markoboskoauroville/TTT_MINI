@@ -10551,3 +10551,21 @@ A tap used to open App info. **Moved to a hold, not removed** — it is the one 
 install, and permissions, storage and force stop still need a door.
 
 Test 1: 7 checks, 0 failed; with the change stashed, 6 red.
+
+## §219 — A number row slot is a snippet now
+
+His ask, 10.10.2026: like AutoHotkey, a slot holds anything — a word, a sentence, a command — the
+key shows its first character, and the hold types the whole box. **This replaces his own §216 rule**
+(punctuation only, 16 characters); he made it and he unmade it.
+
+- `sanitize` keeps letters, digits and line breaks, strips only the separator and `\r`, caps at
+  2000. The editor field is multi-line (up to five visible) and says what the hold does.
+- `hint` puts the first non-blank code point in the corner, so a leading space still marks the key
+  and an emoji is not cut in half.
+- The hold now commits the slot **in one `commitText`**. It used to send one key event per
+  character: harmless for `_`, wrong for a sentence, because each space was a space key that
+  autocorrect and auto-capitalisation could act on mid-snippet, and an emoji went in as two halves
+  of a surrogate pair. `commitText` is dictation's path, so undo and the word model treat it as
+  written text. Phantom space is decided the same way as for a typed character.
+
+Test 1: 39 checks, 0 failed; with the Kotlin changes stashed, 6 red.

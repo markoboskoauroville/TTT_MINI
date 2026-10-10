@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun MaNumericSecondarySetting() {
-    // The rule is enforced in MaNumericSecondary.sanitize and stated here, where he is typing.
+    // What a slot may hold is decided in MaNumericSecondary.sanitize and stated here, where he is typing.
     // A field that silently drops what he types without saying why is a field he retries.
     val prefs by FlorisPreferenceStore
     val scope = rememberCoroutineScope()
@@ -81,9 +81,9 @@ fun MaNumericSecondarySetting() {
             style = MaterialTheme.typography.titleMedium,
         )
         Text(
-            text = "Punctuation only \u2014 letters and numbers are dropped, since the digit and " +
-                "the letter rows already have them. Leave a field empty for a key with " +
-                "nothing behind it.",
+            text = "Anything you like \u2014 a symbol, a word, a whole sentence. Holding the digit " +
+                "types the whole box; the key shows its first character. Leave a field empty " +
+                "for a key with nothing behind it.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -113,7 +113,10 @@ fun MaNumericSecondarySetting() {
                 OutlinedTextField(
                     value = slots.getOrElse(index) { "" },
                     onValueChange = { write(index, it) },
-                    singleLine = true,
+                    // Several lines, because a snippet can be a paragraph and he has to see what
+                    // he wrote to trust what the key will type.
+                    singleLine = false,
+                    maxLines = 5,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

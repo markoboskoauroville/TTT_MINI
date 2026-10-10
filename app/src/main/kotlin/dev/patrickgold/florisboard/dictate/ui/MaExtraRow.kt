@@ -48,6 +48,7 @@ import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.withTimeoutOrNull
@@ -69,6 +70,7 @@ fun MaExtraRow(modifier: Modifier = Modifier) {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
+    val editorInstance by context.editorInstance()
 
     val enabled by prefs.dictate.maExtraRow.collectAsState()
     val mode by prefs.dictate.maExtraRowMode.collectAsState()
@@ -100,7 +102,7 @@ fun MaExtraRow(modifier: Modifier = Modifier) {
                 // A second symbol wins over the cycle, because a key that types something is worth
                 // more than a shortcut to a set the dashboard already lists by name. Only the sets
                 // that carry no second symbols still cycle.
-                onLongPress = maLongPress(key, keyboardManager),
+                onLongPress = maLongPress(key, keyboardManager, editorInstance),
                 onFire = {
                     if (key.code != null) {
                         keyboardManager.inputEventDispatcher.sendDownUp(TextKeyData(code = key.code))
@@ -127,16 +129,16 @@ fun MaExtraRow(modifier: Modifier = Modifier) {
 private fun maLongPress(
     key: MaRowKey,
     keyboardManager: dev.patrickgold.florisboard.ime.keyboard.KeyboardManager,
+    editorInstance: dev.patrickgold.florisboard.ime.editor.EditorInstance,
 ): (() -> Unit)? {
     val text = key.secondary
     if (text != null && text.isNotEmpty()) {
-        return {
-            for (ch in text) {
-                keyboardManager.inputEventDispatcher.sendDownUp(
-                    TextKeyData(code = ch.code, label = ch.toString()),
-                )
-            }
-        }
+        // ONE COMMIT, the whole slot at once, like a hotstring. It used to send one key event per
+        // character, which was fine for a "_" and wrong for a sentence: every space was a space key,
+        // so autocorrect and auto-capitalisation could rewrite the snippet word by word on its way
+        // in, and an emoji split into two halves of a surrogate pair. commitText is the path
+        // dictation takes, so undo and the word model see it like any other written text.
+        return { editorInstance.commitText(text) }
     }
     if (key.cyclesOnLongPress) {
         return {
@@ -332,7 +334,9 @@ private fun MaRowKeyButton(
         // Printed rather than left to be discovered: a long press that types something is invisible
         // until it is found by accident, and the letters below already teach that a corner mark
         // means hold this. Dimmed so the digit stays the thing being read.
-        key.secondary?.let { hint ->
+        // Only the first character of it: a slot can hold a whole sentence now, and a corner holds
+        // one glyph. The hold types the rest.
+        key.secondary?.let { MaNumericSecondary.hint(it) }?.let { hint ->
             Text(
                 text = hint,
                 color = foreground.copy(alpha = 0.55f),

@@ -29,31 +29,38 @@ def check(name: str, ok: bool, detail: str = "") -> None:
 
 
 def sanitize(v):
-    """The port: no newlines, no separator, no letters, no digits, capped at 16."""
-    v = v.replace("\n", "").replace("\r", "").replace(SEP, "")
-    return "".join(c for c in v if not c.isalnum())[:16]
+    """The port: any text, no separator, no carriage return, capped at 2000 (10.10.2026)."""
+    return v.replace("\r", "").replace(SEP, "")[:2000]
 
 
-# ---------------------------------------------------------------- what he can put there
-for good in ("/", "(", ")", "{", "}", "[", "]", "'", '"', "`", "~", "!", "?", ";", ":",
-             "<", ">", "|", "\\", "@", "#", "$", "%", "^", "&", "*", "+", "=", "-", "_"):
-    check(f"{good!r} is allowed", sanitize(good) == good, "a character he asked for is dropped")
+def hint(v):
+    """The port of MaNumericSecondary.hint: the first non-blank code point."""
+    for c in v:
+        if not c.isspace():
+            return c
+    return None
 
-# ---------------------------------------------------------------- what it refuses, and his reason
-for bad in ("7", "0", "k", "Z", "é", "\u0161"):
-    check(f"{bad!r} is dropped", sanitize(bad) == "",
-          "the digit and letter rows already have it, so this spends the only spare gesture")
 
-# Filtered, not refused: the useful part of a paste survives.
-check("a mixed paste keeps the punctuation", sanitize("a/b") == "/",
-      "an error and an empty field instead of the slash he wanted")
-check("a pasted paragraph cannot become a key", len(sanitize("!" * 50)) == 16)
+# ---------------------------------------------------------------- anything, like a hotstring
+#
+# He replaced his own earlier rule: a slot is a snippet now, not one punctuation mark.
+for good in ("/", "_", "7", "k", "\u0161", "Hello, world.", "ssh marko@host -p 22",
+             "line one\nline two", "\U0001F600 done"):
+    check(f"{good!r} is kept whole", sanitize(good) == good, "part of the snippet is lost")
+check("a sentence is not cut at 16", len(sanitize("x" * 300)) == 300, "a snippet would be truncated")
+check("a pasted novel is capped", len(sanitize("x" * 5000)) == 2000)
 
 # The separator must never survive: one in a value would split a slot in two and shift every key
 # after it.
 check("the separator is stripped", sanitize(f"/{SEP}(") == "/(", "one field would become two")
-check("newlines are stripped", sanitize("/\n(") == "/(")
+check("a Windows line break is one break", sanitize("a\r\nb") == "a\nb")
 check("empty stays empty", sanitize("") == "", "a key with nothing behind it is a choice")
+
+# The corner shows the first character only.
+check("the hint is the first character", hint("Hello there") == "H")
+check("a leading space does not blank the hint", hint("  /usr/bin") == "/")
+check("an emoji hint is whole", hint("\U0001F600 hi") == "\U0001F600")
+check("a blank slot has no hint", hint("   ") is None)
 
 # Ten slots, always ten, whatever is stored.
 def parse(raw):
@@ -78,9 +85,17 @@ screen = code(SRC / "app/settings/MaSettingsOrderScreen.kt")
 routes = code(SRC / "app/Routes.kt")
 editor = code(SRC / "app/settings/dictate/MaNumericSecondarySetting.kt")
 
-check("the rule is in the sanitiser", "filter { !it.isLetterOrDigit() }" in core,
-      "a letter typed into a field would become a key")
-check("it filters rather than refusing", "take(16)" in core, "a paste would be lost whole")
+check("letters and digits are no longer filtered", "isLetterOrDigit" not in core,
+      "a snippet would lose its words")
+check("the cap is the long one", "const val MAX_LENGTH = 2000" in core and "take(MAX_LENGTH)" in core,
+      "a sentence would be cut short")
+check("the hint takes a whole code point", "offsetByCodePoints(start, 1)" in core,
+      "an emoji in the corner would be half a surrogate pair")
+row = code(SRC / "dictate/ui/MaExtraRow.kt")
+check("the hold types the slot in one commit", "editorInstance.commitText(text)" in row,
+      "one key event per character, which autocorrect can rewrite word by word")
+check("the corner prints only the first character", "MaNumericSecondary.hint(it)" in row,
+      "a sentence crammed into a corner")
 
 # ---------------------------------------------------------------- it can actually be opened
 check("there is a settings entry", 'NUMBER_ROW("number_row"' in order, "unreachable, as before")
@@ -123,8 +138,8 @@ check("an empty order is DEFAULT", parse_order([]) == _default, str(parse_order(
 check("the route is registered", "composableWithDeepLink(Settings.MaNumberRow::class)" in routes)
 check("the screen hosts the editor", "MaNumericSecondarySetting()" in
       code(SRC / "app/settings/dictate/MaNumberRowScreen.kt"), "an empty screen")
-check("the rule is stated where he types", "letters and numbers are dropped" in editor,
-      "a field that silently drops what he types is a field he retries")
+check("the editor says the hold types the whole box", "types the whole box" in editor,
+      "he would not know the hold types the whole snippet")
 
 print(f"number row, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:

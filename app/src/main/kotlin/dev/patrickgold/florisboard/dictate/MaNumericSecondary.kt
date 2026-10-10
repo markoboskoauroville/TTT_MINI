@@ -60,22 +60,33 @@ object MaNumericSecondary {
         List(COUNT) { index -> sanitize(slots.getOrNull(index) ?: "") }
             .joinToString(SEPARATOR.toString())
 
+    /** The most a slot holds: a paragraph, not a document. */
+    const val MAX_LENGTH = 2000
+
     /**
      * One slot's value, cleaned.
      *
-     * Line breaks and the separator itself are removed, since neither can survive a round trip, and
-     * the length is capped so a paste of a whole paragraph cannot become a key. Everything else is
-     * left exactly as typed.
+     * ANY TEXT, like an AutoHotkey hotstring (10.10.2026, his ask). It was punctuation only and
+     * capped at 16 — his earlier rule, which he has now replaced: a slot is a snippet, a sentence,
+     * an address, a command, and the long press types all of it. Letters, digits and line breaks are
+     * kept. Only the separator is removed, since it cannot survive a round trip, and a carriage
+     * return, so a pasted Windows line break becomes one break rather than two.
      */
     fun sanitize(value: String): String =
-        value.replace("\n", "").replace("\r", "")
+        value.replace("\r", "")
             .replace(SEPARATOR.toString(), "")
-            // NO LETTERS AND NO DIGITS. His rule, and it is the right one: the key already IS a
-            // digit, and the letters are two rows below. A long press that produces a "7" or a "k"
-            // spends the only spare gesture this row has on something he can already reach.
-            //
-            // Filtered rather than refused, so a paste of "a/b" leaves the slash instead of leaving
-            // him with an error and an empty field. **The useful part of what he pasted survives.**
-            .filter { !it.isLetterOrDigit() }
-            .take(16)
+            .take(MAX_LENGTH)
+
+    /**
+     * What the key prints in its corner for [value]: the first character, nothing more.
+     *
+     * His spec: the key shows the first symbol and the hold types the whole box. The first one that
+     * is not blank, so a snippet starting with a space or a line break still marks its key, and a
+     * whole code point, so an emoji is not cut in half.
+     */
+    fun hint(value: String): String? {
+        val start = value.indexOfFirst { !it.isWhitespace() }
+        if (start < 0) return null
+        return value.substring(start, value.offsetByCodePoints(start, 1))
+    }
 }

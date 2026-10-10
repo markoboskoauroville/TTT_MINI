@@ -46,9 +46,8 @@ fun MaNumberRowScreen() = FlorisScreen {
 
     content {
         Text(
-            text = "The row the hash key shows. Each digit can carry one more character, reached by " +
-                "a long press \u2014 a slash, a bracket, a quote, anything but a number or a letter, " +
-                "which the digits already have.",
+            text = "The row the hash key shows. Each digit can carry a snippet, typed whole by a " +
+                "long press \u2014 one symbol, a word, a sentence, anything.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
