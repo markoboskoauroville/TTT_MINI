@@ -80,6 +80,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -118,6 +119,7 @@ import androidx.compose.ui.window.PopupPositionProvider
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.MaKeyColors
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.clipboardManager
@@ -412,6 +414,13 @@ fun LegacyDictateLayout(
 
 
 /**
+ * The colour a feature-row key is painted, or null for the theme's. Provided per key by the row,
+ * read by [ThemedKey], so every key drawn through it — text, icon and action keys alike — takes it
+ * without each one being changed.
+ */
+internal val LocalMaKeyPaint = compositionLocalOf<Int?> { null }
+
+/**
  * A single legacy key: the active theme's `key` colours for the given [code] (so special keys such as
  * enter keep their accent), rendered with the uniform [LegacyKeyShape] and a pressed/ripple state. The
  * [content] receives the themed foreground colour so icons/labels match the theme.
@@ -471,8 +480,14 @@ internal fun ThemedKey(
         keyAttributes(code),
         if (pressed) SnyggSelector.PRESSED else SnyggSelector.NONE,
     )
-    val bg = style.background(default = Color.White.copy(alpha = 0.08f))
-    val fg = style.foreground(default = Color.White)
+    // HIS COLOUR FOR THIS KEY (MaKeyColors), provided by the row through LocalMaKeyPaint. The label
+    // follows by contrast and a press darkens the same hue. State colours a key draws itself — lit,
+    // recording, the bucket ring — are drawn on top and still say what they always said.
+    val paint = LocalMaKeyPaint.current
+    val bg = paint?.let { Color(if (pressed) MaKeyColors.pressed(it) else it) }
+        ?: style.background(default = Color.White.copy(alpha = 0.08f))
+    val fg = paint?.let { if (MaKeyColors.wantsDarkText(it)) Color(0xFF111111) else Color.White }
+        ?: style.foreground(default = Color.White)
     Box(
         modifier = modifier
             .padding(horizontal = KeyMarginH, vertical = KeyMarginV)

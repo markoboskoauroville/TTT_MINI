@@ -46,7 +46,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.settings.dictate.MaButtonGlyph
 import dev.patrickgold.florisboard.dictate.MaKeyColors
+import dev.patrickgold.florisboard.dictate.MaMacroSlots
+import dev.patrickgold.florisboard.dictate.MaRows
+import dev.patrickgold.florisboard.dictate.ui.maFeatureToken
 import dev.patrickgold.florisboard.dictate.MaNumericSecondary
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboard
@@ -88,6 +92,9 @@ fun MaKeyColorsScreen() = FlorisScreen {
         val colors = remember(raw) { MaKeyColors.parse(raw) }
         val secondaryRaw by prefs.dictate.maNumericSecondary.collectPrefAsState()
         val secondaries = remember(secondaryRaw) { MaNumericSecondary.parse(secondaryRaw) }
+        val rowsRaw by prefs.dictate.maRows.collectPrefAsState()
+        val macroRaw by prefs.dictate.maMacroSlots.collectPrefAsState()
+        val macroSlots = remember(macroRaw) { MaMacroSlots.parse(macroRaw) }
         val evaluator by keyboardManager.lastCharactersEvaluator.collectAsState()
         val keyboard = evaluator.keyboard as? TextKeyboard
 
@@ -166,6 +173,36 @@ fun MaKeyColorsScreen() = FlorisScreen {
                         modifier = Modifier.weight(1f),
                         onTap = { paint(id) },
                     )
+                }
+            }
+
+            // The feature rows, as they are arranged — each key by what it is, so a key moved to
+            // another row keeps its colour. State colours (recording, lit, a full bucket) are drawn
+            // over the paint on the keyboard and still mean what they meant.
+            val rows = remember(rowsRaw) {
+                MaRows.visibleRows(if (rowsRaw.isBlank()) MaRows.defaultRows() else MaRows.parse(rowsRaw))
+            }
+            rows.forEachIndexed { rowIndex, buttons ->
+                Text(
+                    text = "Feature row ${rowIndex + 1}",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(start = 6.dp, top = 10.dp, bottom = 2.dp),
+                )
+                // Wrapped at eight, so a long row stays tappable on a phone.
+                buttons.chunked(8).forEach { line ->
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        line.forEach { button ->
+                            val id = MaKeyColors.idForFeature(maFeatureToken(button))
+                            FeatureGridKey(
+                                button = button,
+                                macroSlots = macroSlots,
+                                paint = colors[id],
+                                modifier = Modifier.weight(1f),
+                                onTap = { paint(id) },
+                            )
+                        }
+                        repeat(8 - line.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             }
 
@@ -279,5 +316,32 @@ private fun GridKey(
                 )
             }
         }
+    }
+}
+
+/** A feature-row key on the grid, wearing the same glyph the keyboard draws. */
+@Composable
+private fun FeatureGridKey(
+    button: MaRows.Button,
+    macroSlots: List<MaMacroSlots.Slot>,
+    paint: Int?,
+    modifier: Modifier,
+    onTap: () -> Unit,
+) {
+    val background = paint?.let { Color(it) } ?: MaterialTheme.colorScheme.surfaceVariant
+    val foreground = when {
+        paint == null -> MaterialTheme.colorScheme.onSurfaceVariant
+        MaKeyColors.wantsDarkText(paint) -> Color(0xFF111111)
+        else -> Color.White
+    }
+    Box(
+        modifier = modifier
+            .padding(2.dp)
+            .height(44.dp)
+            .background(background, RoundedCornerShape(6.dp))
+            .clickable(onClick = onTap),
+        contentAlignment = Alignment.Center,
+    ) {
+        MaButtonGlyph(button, macroSlots, tintOverride = foreground)
     }
 }

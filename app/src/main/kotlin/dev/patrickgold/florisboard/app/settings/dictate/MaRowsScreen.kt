@@ -656,8 +656,13 @@ internal fun MaRowKeyItem(
  * list something to translate rather than something to recognise.
  */
 @Composable
-private fun MaButtonGlyph(button: MaRows.Button, macroSlots: List<MaMacroSlots.Slot>) {
-    val tint = MaterialTheme.colorScheme.onSurface
+internal fun MaButtonGlyph(
+    button: MaRows.Button,
+    macroSlots: List<MaMacroSlots.Slot>,
+    // Internal and tintable so Settings → Key colours draws the same glyph on a painted key.
+    tintOverride: Color? = null,
+) {
+    val tint = tintOverride ?: MaterialTheme.colorScheme.onSurface
     val size = Modifier.size(24.dp)
 
     @Composable

@@ -10,6 +10,9 @@
 
 package dev.patrickgold.florisboard.dictate
 
+import java.lang.Character
+import kotlin.collections.LinkedHashMap
+
 /**
  * A colour per key, like the Logitech G815: every key can wear its own.
  *
@@ -62,6 +65,12 @@ object MaKeyColors {
     /** The id of a main keyboard key from its code. Letters fold to lower case. */
     fun idForCode(code: Int): String =
         "k" + (if (code > 0 && Character.isValidCodePoint(code)) Character.toLowerCase(code) else code)
+
+    /**
+     * The id of a feature-row key from its token: the built-in key's name, `C3` for a bucket, `M2`
+     * for a macro. By what the key IS, so a key moved between rows keeps its colour.
+     */
+    fun idForFeature(token: String): String = "f:$token"
 
     /** The id of the number row's key at [index], 0 for the leftmost. */
     fun idForNumberRow(index: Int): String = "n$index"

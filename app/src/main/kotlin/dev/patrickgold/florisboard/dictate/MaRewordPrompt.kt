@@ -13,6 +13,8 @@ package dev.patrickgold.florisboard.dictate
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.data.prompts.DictatePromptDefaults
 import dev.patrickgold.florisboard.dictate.nlp.MaWordLanguage
+import java.lang.System
+import kotlin.jvm.Volatile
 
 /**
  * THE EXACT MESSAGE CTRL+P AND CTRL+F SEND, BUILT IN ONE PLACE.

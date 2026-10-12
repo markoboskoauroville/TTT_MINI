@@ -190,7 +190,7 @@ model list; Haiku is the default, Sonnet or Opus chosen on the Prompts screen. C
 through the native Messages API at effort `low`. Prompts → *Show exactly what is sent* is built by
 the same function the keyboard sends (`MaRewordPrompt`). See §188.
 
-**Keys can wear their own colours** (Settings → Key colours, G815 style), and each number row digit
+**Keys can wear their own colours** (Settings → Key colours, G815 style: letters, number row and feature rows), and each number row digit
 prints the command it types in small letters under the digit. See §189.
 
 **Models repair themselves.** A request that fails because of the model asks the provider what exists,

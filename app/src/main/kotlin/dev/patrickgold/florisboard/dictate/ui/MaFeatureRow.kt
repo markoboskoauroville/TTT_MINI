@@ -80,6 +80,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import androidx.compose.runtime.getValue
@@ -107,6 +108,7 @@ import dev.patrickgold.florisboard.dictate.MaMacroSyntax
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.MaKeyColors
 import dev.patrickgold.florisboard.dictate.MaFeatureOrder
 import dev.patrickgold.florisboard.dictate.MaFeatureKey
 import androidx.compose.runtime.LaunchedEffect
@@ -287,6 +289,9 @@ fun MaFeatureRow(
     val rowsRaw by prefs.dictate.maRows.collectAsState()
     val macroRaw by prefs.dictate.maMacroSlots.collectAsState()
     val macroSlots = remember(macroRaw) { MaMacroSlots.parse(macroRaw) }
+    // The colours he painted (Settings → Key colours), read here once for every key on the rows.
+    val maKeyColorsRaw by prefs.dictate.maKeyColors.collectAsState()
+    val maKeyColors = remember(maKeyColorsRaw) { MaKeyColors.parse(maKeyColorsRaw) }
 
     // Rows that are off are absent rather than empty, so the ones below move up and the keyboard is
     // genuinely shorter. When everything is off everywhere this hands back the settings key alone,
@@ -581,6 +586,11 @@ fun MaFeatureRow(
         // record, which is a warning about a real arrangement rather than a rule that makes some
         // arrangements unreachable.
         rowButtons.forEach { button ->
+          // His colour for this key, if he painted one (Settings → Key colours). Provided rather
+          // than passed, so every key drawn through ThemedKey takes it without each being changed.
+          CompositionLocalProvider(
+            LocalMaKeyPaint provides maKeyColors[MaKeyColors.idForFeature(maFeatureToken(button))],
+          ) {
           when (button) {
             // A macro key: what the user wrote, on the face of it, running what he attached to it.
             //
@@ -1870,6 +1880,7 @@ fun MaFeatureRow(
                 }
             }
           }
+          }
         }
         }
       }
@@ -2244,3 +2255,13 @@ internal fun MaHistoryGlyph(
  * app's own theme, which is the only theme these keys have ever been drawn in.
  */
 private val MaKeyFaceForBadge = Color(0xFF161B22)
+
+/**
+ * What a feature-row key is called for its colour: the built-in key's name, `C3` for a bucket,
+ * `M2` for a macro. Shared with Settings → Key colours, so the grid and the row agree on every id.
+ */
+internal fun maFeatureToken(button: MaRows.Button): String = when (button) {
+    is MaRows.Button.Builtin -> button.key.name
+    is MaRows.Button.Clip -> "C${button.slot}"
+    is MaRows.Button.Macro -> "M${button.slot}"
+}

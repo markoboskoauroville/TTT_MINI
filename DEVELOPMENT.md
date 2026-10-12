@@ -10671,6 +10671,15 @@ Settings → Key colours: pick a swatch, tap keys to paint; tap again or use the
 grid is read from the layout the keyboard last drew, so it is his real layout with its special keys'
 icons. Before the keyboard has been opened in the process, plain letter rows stand in and say so.
 
+## The feature rows too
+
+Every feature-row key drawn through `ThemedKey` — text, icon and action keys — reads a
+`LocalMaKeyPaint` the row provides per key, so all of them take a colour without each being edited.
+Id by what the key IS (`f:SHIFT`, `f:C3`, `f:M2`), so a key moved between rows keeps its colour.
+Keys that draw state themselves (recording, lit, the bucket ring) draw it on top of the paint, so
+**colour still means state** where it did. The grid lists the rows as arranged, wrapped at eight,
+each key wearing the glyph the keyboard draws (`MaButtonGlyph`, now shared).
+
 ## The third line
 
 `MaNumericSecondary.preview`: the whole slot on one line — `{Enter}` as ⏎, line breaks as ⏎ —

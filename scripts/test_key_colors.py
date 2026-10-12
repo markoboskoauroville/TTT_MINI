@@ -68,6 +68,17 @@ check("icons follow", "tintOverride = maForeground" in tkl)
 check("a press still shows", "MaKeyColors.pressed(it)" in tkl)
 check("number row reads the colours", "colors[MaKeyColors.idForNumberRow(index)]" in row)
 
+# ---------------------------------------------------------------- the feature rows
+fr = code(APP / "dictate/ui/MaFeatureRow.kt")
+legacy = code(APP / "dictate/ui/LegacyDictateLayout.kt")
+check("ThemedKey reads the paint", "val paint = LocalMaKeyPaint.current" in legacy)
+check("ThemedKey keeps its OptIn", "@OptIn(ExperimentalFoundationApi::class)\n@Composable\ninternal fun ThemedKey(" in legacy,
+      "the paint declaration must not sit between the annotation and the function")
+check("every feature key is wrapped", "LocalMaKeyPaint provides maKeyColors[MaKeyColors.idForFeature(maFeatureToken(button))]" in fr)
+check("one token function, shared", "internal fun maFeatureToken(" in fr and "maFeatureToken(button)" in screen)
+check("the grid shows feature rows", "Feature row ${rowIndex + 1}" in screen)
+check("with the keyboard's own glyphs", "MaButtonGlyph(button, macroSlots, tintOverride = foreground)" in screen)
+
 # ---------------------------------------------------------------- the third line
 check("the command is printed under the digit", "MaNumericSecondary.preview(it)" in row)
 check("two small lines at most", "maxLines = 2" in row)
