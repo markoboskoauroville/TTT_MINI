@@ -89,6 +89,45 @@ object MaWordLanguage {
         return MaLanguage.active()
     }
 
+    /**
+     * The language of a passage for Ctrl+P and Ctrl+F, or null when the text does not say.
+     *
+     * [detect] falls back to the last recording key, and that was wrong for a sentence: he records
+     * in English, then selects a Croatian line with no č or š in it — "Dobro jutro, kako si danas"
+     * — and the instruction told the model the text was ENGLISH and must stay English. Most
+     * Croatian has no diacritics; the doc above says so, and the fallback ignored it.
+     *
+     * So the small words decide: je, se, da, kako, nije against the, is, and, you. Words that are
+     * the same in both (i, a, to, on, do) count for neither. No winner returns null, and the
+     * instruction then says "the language the text is in" without naming one.
+     */
+    fun detectPassage(text: String): String? {
+        if (text.any { it.lowercaseChar() in CROATIAN_LETTERS }) return HR
+        val words = text.lowercase().split(Regex("[^\\p{L}']+")).filter { it.isNotEmpty() }
+        val hr = words.count { it in HR_SMALL_WORDS }
+        val en = words.count { it in EN_SMALL_WORDS }
+        return when {
+            hr > en -> HR
+            en > hr -> EN
+            else -> null
+        }
+    }
+
+    private val HR_SMALL_WORDS = setOf(
+        "je", "se", "da", "u", "na", "za", "su", "od", "ne", "sam", "si", "smo", "ste", "kako",
+        "ali", "ili", "sto", "kad", "kada", "bi", "ja", "ti", "mi", "vi", "ona", "oni", "ovo", "taj",
+        "koji", "koja", "koje", "iz", "sa", "po", "pa", "jer", "ako", "jos", "vec", "samo", "biti",
+        "bio", "bila", "nije", "ima", "imam", "hvala", "molim", "dobro", "danas", "sutra", "jutro",
+        "ovaj", "ova", "neki", "svi", "sve", "mogu", "moze", "treba", "evo", "nego", "kao", "tako",
+    )
+
+    private val EN_SMALL_WORDS = setOf(
+        "the", "and", "is", "are", "of", "that", "it", "you", "for", "with", "this", "be", "was",
+        "have", "has", "not", "but", "we", "they", "my", "your", "will", "can", "what", "so", "at",
+        "would", "there", "their", "from", "were", "been", "if", "or", "about", "just", "please",
+        "thanks", "thank", "here", "how", "when", "which", "who", "should", "could", "i'm", "it's",
+    )
+
     /** The English name of a language code, for naming it in an instruction. */
     fun nameOf(code: String): String = if (code == HR) "Croatian" else "English"
 

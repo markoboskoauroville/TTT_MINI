@@ -77,6 +77,10 @@ class OpenAiCompatibleClient(
     }
 
     override suspend fun complete(request: ChatRequest): ChatResult {
+        // Claude goes through Anthropic's own Messages API, not the OpenAI-compatible shim: the shim
+        // cannot set `output_config.effort`, and the newest Claude models cannot switch thinking off,
+        // so through the shim every proofread would think at the default depth and wait for it.
+        if (isAnthropic) return completeAnthropic(request)
         // Skip reasoning_effort up-front for endpoint+model pairs already known to reject it, so we don't
         // waste a doubled request on every rewording (#184/#186).
         val key = "${config.normalizedBaseUrl}|${request.model}"
@@ -98,6 +102,80 @@ class OpenAiCompatibleClient(
                 throw e
             }
         }
+    }
+
+    private val isAnthropic: Boolean
+        get() = config.normalizedBaseUrl.startsWith("https://api.anthropic.com/")
+
+    /**
+     * Claude, through `POST /v1/messages`, always on the newest model of the tier asked for.
+     *
+     * [MaClaudeModels] turns `claude-haiku-latest` into the newest Haiku Anthropic list for this key.
+     * If Anthropic refuse the model itself — retired, renamed — the catalog is read again, the newest
+     * of the same tier is taken, and the request is sent once more. Never a different tier, and
+     * never a name the catalog did not list.
+     */
+    private suspend fun completeAnthropic(request: ChatRequest): ChatResult {
+        val asked = MaClaudeModels.upgradeOldDefault(request.model)
+        val catalog = if (MaClaudeModels.isAlias(asked)) claudeCatalog(refresh = false) else emptyList()
+        val model = MaClaudeModels.resolve(asked, catalog)
+        return try {
+            anthropicMessagesOnce(request, model)
+        } catch (e: DictateApiException) {
+            if (!MaClaudeModels.isModelFailure(e.httpStatus, e.message, model)) throw e
+            val next = MaClaudeModels.successor(model, claudeCatalog(refresh = true)) ?: throw e
+            DictateHttpLog.warn("Claude model ${sanitizeForLog(model)} refused; retrying on ${sanitizeForLog(next)}")
+            anthropicMessagesOnce(request, next)
+        }
+    }
+
+    /**
+     * The model ids this key can use, read once per process and kept.
+     *
+     * Empty when the list cannot be read; [MaClaudeModels.resolve] then falls back to known ids
+     * rather than failing the proofread over a catalog.
+     */
+    private suspend fun claudeCatalog(refresh: Boolean): List<String> {
+        val cacheKey = config.normalizedBaseUrl + "|" + config.apiKey.hashCode()
+        if (!refresh) claudeCatalogs[cacheKey]?.let { return it }
+        val ids = runCatching { listModels().map { it.id } }.getOrDefault(emptyList())
+        if (ids.isNotEmpty()) claudeCatalogs[cacheKey] = ids
+        return ids.ifEmpty { claudeCatalogs[cacheKey].orEmpty() }
+    }
+
+    private suspend fun anthropicMessagesOnce(request: ChatRequest, model: String): ChatResult {
+        val system = request.messages.filter { it.role == ChatRole.SYSTEM }
+            .joinToString("\n\n") { it.content }.ifBlank { null }
+        val dto = AnthropicMessagesRequestDto(
+            model = model,
+            maxTokens = request.maxTokens ?: ANTHROPIC_MAX_TOKENS,
+            system = system,
+            messages = request.messages.filter { it.role != ChatRole.SYSTEM }
+                .map { MessageDto(it.role.wire, it.content) },
+            outputConfig = if (MaClaudeModels.supportsEffort(model)) {
+                AnthropicOutputConfigDto(MaClaudeModels.effortFor(request.reasoningEffort))
+            } else {
+                null
+            },
+        )
+        val httpRequest = Request.Builder()
+            .url(config.normalizedBaseUrl + "messages")
+            .header("x-api-key", config.apiKey)
+            .header("anthropic-version", "2023-06-01")
+            .post(json.encodeToString(AnthropicMessagesRequestDto.serializer(), dto).toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+        val body = executeForBody(httpRequest, maxRetries = 1)
+        val response = json.decodeFromString(AnthropicMessagesResponseDto.serializer(), body)
+        val text = response.content.filter { it.type == "text" }.joinToString("") { it.text.orEmpty() }
+        if (response.stopReason == "refusal") {
+            throw DictateApiException(DictateApiException.Kind.UNKNOWN, "Claude declined this text")
+        }
+        if (text.isBlank()) {
+            throw DictateApiException(DictateApiException.Kind.UNKNOWN, "Empty response from Claude")
+        }
+        lastClaudeModel = response.model ?: model
+        val usage = response.usage?.let { TokenUsage(it.inputTokens, it.outputTokens) }
+        return ChatResult(text, usage)
     }
 
     /** True when [e] looks like the provider rejecting the `reasoning_effort` field or its value. */
@@ -550,7 +628,13 @@ class OpenAiCompatibleClient(
         val lang = request.language?.takeIf { it.isNotEmpty() && it != "detect" }
         val createDto = AssemblyCreateDto(
             audioUrl = uploadUrl,
-            speechModels = request.model.takeIf { it.isNotBlank() }?.let { listOf(it) },
+            // ALWAYS WITH universal-2 BEHIND IT. Croatian is not one of the Universal-3 languages; it
+            // is a Universal-2 language. A list is AssemblyAI's own routing: the first model that
+            // supports the language transcribes it. English goes to the Pro model, Croatian to
+            // Universal-2, by the API's rule rather than by a guess of ours.
+            speechModels = request.model.takeIf { it.isNotBlank() }?.let {
+                if (it == ASSEMBLY_FALLBACK_MODEL) listOf(it) else listOf(it, ASSEMBLY_FALLBACK_MODEL)
+            },
             languageCode = lang,
             languageDetection = if (lang == null) true else null,
             languageDetectionOptions = if (lang == null && request.languageCandidates.isNotEmpty()) {
@@ -871,8 +955,10 @@ class OpenAiCompatibleClient(
         // response is the same `{ data: [{ id }] }` shape, so parse it like the default path. This keeps the
         // picker/connection test live (and actually key-validating) without touching the Bearer chat path.
         if (config.normalizedBaseUrl.startsWith("https://api.anthropic.com/")) {
+            // limit=1000: the endpoint pages at 20 by default, and a tier's newest model must not
+            // be missed because it sat on page two.
             val request = Request.Builder()
-                .url(config.normalizedBaseUrl + "models")
+                .url(config.normalizedBaseUrl + "models?limit=1000")
                 .header("x-api-key", config.apiKey)
                 .header("anthropic-version", "2023-06-01")
                 .get()
@@ -1273,6 +1359,37 @@ class OpenAiCompatibleClient(
     @Serializable
     private data class MessageDto(val role: String, val content: String)
 
+    // --- Anthropic Messages API ---
+
+    @Serializable
+    private data class AnthropicMessagesRequestDto(
+        val model: String,
+        @SerialName("max_tokens") val maxTokens: Int,
+        val system: String? = null,
+        val messages: List<MessageDto>,
+        @SerialName("output_config") val outputConfig: AnthropicOutputConfigDto? = null,
+    )
+
+    @Serializable
+    private data class AnthropicOutputConfigDto(val effort: String)
+
+    @Serializable
+    private data class AnthropicMessagesResponseDto(
+        val model: String? = null,
+        val content: List<AnthropicContentDto> = emptyList(),
+        @SerialName("stop_reason") val stopReason: String? = null,
+        val usage: AnthropicUsageDto? = null,
+    )
+
+    @Serializable
+    private data class AnthropicContentDto(val type: String = "", val text: String? = null)
+
+    @Serializable
+    private data class AnthropicUsageDto(
+        @SerialName("input_tokens") val inputTokens: Long = 0,
+        @SerialName("output_tokens") val outputTokens: Long = 0,
+    )
+
     @Serializable
     private data class ChatCompletionResponseDto(
         val choices: List<ChoiceDto> = emptyList(),
@@ -1601,6 +1718,20 @@ class OpenAiCompatibleClient(
         private val reasoningEffortUnsupported =
             java.util.Collections.synchronizedSet(HashSet<String>())
 
+        /** Claude catalogs, per endpoint and key, for the life of the process. */
+        private val claudeCatalogs = ConcurrentHashMap<String, List<String>>()
+
+        /** Room for a long field coming back whole. Proofreading returns about what it was given. */
+        private const val ANTHROPIC_MAX_TOKENS = 16000
+
+        /**
+         * The model id Anthropic said answered the last Claude request. Shown in settings, so the
+         * screen names the model that really ran rather than the alias that was asked for.
+         */
+        @Volatile
+        var lastClaudeModel: String? = null
+            private set
+
         /** Soniox / AssemblyAI async polling: the overall budget before giving up. */
         private const val SONIOX_POLL_TIMEOUT_MS = 300_000L
 
@@ -1631,6 +1762,9 @@ class OpenAiCompatibleClient(
          */
         private const val SYNC_MODEL_HEADER = "X-AAI-Model"
         const val SYNC_MODEL = "universal-3-5-pro"
+
+        /** The AssemblyAI model that covers Croatian; listed after the chosen model on every async job. */
+        private const val ASSEMBLY_FALLBACK_MODEL = "universal-2"
 
         /** One retry, not three: see [transcribeAssemblyAiSync]. */
         private const val SYNC_MAX_RETRIES = 1

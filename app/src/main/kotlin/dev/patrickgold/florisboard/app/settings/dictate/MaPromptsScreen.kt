@@ -11,6 +11,8 @@
 package dev.patrickgold.florisboard.app.settings.dictate
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
@@ -38,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,6 +49,10 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaFlow
 import dev.patrickgold.florisboard.dictate.MaProofread
 import dev.patrickgold.florisboard.dictate.MaPrompts
+import dev.patrickgold.florisboard.dictate.MaProviders
+import dev.patrickgold.florisboard.dictate.MaRewordPrompt
+import dev.patrickgold.florisboard.dictate.provider.MaClaudeModels
+import dev.patrickgold.florisboard.dictate.provider.OpenAiCompatibleClient
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.PreferenceData
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -103,6 +111,12 @@ fun MaPromptsScreen() = FlorisScreen {
             pref = prefs.dictate.maFlowPrompt,
             shipped = MaFlow.INSTRUCTION,
         )
+
+        // WHAT IS SENT, WORD FOR WORD. He asked to see the exact message and to change it. The
+        // instruction above is only the first of four parts; the other three are shown and, where
+        // they belong to this screen, editable here.
+        Spacer(Modifier.height(20.dp))
+        SentToClaudeSection()
 
         // GRAMMAR CORRECTION (MANTRA). One voice, stated rather than chosen.
         //
@@ -244,6 +258,19 @@ private fun PromptCategory(
         modifier = Modifier.padding(start = 8.dp),
     ) { Text("New wording") }
 
+    var previewing by remember { mutableStateOf(false) }
+    TextButton(
+        onClick = { previewing = true },
+        modifier = Modifier.padding(start = 8.dp),
+    ) { Text("Show exactly what is sent") }
+    if (previewing) {
+        SentPreviewDialog(
+            title = title,
+            instruction = set.active.text.ifBlank { shipped },
+            onDismiss = { previewing = false },
+        )
+    }
+
     editing?.let { inst ->
         PromptEditor(
             instance = inst,
@@ -373,4 +400,304 @@ private fun PromptEditor(
             }
         },
     )
+}
+
+/** The model Ctrl+P and Ctrl+F go to, as a line he can read: what is set, and what it means. */
+private fun rewordingModelLine(): String {
+    val account = MaProviders.rewordingAccount()
+    val preset = MaProviders.presetFor(account)
+    val set = MaClaudeModels.upgradeOldDefault(account.chatModel.ifBlank { preset.defaultChatModel.orEmpty() })
+    val tier = MaClaudeModels.tierOfAlias(set)
+    val ran = OpenAiCompatibleClient.lastClaudeModel
+    return buildString {
+        append("Model: ").append(set.ifBlank { "provider default" })
+        if (tier != null) {
+            append(" \u2014 the newest ").append(tier.replaceFirstChar { it.uppercase() })
+            append(" on Anthropic's model list, looked up by the app")
+        }
+        if (ran != null) append("\nLast answered by: ").append(ran)
+    }
+}
+
+/**
+ * The whole message for one key, as [MaRewordPrompt.build] makes it, with his text replaced by a
+ * marker. Three language cases, because the language line is the part that changes with the text.
+ */
+@Composable
+private fun SentPreviewDialog(title: String, instruction: String, onDismiss: () -> Unit) {
+    val prefs by FlorisPreferenceStore
+    // Collected so the preview follows the settings it is built from.
+    val selection by prefs.dictate.systemPromptSelection.collectAsState()
+    val custom by prefs.dictate.systemPromptCustom.collectAsState()
+    val rule by prefs.dictate.maLanguageRule.collectAsState()
+    val unsure by prefs.dictate.maLanguageRuleUnsure.collectAsState()
+    var language by remember { mutableStateOf<String?>("Croatian") }
+
+    val message = remember(instruction, selection, custom, rule, unsure, language) {
+        MaRewordPrompt.build(
+            instruction = instruction,
+            systemPrompt = MaRewordPrompt.currentSystemPrompt(),
+            languageTemplate = rule.ifBlank { MaRewordPrompt.LANGUAGE_RULE },
+            languageUnsure = unsure.ifBlank { MaRewordPrompt.LANGUAGE_RULE_UNSURE },
+            language = language,
+            input = MaRewordPrompt.TEXT_PLACEHOLDER,
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    text = rewordingModelLine(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                Row {
+                    for (choice in listOf("Croatian", "English", null)) {
+                        TextButton(onClick = { language = choice }) {
+                            Text(
+                                text = choice ?: "Unclear",
+                                fontWeight = if (language == choice) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        }
+                    }
+                }
+                Text(
+                    text = "Sent as one message, in this order: your instruction, the rewording " +
+                        "system prompt, the language line, your text.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                SelectionContainer {
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+
+/** The language lines, editable, and the last message that really left the phone. */
+@Composable
+private fun SentToClaudeSection() {
+    val prefs by FlorisPreferenceStore
+    val scope = rememberCoroutineScope()
+    val rule by prefs.dictate.maLanguageRule.collectAsState()
+    val unsure by prefs.dictate.maLanguageRuleUnsure.collectAsState()
+    var editingRule by remember { mutableStateOf<Int?>(null) }
+    var refresh by remember { mutableStateOf(0) }
+
+    Text(
+        text = "Sent to Claude",
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(horizontal = 16.dp),
+    )
+    Text(
+        text = rewordingModelLine(),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+    )
+
+    ClaudeTierChooser()
+
+    LanguageRuleRow(
+        name = "Language line",
+        hint = "{language} becomes Croatian or English",
+        text = rule.ifBlank { MaRewordPrompt.LANGUAGE_RULE },
+        custom = rule.isNotBlank(),
+        onClick = { editingRule = 0 },
+    )
+    LanguageRuleRow(
+        name = "Language line when the language is unclear",
+        hint = "used when the text does not show which language it is",
+        text = unsure.ifBlank { MaRewordPrompt.LANGUAGE_RULE_UNSURE },
+        custom = unsure.isNotBlank(),
+        onClick = { editingRule = 1 },
+    )
+
+    editingRule?.let { which ->
+        val pref = if (which == 0) prefs.dictate.maLanguageRule else prefs.dictate.maLanguageRuleUnsure
+        val shipped = if (which == 0) MaRewordPrompt.LANGUAGE_RULE else MaRewordPrompt.LANGUAGE_RULE_UNSURE
+        var text by remember(which) { mutableStateOf(pref.get().ifBlank { shipped }) }
+        AlertDialog(
+            onDismissRequest = { editingRule = null },
+            title = { Text(if (which == 0) "Language line" else "Language line, unclear") },
+            text = {
+                Column {
+                    if (which == 0) {
+                        Text(
+                            text = "Write {language} where the language name goes.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        minLines = 3,
+                        maxLines = 8,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    // Saved as empty when it matches the built-in, so improving the built-in later
+                    // still reaches him — the same rule the Default wordings follow.
+                    val value = text.trim().takeIf { it != shipped }.orEmpty()
+                    scope.launch { pref.set(value) }
+                    editingRule = null
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        scope.launch { pref.set("") }
+                        editingRule = null
+                    }) { Text("Built-in") }
+                    TextButton(onClick = { editingRule = null }) { Text("Cancel") }
+                }
+            },
+        )
+    }
+
+    Spacer(Modifier.height(12.dp))
+    Text(
+        text = "Last message sent",
+        style = MaterialTheme.typography.titleSmall,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+    )
+    val last = remember(refresh) { MaRewordPrompt.last }
+    if (last == null) {
+        Text(
+            text = "Nothing sent since the keyboard last started. Press Ctrl+P or Ctrl+F, then come back.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+    } else {
+        val time = remember(last) {
+            java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(last.atMillis))
+        }
+        Text(
+            text = "$time \u2014 asked for ${last.model}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        SelectionContainer {
+            Text(
+                text = last.message,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
+    }
+    TextButton(onClick = { refresh++ }, modifier = Modifier.padding(start = 8.dp)) { Text("Refresh") }
+    Text(
+        text = "Kept in memory only, never saved: it holds your text.",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp),
+    )
+}
+
+/**
+ * Which Claude answers Ctrl+P and Ctrl+F: the newest Haiku, Sonnet or Opus.
+ *
+ * A tier, never a number — the number is looked up from Anthropic's list (MaClaudeModels), so this
+ * choice never goes stale. Haiku stays the default; Sonnet and Opus are his to pick, with the price
+ * beside them, because a tier change is a price change.
+ */
+@Composable
+private fun ClaudeTierChooser() {
+    val prefs by FlorisPreferenceStore
+    val scope = rememberCoroutineScope()
+    val accounts by prefs.dictate.providerAccounts.collectAsState()
+    val account = MaProviders.rewordingAccount()
+    if (account.providerId != "anthropic") return
+    val preset = MaProviders.presetFor(account)
+    val current = MaClaudeModels.upgradeOldDefault(
+        accounts.getOrEmpty(account.providerId).chatModel.ifBlank { preset.defaultChatModel.orEmpty() },
+    )
+    val choices = listOf(
+        "haiku" to "Newest Haiku \u2014 fastest, cheapest (default)",
+        "sonnet" to "Newest Sonnet \u2014 better Croatian grammar, about 20\u00D7 the price",
+        "opus" to "Newest Opus \u2014 most careful, about 40\u00D7 the price",
+    )
+    for ((tier, label) in choices) {
+        val alias = MaClaudeModels.alias(tier)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    scope.launch {
+                        prefs.dictate.providerAccounts.set(
+                            accounts.edit(account.providerId) { it.copy(chatModel = alias) },
+                        )
+                    }
+                }
+                .padding(horizontal = 8.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RadioButton(
+                selected = current == alias,
+                onClick = {
+                    scope.launch {
+                        prefs.dictate.providerAccounts.set(
+                            accounts.edit(account.providerId) { it.copy(chatModel = alias) },
+                        )
+                    }
+                },
+            )
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+    if (MaClaudeModels.tierOfAlias(current) == null) {
+        Text(
+            text = "Pinned to $current. Pick one above to follow the newest instead.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+    }
+    Spacer(Modifier.height(8.dp))
+}
+
+@Composable
+private fun LanguageRuleRow(name: String, hint: String, text: String, custom: Boolean, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text = if (custom) "$name  (yours)" else "$name  (built in)",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            text = hint,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }

@@ -185,6 +185,11 @@ nothing on that line changes the language: the keys decide it.
 skipping — letters, symbols, symbols², letters — and a long press offers all three for jumping
 straight there. The comma has its own key; the period offers ! and ?
 
+**Claude follows the newest model by tier.** `claude-haiku-latest` is resolved against Anthropic's
+model list; Haiku is the default, Sonnet or Opus chosen on the Prompts screen. Claude is called
+through the native Messages API at effort `low`. Prompts → *Show exactly what is sent* is built by
+the same function the keyboard sends (`MaRewordPrompt`). See §188.
+
 **Models repair themselves.** A request that fails because of the model asks the provider what exists,
 picks the successor by family and version, writes it down and retries once. See
 `MANTRA_MANIFEST/modules/model-self-repair.md`.

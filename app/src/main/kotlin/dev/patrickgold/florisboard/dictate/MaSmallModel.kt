@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate
 
+import dev.patrickgold.florisboard.dictate.provider.MaClaudeModels
+
 /**
  * THE SMALL MODEL, NAMED, PER PROVIDER. HAIKU IS THE RULE.
  *
@@ -54,7 +56,8 @@ object MaSmallModel {
     fun forProvider(providerId: String): String? {
         val id = providerId.lowercase()
         return when {
-            id.contains("anthropic") || id.contains("claude") -> "claude-haiku-4-5-20251001"
+            // The newest Haiku, whatever its number. Resolved against Anthropic's model list.
+            id.contains("anthropic") || id.contains("claude") -> MaClaudeModels.DEFAULT
             id.contains("groq") -> "llama-3.1-8b-instant"
             id.contains("gemini") || id.contains("google") -> "gemini-2.0-flash"
             id.contains("openai") -> "gpt-4o-mini"
@@ -64,7 +67,7 @@ object MaSmallModel {
 
     /** Every small model this app will use. For the test, and for anybody auditing the bill. */
     val ALL = listOf(
-        "claude-haiku-4-5-20251001",
+        MaClaudeModels.DEFAULT,
         "llama-3.1-8b-instant",
         "gemini-2.0-flash",
         "gpt-4o-mini",

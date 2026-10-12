@@ -1108,6 +1108,22 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         /**
+         * His wording of the language line added after every Ctrl+P and Ctrl+F instruction, or
+         * empty for the shipped one. `{language}` is replaced by Croatian or English. See
+         * MaRewordPrompt.
+         */
+        val maLanguageRule = string(
+            key = "dictate__ma_language_rule",
+            default = "",
+        )
+
+        /** The same line for text whose language could not be told, or empty for the shipped one. */
+        val maLanguageRuleUnsure = string(
+            key = "dictate__ma_language_rule_unsure",
+            default = "",
+        )
+
+        /**
          * Spoken formatting marks he has switched OFF, comma separated.
          *
          * The ones OFF rather than the ones on, so a mark added in a later version is live by

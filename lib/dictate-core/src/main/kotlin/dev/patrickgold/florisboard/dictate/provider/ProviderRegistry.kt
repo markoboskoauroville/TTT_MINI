@@ -225,7 +225,8 @@ object ProviderRegistry {
     /**
      * Anthropic Claude — rewording only (issue: Anthropic provider). Anthropic has no speech-to-text or
      * realtime-audio API, so this is [CHAT_ONLY]; Claude is excellent for rewording, translation and tone
-     * changes. It is reached through Anthropic's OpenAI-compatible endpoint (`POST {baseUrl}chat/completions`
+     * changes. Chat goes through Anthropic's native Messages API (see OpenAiCompatibleClient.completeAnthropic);
+     * this paragraph describes the OpenAI-compatible endpoint it used before (`POST {baseUrl}chat/completions`
      * with an `Authorization: Bearer <key>` header), so the standard [OpenAiCompatibleClient] works
      * unchanged. `GET {baseUrl}models` also accepts that same Bearer key and returns the Claude models in
      * the OpenAI `{ data: [{ id }] }` shape, so [supportsDynamicModels] = true keeps the picker current when
@@ -240,9 +241,13 @@ object ProviderRegistry {
         capabilities = CHAT_ONLY,
         supportsDynamicModels = true,
         apiKeyUrl = "https://console.anthropic.com/settings/keys",
-        defaultChatModel = "claude-haiku-4-5-20251001",
+        // A tier, not a number. `claude-haiku-latest` is resolved against Anthropic's own model list
+        // on every new process, so the next Haiku is picked up without an app update. See
+        // MaClaudeModels. The concrete ids after the aliases are for pinning one on purpose.
+        defaultChatModel = MaClaudeModels.DEFAULT,
         curatedChatModels = listOf(
-            "claude-haiku-4-5-20251001", "claude-sonnet-5", "claude-opus-4-8",
+            MaClaudeModels.alias("haiku"), MaClaudeModels.alias("sonnet"), MaClaudeModels.alias("opus"),
+            "claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5",
         ),
     )
 
@@ -361,8 +366,11 @@ object ProviderRegistry {
         transcriptionApi = TranscriptionApi.ASSEMBLYAI_ASYNC,
         supportsDynamicModels = false,
         apiKeyUrl = "https://www.assemblyai.com/app/api-keys",
-        defaultTranscriptionModel = "universal-3-pro",
-        curatedTranscriptionModels = listOf("universal-3-pro", "universal-2"),
+        // Universal-3.5 Pro, the model on his price sheet and the one the Sync path already uses.
+        // Croatian is not among its languages; the async job lists universal-2 after it, so
+        // Croatian is routed there by AssemblyAI (see transcribeAssemblyAi).
+        defaultTranscriptionModel = "universal-3-5-pro",
+        curatedTranscriptionModels = listOf("universal-3-5-pro", "universal-3-pro", "universal-2"),
         // Realtime (#128): Universal-Streaming wss streaming.assemblyai.com/v3/ws (~300ms). Model ids
         // verified when the session is built (billed by connection-open duration).
         supportsRealtime = true,

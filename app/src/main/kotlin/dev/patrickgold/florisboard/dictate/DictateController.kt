@@ -95,7 +95,6 @@ import dev.patrickgold.florisboard.dictate.audio.MaEncoder
 import dev.patrickgold.florisboard.dictate.audio.MaResample
 import dev.patrickgold.florisboard.dictate.provider.MaKeyRing
 import dev.patrickgold.florisboard.dictate.provider.MaKeys
-import dev.patrickgold.florisboard.dictate.nlp.MaWordLanguage
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -3738,41 +3737,17 @@ object DictateController {
         reasoning: DictateReasoningEffort? = null,
         reasoningCustom: String? = null,
     ): String {
-        val sys = systemPrompt()
-        val content = buildString {
-            append(instruction)
-            if (sys.isNotBlank()) append("\n\n").append(sys)
-            if (!input.isNullOrBlank()) {
-                // THE LANGUAGE RULE GOES LAST, AND IT NAMES THE LANGUAGE.
-                //
-                // He reported reflow silently TRANSLATING his Croatian into English, and only
-                // noticing after he had pasted it somewhere. The instruction never mentioned
-                // language at all, and every style rule in it is written in English — so the model
-                // followed the language of the instruction rather than the language of the text.
-                //
-                // Three things, and each matters on its own:
-                //
-                //  1. The language is DETECTED HERE from the text, not left to the model to infer.
-                //     Inferring is what it was already doing, and it inferred English.
-                //  2. It is NAMED. "Croatian", not "the original language" — a rule that describes
-                //     a language without naming it is a rule the model has to resolve, and it
-                //     resolves it towards the language it is being spoken to in.
-                //  3. It is LAST, after every style rule and immediately before his text. Anything
-                //     written in English AFTER it drags the output back, which is exactly how the
-                //     old "keep the original language" line in the proofread prompt survives being
-                //     buried in the middle of a list.
-                //
-                // Applied to every rewording prompt, not only reflow — proofread, the library, the
-                // live prompts. The failure is a property of an English instruction meeting foreign
-                // text, and every one of them is an English instruction.
-                val language = MaWordLanguage.nameOf(MaWordLanguage.detect(input))
-                append("\n\n").append(
-                    "The text below is written in $language. Your entire answer must be in " +
-                        "$language. Do not translate it into English or any other language.",
-                )
-                append("\n\n").append(input)
-            }
-        }
+        // THE LANGUAGE RULE GOES LAST, AND IT NAMES THE LANGUAGE.
+        //
+        // He reported reflow silently TRANSLATING his Croatian into English. The language is
+        // detected here from the text and NAMED, immediately before his text, after every
+        // English style rule. Applied to every rewording prompt, not only reflow.
+        //
+        // The whole message is built by MaRewordPrompt, the same function the Prompts screen
+        // previews, so what he reads there is what is sent. See there for the be-precise sentence
+        // that used to contradict this rule, and for the passage detection that replaced the
+        // recording key as the guess.
+        val content = MaRewordPrompt.forSending(instruction, input)
         return requestRewordRaw(content, reasoning, reasoningCustom)
     }
 
@@ -3890,6 +3865,8 @@ object DictateController {
         // field and fail outright if that key was refused, which on a keyring of ten was a strange
         // thing to do while dictation happily rolled to the next one.
         val ring = MaKeyRingStore.load(ringId)
+        // Kept so Settings → Prompts can show the last message exactly as it left, and to whom.
+        MaRewordPrompt.recordSent(model, userContent)
         val outcome = try {
             MaKeyRing.run(MaKeyRingStore.keys(ringId, stored).ifEmpty { listOf(apiKey) }, ring) { key ->
                 clientFor(key).complete(
@@ -3903,12 +3880,6 @@ object DictateController {
         MaKeyRingStore.save(ringId, outcome.second)
         // Lifetime statistics (issue #142): every rewording/prompt pass funnels through here.
         return outcome.first
-    }
-
-    private fun systemPrompt(): String = when (prefs.dictate.systemPromptSelection.get()) {
-        DictatePromptDefaults.SELECTION_PREDEFINED -> DictatePromptDefaults.REWORDING_BE_PRECISE
-        DictatePromptDefaults.SELECTION_CUSTOM -> prefs.dictate.systemPromptCustom.get()
-        else -> ""
     }
 
     /**

@@ -27,7 +27,7 @@ def check(name: str, ok: bool, detail: str = "") -> None:
 def small_for(pid):
     p = pid.lower()
     if "anthropic" in p or "claude" in p:
-        return "claude-haiku-4-5-20251001"
+        return "claude-haiku-latest"
     if "groq" in p:
         return "llama-3.1-8b-instant"
     if "gemini" in p or "google" in p:
@@ -64,7 +64,11 @@ def code(path: Path) -> str:
 small = code(SRC / "dictate/MaSmallModel.kt")
 ctrl = code(SRC / "dictate/DictateController.kt")
 check("the small models are named", "fun forProvider(" in small, "trusted to a default")
-check("haiku is named outright", "claude-haiku" in small, "a rule that names nothing enforces nothing")
+# Named through MaClaudeModels, which names the Haiku tier and resolves it to the newest Haiku.
+claude = code(ROOT / "lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/provider/MaClaudeModels.kt")
+check("haiku is named outright",
+      "claude-haiku" in small or ("MaClaudeModels.DEFAULT" in small and 'val DEFAULT = alias("haiku")' in claude),
+      "a rule that names nothing enforces nothing")
 # find, not index. The sabotage removed the call and this THREW — the count never printed, every
 # other result was lost. Third time this month, and each time in a check written the same hour as the
 # section documenting the previous one.

@@ -10586,3 +10586,64 @@ working. A slot starting with a key shows that key's glyph in the corner (⏎ fo
 
 Test 1: 65 checks, 0 failed, including every offered token checked against the macro runner's own
 key table read from source; with the Kotlin changes stashed, 6 red.
+
+---
+
+# §188 — Always the newest Claude, and the exact message on screen
+
+He asked three things: can the app follow new Claude models by itself, is the Croatian path the best
+it can be, and can he see and change exactly what Ctrl+P and Ctrl+F send.
+
+## Models follow Anthropic's list, by tier
+
+`claude-haiku-4-5-20251001` was the shipped default months after Haiku 5.5 arrived, cheaper and
+better. And `MaModelHealing` could not have rescued it: its family rule reads `20251001` as the
+version, so the family is `claude-haiku-4-5` and `claude-haiku-5-5` never matches.
+
+`MaClaudeModels` stores a TIER — `claude-haiku-latest` — and resolves it against `GET /v1/models`
+(read once per process, `limit=1000` so nothing hides on page two). The highest version of that tier
+on the list is sent, compared as numbers. A model Anthropic refuse as a model (404/400 naming it,
+410) re-reads the list and retries once on the newest of the same tier. A tier is never crossed:
+that is a price change, and his. With no list, real fallback ids are used, never a guess.
+
+The old default id stored on a phone is read as the Haiku alias; any other concrete id is his pin
+and is left alone. Prompts screen has the choice: newest Haiku (default), Sonnet, Opus, with prices.
+
+## Claude through the Messages API, not the OpenAI shim
+
+The shim cannot send `output_config.effort`, and the 5.5 models cannot switch thinking off, so every
+proofread thought at the default depth. `/v1/messages` with effort `low` (the reasoning setting can
+raise it) — sent only to models that accept effort; Haiku 4.5 rejects it with a 400.
+
+## Ctrl+P on Croatian carried an order to answer in English
+
+The be-precise system prompt ends *"Output the text in the language of the instruction"*. The
+instruction is English. The language line after it said the opposite. That sentence is now dropped
+whenever there is text to work on.
+
+The language line itself guessed from the last recording key when the text had no č/ć/ž/š/đ, so a
+plain Croatian sentence after an English recording was declared English. `detectPassage` counts small
+words (je, se, kako, nije / the, is, and, you); no winner means a line that names no language.
+
+## The exact message, on screen and editable
+
+`MaRewordPrompt.build` makes the message; the keyboard and the Prompts screen both call it, so the
+preview cannot drift. *Show exactly what is sent* under each key, with Croatian / English / Unclear.
+Both language lines are editable. *Last message sent* shows the real last request and the model that
+answered — in memory only, because it holds his text.
+
+## AssemblyAI: universal-2 behind the chosen model
+
+Croatian is not a Universal-3 language. The async job now sends `speech_models: [chosen,
+"universal-2"]`, AssemblyAI's own routing; Croatian goes to Universal-2 by their rule. Default async
+model is `universal-3-5-pro`, the one on his price sheet and the one Sync already uses (§166, cost
+problem 1, closed).
+
+## Tested, and not
+
+`test_claude_models.py` (new), `test_word_language.py` and `test_small_model.py` updated, all suites
+green, verify.py clean. The pure Kotlin (`MaClaudeModels`, `MaRewordPrompt.build`, `detectPassage`)
+was compiled with kotlinc and run against 33 cases, 0 failed. **The Android build was not run here**
+(no SDK in the sandbox), and no request reached Anthropic or AssemblyAI: the sandbox's network
+policy refuses `api.assemblyai.com` and the Edge speech host, so the Croatian end-to-end test with
+Srečko and Gabrijela could not run.

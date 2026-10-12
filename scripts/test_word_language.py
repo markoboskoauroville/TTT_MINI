@@ -182,16 +182,27 @@ check("the detector exists", "fun detect(" in wl, "left to the model to infer")
 check("it names the language", "fun nameOf(" in wl, "nothing to put in the instruction")
 
 ctrl = code(SRC / "dictate/DictateController.kt")
-check("every rewording names the language", "Your entire answer must be in" in ctrl, "silent translation")
-check("it forbids translating outright", "Do not translate it into English" in ctrl)
+# The message is built in MaRewordPrompt now, the same function the Prompts screen previews.
+rp = code(SRC / "dictate/MaRewordPrompt.kt")
+check("the controller sends what MaRewordPrompt builds", "MaRewordPrompt.forSending(instruction, input)" in ctrl,
+      "the preview and the request would be two different texts")
+check("every rewording names the language", "Your entire answer must be in" in rp, "silent translation")
+check("it forbids translating outright", "Do not translate it into English" in rp)
 # THE ORDERING, which is the whole fix. The language rule must sit AFTER the instruction and the
 # system prompt, and immediately before his text.
-lang_at = ctrl.find("The text below is written in")
-sys_at = ctrl.find("if (sys.isNotBlank())")
-check("the language rule comes after the style rules", 0 < sys_at < lang_at,
+build_at = rp.find("fun build(")
+sys_at = rp.find("if (sys.isNotBlank())", build_at)
+lang_at = rp.find("languageLine(", build_at)
+check("the language rule comes after the style rules", 0 < build_at < sys_at < lang_at,
       "English written after it drags the output back into English")
-check("and immediately before the text", ctrl.find('append("\\n\\n").append(input)', lang_at) > lang_at,
+check("and immediately before the text", rp.find('append("\\n\\n").append(input)', lang_at) > lang_at,
       "something else sits between the rule and the text it governs")
+# The be-precise prompt's "answer in the language of the instruction" contradicted the rule.
+check("the instruction-language sentence is dropped when there is text",
+      "ANSWER_IN_INSTRUCTION_LANGUAGE" in rp and 'replace(ANSWER_IN_INSTRUCTION_LANGUAGE, "")' in rp,
+      "Ctrl+P on Croatian carried an order to answer in English")
+check("passage detection, not the recording key", "fun detectPassage(" in wl and "MaWordLanguage.detectPassage(" in rp,
+      "Croatian without diacritics was labelled English after an English recording")
 
 # ---------------------------------------------------------------- short phrases and the styles
 proof = code(SRC / "dictate/MaProofread.kt")
