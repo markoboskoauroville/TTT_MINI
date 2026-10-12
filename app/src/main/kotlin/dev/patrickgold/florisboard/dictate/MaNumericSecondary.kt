@@ -98,6 +98,30 @@ object MaNumericSecondary {
     private val TOKEN_AT_START = Regex("^\\{[A-Za-z0-9+]+\\}")
 
     /**
+     * The whole slot as one readable line, for the small third line under the digit.
+     *
+     * His ask (12.10.2026): the corner shows one character, and he could not remember which macro
+     * sat behind which digit. So the key prints the command itself, as much of it as fits, and he
+     * reads what will be typed before he holds it.
+     *
+     * Special keys become their glyphs ({Enter} → ⏎) and line breaks become ⏎, so a two-line snippet
+     * reads as one line. Null when there is nothing the corner does not already say: an empty slot,
+     * or a slot of a single character, where the line would only repeat the corner.
+     */
+    fun preview(value: String): String? {
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) return null
+        if (trimmed.codePointCount(0, trimmed.length) == 1) return null
+        val withGlyphs = ANY_TOKEN.replace(trimmed) { m ->
+            SPECIAL_KEYS.firstOrNull { it.token.equals(m.value, ignoreCase = true) }?.glyph ?: m.value
+        }
+        val oneLine = withGlyphs.replace("\n", "\u23ce").replace(Regex("[ \\t]+"), " ")
+        return oneLine.takeIf { it.isNotBlank() && it != hint(value) }
+    }
+
+    private val ANY_TOKEN = Regex("\\{[A-Za-z0-9+]+\\}")
+
+    /**
      * One key that cannot be typed as a character, offered on the digit's long press in the editor.
      *
      * [token] is MaMacroSyntax's AutoHotkey brace form, the same syntax the macro keys already use,

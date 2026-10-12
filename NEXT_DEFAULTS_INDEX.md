@@ -197,3 +197,4 @@ since been removed.
 - **§186** — Drag feedback, and where the 40 MB is
 - **§187** — Hold a half, and the cursor runs
 - **§188** — Always the newest Claude, and the exact message on screen
+- **§189** — Key colours, G815 style, and the command under each digit

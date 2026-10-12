@@ -832,6 +832,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__ma_numeric_secondary",
             default = MaNumericSecondary.DEFAULT,
         )
+        // A colour per key, G815 style: `k97=#C0392B n0=#2E86DE`. See MaKeyColors. Empty means every
+        // key wears the theme's colour.
+        val maKeyColors = string(
+            key = "dictate__ma_key_colors",
+            default = "",
+        )
         // Personal word prediction: counts of what follows what, learned from this phone only and
         // never sent anywhere. On, because the words it exists to learn are the ones no shipped
         // dictionary contains, and it cannot learn them while switched off.

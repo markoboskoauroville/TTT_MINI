@@ -19,6 +19,7 @@ package org.florisboard.lib.snygg.ui
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -65,6 +66,8 @@ fun SnyggText(
     // letter" without knowing what a letter currently is — the font scale, the theme and the user's
     // size multiplier all still apply underneath.
     fontSizeScale: Float? = null,
+    // Replaces the themed text colour; null keeps it. Used where a key wears its own background.
+    colorOverride: Color? = null,
     text: String,
 ) {
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
@@ -76,7 +79,7 @@ fun SnyggText(
                 .snyggBackground(style, allowClip = false)
                 .snyggPadding(style),
             text = text,
-            color = style.foreground(),
+            color = colorOverride ?: style.foreground(),
             // A malformed (e.g. third-party) theme can resolve a size to a non-finite value; since the font
             // scale multiplies every sp size, a NaN/∞ would reach Compose's Text and crash it on measure
             // ("lineHeight can't be negative (NaN)"). Coerce those to Unspecified so a bad theme can't crash

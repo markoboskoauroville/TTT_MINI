@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -90,6 +91,8 @@ val MaSettingsEntry.icon: ImageVector
         MaSettingsEntry.VOICE_FORMAT -> Icons.Default.Spellcheck
         MaSettingsEntry.READER -> Icons.AutoMirrored.Filled.VolumeUp
         MaSettingsEntry.NUMBER_ROW -> Icons.Default.Tag
+        // ColorLens, already resolved elsewhere in this app.
+        MaSettingsEntry.KEY_COLORS -> Icons.Default.ColorLens
         MaSettingsEntry.CLOUD_READER -> Icons.AutoMirrored.Filled.VolumeUp
         MaSettingsEntry.COPY_ROW -> Icons.Default.ContentPasteGo
         MaSettingsEntry.PROFILES -> Icons.Default.Folder
@@ -127,6 +130,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.VOICE_FORMAT -> Routes.Settings.MaVoiceFormat
         MaSettingsEntry.READER -> Routes.Settings.MaReader
         MaSettingsEntry.NUMBER_ROW -> Routes.Settings.MaNumberRow
+        MaSettingsEntry.KEY_COLORS -> Routes.Settings.MaKeyColors
         MaSettingsEntry.CLOUD_READER -> Routes.Settings.MaCloudLog
         MaSettingsEntry.COPY_ROW -> Routes.Settings.MaCopyRow
         MaSettingsEntry.PROFILES -> Routes.Settings.MaProfiles

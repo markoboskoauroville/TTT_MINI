@@ -31,16 +31,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.FlorisImeService
+import dev.patrickgold.florisboard.dictate.MaKeyColors
 import dev.patrickgold.florisboard.dictate.MaMacroSyntax
 import dev.patrickgold.florisboard.dictate.MaNumericSecondary
 import dev.patrickgold.florisboard.ime.input.InputShiftState
@@ -81,6 +84,9 @@ fun MaExtraRow(modifier: Modifier = Modifier) {
     val secondaryRaw by prefs.dictate.maNumericSecondary.collectAsState()
     val secondaries = remember(secondaryRaw) { MaNumericSecondary.parse(secondaryRaw) }
 
+    val colorsRaw by prefs.dictate.maKeyColors.collectAsState()
+    val colors = remember(colorsRaw) { MaKeyColors.parse(colorsRaw) }
+
     val keys: List<MaRowKey> = when (mode) {
         "diacritics" -> MaRowSets.CROATIAN
         "symbols" -> MaRowSets.BRACKETS
@@ -97,10 +103,12 @@ fun MaExtraRow(modifier: Modifier = Modifier) {
             .height(FlorisImeSizing.keyboardRowBaseHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        keys.forEach { key ->
+        keys.forEachIndexed { index, key ->
             MaRowKeyButton(
                 key = key,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
+                // By position, so the colour stays with the place the thumb goes whatever set is up.
+                paint = colors[MaKeyColors.idForNumberRow(index)],
                 // A second symbol wins over the cycle, because a key that types something is worth
                 // more than a shortcut to a set the dashboard already lists by name. Only the sets
                 // that carry no second symbols still cycle.
@@ -273,6 +281,7 @@ private fun MaRowKeyButton(
     modifier: Modifier,
     onFire: () -> Unit,
     onLongPress: (() -> Unit)? = null,
+    paint: Int? = null,
 ) {
     val style = rememberSnyggThemeQuery(
         FlorisImeUi.Key.elementName,
@@ -282,8 +291,12 @@ private fun MaRowKeyButton(
             FlorisImeUi.Attr.ShiftState to InputShiftState.UNSHIFTED.toString(),
         ),
     )
-    val background = style.background(default = Color.White.copy(alpha = 0.08f))
-    val foreground = style.foreground(default = Color.White)
+    // His colour for this place on the row (MaKeyColors), with text that stays readable on it.
+    val background = paint?.let { Color(it) } ?: style.background(default = Color.White.copy(alpha = 0.08f))
+    val foreground = paint?.let { if (MaKeyColors.wantsDarkText(it)) Color(0xFF111111) else Color.White }
+        ?: style.foreground(default = Color.White)
+    // The whole command, small, under the digit: what the hold will type, read before holding.
+    val preview = key.secondary?.let { MaNumericSecondary.preview(it) }
     val feedback = LocalInputFeedbackController.current
 
     val gesture = Modifier.pointerInput(key) {
@@ -339,10 +352,29 @@ private fun MaRowKeyButton(
             color = foreground,
             // Sized like a letter key rather than shrunk to fit a crowd, because ten keys across is
             // exactly what the row below manages at full size.
-            fontSize = 17.sp,
+            // A little smaller and lifted when the command is printed below, so the two never touch
+            // on a row only one key high.
+            fontSize = if (preview != null) 15.sp else 17.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = if (preview != null) Modifier.align(BiasAlignment(0f, -0.8f)) else Modifier,
         )
+        // THE THIRD LINE: the command itself, as much as fits in two small lines. His ask: the
+        // corner shows one character and he could not tell which macro was behind which digit.
+        preview?.let { line ->
+            Text(
+                text = line,
+                color = foreground.copy(alpha = 0.8f),
+                fontSize = 7.5.sp,
+                lineHeight = 8.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 2.dp, end = 2.dp, bottom = 2.dp),
+            )
+        }
         // The second symbol, small, in the corner, exactly where the letter keys print theirs.
         //
         // Printed rather than left to be discovered: a long press that types something is invisible

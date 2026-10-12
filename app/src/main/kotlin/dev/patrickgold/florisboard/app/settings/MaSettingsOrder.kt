@@ -38,6 +38,8 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     // DictateLayoutScreen, which has no entry here — so the only way to reach it was a deep link
     // nobody types, and he asked for it as a new feature because from where he sits it did not exist.
     NUMBER_ROW("number_row", "Number row", "What each digit carries on a long press"),
+    // Beside the number row: the colours are most of all for telling its macro digits apart.
+    KEY_COLORS("key_colors", "Key colours", "Every key on one grid, each in its own colour"),
     CLOUD_READER("cloud_reader", "Claude.ai reader", "Chats it read, kept so you can read them again"),
     COPY_ROW("copy_row", "Copy row", "The clipboard row, shown in the transcription view"),
     PROFILES("profiles", "Profiles", "Whole configurations, saved by name and swapped in one tap"),
@@ -90,6 +92,7 @@ object MaSettingsOrder {
         MaSettingsEntry.VOICE_FORMAT,
         MaSettingsEntry.READER,
         MaSettingsEntry.NUMBER_ROW,
+        MaSettingsEntry.KEY_COLORS,
         MaSettingsEntry.CLOUD_READER,
         MaSettingsEntry.COPY_ROW,
         MaSettingsEntry.PROFILES,

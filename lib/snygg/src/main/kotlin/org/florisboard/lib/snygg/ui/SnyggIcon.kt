@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
@@ -58,13 +59,15 @@ fun SnyggIcon(
     modifier: Modifier = Modifier,
     imageVector: ImageVector,
     contentDescription: String? = null,
+    // Replaces the themed tint; null keeps it. Used where a key wears its own background.
+    tintOverride: Color? = null,
 ) {
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
         Icon(
             modifier = modifier.snyggIconSize(style),
             imageVector = imageVector,
             contentDescription = contentDescription,
-            tint = style.foreground(),
+            tint = tintOverride ?: style.foreground(),
         )
     }
 }

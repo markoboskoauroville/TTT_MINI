@@ -10647,3 +10647,39 @@ was compiled with kotlinc and run against 33 cases, 0 failed. **The Android buil
 (no SDK in the sandbox), and no request reached Anthropic or AssemblyAI: the sandbox's network
 policy refuses `api.assemblyai.com` and the Edge speech host, so the Croatian end-to-end test with
 Srečko and Gabrijela could not run.
+
+---
+
+# §189 — Key colours, G815 style, and the command under each digit
+
+His ask: every key on one grid in settings, each in its own colour like a Logitech G815, so the
+number row's macro digits can be told apart — and under each digit, small, the command it types,
+so he reads it before holding.
+
+## Colours
+
+`MaKeyColors`, one preference (`k97=#C0392B n0=#2E86DE`). Main keys by code, letters folded to lower
+case so shift keeps the colour; the number row by POSITION, so a colour stays with the place the
+thumb goes when the row switches to Croatian or brackets. Unpainted keys keep the theme.
+
+Drawn through a `backgroundOverride` on `SnyggBox` — inside the margin and the key's shape, over
+the theme's background, under the label — plus a text/tint override on `SnyggText` and `SnyggIcon`.
+The label colour is chosen by WCAG contrast (near-black or white, whichever is higher): he has low
+vision, and a label the colour swallows is worse than no colour. A press darkens the same hue.
+
+Settings → Key colours: pick a swatch, tap keys to paint; tap again or use the eraser to clear. The
+grid is read from the layout the keyboard last drew, so it is his real layout with its special keys'
+icons. Before the keyboard has been opened in the process, plain letter rows stand in and say so.
+
+## The third line
+
+`MaNumericSecondary.preview`: the whole slot on one line — `{Enter}` as ⏎, line breaks as ⏎ —
+printed at 7.5sp, two lines at most, under a digit lifted to make room. Not printed when it would
+only repeat the corner (an empty slot or a single character, such as the default underscore).
+
+## Tested, and not
+
+`test_key_colors.py` new (29 checks); every suite green, verify.py clean. `MaKeyColors` and
+`preview` compiled with kotlinc and run against 16 cases. **No Android build here**, and nothing
+seen on a phone: whether 7.5sp under a 15sp digit fits the row height on the Nothing Phone 2a is
+the first thing to look at.

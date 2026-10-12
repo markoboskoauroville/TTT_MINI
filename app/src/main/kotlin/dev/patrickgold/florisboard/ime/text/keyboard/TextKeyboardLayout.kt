@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.toSize
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.MaKeyColors
 import dev.patrickgold.florisboard.dictate.ui.LegacyLayoutState
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.glideTypingManager
@@ -384,6 +385,14 @@ private fun TextKeyButton(
     val size = remember(key, desiredKey) {
         key.visibleBounds.size.toDpSize()
     }
+    // HIS COLOUR FOR THIS KEY, G815 style (MaKeyColors). Null leaves the theme's colour alone. The
+    // label and icon follow the colour so the face stays readable, and a press darkens the same
+    // hue rather than snapping back to the theme's pressed colour.
+    val maKeyColorsRaw by maPrefs.dictate.maKeyColors.collectAsState()
+    val maKeyColors = remember(maKeyColorsRaw) { MaKeyColors.parse(maKeyColorsRaw) }
+    val maPainted = maKeyColors[MaKeyColors.idForCode(key.computedData.code)]
+    val maBackground = maPainted?.let { Color(if (key.isPressed) MaKeyColors.pressed(it) else it) }
+    val maForeground = maPainted?.let { if (MaKeyColors.wantsDarkText(it)) Color(0xFF111111) else Color.White }
     SnyggBox(
         FlorisImeUi.Key.elementName,
         attributes = attributes,
@@ -391,6 +400,7 @@ private fun TextKeyButton(
         modifier = Modifier
             .requiredSize(size)
             .absoluteOffset { key.visibleBounds.topLeft.toIntOffset() },
+        backgroundOverride = maBackground,
     ) {
         val isTelPadKey = key.computedData.type == KeyType.NUMERIC && evaluator.keyboard.mode == KeyboardMode.PHONE
         key.label?.let { label ->
@@ -456,6 +466,7 @@ private fun TextKeyButton(
                 // which is what "the same size as the other keys' faces" actually means for a mark
                 // that sits on the baseline and has no ascender.
                 fontSizeScale = if (isSpaceMark) 2.6f else null,
+                colorOverride = maForeground,
             )
         }
         key.hintedLabel?.let { hintedLabel ->
@@ -467,6 +478,7 @@ private fun TextKeyButton(
                     .wrapContentSize()
                     .align(if (isTelPadKey) BiasAlignment(0.5f, 0f) else Alignment.TopEnd),
                 text = hintedLabel,
+                colorOverride = maForeground?.copy(alpha = 0.7f),
             )
         }
         key.foregroundImageVector?.let { imageVector ->
@@ -474,6 +486,7 @@ private fun TextKeyButton(
                 modifier = Modifier.align(Alignment.Center),
                 imageVector = imageVector,
                 contentDescription = null,
+                tintOverride = maForeground,
             )
         }
     }

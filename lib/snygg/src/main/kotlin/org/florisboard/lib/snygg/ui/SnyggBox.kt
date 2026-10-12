@@ -16,12 +16,14 @@
 
 package org.florisboard.lib.snygg.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -67,6 +69,9 @@ fun SnyggBox(
     supportsBackgroundImage: Boolean = false,
     backgroundImageDescription: String? = null,
     allowClip: Boolean = true,
+    // Painted over the themed background, inside the margin and the shape, under the content. Null
+    // keeps the theme's. Used for the per-key colours (MaKeyColors).
+    backgroundOverride: Color? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
@@ -86,6 +91,7 @@ fun SnyggBox(
                 .snyggShadow(style)
                 .snyggBorder(style)
                 .snyggBackground(style, allowClip = allowClip)
+                .then(if (backgroundOverride != null) Modifier.background(backgroundOverride, style.shape()) else Modifier)
                 .then(clickAndSemanticsModifier)
                 .snyggPadding(style),
             contentAlignment = contentAlignment,
