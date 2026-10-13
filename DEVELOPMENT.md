@@ -10692,3 +10692,36 @@ only repeat the corner (an empty slot or a single character, such as the default
 `preview` compiled with kotlinc and run against 16 cases. **No Android build here**, and nothing
 seen on a phone: whether 7.5sp under a 15sp digit fits the row height on the Nothing Phone 2a is
 the first thing to look at.
+
+---
+
+# §190 — Croatian spell check, a model per prompt, and what Claude costs
+
+## Spell check, after every Croatian dictation
+
+AssemblyAI's Universal-2 invents Croatian words. `MaSpellcheck` sends every Croatian transcript to
+Claude once before it is typed, with one job — put back the word that was spoken — plus Croatian
+spelling and punctuation. No rephrasing. Its own switch, on by default (he called it mandatory), not
+tied to the rewording switch. A reply more than half again as long or under half as long is refused
+and the transcript kept. It counts as a pure transcript for paragraph splitting; the raw transcript
+stays the history's original. Wording editable as a named set on the Prompts screen.
+
+## A model per prompt
+
+Ctrl+P, Ctrl+F and the spell check each choose Default / Haiku / Sonnet / Opus — tiers, resolved to
+the newest (§188). Used only when the rewording provider is Anthropic.
+
+## Costs, and why the balance is typed in
+
+There is no API that tells an ordinary key its remaining credit; the Admin API reports spend, not
+balance, and needs an admin key. So every answered Claude request is priced from the usage Anthropic
+returns × the published price and logged (no text, only time, purpose, model, tokens, dollars).
+Settings → Claude costs: today, this month, the log, and "left" = the Console balance he types in
+minus everything this phone spent since. A model newer than the price table is priced as its tier's
+newest and marked `~`.
+
+## Tested, and not
+
+`test_spellcheck_costs.py` new (24 checks); all suites green; verify.py clean. `MaClaudeCost`
+compiled with kotlinc against an Android stub and run against 9 cases. Whether Haiku is good at
+Croatian mishearing is the open question: if it misses, choose Sonnet for the spell check.

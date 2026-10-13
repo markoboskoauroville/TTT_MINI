@@ -88,6 +88,8 @@ val MaSettingsEntry.icon: ImageVector
         // about how text should read, which is the nearest thing to it in the set, and this file's
         // own note says an icon that resolves beats an icon that fits.
         MaSettingsEntry.PROMPTS -> Icons.Default.Spellcheck
+        // History, already resolved in this file: a cost log is a history of requests.
+        MaSettingsEntry.CLAUDE_COSTS -> Icons.Default.History
         MaSettingsEntry.VOICE_FORMAT -> Icons.Default.Spellcheck
         MaSettingsEntry.READER -> Icons.AutoMirrored.Filled.VolumeUp
         MaSettingsEntry.NUMBER_ROW -> Icons.Default.Tag
@@ -127,6 +129,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.PERMISSIONS -> Routes.Settings.MaPermissions
         MaSettingsEntry.SHORTCUTS -> Routes.Settings.MaShortcuts
         MaSettingsEntry.PROMPTS -> Routes.Settings.MaPrompts
+        MaSettingsEntry.CLAUDE_COSTS -> Routes.Settings.MaClaudeCosts
         MaSettingsEntry.VOICE_FORMAT -> Routes.Settings.MaVoiceFormat
         MaSettingsEntry.READER -> Routes.Settings.MaReader
         MaSettingsEntry.NUMBER_ROW -> Routes.Settings.MaNumberRow

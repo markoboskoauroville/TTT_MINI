@@ -1957,6 +1957,9 @@ object DictateController {
         capture: HistoryCapture? = null,
         latencyTrace: BatchLatencyTrace? = null,
     ) {
+        // The transcript after the Croatian spell check: a correction, not a rewrite, so paragraph
+        // splitting still treats it as the pure transcript. The raw one stays the history's original.
+        var spellchecked = rawText
         val finalText = if (live) {
             // The spoken transcript is an instruction; send it to GPT (optionally operating on the current
             // selection) and insert the answer instead of the transcript.
@@ -1991,7 +1994,12 @@ object DictateController {
             // Normal dictation: auto-formatting + auto-apply prompts, then the prompts the user queued by
             // tapping the prompt row while recording, in tap order; then commit. [alreadyFormatted] skips
             // the rewording pass (single-call multimodal #130 already returns finished text).
-            val processed = if (alreadyFormatted) rawText else postProcessTranscript(appContext, rawText)
+            // CROATIAN SPELL CHECK FIRST (MaSpellcheck): AssemblyAI invents Croatian words, and every
+            // later step would build on them. Not on single-call audio, which never went through
+            // AssemblyAI, and never on English.
+            val checked = if (!alreadyFormatted) croatianSpellcheck(appContext, rawText) else rawText
+            spellchecked = checked
+            val processed = if (alreadyFormatted) checked else postProcessTranscript(appContext, checked)
             applyPendingPrompts(appContext, processed)
         }
         // Paragraph splitting (issue #225): break a long *pure* transcript into paragraphs at sentence
@@ -1999,7 +2007,7 @@ object DictateController {
         // multimodal, or an auto-format/prompt pass that actually changed it) — that output already carries
         // its own paragraphing and must not be second-guessed.
         val splitWords = prefs.dictate.paragraphSplitWords.get()
-        val isPureTranscript = !live && !alreadyFormatted && finalText == rawText
+        val isPureTranscript = !live && !alreadyFormatted && finalText == spellchecked
         // Keep the raw transcript for the history when a prompt actually rewrote it (issue #240), so the
         // original wording stays recoverable without re-running (and paying for) the transcription. Only
         // the prompt chain counts: the deterministic steps below (paragraph splitting, custom mappings)
@@ -3522,6 +3530,8 @@ object DictateController {
         prompt: PromptModel,
         selectionOverride: String? = null,
         target: OutputTarget? = null,
+        /** The model for this prompt (Settings → Prompts), or null for the rewording account's own. */
+        model: String? = null,
     ) {
         if (_state.value !is UiState.Idle && _state.value !is UiState.Error) return
         // The floating overlay passes OVERLAY so the result is injected into the focused field via the
@@ -3584,7 +3594,10 @@ object DictateController {
         // Store the job so the stop button can abort this reword mid-generation (issue #192).
         rewordJob = scope.launch {
             try {
-                val text = requestReword(raw, input, prompt.reasoningEffort, prompt.reasoningEffortCustom)
+                val text = requestReword(
+                    raw, input, prompt.reasoningEffort, prompt.reasoningEffortCustom,
+                    model = model, purpose = prompt.name ?: "Prompt",
+                )
                 // A reply that is not his text back does not go into his text.
                 //
                 // Ctrl+P and Ctrl+F replace the field with whatever returns, and a model that
@@ -3650,6 +3663,31 @@ object DictateController {
                 livePromptArmed = true
                 startRecording(context)
             }
+        }
+    }
+
+    /**
+     * The Croatian spell check, or [text] unchanged when it does not apply or does not succeed.
+     *
+     * Runs only for a Croatian recording, only when switched on, only with a rewording key. Its own
+     * switch, not the rewording switch: he called it mandatory, and it must not vanish because
+     * auto-formatting was turned off. A failure or a reply that fails [MaSpellcheck.accept] keeps the
+     * transcript as it came — a dictation is never lost to its own correction.
+     */
+    private suspend fun croatianSpellcheck(context: Context, text: String): String {
+        if (text.isBlank() || !MaSpellcheck.enabled()) return text
+        if (MaLanguage.active() != MaLanguage.HR) return text
+        if (MaProviders.rewordingApiKey().isBlank()) return text
+        _state.value = UiState.Rewording(MaSpellcheck.NAME)
+        val corrected = runCatching {
+            requestReword(MaSpellcheck.instruction(), text, model = MaSpellcheck.model(), purpose = MaSpellcheck.NAME)
+        }.getOrElse {
+            MaLog.add("dictate", "spell check failed: ${it.javaClass.simpleName}")
+            return text
+        }
+        return if (MaSpellcheck.accept(text, corrected)) corrected else {
+            MaLog.add("dictate", "spell check reply refused: ${corrected.length} chars for ${text.length}")
+            text
         }
     }
 
@@ -3736,6 +3774,8 @@ object DictateController {
         input: String?,
         reasoning: DictateReasoningEffort? = null,
         reasoningCustom: String? = null,
+        model: String? = null,
+        purpose: String = "Rewording",
     ): String {
         // THE LANGUAGE RULE GOES LAST, AND IT NAMES THE LANGUAGE.
         //
@@ -3748,7 +3788,7 @@ object DictateController {
         // that used to contradict this rule, and for the passage detection that replaced the
         // recording key as the guess.
         val content = MaRewordPrompt.forSending(instruction, input)
-        return requestRewordRaw(content, reasoning, reasoningCustom)
+        return requestRewordRaw(content, reasoning, reasoningCustom, modelOverride = model, purpose = purpose)
     }
 
     /**
@@ -3804,6 +3844,10 @@ object DictateController {
         reasoning: DictateReasoningEffort? = null,
         reasoningCustom: String? = null,
         cheapest: Boolean = false,
+        /** A model chosen for this one job; used only when the rewording provider is Anthropic. */
+        modelOverride: String? = null,
+        /** What the cost log says this request was for. */
+        purpose: String = if (cheapest) "Suggestion" else "Rewording",
     ): String {
         val account = MaProviders.rewordingAccount()
         // Blank rewording key falls back to the transcription account's key (legacy "reuse" behavior).
@@ -3830,7 +3874,9 @@ object DictateController {
         //
         // So the small model is NAMED, per provider, and the preset default is the fallback rather
         // than the source. Anthropic gets haiku by name.
-        val model = if (cheapest) {
+        val model = if (!cheapest && modelOverride != null && account.providerId == MaRoles.REWORDING) {
+            modelOverride
+        } else if (cheapest) {
             MaSmallModel.forProvider(account.providerId)
                 ?: preset.defaultChatModel
                 ?: account.chatModel.ifBlank { "gpt-4o-mini" }
@@ -3867,6 +3913,7 @@ object DictateController {
         val ring = MaKeyRingStore.load(ringId)
         // Kept so Settings → Prompts can show the last message exactly as it left, and to whom.
         MaRewordPrompt.recordSent(model, userContent)
+        MaClaudeCost.purpose = purpose
         val outcome = try {
             MaKeyRing.run(MaKeyRingStore.keys(ringId, stored).ifEmpty { listOf(apiKey) }, ring) { key ->
                 clientFor(key).complete(

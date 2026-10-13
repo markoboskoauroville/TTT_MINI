@@ -30,7 +30,9 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     MAGIC("magic", "Magic finger", "What it presses on screen, and which it tries first"),
     VOICE_COMMANDS("voice_commands", "Voice commands", "Words that press instead of being typed"),
     SHORTCUTS("shortcuts", "Keyboard shortcuts", "Ctrl and a letter, including Ctrl+P to proofread"),
-    PROMPTS("prompts", "Prompts", "Several wordings for Ctrl+P and Ctrl+F, one of them ticked"),
+    PROMPTS("prompts", "Prompts", "Ctrl+P, Ctrl+F and the Croatian spell check: wording and model"),
+    // Beside Prompts: what those prompts cost.
+    CLAUDE_COSTS("claude_costs", "Claude costs", "What each request cost, and an estimate of what is left"),
     VOICE_FORMAT("voice_format", "Voice formatting", "Marks you can speak, and how to say them"),
     READER("reader", "Reader", "The voice that reads the screen aloud"),
     // Beside the reader, because it is the reader's memory. A chat he listened to and can go back to.
@@ -89,6 +91,7 @@ object MaSettingsOrder {
         MaSettingsEntry.VOICE_COMMANDS,
         MaSettingsEntry.SHORTCUTS,
         MaSettingsEntry.PROMPTS,
+        MaSettingsEntry.CLAUDE_COSTS,
         MaSettingsEntry.VOICE_FORMAT,
         MaSettingsEntry.READER,
         MaSettingsEntry.NUMBER_ROW,

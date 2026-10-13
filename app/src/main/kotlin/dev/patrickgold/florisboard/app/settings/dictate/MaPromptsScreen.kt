@@ -31,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -51,6 +52,7 @@ import dev.patrickgold.florisboard.dictate.MaProofread
 import dev.patrickgold.florisboard.dictate.MaPrompts
 import dev.patrickgold.florisboard.dictate.MaProviders
 import dev.patrickgold.florisboard.dictate.MaRewordPrompt
+import dev.patrickgold.florisboard.dictate.MaSpellcheck
 import dev.patrickgold.florisboard.dictate.provider.MaClaudeModels
 import dev.patrickgold.florisboard.dictate.provider.OpenAiCompatibleClient
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -102,6 +104,7 @@ fun MaPromptsScreen() = FlorisScreen {
             title = "Ctrl + P \u2014 Proofread",
             pref = prefs.dictate.maProofreadPrompt,
             shipped = MaProofread.INSTRUCTION,
+            modelPref = prefs.dictate.maProofreadModel,
         )
 
         Spacer(Modifier.height(20.dp))
@@ -110,6 +113,41 @@ fun MaPromptsScreen() = FlorisScreen {
             title = "Ctrl + F \u2014 Better flow",
             pref = prefs.dictate.maFlowPrompt,
             shipped = MaFlow.INSTRUCTION,
+            modelPref = prefs.dictate.maFlowModel,
+        )
+
+        // THE CROATIAN SPELL CHECK, a third prompt of the same shape. It runs by itself after every
+        // Croatian dictation rather than on a key, so it has a switch as well (MaSpellcheck).
+        Spacer(Modifier.height(20.dp))
+        val spellOn by prefs.dictate.maSpellcheckEnabled.collectAsState()
+        val switchScope = rememberCoroutineScope()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { switchScope.launch { prefs.dictate.maSpellcheckEnabled.set(!spellOn) } }
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Croatian spell check", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    text = "After every Croatian dictation, before it is typed: puts back words the " +
+                        "transcription invented or misheard, and fixes Croatian spelling. English " +
+                        "dictations are left alone.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = spellOn,
+                onCheckedChange = { on -> switchScope.launch { prefs.dictate.maSpellcheckEnabled.set(on) } },
+            )
+        }
+        PromptCategory(
+            title = "Spell check wording",
+            pref = prefs.dictate.maSpellcheckPrompt,
+            shipped = MaSpellcheck.INSTRUCTION,
+            modelPref = prefs.dictate.maSpellcheckModel,
         )
 
         // WHAT IS SENT, WORD FOR WORD. He asked to see the exact message and to change it. The
@@ -155,6 +193,8 @@ private fun PromptCategory(
     title: String,
     pref: PreferenceData<String>,
     shipped: String,
+    /** Which model this prompt runs on; empty means the default chosen under Sent to Claude. */
+    modelPref: PreferenceData<String>? = null,
 ) {
     val scope = rememberCoroutineScope()
     val raw by pref.collectAsState()
@@ -258,6 +298,8 @@ private fun PromptCategory(
         modifier = Modifier.padding(start = 8.dp),
     ) { Text("New wording") }
 
+    modelPref?.let { ModelChooser(it) }
+
     var previewing by remember { mutableStateOf(false) }
     TextButton(
         onClick = { previewing = true },
@@ -268,6 +310,7 @@ private fun PromptCategory(
             title = title,
             instruction = set.active.text.ifBlank { shipped },
             onDismiss = { previewing = false },
+            promptModel = modelPref?.get()?.trim()?.ifBlank { null },
         )
     }
 
@@ -424,7 +467,13 @@ private fun rewordingModelLine(): String {
  * marker. Three language cases, because the language line is the part that changes with the text.
  */
 @Composable
-private fun SentPreviewDialog(title: String, instruction: String, onDismiss: () -> Unit) {
+private fun SentPreviewDialog(
+    title: String,
+    instruction: String,
+    onDismiss: () -> Unit,
+    /** The model chosen for this prompt, or null when it uses the default. */
+    promptModel: String? = null,
+) {
     val prefs by FlorisPreferenceStore
     // Collected so the preview follows the settings it is built from.
     val selection by prefs.dictate.systemPromptSelection.collectAsState()
@@ -450,7 +499,8 @@ private fun SentPreviewDialog(title: String, instruction: String, onDismiss: () 
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    text = rewordingModelLine(),
+                    text = promptModel?.let { "This prompt runs on: $it (its own choice, above)" }
+                        ?: rewordingModelLine(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -698,6 +748,50 @@ private fun LanguageRuleRow(name: String, hint: String, text: String, custom: Bo
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/**
+ * The model one prompt runs on: the default, or the newest Haiku, Sonnet or Opus.
+ *
+ * Tiers, never numbers, so the choice follows Anthropic's newest model of that tier by itself
+ * (MaClaudeModels). Used only when the rewording provider is Anthropic.
+ */
+@Composable
+private fun ModelChooser(pref: PreferenceData<String>) {
+    val scope = rememberCoroutineScope()
+    val current by pref.collectAsState()
+    val options = listOf(
+        "" to "Default",
+        MaClaudeModels.alias("haiku") to "Haiku",
+        MaClaudeModels.alias("sonnet") to "Sonnet",
+        MaClaudeModels.alias("opus") to "Opus",
+    )
+    Row(
+        modifier = Modifier.padding(start = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Model:",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        for ((value, label) in options) {
+            TextButton(onClick = { scope.launch { pref.set(value) } }) {
+                Text(
+                    text = label,
+                    fontWeight = if (current.trim() == value) FontWeight.Bold else FontWeight.Normal,
+                )
+            }
+        }
+    }
+    if (current.isNotBlank() && MaClaudeModels.tierOfAlias(current) == null) {
+        Text(
+            text = "Pinned to $current.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
     }
 }

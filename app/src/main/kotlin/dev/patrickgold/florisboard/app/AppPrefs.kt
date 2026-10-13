@@ -1130,6 +1130,37 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
 
         /**
+         * Croatian spell check after every Croatian dictation (MaSpellcheck). On by default: he
+         * called it mandatory, because AssemblyAI invents Croatian words that do not exist.
+         */
+        val maSpellcheckEnabled = boolean(
+            key = "dictate__ma_spellcheck_enabled",
+            default = true,
+        )
+
+        /** Its wordings, the same named-set shape as Ctrl+P and Ctrl+F (MaPrompts). */
+        val maSpellcheckPrompt = string(
+            key = "dictate__ma_spellcheck_prompt",
+            default = "",
+        )
+
+        /**
+         * The model each prompt runs on: a tier alias such as `claude-sonnet-latest`, a pinned id, or
+         * empty for the rewording account's model. One each, so proofreading can run on Sonnet while
+         * reflow stays on Haiku.
+         */
+        val maProofreadModel = string(key = "dictate__ma_proofread_model", default = "")
+        val maFlowModel = string(key = "dictate__ma_flow_model", default = "")
+        val maSpellcheckModel = string(key = "dictate__ma_spellcheck_model", default = "")
+
+        /**
+         * The Anthropic credit he last read in the Console, in dollars, and when he entered it. The
+         * API cannot be asked for it (MaClaudeCost); the app subtracts every logged request since.
+         */
+        val maClaudeBalanceUsd = string(key = "dictate__ma_claude_balance_usd", default = "")
+        val maClaudeBalanceAt = long(key = "dictate__ma_claude_balance_at", default = 0L)
+
+        /**
          * Spoken formatting marks he has switched OFF, comma separated.
          *
          * The ones OFF rather than the ones on, so a mark added in a later version is live by

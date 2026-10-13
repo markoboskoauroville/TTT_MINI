@@ -104,6 +104,12 @@ object MaProofread {
         return MaPrompts.activeText(prefs.dictate.maProofreadPrompt.get())
     }
 
+    /** The model this key runs on (Settings → Prompts), or null for the rewording account's own. */
+    fun model(): String? {
+        val prefs by FlorisPreferenceStore
+        return prefs.dictate.maProofreadModel.get().trim().ifBlank { null }
+    }
+
     fun prompt(): PromptModel = PromptModel(
         id = PromptModel.ID_INSTANT_PROMPT,
         pos = 0,

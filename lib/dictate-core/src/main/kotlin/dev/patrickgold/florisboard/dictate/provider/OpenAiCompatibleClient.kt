@@ -175,6 +175,11 @@ class OpenAiCompatibleClient(
         }
         lastClaudeModel = response.model ?: model
         val usage = response.usage?.let { TokenUsage(it.inputTokens, it.outputTokens) }
+        // Every answered request is reported, so the app can log what it cost. A listener that
+        // fails must not fail the answer that already arrived.
+        response.usage?.let { u ->
+            runCatching { claudeUsageListener?.invoke(response.model ?: model, u.inputTokens, u.outputTokens) }
+        }
         return ChatResult(text, usage)
     }
 
@@ -1731,6 +1736,10 @@ class OpenAiCompatibleClient(
         @Volatile
         var lastClaudeModel: String? = null
             private set
+
+        /** Told of every answered Claude request: model, input tokens, output tokens. Set by the app. */
+        @Volatile
+        var claudeUsageListener: ((String, Long, Long) -> Unit)? = null
 
         /** Soniox / AssemblyAI async polling: the overall budget before giving up. */
         private const val SONIOX_POLL_TIMEOUT_MS = 300_000L

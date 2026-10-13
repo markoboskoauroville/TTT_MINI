@@ -121,6 +121,12 @@ object MaFlow {
     // between variants of it. `maProseStyle` is left declared and unread rather than deleted, so a
     // phone that stored "yshai" reads back harmlessly instead of tripping a missing preference.
 
+    /** The model this key runs on (Settings → Prompts), or null for the rewording account's own. */
+    fun model(): String? {
+        val prefs by FlorisPreferenceStore
+        return prefs.dictate.maFlowModel.get().trim().ifBlank { null }
+    }
+
     fun prompt(): PromptModel = PromptModel(
         id = PromptModel.ID_INSTANT_PROMPT,
         pos = 0,

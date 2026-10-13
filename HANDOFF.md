@@ -193,6 +193,11 @@ the same function the keyboard sends (`MaRewordPrompt`). See §188.
 **Keys can wear their own colours** (Settings → Key colours, G815 style: letters, number row and feature rows), and each number row digit
 prints the command it types in small letters under the digit. See §189.
 
+**Every Croatian dictation is spell-checked by Claude before it is typed** (MaSpellcheck, on by
+default). Ctrl+P, Ctrl+F and the spell check each choose their own model. Settings → Claude costs
+logs what each request cost; the balance is typed in from the Console because the API cannot be
+asked for it. See §190.
+
 **Models repair themselves.** A request that fails because of the model asks the provider what exists,
 picks the successor by family and version, writes it down and retries once. See
 `MANTRA_MANIFEST/modules/model-self-repair.md`.

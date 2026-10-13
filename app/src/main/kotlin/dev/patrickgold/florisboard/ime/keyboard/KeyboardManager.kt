@@ -608,7 +608,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             // see what is about to change. That reuse is the point — the network call, the key
             // ring walk, the stop button, and the error that opens settings when no key is set are
             // all already built and already tested here.
-            'p' -> DictateController.applyPrompt(appContext, MaProofread.prompt())
+            'p' -> DictateController.applyPrompt(appContext, MaProofread.prompt(), model = MaProofread.model())
             // Ctrl+F: the other half of Ctrl+P. P fixes what is wrong and touches nothing else;
             // F is allowed to move the words, cut the repetition speech leaves behind, and put the
             // ideas in an order that follows. Two keys rather than one compromise, because the two
@@ -616,7 +616,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             //
             // Taken deliberately, like P. Ctrl+F means find on a desktop, and there is nothing on
             // a phone that answers it, so the event this replaces did nothing in every app he uses.
-            'f' -> DictateController.applyPrompt(appContext, MaFlow.prompt())
+            'f' -> DictateController.applyPrompt(appContext, MaFlow.prompt(), model = MaFlow.model())
             else -> {
                 val androidCode = when (ch) {
                     in 'a'..'z' -> KeyEvent.KEYCODE_A + (ch - 'a')
