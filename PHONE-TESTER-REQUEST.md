@@ -14,3 +14,5 @@
    - Why: on this phone Hugging Face reset the connection twice in the first 70 MB. With aria2 on the command line (-x 8 -s 8 -c) the same file finished at 2.6 MB/s on average and passed sha256.
 
 4. When the new APK is ready, put it on the branch with its sha256. The phone session will run the whole test plan once and send the report back.
+
+5. PUSH THE LATEST WORK TO MAIN (Marko, 20.10.2026). Please merge your newest updates into main: the phone model (branch ccr-0c287bcf-wy37ae, commit b607316: llama.cpp, Models on the phone, Style after every dictation, a model chooser on every prompt), the resumable download from branch phone-resume-download (63e355a), and the parallel aria2-style download once it's written. Build it first, and fix what doesn't compile. Pushing to main runs build-apk.yml, which publishes a new release (TTT mini build N), and that release gives the phone an APK to install and test.
