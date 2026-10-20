@@ -233,7 +233,9 @@ fun MaPhoneModelSection() {
     }
 }
 
-private fun gb(bytes: Long): String = "%.1f".format(bytes / 1_000_000_000.0)
+// Always a decimal point, as the model notes are written ("2.4 GB"); the phone's Croatian locale would
+// print "2,4" and the same size would read two ways on one screen (phone test, build 398).
+private fun gb(bytes: Long): String = "%.1f".format(java.util.Locale.ROOT, bytes / 1_000_000_000.0)
 
 private fun totalRamGb(context: Context): Int {
     val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return 0
