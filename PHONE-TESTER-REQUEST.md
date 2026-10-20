@@ -24,3 +24,38 @@
    - Android permission: Download/ is shared storage. To read a file another tool put there (and to mmap it for llama.cpp), the app needs "All files access" (MANAGE_EXTERNAL_STORAGE, the way Donnie Horoscope does it) or a folder the user picks once through the system picker (SAF), with the permission kept. Without either, it can't see the file. Ask once in Settings → Prompts → Models on the phone, and explain why there.
    - The app's private models folder can stay as the fallback when the permission is refused.
    - "Delete" on that screen must say whether it deletes the shared file (other tools use it too).
+
+## Report build 398 (phone tester, 20.10.2026 20:35)
+
+**Build 398: 17 pass, 1 fail, 2 blocked.** Nothing Phone 2a, 7.6 GB RAM, build 1398 installed over 1397.
+
+| Case | Result | What the screen said |
+|---|---|---|
+| A1 All files access | PASS | "Allowed. Models are downloaded there, and a model already there at the right size is used without downloading it again." |
+| A2 4B found, no download | PASS | "Downloaded, in Download/models" |
+| A3 force-stop, reopen | PASS | still downloaded |
+| A4 Ctrl+F on Qwen3 4B | **FAIL** | Works online (76 s) and in flight mode (48 s), but makes up sentences and is cut off mid-word. Example: "…I'll send the link by 3pm. You can reach me at jones@company.com. It's not perfect, but it's". Fixed in a3a5d7d, not yet in an APK. |
+| A5 8B memory warning | PASS | "Too big for this phone's memory: it may not start" |
+| A6 resume download | PASS | Killed at 9 % (24 of 284 pieces of 8 MB); Download again continued at 9 %, then 11 %. Cancel removed .part and .part.pieces. ~3.7 MB/s. |
+| A7 Delete dialog | PASS | says it deletes the SHARED file; Cancel kept it. Dialog "2,4 GB" vs row "2.4 GB" (fixed in a3a5d7d). |
+| B1 model rows | PASS | Haiku / Sonnet / Opus / Phone 4B / Phone 8B on every prompt, with "In use: …" |
+| B2 Show exactly what is sent | PASS | Croatian / English / Unclear each swap the language line. Wording: the English line says "…must be in English. Do not translate it into English or any other language." |
+| B3 Ctrl+P "dobro jutro kako si danas" | PASS | "Dobro jutro, kako si danas?" in 6 s; "Last message sent 20:23:28 — asked for claude-haiku-latest"; "Last answered by: claude-haiku-5-5" |
+| B4 edit language line, Built-in | PASS | "(yours)" after Save, "(built in)" after Built-in |
+| C1 spell check switch | PASS | on |
+| C2 Croatian dictation | BLOCKED | needs a real voice: Android mutes TTS played from a background app ("AudioHardening background playback would be muted for com.google.android.tts") |
+| C3 English dictation | BLOCKED | same |
+| D1 costs list | PASS | "Today $0.0030 · This month $0.01 · 72 requests logged", each with tokens and dollars; Haiku 5.5 at $0.10/$0.50 is right |
+| D2 balance 10, Set | PASS | "about $10.00 … entered on 20.10. 20:32, minus $0.0000 spent" |
+| E1 Key colours grid | PASS | |
+| E2 1 red, A blue + Shift, Clear all | PASS | |
+| E3 command under a digit | PASS | "/exit", "/rc" readable; "/rc" grey on dark is the weaker of the two |
+| F crashes, meminfo | PASS | no crash or ANR. Keyboard PSS 172–230 MB. During A4, lowmemorykiller killed ~12 background apps (com.mantra.cockpit, com.mantra.route, com.mantra.sampleplayer, Settings, TTS…); MemAvailable 1.2 GB after. |
+
+**Also seen**
+1. Dictation of near-silence (Croatian, H key) typed an invented English sentence: "Do you feel only that quality I wanted? Yes or no?". The usual Whisper silence hallucination; worth a silence/energy check before transcribing, and the language was ignored.
+2. "Style after every dictation" is set to Phone: Qwen3 4B on this phone, so every dictation waits ~45–75 s and squeezes memory. Check it is meant to be the default.
+3. Spell check sometimes answers with far more than it got: 480 in / 1051 out, 447 in / 857 out, 443 in / 859 out (Haiku). Same padding family as A4.
+4. After a killed download the row only says "Download"; nothing shows that 9 % is already on disk and will be kept.
+5. Clear all in Key colours wipes everything with no confirmation and no undo.
+6. Dictated text is glued to what is before the cursor: "C2:" + dictation gave "C2:Do you…", no space.
