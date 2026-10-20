@@ -198,6 +198,15 @@ default). Ctrl+P, Ctrl+F and the spell check each choose their own model. Settin
 logs what each request cost; the balance is typed in from the Console because the API cannot be
 asked for it. See §190.
 
+**The Mac's style model runs on the phone** (§191). Settings → Prompts → *Models on the phone*
+downloads Qwen3 4B Instruct 2507 (2.4 GB, the Mac's fast model) or Qwen3 8B (5 GB, the Mac's current
+one, too big for an 8 GB phone). llama.cpp runs it in its own process (`:llm`), so running out of
+memory never takes the keyboard. **Style after every dictation** sends each transcript through it
+with the Mac's rules word for word (`MaPhoneStyle`), on by default and inert until the model is
+downloaded; when it has run, the Croatian spell check is not sent too. Every prompt can choose a phone
+model beside Haiku, Sonnet and Opus. **There is no "Default" model**: each prompt names its model and
+says under it exactly which one is in use. Not yet run on a phone.
+
 **Models repair themselves.** A request that fails because of the model asks the provider what exists,
 picks the successor by family and version, writes it down and retries once. See
 `MANTRA_MANIFEST/modules/model-self-repair.md`.
@@ -271,6 +280,8 @@ token that can push to every repository in the account.
 | Path | What lives there |
 |---|---|
 | `dictate/DictateController.kt` | recording, transcription, rewording, the whole state machine |
+| `dictate/llm/` | the model on the phone: catalog, the `:llm` service, its client, the JNI side |
+| `app/src/main/cpp/` | `ma_llm.cpp`, the llama.cpp bridge; llama.cpp itself is fetched by `tools/fetch-llama-cpp.sh` |
 | `dictate/ui/MaFeatureRow.kt` | every feature-row key |
 | `dictate/ui/LegacyDictateLayout.kt` | `ThemedKey`, the spacebar, the transcription view |
 | `dictate/ui/MaSubtitleRow.kt` | the reading window, its effects and its gestures |

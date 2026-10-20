@@ -15,6 +15,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +37,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,17 +45,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.MaFlow
+import dev.patrickgold.florisboard.dictate.MaPhoneStyle
+import dev.patrickgold.florisboard.dictate.MaPromptModel
 import dev.patrickgold.florisboard.dictate.MaProofread
 import dev.patrickgold.florisboard.dictate.MaPrompts
 import dev.patrickgold.florisboard.dictate.MaProviders
 import dev.patrickgold.florisboard.dictate.MaRewordPrompt
 import dev.patrickgold.florisboard.dictate.MaSpellcheck
+import dev.patrickgold.florisboard.dictate.llm.MaPhoneModels
 import dev.patrickgold.florisboard.dictate.provider.MaClaudeModels
 import dev.patrickgold.florisboard.dictate.provider.OpenAiCompatibleClient
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -99,6 +106,45 @@ fun MaPromptsScreen() = FlorisScreen {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
+
+        // MODELS ON THE PHONE (§191), first: every prompt below can choose one.
+        MaPhoneModelSection()
+        Spacer(Modifier.height(20.dp))
+
+        // THE MAC'S STYLE PASS (MaPhoneStyle), after every dictation, before the spell check.
+        val styleOn by prefs.dictate.maPhoneStyleEnabled.collectAsState()
+        val styleScope = rememberCoroutineScope()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { styleScope.launch { prefs.dictate.maPhoneStyleEnabled.set(!styleOn) } }
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Style after every dictation", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    text = "The Mac's rules, word for word: fixes misheard words, spelling and " +
+                        "punctuation, removes repetitions and filler, keeps every fact. Croatian and " +
+                        "English. Runs only when its model is downloaded; when it has run, the Croatian " +
+                        "spell check is not sent too.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = styleOn,
+                onCheckedChange = { on -> styleScope.launch { prefs.dictate.maPhoneStyleEnabled.set(on) } },
+            )
+        }
+        PromptCategory(
+            title = "Style wording",
+            pref = prefs.dictate.maPhoneStylePrompt,
+            shipped = MaPhoneStyle.INSTRUCTION,
+            modelPref = prefs.dictate.maPhoneStyleModel,
+        )
+
+        Spacer(Modifier.height(20.dp))
 
         PromptCategory(
             title = "Ctrl + P \u2014 Proofread",
@@ -193,7 +239,7 @@ private fun PromptCategory(
     title: String,
     pref: PreferenceData<String>,
     shipped: String,
-    /** Which model this prompt runs on; empty means the default chosen under Sent to Claude. */
+    /** Which model this prompt runs on, always by name (MaPromptModel). */
     modelPref: PreferenceData<String>? = null,
 ) {
     val scope = rememberCoroutineScope()
@@ -310,7 +356,7 @@ private fun PromptCategory(
             title = title,
             instruction = set.active.text.ifBlank { shipped },
             onDismiss = { previewing = false },
-            promptModel = modelPref?.get()?.trim()?.ifBlank { null },
+            promptModel = modelPref?.get()?.let { MaPromptModel.effective(it) },
         )
     }
 
@@ -453,7 +499,7 @@ private fun rewordingModelLine(): String {
     val tier = MaClaudeModels.tierOfAlias(set)
     val ran = OpenAiCompatibleClient.lastClaudeModel
     return buildString {
-        append("Model: ").append(set.ifBlank { "provider default" })
+        append("Model: ").append(set.ifBlank { "not set" })
         if (tier != null) {
             append(" \u2014 the newest ").append(tier.replaceFirstChar { it.uppercase() })
             append(" on Anthropic's model list, looked up by the app")
@@ -471,7 +517,7 @@ private fun SentPreviewDialog(
     title: String,
     instruction: String,
     onDismiss: () -> Unit,
-    /** The model chosen for this prompt, or null when it uses the default. */
+    /** The model chosen for this prompt, or null for a screen that has none. */
     promptModel: String? = null,
 ) {
     val prefs by FlorisPreferenceStore
@@ -499,7 +545,7 @@ private fun SentPreviewDialog(
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    text = promptModel?.let { "This prompt runs on: $it (its own choice, above)" }
+                    text = promptModel?.let { "This prompt runs on: ${MaPromptModel.describe(LocalContext.current, it)}" }
                         ?: rewordingModelLine(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -682,7 +728,7 @@ private fun ClaudeTierChooser() {
         accounts.getOrEmpty(account.providerId).chatModel.ifBlank { preset.defaultChatModel.orEmpty() },
     )
     val choices = listOf(
-        "haiku" to "Newest Haiku \u2014 fastest, cheapest (default)",
+        "haiku" to "Newest Haiku \u2014 fastest, cheapest",
         "sonnet" to "Newest Sonnet \u2014 better Croatian grammar, about 20\u00D7 the price",
         "opus" to "Newest Opus \u2014 most careful, about 40\u00D7 the price",
     )
@@ -753,30 +799,37 @@ private fun LanguageRuleRow(name: String, hint: String, text: String, custom: Bo
 }
 
 /**
- * The model one prompt runs on: the default, or the newest Haiku, Sonnet or Opus.
+ * The model one prompt runs on: the newest Haiku, Sonnet or Opus, or a model on the phone. §191.
  *
- * Tiers, never numbers, so the choice follows Anthropic's newest model of that tier by itself
- * (MaClaudeModels). Used only when the rewording provider is Anthropic.
+ * There is no "Default" any more. It meant "whatever the rewording account is set to" and never said
+ * what that was; he asked to see the model in use. An empty value an old build left is named here
+ * as the model it stood for, and the line under the choice says exactly what will answer.
+ *
+ * Claude by tier, never by number, so the choice follows Anthropic's newest model of that tier by
+ * itself (MaClaudeModels). Used only when the rewording provider is Anthropic.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ModelChooser(pref: PreferenceData<String>) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val current by pref.collectAsState()
+    val stored by pref.collectAsState()
+    val current = MaPromptModel.effective(stored)
+    LaunchedEffect(stored) {
+        if (stored.isBlank()) pref.set(current)
+    }
     val options = listOf(
-        "" to "Default",
         MaClaudeModels.alias("haiku") to "Haiku",
         MaClaudeModels.alias("sonnet") to "Sonnet",
         MaClaudeModels.alias("opus") to "Opus",
+    ) + MaPhoneModels.all.map { it.choice to "Phone: ${it.name.substringBefore(" Instruct")}" }
+    Text(
+        text = "Model:",
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, top = 4.dp),
     )
-    Row(
-        modifier = Modifier.padding(start = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "Model:",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    FlowRow(modifier = Modifier.padding(start = 8.dp)) {
         for ((value, label) in options) {
             TextButton(onClick = { scope.launch { pref.set(value) } }) {
                 Text(
@@ -786,12 +839,13 @@ private fun ModelChooser(pref: PreferenceData<String>) {
             }
         }
     }
-    if (current.isNotBlank() && MaClaudeModels.tierOfAlias(current) == null) {
-        Text(
-            text = "Pinned to $current.",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-    }
+    val phone = MaPhoneModels.byChoice(current)
+    val missing = phone != null && !MaPhoneModels.isInstalled(context, phone)
+    Text(
+        text = "In use: " + MaPromptModel.describe(context, current) +
+            if (missing) ". Download it above, or this prompt does nothing." else "",
+        style = MaterialTheme.typography.labelSmall,
+        color = if (missing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp),
+    )
 }

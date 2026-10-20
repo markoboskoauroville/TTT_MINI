@@ -40,12 +40,16 @@ jobs:
 
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
         with:
-          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 ndk;29.0.14206865'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 ndk;29.0.14206865 cmake;3.31.6'
 
       - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
 
       - name: Fetch sherpa-onnx native libs
         run: bash tools/fetch-sherpa-onnx.sh
+
+      # The model on the phone (§191): llama.cpp source, pinned by tag and commit.
+      - name: Fetch llama.cpp
+        run: bash tools/fetch-llama-cpp.sh
 
       # One permanent key, kept as an encrypted repository secret. Every build is then signed
       # identically, so a new version installs straight over the old one and Android never asks

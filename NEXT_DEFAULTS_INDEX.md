@@ -199,3 +199,4 @@ since been removed.
 - **§188** — Always the newest Claude, and the exact message on screen
 - **§189** — Key colours, G815 style, and the command under each digit
 - **§190** — Croatian spell check, a model per prompt, and what Claude costs
+- **§191** — The Mac's style model on the phone, and no more "Default"

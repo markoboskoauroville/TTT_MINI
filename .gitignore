@@ -93,3 +93,6 @@ tools/glide-dict/dist/
 *_token.txt
 *_keys.txt
 *_api.txt
+
+# The model on the phone (§191): llama.cpp source, fetched by tools/fetch-llama-cpp.sh.
+/app/src/main/cpp/llama.cpp/

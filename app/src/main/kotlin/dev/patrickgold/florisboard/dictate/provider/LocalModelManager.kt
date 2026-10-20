@@ -11,12 +11,16 @@
 package dev.patrickgold.florisboard.dictate.provider
 
 import android.content.Context
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.coroutineContext
@@ -29,8 +33,17 @@ import kotlin.coroutines.coroutineContext
  * Installs are atomic: files download into a `.tmp-<id>` staging dir, are size/checksum-verified, and
  * only then replace the real model dir. A failed or cancelled download leaves any previously installed
  * model untouched. All work runs on [Dispatchers.IO] and honours coroutine cancellation.
+ *
+ * Dropped connections resume (Marko, 20.10.2026: "continue dropped downloads, little by little"): each
+ * file is asked for again from the byte it reached (HTTP Range), up to [MAX_TRIES_WITHOUT_PROGRESS]
+ * tries in a row that bring no new bytes. A download that still fails keeps its staging dir, so the
+ * next start (or the app after a restart) carries on from there; only Cancel and a bad size or
+ * checksum throw the bytes away.
  */
 object LocalModelManager {
+
+    /** Tries in a row that bring no new byte before a download gives up; any progress resets the count. */
+    private const val MAX_TRIES_WITHOUT_PROGRESS = 8
 
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -64,8 +77,9 @@ object LocalModelManager {
 
     /**
      * Downloads and installs [spec]. [onProgress] is invoked with `(downloadedBytes, totalBytes)` as the
-     * download proceeds (frequently — throttle on the UI side). Suspends until done; throws on any
-     * failure (network, HTTP, size/checksum mismatch) after cleaning up the staging dir.
+     * download proceeds (frequently — throttle on the UI side). Suspends until done. A dropped connection
+     * is retried from where it stopped; when the tries run out it throws and keeps the staging dir for
+     * the next start. Cancellation and a size/checksum mismatch clean the staging dir up.
      */
     suspend fun download(
         context: Context,
@@ -75,8 +89,9 @@ object LocalModelManager {
         val root = LocalTranscriptionProvider.modelsRoot(context)
         val finalDir = LocalTranscriptionProvider.modelDir(context, spec.id)
         val tmpDir = File(root, ".tmp-${spec.id}")
-        tmpDir.deleteRecursively()
-        check(tmpDir.mkdirs()) { "could not create staging dir ${tmpDir.absolutePath}" }
+        // kept from an earlier attempt on purpose: its files are resumed, not fetched again
+        tmpDir.mkdirs()
+        check(tmpDir.isDirectory) { "could not create staging dir ${tmpDir.absolutePath}" }
         try {
             val total = spec.totalBytes
             var completed = 0L
@@ -92,12 +107,13 @@ object LocalModelManager {
                 tmpDir.copyRecursively(finalDir, overwrite = true)
                 tmpDir.deleteRecursively()
             }
-        } catch (t: Throwable) {
+        } catch (c: CancellationException) {
             tmpDir.deleteRecursively()
-            throw t
+            throw c
         }
     }
 
+    /** Fetches [file] into [dest], resuming a partial [dest] and retrying dropped connections. */
     private suspend fun downloadFile(
         file: LocalModelFile,
         dest: File,
@@ -105,33 +121,87 @@ object LocalModelManager {
         total: Long,
         onProgress: (downloaded: Long, total: Long) -> Unit,
     ) {
-        val request = Request.Builder().url(file.url).build()
+        if (dest.length() > file.sizeBytes) dest.delete() // left by a different file of the same name
+        var tries = 0
+        while (dest.length() < file.sizeBytes) {
+            coroutineContext.ensureActive()
+            val before = dest.length()
+            try {
+                fetchFrom(file, dest, baseCompleted, total, onProgress)
+            } catch (e: IOException) {
+                if (dest.length() > before) tries = 0
+                if (++tries >= MAX_TRIES_WITHOUT_PROGRESS) {
+                    throw IOException(
+                        "${file.destName} stopped at ${dest.length()} of ${file.sizeBytes} bytes " +
+                            "($tries tries without progress: ${e.message}). Start it again to continue.",
+                        e,
+                    )
+                }
+                delay(minOf(2_000L shl (tries - 1), 60_000L)) // 2, 4, 8 … 60 s
+            }
+        }
+        if (dest.length() != file.sizeBytes) {
+            val got = dest.length()
+            dest.delete()
+            error("size mismatch for ${file.destName}: expected ${file.sizeBytes}, got $got")
+        }
+        if (file.sha256 != null) {
+            // hashed from disk: a resumed file arrived in pieces, so the stream never saw it whole
+            val digest = MessageDigest.getInstance("SHA-256")
+            dest.inputStream().buffered().use { input ->
+                val buffer = ByteArray(256 * 1024)
+                while (true) {
+                    coroutineContext.ensureActive()
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+            val actual = digest.digest().joinToString("") { "%02x".format(it) }
+            if (!actual.equals(file.sha256, ignoreCase = true)) {
+                dest.delete()
+                error("checksum mismatch for ${file.destName}")
+            }
+        }
+    }
+
+    /**
+     * One request: from byte 0, or from the end of a partial [dest] with `Range`. A 206 appends; a 200
+     * means the server sent the whole file, which then replaces the partial one. Network errors, 5xx
+     * and 429 surface as [IOException] so [downloadFile] retries them; other HTTP errors are final.
+     */
+    private suspend fun fetchFrom(
+        file: LocalModelFile,
+        dest: File,
+        baseCompleted: Long,
+        total: Long,
+        onProgress: (downloaded: Long, total: Long) -> Unit,
+    ) {
+        val have = dest.length()
+        val request = Request.Builder().url(file.url).apply {
+            if (have > 0) header("Range", "bytes=$have-")
+        }.build()
         client.newCall(request).execute().use { response ->
+            if (response.code == 416) {
+                dest.delete() // the server disagrees about where the file ends: start it over
+                throw IOException("HTTP 416 resuming ${file.destName} at $have")
+            }
+            if (response.code >= 500 || response.code == 429) throw IOException("HTTP ${response.code}")
             check(response.isSuccessful) { "HTTP ${response.code} downloading ${file.url}" }
-            val body = response.body ?: error("empty response body for ${file.url}")
-            val digest = if (file.sha256 != null) MessageDigest.getInstance("SHA-256") else null
+            val append = have > 0 && response.code == 206
+            val body = response.body ?: throw IOException("empty response body for ${file.url}")
             body.byteStream().use { input ->
-                dest.outputStream().buffered().use { output ->
+                FileOutputStream(dest, append).buffered().use { output ->
                     val buffer = ByteArray(64 * 1024)
-                    var fileDone = 0L
+                    var fileDone = if (append) have else 0L
                     while (true) {
                         coroutineContext.ensureActive() // cancellation-aware
                         val read = input.read(buffer)
                         if (read < 0) break
                         output.write(buffer, 0, read)
-                        digest?.update(buffer, 0, read)
                         fileDone += read
                         onProgress(baseCompleted + fileDone, total)
                     }
-                }
-            }
-            check(dest.length() == file.sizeBytes) {
-                "size mismatch for ${file.destName}: expected ${file.sizeBytes}, got ${dest.length()}"
-            }
-            if (digest != null) {
-                val actual = digest.digest().joinToString("") { "%02x".format(it) }
-                check(actual.equals(file.sha256, ignoreCase = true)) {
-                    "checksum mismatch for ${file.destName}"
                 }
             }
         }

@@ -78,7 +78,12 @@ class FlorisApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // The model on the phone runs in its own process (MaLlmService, ":llm", §191). Nothing of the
+        // keyboard starts there: two processes on one preference store would corrupt it, and init
+        // empties the cache directory.
+        if (isLlmProcess()) return
         FlorisApplicationReference = WeakReference(this)
+        dev.patrickgold.florisboard.dictate.llm.MaLocalLlm.attach(this)
         // The key ring is read before every call that needs an API key, from places that were never
         // handed a Context. Bound here, once, with the application context.
         dev.patrickgold.florisboard.dictate.MaKeyRingStore.bind(this)
@@ -111,6 +116,15 @@ class FlorisApplication : Application() {
         }
     }
 
+    private fun isLlmProcess(): Boolean {
+        val name = if (android.os.Build.VERSION.SDK_INT >= 28) {
+            getProcessName()
+        } else {
+            runCatching { java.io.File("/proc/self/cmdline").readText().trim('\u0000', ' ', '\n') }.getOrDefault("")
+        }
+        return name.endsWith(":llm")
+    }
+
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         // Under memory pressure, free the on-device STT model from RAM (it can be ~100 MB up to ~700 MB).
@@ -131,6 +145,8 @@ class FlorisApplication : Application() {
             DictateLegacyMigrator.migrateIfNeeded(this@FlorisApplication)
             DictateLegacyMigrator.seedDeviceLanguageIfNeeded()
             DictateLegacyMigrator.migrateProviderKeyringIfNeeded()
+            // No prompt runs on an unnamed "Default" model any more (§191).
+            dev.patrickgold.florisboard.dictate.MaPromptModel.nameBlankModels()
             DictateLegacyMigrator.removeLivePromptActionIfNeeded(this@FlorisApplication)
             DictateLegacyMigrator.migratePromptsActionIfNeeded(this@FlorisApplication)
             DictateLegacyMigrator.migratePromptsLayoutToRowIfNeeded()

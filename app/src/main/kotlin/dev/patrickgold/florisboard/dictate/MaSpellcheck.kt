@@ -59,10 +59,10 @@ object MaSpellcheck {
         return MaPrompts.activeText(prefs.dictate.maSpellcheckPrompt.get()).ifBlank { INSTRUCTION }
     }
 
-    /** The model for this job, or null for the rewording account's own. */
-    fun model(): String? {
+    /** The model for this job, always by name (MaPromptModel). */
+    fun model(): String {
         val prefs by FlorisPreferenceStore
-        return prefs.dictate.maSpellcheckModel.get().trim().ifBlank { null }
+        return prefs.dictate.maSpellcheckModel.get().let { MaPromptModel.effective(it) }
     }
 
     fun enabled(): Boolean {

@@ -24,6 +24,7 @@ import dev.patrickgold.florisboard.app.settings.theme.DisplayKbdAfterDialogs
 import dev.patrickgold.florisboard.app.settings.theme.SnyggLevel
 import dev.patrickgold.florisboard.app.setup.NotificationPermissionState
 import dev.patrickgold.florisboard.dictate.DictateFloatingButtonDesign
+import dev.patrickgold.florisboard.dictate.llm.MaPhoneModels
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.dictate.MaNumericSecondary
 import dev.patrickgold.florisboard.dictate.MaFeatureOrder
@@ -1146,12 +1147,21 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
         /**
          * The model each prompt runs on: a tier alias such as `claude-sonnet-latest`, a pinned id, or
-         * empty for the rewording account's model. One each, so proofreading can run on Sonnet while
-         * reflow stays on Haiku.
+         * a model on the phone (`phone:<id>`, MaPhoneModels). One each, so proofreading can run on
+         * Sonnet while reflow stays on Haiku. Always a name: there is no "Default" choice any more
+         * (§191); an empty value left by an old build is shown and replaced by the model it meant.
          */
         val maProofreadModel = string(key = "dictate__ma_proofread_model", default = "")
         val maFlowModel = string(key = "dictate__ma_flow_model", default = "")
         val maSpellcheckModel = string(key = "dictate__ma_spellcheck_model", default = "")
+
+        /**
+         * Style after every dictation, the Mac's rules (MaPhoneStyle, §191). On, and inert until its
+         * model is downloaded: he asked for it, and a switch that does nothing until then costs nothing.
+         */
+        val maPhoneStyleEnabled = boolean(key = "dictate__ma_phone_style_enabled", default = true)
+        val maPhoneStylePrompt = string(key = "dictate__ma_phone_style_prompt", default = "")
+        val maPhoneStyleModel = string(key = "dictate__ma_phone_style_model", default = MaPhoneModels.QWEN3_4B.choice)
 
         /**
          * The Anthropic credit he last read in the Console, in dollars, and when he entered it. The
