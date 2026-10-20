@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.llm
 
+import kotlin.text.RegexOption
+
 import android.content.Context
 import dev.patrickgold.florisboard.dictate.provider.LocalModelFile
 import dev.patrickgold.florisboard.dictate.provider.LocalModelSpec

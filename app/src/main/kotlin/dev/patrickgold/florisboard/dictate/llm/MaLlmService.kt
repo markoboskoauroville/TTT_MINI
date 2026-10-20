@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.llm
 
+import kotlin.text.Charsets
+
 import android.app.Service
 import android.content.Intent
 import android.os.Bundle

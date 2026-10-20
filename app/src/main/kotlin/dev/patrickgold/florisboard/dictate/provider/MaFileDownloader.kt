@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.provider
 
+import kotlin.BooleanArray
+import kotlin.collections.HashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope

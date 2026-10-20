@@ -10,6 +10,9 @@
 
 package dev.patrickgold.florisboard.dictate.provider
 
+import kotlin.BooleanArray
+import kotlin.ranges.LongRange
+
 /**
  * THE PIECES OF A PARALLEL DOWNLOAD, AND WHICH ARE DONE — aria2's `.aria2` file, for this app.
  *

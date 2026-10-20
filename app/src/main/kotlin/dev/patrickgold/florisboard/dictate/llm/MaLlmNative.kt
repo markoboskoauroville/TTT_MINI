@@ -10,6 +10,8 @@
 
 package dev.patrickgold.florisboard.dictate.llm
 
+import java.lang.System
+
 /**
  * The JNI side of the model on the phone (app/src/main/cpp/ma_llm.cpp, llama.cpp underneath).
  *
