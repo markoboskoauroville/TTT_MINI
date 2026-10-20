@@ -187,7 +187,7 @@ rp = code(SRC / "dictate/MaRewordPrompt.kt")
 check("the controller sends what MaRewordPrompt builds", "MaRewordPrompt.forSending(instruction, input)" in ctrl,
       "the preview and the request would be two different texts")
 check("every rewording names the language", "Your entire answer must be in" in rp, "silent translation")
-check("it forbids translating outright", "Do not translate it into English" in rp)
+check("it forbids translating outright", "Do not translate it into another language" in rp)
 # THE ORDERING, which is the whole fix. The language rule must sit AFTER the instruction and the
 # system prompt, and immediately before his text.
 build_at = rp.find("fun build(")

@@ -46,7 +46,7 @@ object MaRewordPrompt {
     /** `{language}` becomes Croatian or English. */
     const val LANGUAGE_RULE =
         "The text below is written in {language}. Your entire answer must be in {language}. " +
-            "Do not translate it into English or any other language."
+            "Do not translate it into another language."
 
     /** Used when the small words do not say which language the text is in. */
     const val LANGUAGE_RULE_UNSURE =

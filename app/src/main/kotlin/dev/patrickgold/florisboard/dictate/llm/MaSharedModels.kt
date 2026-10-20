@@ -15,6 +15,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Environment
+import dev.patrickgold.florisboard.dictate.provider.LocalTranscriptionProvider
+import dev.patrickgold.florisboard.dictate.provider.MaPieces
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -169,6 +171,34 @@ object MaSharedModels {
         val d = dir()
         if (!d.isDirectory && !d.mkdirs()) return null
         return sharedFile(m)
+    }
+
+    /**
+     * How much of a stopped download of [m] is kept on disk, in percent, or null when none is.
+     *
+     * Found on the phone (build 398): after a killed download the row said only "Download", with 9 %
+     * already kept and waiting. Read from the piece map when there is one (whole pieces plus how far
+     * the unfinished ones got), else from the length of a one-connection partial file.
+     */
+    fun partialPercent(context: Context, m: MaPhoneModels.PhoneModel): Int? {
+        val candidates = listOf(
+            File(sharedFile(m).path + ".part"),
+            File(File(LocalTranscriptionProvider.modelsRoot(context), ".tmp-${m.id}"), "model.gguf"),
+        )
+        for (part in candidates) {
+            if (!part.isFile) continue
+            val map = File(part.path + ".pieces")
+            val kept = if (map.isFile) {
+                val raw = runCatching { map.readText() }.getOrNull()
+                val done = MaPieces.parse(raw, m.sizeBytes) ?: continue
+                MaPieces.doneBytes(done, m.sizeBytes) + MaPieces.parsePartial(raw, m.sizeBytes).values.sum()
+            } else {
+                part.length().takeIf { it < m.sizeBytes } ?: continue
+            }
+            if (kept <= 0) continue
+            return (kept * 100 / m.sizeBytes).toInt().coerceIn(1, 99)
+        }
+        return null
     }
 
     /** Deletes the shared copy and anything a download left beside it. */

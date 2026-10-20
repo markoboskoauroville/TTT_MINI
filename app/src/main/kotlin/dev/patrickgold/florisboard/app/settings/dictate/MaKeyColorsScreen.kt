@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -100,6 +101,21 @@ fun MaKeyColorsScreen() = FlorisScreen {
 
         // The brush: a palette colour, or null for the eraser.
         var brush by remember { mutableStateOf<Int?>(MaKeyColors.PALETTE.first().argb) }
+        var confirmClear by remember { mutableStateOf(false) }
+        if (confirmClear) {
+            AlertDialog(
+                onDismissRequest = { confirmClear = false },
+                title = { Text("Clear every key colour?") },
+                text = { Text("All ${colors.size} painted keys go back to the theme's colour. This cannot be undone.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        scope.launch { prefs.dictate.maKeyColors.set("") }
+                        confirmClear = false
+                    }) { Text("Clear all") }
+                },
+                dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } },
+            )
+        }
 
         fun paint(id: String) {
             val current = colors[id]
@@ -143,7 +159,8 @@ fun MaKeyColorsScreen() = FlorisScreen {
                         fontWeight = if (brush == null) FontWeight.Bold else FontWeight.Normal,
                     )
                 }
-                TextButton(onClick = { scope.launch { prefs.dictate.maKeyColors.set("") } }) {
+                // Asked first (phone test, build 398): one tap wiped every colour with no way back.
+                TextButton(enabled = colors.isNotEmpty(), onClick = { confirmClear = true }) {
                     Text("Clear all")
                 }
             }

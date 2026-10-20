@@ -184,6 +184,27 @@ object MaClaudeModels {
     }
 
     /**
+     * How to switch thinking OFF for [model], or null to leave the request as it is.
+     *
+     * Found on the phone (build 398): the spell check showed 1,051 output tokens for 480 in. On the
+     * newest Haiku thinking is on by default and billed as output, and a spell check gains nothing
+     * from it. Only where Anthropic accept switching it off: `disabled` on Haiku 5.x, Sonnet 5 and
+     * Opus 5; `between_tools` on Sonnet 5.5. Opus 5.5 and Fable cannot switch it off and older
+     * models do not think unless asked, so they get nothing. A 400 about thinking is retried without
+     * it (OpenAiCompatibleClient), so a wrong guess costs one request, never the answer.
+     */
+    fun thinkingOff(model: String): String? {
+        val v = parse(model) ?: return null
+        return when {
+            v.tier == "haiku" && v.major >= 5 -> "disabled"
+            v.tier == "sonnet" && v.major == 5 && v.minor == 0 -> "disabled"
+            v.tier == "sonnet" && v.major == 5 && v.minor == 5 -> "between_tools"
+            v.tier == "opus" && v.major == 5 && v.minor == 0 -> "disabled"
+            else -> null
+        }
+    }
+
+    /**
      * The effort to send, from the app's reasoning setting.
      *
      * The newest models cannot switch thinking off, so "off" and "minimal" become `low`, which is

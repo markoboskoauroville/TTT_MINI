@@ -126,6 +126,7 @@ fun MaPhoneModelSection() {
         val installed = remember(tick, deleted, downloads, sharedTick, access) { MaPhoneModels.isInstalled(context, m) }
         val sharedState = remember(tick, deleted, downloads, sharedTick, access) { MaSharedModels.state(context, m) }
         val sharedReason = remember(tick, deleted, downloads, sharedTick, access) { MaSharedModels.reason(context, m) }
+        val kept = remember(tick, deleted, downloads, sharedTick, access) { MaSharedModels.partialPercent(context, m) }
         val state = downloads[m.id]
         val downloading = state != null && state.error == null
         Row(
@@ -146,6 +147,8 @@ fun MaPhoneModelSection() {
                         "In Download/models, in use; checking its checksum in the background"
                     sharedState == MaSharedModels.State.READY -> "Downloaded, in Download/models"
                     installed -> "Downloaded"
+                    // A stopped download is kept, and Download carries on from it (phone test, build 398).
+                    kept != null -> "Stopped at $kept %. Download continues from there."
                     m == MaPhoneModels.QWEN3_8B && ramGb < 11 -> "Too big for this phone's memory: it may not start"
                     else -> null
                 }

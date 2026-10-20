@@ -120,7 +120,17 @@ class OpenAiCompatibleClient(
         val catalog = if (MaClaudeModels.isAlias(asked)) claudeCatalog(refresh = false) else emptyList()
         val model = MaClaudeModels.resolve(asked, catalog)
         return try {
-            anthropicMessagesOnce(request, model)
+            try {
+                anthropicMessagesOnce(request, model)
+            } catch (e: DictateApiException) {
+                // Thinking switched off where it should not have been: once more, as Anthropic default.
+                val m = e.message.orEmpty().lowercase()
+                if (e.httpStatus == 400 && "thinking" in m && thinkingFor(request, model) != null) {
+                    anthropicMessagesOnce(request, model, allowThinkingOff = false)
+                } else {
+                    throw e
+                }
+            }
         } catch (e: DictateApiException) {
             if (!MaClaudeModels.isModelFailure(e.httpStatus, e.message, model)) throw e
             val next = MaClaudeModels.successor(model, claudeCatalog(refresh = true)) ?: throw e
@@ -143,7 +153,15 @@ class OpenAiCompatibleClient(
         return ids.ifEmpty { claudeCatalogs[cacheKey].orEmpty() }
     }
 
-    private suspend fun anthropicMessagesOnce(request: ChatRequest, model: String): ChatResult {
+    /** Thinking off for a low-effort request on a model that allows it; see [MaClaudeModels.thinkingOff]. */
+    private fun thinkingFor(request: ChatRequest, model: String): String? =
+        if (MaClaudeModels.effortFor(request.reasoningEffort) == "low") MaClaudeModels.thinkingOff(model) else null
+
+    private suspend fun anthropicMessagesOnce(
+        request: ChatRequest,
+        model: String,
+        allowThinkingOff: Boolean = true,
+    ): ChatResult {
         val system = request.messages.filter { it.role == ChatRole.SYSTEM }
             .joinToString("\n\n") { it.content }.ifBlank { null }
         val dto = AnthropicMessagesRequestDto(
@@ -157,6 +175,7 @@ class OpenAiCompatibleClient(
             } else {
                 null
             },
+            thinking = if (allowThinkingOff) thinkingFor(request, model)?.let { AnthropicThinkingDto(it) } else null,
         )
         val httpRequest = Request.Builder()
             .url(config.normalizedBaseUrl + "messages")
@@ -1373,7 +1392,11 @@ class OpenAiCompatibleClient(
         val system: String? = null,
         val messages: List<MessageDto>,
         @SerialName("output_config") val outputConfig: AnthropicOutputConfigDto? = null,
+        val thinking: AnthropicThinkingDto? = null,
     )
+
+    @Serializable
+    private data class AnthropicThinkingDto(val type: String)
 
     @Serializable
     private data class AnthropicOutputConfigDto(val effort: String)

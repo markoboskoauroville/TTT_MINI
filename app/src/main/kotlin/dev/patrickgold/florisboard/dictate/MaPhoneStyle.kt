@@ -12,6 +12,7 @@ package dev.patrickgold.florisboard.dictate
 
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.llm.MaPhoneModels
+import dev.patrickgold.florisboard.dictate.nlp.MaWordLanguage
 
 /**
  * STYLE AFTER EVERY DICTATION, THE MAC'S WAY. §191.
@@ -79,6 +80,14 @@ object MaPhoneStyle {
 
     fun fitsPhone(text: String): Boolean = text.trim().split(Regex("\\s+")).size <= PHONE_MAX_WORDS
 
+    /**
+     * Fewer words than this are typed as they came. A dictation of two or three words has nothing to
+     * clean up and everything to invent: near silence turned into a made-up sentence (build 398).
+     */
+    const val MIN_WORDS = 4
+
+    fun worthStyling(text: String): Boolean = text.trim().split(Regex("\\s+")).count { it.isNotEmpty() } >= MIN_WORDS
+
     fun enabled(): Boolean {
         val prefs by FlorisPreferenceStore
         return prefs.dictate.maPhoneStyleEnabled.get()
@@ -91,6 +100,11 @@ object MaPhoneStyle {
     fun accept(original: String, styled: String): Boolean {
         val s = styled.trim()
         if (s.isEmpty()) return false
+        // Never a different language (phone test, build 398: a near-silent Croatian dictation came
+        // back as an invented English sentence). Only when both can be told; unclear passes.
+        val from = MaWordLanguage.detectPassage(original)
+        val to = MaWordLanguage.detectPassage(s)
+        if (from != null && to != null && from != to) return false
         val ratio = s.length.toDouble() / original.trim().length.coerceAtLeast(1)
         return ratio in 0.33..1.6
     }

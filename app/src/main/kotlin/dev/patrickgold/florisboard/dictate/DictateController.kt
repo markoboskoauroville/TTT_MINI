@@ -2721,6 +2721,10 @@ object DictateController {
             livePromptReplacesField = false
             sink.selectAll()
         }
+        // A SPACE BETWEEN HIS TEXT AND THE DICTATION (phone test, build 398): "C2:" + a dictation gave
+        // "C2:Do you…". Only when the field ends on a word or punctuation and the dictation starts
+        // with a letter or digit; never after a space, a line break or an opening bracket.
+        if (MaDictationSpace.needsLeadingSpace(sink.charBeforeCursor(), body.firstOrNull())) body = " $body"
         var committed: Boolean
         // System voice input (#67) returns the whole result at once — no typewriter animation, which only
         // makes sense when we're the one typing into a visible field.
@@ -3709,7 +3713,7 @@ object DictateController {
      * model was chosen and there is no key.
      */
     private suspend fun phoneStyle(text: String): String? {
-        if (text.isBlank() || !MaPhoneStyle.enabled()) return null
+        if (text.isBlank() || !MaPhoneStyle.enabled() || !MaPhoneStyle.worthStyling(text)) return null
         val model = MaPhoneStyle.model()
         val phone = MaPhoneModels.byChoice(model)
         val context = maAppContext

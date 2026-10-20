@@ -40,6 +40,12 @@ interface DictationSink {
     /** The full text of the focused field (used by the "rework the whole field" path). */
     fun fullText(): String
 
+    /**
+     * The character right before the cursor (or the selection), or null when it cannot be read. Used
+     * to put a space between his text and a dictation; a sink that cannot read it never gets one.
+     */
+    fun charBeforeCursor(): Char? = null
+
     /** Selects the whole field so a subsequent [commitText] replaces its content. */
     fun selectAll()
 
@@ -85,6 +91,8 @@ class ImeDictationSink(context: Context) : DictationSink {
     override fun selectedText(): String = editorInstance.activeContent.selectedText
 
     override fun fullText(): String = editorInstance.activeContent.text
+
+    override fun charBeforeCursor(): Char? = editorInstance.activeContent.textBeforeSelection.lastOrNull()
 
     override fun selectAll() {
         editorInstance.performClipboardSelectAll()
