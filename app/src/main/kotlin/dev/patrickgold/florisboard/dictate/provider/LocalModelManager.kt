@@ -11,19 +11,13 @@
 package dev.patrickgold.florisboard.dictate.provider
 
 import android.content.Context
+import dev.patrickgold.florisboard.dictate.llm.MaSharedModels
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.coroutineContext
 
 /**
  * Downloads, installs and removes the on-device transcription models consumed by
@@ -86,6 +80,13 @@ object LocalModelManager {
         spec: LocalModelSpec,
         onProgress: (downloaded: Long, total: Long) -> Unit = { _, _ -> },
     ): Unit = withContext(Dispatchers.IO) {
+        // A phone model goes to the shared Download/models/ when the app may write there, under
+        // Hugging Face's own name, so aria2 and every other tool use the same copy (MaSharedModels).
+        val shared = MaSharedModels.downloadTarget(context, spec.id)
+        if (shared != null && spec.files.size == 1) {
+            downloadShared(context, spec.files.single(), shared, onProgress)
+            return@withContext
+        }
         val root = LocalTranscriptionProvider.modelsRoot(context)
         val finalDir = LocalTranscriptionProvider.modelDir(context, spec.id)
         val tmpDir = File(root, ".tmp-${spec.id}")
@@ -96,7 +97,7 @@ object LocalModelManager {
             val total = spec.totalBytes
             var completed = 0L
             for (f in spec.files) {
-                downloadFile(f, File(tmpDir, f.destName), completed, total, onProgress)
+                MaFileDownloader.downloadFile(client, f, File(tmpDir, f.destName), completed, total, onProgress)
                 completed += f.sizeBytes
                 onProgress(completed, total)
             }
@@ -113,97 +114,33 @@ object LocalModelManager {
         }
     }
 
-    /** Fetches [file] into [dest], resuming a partial [dest] and retrying dropped connections. */
-    private suspend fun downloadFile(
+    /**
+     * Downloads one file straight into the shared folder: into `<name>.part` beside it, then renamed
+     * into place when whole and checked. A file already there at the exact size is not fetched again.
+     * Cancel deletes the part and its piece map; any other failure keeps them for the next start.
+     */
+    private suspend fun downloadShared(
+        context: Context,
         file: LocalModelFile,
-        dest: File,
-        baseCompleted: Long,
-        total: Long,
+        target: File,
         onProgress: (downloaded: Long, total: Long) -> Unit,
     ) {
-        if (dest.length() > file.sizeBytes) dest.delete() // left by a different file of the same name
-        var tries = 0
-        while (dest.length() < file.sizeBytes) {
-            coroutineContext.ensureActive()
-            val before = dest.length()
-            try {
-                fetchFrom(file, dest, baseCompleted, total, onProgress)
-            } catch (e: IOException) {
-                if (dest.length() > before) tries = 0
-                if (++tries >= MAX_TRIES_WITHOUT_PROGRESS) {
-                    throw IOException(
-                        "${file.destName} stopped at ${dest.length()} of ${file.sizeBytes} bytes " +
-                            "($tries tries without progress: ${e.message}). Start it again to continue.",
-                        e,
-                    )
-                }
-                delay(minOf(2_000L shl (tries - 1), 60_000L)) // 2, 4, 8 … 60 s
-            }
+        if (target.length() == file.sizeBytes) {
+            onProgress(file.sizeBytes, file.sizeBytes)
+            return
         }
-        if (dest.length() != file.sizeBytes) {
-            val got = dest.length()
-            dest.delete()
-            error("size mismatch for ${file.destName}: expected ${file.sizeBytes}, got $got")
-        }
-        if (file.sha256 != null) {
-            // hashed from disk: a resumed file arrived in pieces, so the stream never saw it whole
-            val digest = MessageDigest.getInstance("SHA-256")
-            dest.inputStream().buffered().use { input ->
-                val buffer = ByteArray(256 * 1024)
-                while (true) {
-                    coroutineContext.ensureActive()
-                    val read = input.read(buffer)
-                    if (read < 0) break
-                    digest.update(buffer, 0, read)
-                }
-            }
-            val actual = digest.digest().joinToString("") { "%02x".format(it) }
-            if (!actual.equals(file.sha256, ignoreCase = true)) {
-                dest.delete()
-                error("checksum mismatch for ${file.destName}")
-            }
+        val part = File(target.path + ".part")
+        try {
+            MaFileDownloader.downloadFile(client, file, part, 0L, file.sizeBytes, onProgress)
+            target.delete()
+            if (!part.renameTo(target)) error("could not move ${part.name} to ${target.name}")
+            // Just checked whole by downloadFile, so the background check need not hash it again.
+            MaSharedModels.rememberGood(context, target)
+        } catch (c: CancellationException) {
+            part.delete()
+            MaFileDownloader.controlFile(part).delete()
+            throw c
         }
     }
 
-    /**
-     * One request: from byte 0, or from the end of a partial [dest] with `Range`. A 206 appends; a 200
-     * means the server sent the whole file, which then replaces the partial one. Network errors, 5xx
-     * and 429 surface as [IOException] so [downloadFile] retries them; other HTTP errors are final.
-     */
-    private suspend fun fetchFrom(
-        file: LocalModelFile,
-        dest: File,
-        baseCompleted: Long,
-        total: Long,
-        onProgress: (downloaded: Long, total: Long) -> Unit,
-    ) {
-        val have = dest.length()
-        val request = Request.Builder().url(file.url).apply {
-            if (have > 0) header("Range", "bytes=$have-")
-        }.build()
-        client.newCall(request).execute().use { response ->
-            if (response.code == 416) {
-                dest.delete() // the server disagrees about where the file ends: start it over
-                throw IOException("HTTP 416 resuming ${file.destName} at $have")
-            }
-            if (response.code >= 500 || response.code == 429) throw IOException("HTTP ${response.code}")
-            check(response.isSuccessful) { "HTTP ${response.code} downloading ${file.url}" }
-            val append = have > 0 && response.code == 206
-            val body = response.body ?: throw IOException("empty response body for ${file.url}")
-            body.byteStream().use { input ->
-                FileOutputStream(dest, append).buffered().use { output ->
-                    val buffer = ByteArray(64 * 1024)
-                    var fileDone = if (append) have else 0L
-                    while (true) {
-                        coroutineContext.ensureActive() // cancellation-aware
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        output.write(buffer, 0, read)
-                        fileDone += read
-                        onProgress(baseCompleted + fileDone, total)
-                    }
-                }
-            }
-        }
-    }
 }

@@ -89,6 +89,9 @@ class FlorisApplication : Application() {
         dev.patrickgold.florisboard.dictate.MaKeyRingStore.bind(this)
         // The Claude cost log (MaClaudeCost): every answered request is priced and written down.
         dev.patrickgold.florisboard.dictate.MaClaudeCost.attach(this)
+        // Models already in Download/models/: used at once at the exact size, their checksum checked
+        // once in the background (MaSharedModels). Every start, so also the first after an update.
+        dev.patrickgold.florisboard.dictate.llm.MaSharedModels.verifyInBackground(this)
         dev.patrickgold.florisboard.dictate.provider.OpenAiCompatibleClient.claudeUsageListener =
             { model, input, output -> dev.patrickgold.florisboard.dictate.MaClaudeCost.record(model, input, output) }
         try {

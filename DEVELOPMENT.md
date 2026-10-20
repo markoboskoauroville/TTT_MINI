@@ -10817,3 +10817,44 @@ every suite green, verify.py clean. The bridge ran for real on x86 (above). The 
 whole release APK were built here with the CI's command. **Nothing was run on a phone**: the speed
 on the Dimensity 7200, whether the 8 GB phone keeps the `:llm` process alive with the keyboard and
 the reader running, and how the first, slow message feels are the first things to look at.
+
+---
+
+# §192 — aria2 inside the app, and one copy of each model in Download/models
+
+Merged with §191 (the phone model, from the other session) and its resumable download
+(`phone-resume-download`), as Marko asked on 20.10.2026.
+
+## Downloads in pieces
+
+Hugging Face's CDN reset the connection twice in the first 70 MB on his phone; aria2 with eight
+connections fetched the same 2.4 GB at 2.6 MB/s. `MaFileDownloader` does the same: a file of 64 MB or
+more, from a server that answers a `bytes=0-0` probe with 206, comes down as 8 MB pieces on eight
+connections, each written at its offset into one file of the final size. A piece map beside it
+(`<file>.pieces`, written atomically) says which pieces are whole and how far each unfinished one got,
+saved after every piece and every 2 MB — so a drop, an app kill or a restart fetches only what is
+missing, continuing inside a piece rather than from its start. A piece retries with 2 s … 60 s backoff
+and the download stops only after eight tries in a row on one piece bring nothing. A server that
+ignores Range gets the one-connection resume from §191. Size and SHA-256 are checked from disk at the
+end; Cancel deletes the file and its map, any other failure keeps both. Progress is the sum of every
+piece. A partial file left by the one-connection code carries on from the pieces it already holds.
+
+The engine has no Android in it, so it was run under plain Kotlin against a local server serving
+100 MB with dropped connections and a kill halfway; the results are in
+`scripts/test_parallel_download.py`. The piece arithmetic (`MaPieces`) was run against 14 cases.
+
+## One copy, in Download/models
+
+`MaSharedModels`: the phone models live in `Download/models/` under Hugging Face's names
+(`Qwen3-4B-Instruct-2507-Q4_0.gguf`, `Qwen3-8B-Q4_K_M.gguf`), shared with aria2 and anything else.
+A file there at the exact size is used at once — on every start, so also after an update — with no
+download and no question; its SHA-256 is checked once in the background and remembered by path, size
+and modified time. A wrong size or hash means not downloaded, with the reason in red. Downloads go
+there too (`<name>.part`, renamed when whole). It needs All files access, asked once from Settings →
+Prompts → Models on the phone, saying why; without it the app's private folder is used as before.
+Delete says it deletes the shared file.
+
+## Built here first
+
+The Android SDK, NDK 29 and CMake 3.31.6 were installed in the sandbox and the whole app, llama.cpp
+included, was built with Gradle before anything was pushed.

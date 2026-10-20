@@ -84,10 +84,19 @@ object MaPhoneModels {
         return all.firstOrNull { it.id == id }
     }
 
-    fun file(context: Context, m: PhoneModel): File =
+    /** The copy in the app's own folder, the fallback when Download/models/ is not reachable. */
+    fun privateFile(context: Context, m: PhoneModel): File =
         File(LocalTranscriptionProvider.modelDir(context, m.id), FILE)
 
-    fun isInstalled(context: Context, m: PhoneModel): Boolean = file(context, m).length() == m.sizeBytes
+    /**
+     * The file to run: the shared copy in Download/models/ when it is there at the exact size and not
+     * known to be bad (MaSharedModels), else the private one.
+     */
+    fun file(context: Context, m: PhoneModel): File =
+        MaSharedModels.usableFile(context, m) ?: privateFile(context, m)
+
+    fun isInstalled(context: Context, m: PhoneModel): Boolean =
+        MaSharedModels.usableFile(context, m) != null || privateFile(context, m).length() == m.sizeBytes
 
     /**
      * The whole prompt in Qwen's chat format (ChatML). Pure, so it can be checked without a phone.

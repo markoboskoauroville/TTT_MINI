@@ -207,6 +207,10 @@ downloaded; when it has run, the Croatian spell check is not sent too. Every pro
 model beside Haiku, Sonnet and Opus. **There is no "Default" model**: each prompt names its model and
 says under it exactly which one is in use. Not yet run on a phone.
 
+**Model downloads come in eight parallel pieces and resume after any drop** (MaFileDownloader,
+aria2's way), into the shared `Download/models/`; a model already there at the right size is used
+without downloading. See §192.
+
 **Models repair themselves.** A request that fails because of the model asks the provider what exists,
 picks the successor by family and version, writes it down and retries once. See
 `MANTRA_MANIFEST/modules/model-self-repair.md`.

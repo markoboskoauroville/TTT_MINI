@@ -200,3 +200,4 @@ since been removed.
 - **§189** — Key colours, G815 style, and the command under each digit
 - **§190** — Croatian spell check, a model per prompt, and what Claude costs
 - **§191** — The Mac's style model on the phone, and no more "Default"
+- **§192** — aria2 inside the app, and one copy of each model in Download/models
