@@ -40,3 +40,6 @@
 # optional providers) so release builds behave like debug.
 -keep class ai.onnxruntime.** { *; }
 -dontwarn ai.onnxruntime.**
+
+# The model on the phone (§191): ma_llm.cpp finds these methods by their exact names.
+-keep class dev.patrickgold.florisboard.dictate.llm.MaLlmNative { *; }

@@ -126,6 +126,22 @@ object MaRewordPrompt {
         input = input,
     )
 
+    /**
+     * The same message in two parts, for the model on the phone, which takes its rules as a system
+     * message (§191): everything [forSending] puts before his text, and his text. The order inside
+     * the first part is the same, so the language rule is still the last thing before his words.
+     */
+    fun forSendingSplit(instruction: String, input: String): Pair<String, String> {
+        val rules = buildString {
+            append(instruction)
+            val sys = appendix(currentSystemPrompt(), hasInput = true)
+            if (sys.isNotBlank()) append("\n\n").append(sys)
+            val line = languageLine(currentLanguageTemplate(), currentLanguageUnsure(), languageOf(input))
+            if (line.isNotBlank()) append("\n\n").append(line)
+        }
+        return rules to input
+    }
+
     // ---------------------------------------------------------------- the last one sent
 
     /** One request as it left the phone. Kept in memory only: it holds his text. */

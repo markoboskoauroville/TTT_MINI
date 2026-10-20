@@ -10725,3 +10725,95 @@ newest and marked `~`.
 `test_spellcheck_costs.py` new (24 checks); all suites green; verify.py clean. `MaClaudeCost`
 compiled with kotlinc against an Android stub and run against 9 cases. Whether Haiku is good at
 Croatian mishearing is the open question: if it misses, choose Sonnet for the spell check.
+
+---
+
+# §191 — The Mac's style model on the phone, and no more "Default"
+
+## What he asked
+
+MARKO_TRANSCRIBE on his MacBook styles every message with a language model on the Mac
+(`server/styled.py`: Qwen3 8B, 4-bit, MLX; Qwen3 4B Instruct 2507 as the fast one). He asked for the
+same model here, on the phone, downloaded by the app, to restyle and correct what he dictates. And
+for "Default" to go from the model choice: he wants to see which model is in use.
+
+## Is it feasible: yes, with the 4B
+
+MLX runs only on Apple chips, so the phone runs the same weights in llama.cpp's format (GGUF):
+
+| Model | File | Fits the Nothing Phone 2a |
+|---|---|---|
+| Qwen3 4B Instruct 2507, Q4_0 (unsloth) | 2.38 GB | yes, the one to use |
+| Qwen3 8B, Q4_K_M (Qwen) — the Mac's current model | 5.03 GB | only the 12 GB phone, about twice as slow |
+
+Measured on 20.10.2026 with the real bridge (`ma_llm.cpp`) built for a 4-core x86 cloud machine and
+the Mac's six artificial-test messages: first message 15 s to read the rules plus 6 s to write;
+from the second message on the rules come from the cache (426 of ~500 tokens reused) and a message
+takes **2.3–3.3 s to read and 6–8.5 s to write**. The phone's two fast cores are in the same range;
+**not measured on the phone**. The Mac does it in 2–4 s.
+
+Quality on the same messages, as on the Mac's 4B (test/COMPARISON.md): repetitions and filler went,
+"Grok" became Groq, "Amarco" became Marko. But hr3 **dropped "Marko je rekao"**, the exact fact the
+Mac's 4B dropped, en1 turned "bring the hard drive, the SSD" into "bring the SSD to the hard drive",
+and Croatian spelling stayed ("u jutro", "klient"). That is the model, not the port: the Mac moved to
+the 8B for this reason, and the 8B is the one that does not fit an 8 GB phone.
+
+## How it is built
+
+- **llama.cpp b11400** (5.10.2026), fetched by `tools/fetch-llama-cpp.sh`, pinned by tag AND commit,
+  compiled by CMake into `libmallm.so` with the bridge. Static, no OpenMP, no KleidiAI (a second
+  download at configure time). `armv8.2-a+dotprod+fp16`: dotprod doubles the speed of a 4-bit model
+  and every arm64 phone of six years has it; **i8mm is left out on purpose**, a phone without it
+  would crash instead of running slower. Always built Release: a debug llama.cpp is ten times slower.
+- **Its own process.** `MaLlmService` runs in `:llm`. A 2.4 GB model and a native engine next to the
+  keyboard would mean that running out of memory, or a crash, ends the keyboard. Here it ends one
+  style pass. `FlorisApplication.onCreate` returns at once in that process: two processes on one
+  preference store would corrupt it, and `init` empties the cache directory.
+- **Bound while he dictates, released after five idle minutes** (`MaLocalLlm`). The stop key cancels
+  the request between two tokens. If the process dies, the waiting request fails with a sentence and
+  the dictation keeps its text.
+- **The rules are read once.** The bridge keeps the last prompt's tokens and recomputes only what
+  follows the longest shared prefix. Every style request starts with the same rules, so that is most
+  of the waiting saved.
+- **Greedy**, as on the Mac (`temp=0`): the same message gives the same result. Room for the answer:
+  three tokens a word, never fewer than 64. Qwen3 8B is told not to think with the empty think block,
+  which is what `enable_thinking=False` does on the Mac.
+- **Downloaded like Parakeet**: `LocalModelDownloads`, foreground service, size and SHA-256 checked,
+  installed only when whole. Free space is checked first. Source: Hugging Face (unsloth for the 4B,
+  Qwen for the 8B), Apache-2.0.
+
+## The style pass
+
+`MaPhoneStyle`: the Mac's RULES word for word and its standing corrections (Marco → Marko, Grok →
+Groq, "a Marco" → "and Marko") before and after the model. **After every dictation, both languages,
+on by default, inert until its model is downloaded.** It runs before the Croatian spell check and,
+when it succeeds, the spell check is not sent too: it fixes the same misheard words and spelling.
+When it fails, or its reply is refused (blank, under a third or over 1.6× the length), the spell
+check runs as before, so a dictation is never left with neither. A dictation over 350 words skips
+the phone model (it writes six to eight words a second, so ten minutes of speech would hold the text
+for minutes) and gets the spell check; Claude has no such limit. Its wording and its model are on the
+Prompts screen like the others; choosing Haiku there sends it to Claude instead.
+
+Every prompt can now choose a phone model: Ctrl+P, Ctrl+F, the spell check and the style pass. A
+phone request needs no key, goes nowhere, and is recorded for "Show exactly what is sent" the same
+way. It is split into the rules (system message) and his text; the language rule is still the last
+thing before his words.
+
+## "Default" is gone
+
+"Default" meant "whatever the rewording account is set to" and the screen never said what that was.
+Now a prompt's model is always a name. `MaPromptModel.nameBlankModels()` writes the account's model
+into every empty per-prompt model at start, the chooser does it again if it sees one, and the
+getters never return null. Under each choice: **"In use: claude-haiku-… (newest Haiku)"** or **"In
+use: Qwen3 4B Instruct 2507 on this phone, downloaded"**, in red with what to do when the phone model
+is not downloaded. The "(default)" label on the Claude tier list went too. The built-in prompt
+*wording* is still called Default: that is a wording, not a model, and renaming it would orphan the
+stored sets.
+
+## Tested, and not
+
+`test_phone_model.py` new (43 checks); `test_spellcheck_costs.py` now expects four model choosers;
+every suite green, verify.py clean. The bridge ran for real on x86 (above). The arm64 library and the
+whole release APK were built here with the CI's command. **Nothing was run on a phone**: the speed
+on the Dimensity 7200, whether the 8 GB phone keeps the `:llm` process alive with the keyboard and
+the reader running, and how the first, slow message feels are the first things to look at.

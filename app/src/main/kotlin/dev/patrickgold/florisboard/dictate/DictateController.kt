@@ -48,6 +48,8 @@ import dev.patrickgold.florisboard.dictate.data.history.DictateHistoryEntry
 import dev.patrickgold.florisboard.dictate.data.history.DictateHistorySource
 import dev.patrickgold.florisboard.dictate.data.history.DictateHistoryStore
 import dev.patrickgold.florisboard.dictate.provider.ChatRequest
+import dev.patrickgold.florisboard.dictate.llm.MaLocalLlm
+import dev.patrickgold.florisboard.dictate.llm.MaPhoneModels
 import dev.patrickgold.florisboard.dictate.provider.DictateApiException
 import dev.patrickgold.florisboard.dictate.provider.LocalModelCatalog
 import dev.patrickgold.florisboard.dictate.provider.LocalModelManager
@@ -1997,7 +1999,13 @@ object DictateController {
             // CROATIAN SPELL CHECK FIRST (MaSpellcheck): AssemblyAI invents Croatian words, and every
             // later step would build on them. Not on single-call audio, which never went through
             // AssemblyAI, and never on English.
-            val checked = if (!alreadyFormatted) croatianSpellcheck(appContext, rawText) else rawText
+            // THE MAC'S STYLE PASS (MaPhoneStyle, §191) before it, when it is on and can run: it fixes
+            // the same misheard words and spelling, so a dictation it styled skips the spell check.
+            val checked = if (!alreadyFormatted) {
+                phoneStyle(rawText) ?: croatianSpellcheck(appContext, rawText)
+            } else {
+                rawText
+            }
             spellchecked = checked
             val processed = if (alreadyFormatted) checked else postProcessTranscript(appContext, checked)
             applyPendingPrompts(appContext, processed)
@@ -3677,10 +3685,11 @@ object DictateController {
     private suspend fun croatianSpellcheck(context: Context, text: String): String {
         if (text.isBlank() || !MaSpellcheck.enabled()) return text
         if (MaLanguage.active() != MaLanguage.HR) return text
-        if (MaProviders.rewordingApiKey().isBlank()) return text
+        val model = MaSpellcheck.model()
+        if (!MaPhoneModels.isPhone(model) && MaProviders.rewordingApiKey().isBlank()) return text
         _state.value = UiState.Rewording(MaSpellcheck.NAME)
         val corrected = runCatching {
-            requestReword(MaSpellcheck.instruction(), text, model = MaSpellcheck.model(), purpose = MaSpellcheck.NAME)
+            requestReword(MaSpellcheck.instruction(), text, model = model, purpose = MaSpellcheck.NAME)
         }.getOrElse {
             MaLog.add("dictate", "spell check failed: ${it.javaClass.simpleName}")
             return text
@@ -3688,6 +3697,42 @@ object DictateController {
         return if (MaSpellcheck.accept(text, corrected)) corrected else {
             MaLog.add("dictate", "spell check reply refused: ${corrected.length} chars for ${text.length}")
             text
+        }
+    }
+
+    /**
+     * The Mac's style pass on [text] (MaPhoneStyle), or null when it is off, cannot run, or fails.
+     *
+     * Null rather than [text] so the caller can tell "styled" from "not styled" and fall back to the
+     * Croatian spell check. Cannot run means: the model on the phone is not downloaded, or a Claude
+     * model was chosen and there is no key.
+     */
+    private suspend fun phoneStyle(text: String): String? {
+        if (text.isBlank() || !MaPhoneStyle.enabled()) return null
+        val model = MaPhoneStyle.model()
+        val phone = MaPhoneModels.byChoice(model)
+        val context = maAppContext
+        if (phone != null) {
+            if (context == null || !MaPhoneModels.isInstalled(context, phone)) return null
+            if (!MaPhoneStyle.fitsPhone(text)) {
+                MaLog.add("dictate", "style pass skipped: longer than ${MaPhoneStyle.PHONE_MAX_WORDS} words")
+                return null
+            }
+        } else if (MaProviders.rewordingApiKey().isBlank()) {
+            return null
+        }
+        _state.value = UiState.Rewording(if (phone != null) "${MaPhoneStyle.NAME} \u00B7 ${phone.name}" else MaPhoneStyle.NAME)
+        val input = MaPhoneStyle.correct(text)
+        val styled = runCatching {
+            MaPhoneStyle.correct(requestReword(MaPhoneStyle.instruction(), input, model = model, purpose = MaPhoneStyle.NAME))
+        }.getOrElse {
+            if (it is CancellationException) throw it
+            MaLog.add("dictate", "style pass failed: ${it.message ?: it.javaClass.simpleName}")
+            return null
+        }
+        return if (MaPhoneStyle.accept(text, styled)) styled else {
+            MaLog.add("dictate", "style pass reply refused: ${styled.length} chars for ${text.length}")
+            null
         }
     }
 
@@ -3787,8 +3832,31 @@ object DictateController {
         // previews, so what he reads there is what is sent. See there for the be-precise sentence
         // that used to contradict this rule, and for the passage detection that replaced the
         // recording key as the guess.
+        if (MaPhoneModels.isPhone(model)) return requestPhoneModel(instruction, input, model.orEmpty())
         val content = MaRewordPrompt.forSending(instruction, input)
         return requestRewordRaw(content, reasoning, reasoningCustom, modelOverride = model, purpose = purpose)
+    }
+
+    /**
+     * The same request, answered by the model on the phone (§191) instead of Claude: no key, no
+     * network, nothing leaves the phone. The message is the one [MaRewordPrompt] builds for Claude,
+     * split into its rules and his text, and recorded the same way for the Prompts screen.
+     */
+    private suspend fun requestPhoneModel(instruction: String, input: String?, model: String): String {
+        val m = MaPhoneModels.byChoice(model)
+            ?: throw DictateApiException(DictateApiException.Kind.UNKNOWN, "No model on the phone called $model")
+        val (system, user) = if (input.isNullOrBlank()) {
+            "" to MaRewordPrompt.forSending(instruction, null)
+        } else {
+            MaRewordPrompt.forSendingSplit(instruction, input)
+        }
+        MaRewordPrompt.recordSent(model, if (system.isBlank()) user else "$system\n\n$user")
+        val answer = try {
+            MaLocalLlm.complete(m, MaPhoneModels.chatPrompt(m, system, user), MaPhoneModels.maxTokens(user))
+        } catch (e: MaLocalLlm.LocalModelException) {
+            throw DictateApiException(DictateApiException.Kind.UNKNOWN, e.message, e)
+        }
+        return MaPhoneModels.clean(answer.text)
     }
 
     /**

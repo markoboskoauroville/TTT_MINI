@@ -92,6 +92,14 @@ configure<ApplicationExtension> {
             abiFilters += listOf("arm64-v8a")
         }
 
+        // The model on the phone (§191): llama.cpp, always optimised. A debug build of it is ten times
+        // slower, which would make a debug APK say nothing true about the speed.
+        externalNativeBuild {
+            cmake {
+                arguments += listOf("-DCMAKE_BUILD_TYPE=Release")
+            }
+        }
+
         buildConfigField("String", "BUILD_COMMIT_HASH", "\"${getGitCommitHash().get()}\"")
         buildConfigField("String", "FLADDONS_API_VERSION", "\"v~draft2\"")
         buildConfigField("String", "FLADDONS_STORE_URL", "\"beta.addons.florisboard.org\"")
@@ -115,6 +123,15 @@ configure<ApplicationExtension> {
     buildFeatures {
         buildConfig = true
         compose = true
+    }
+
+    // libmallm.so: llama.cpp and its JNI bridge (app/src/main/cpp, §191). The source is fetched by
+    // tools/fetch-llama-cpp.sh, pinned by tag and commit.
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.31.6"
+        }
     }
 
     // Release signing. Credentials live in a local, untracked `keystore.properties` at the repo root
