@@ -26,3 +26,28 @@ the aria2-style parallel download, and the shared Download/models folder.
 5. Delete on a model in the shared folder should say it deletes the SHARED file.
 
 Report anything red, with the exact text, by send_message.
+
+## Full test plan for build 398 (sent by send_message on 20.10.2026)
+
+Rules: Haiku only, short texts, one try per case; dictations under ~15 s; never print keys; no
+build-apk.yml. Record PASS / FAIL / BLOCKED with the exact on-screen text, a screenshot for every
+FAIL, logcat for every crash.
+
+A. Models on the phone: A1 Allow All files access; A2 Qwen3 4B "checking" then "Downloaded, in
+Download/models", no download (time it); A3 force-stop and reopen, still downloaded; A4 Ctrl+F on
+Qwen3 4B, also in flight mode, time it; A5 8B shows the memory warning, do not download; A6 rename
+the 4B to .bak, Download, force-stop at ~200 MB, Download again continues not from 0, Cancel removes
+.part and .pieces, rename back; A7 Delete dialog says SHARED file, press Cancel.
+B. Claude prompts on Haiku: B1 model rows; B2 "Show exactly what is sent" with Croatian / English /
+Unclear; B3 Ctrl+P on "dobro jutro kako si danas" stays Croatian, then "Last message sent" and
+"Last answered by"; B4 edit the language line, then Built-in.
+C. Spell check: C1 switch on; C2 short Croatian dictation shows "Croatian spell check"; C3 English
+dictation does not.
+D. Claude costs: D1 the requests are listed with tokens and dollars; D2 balance 10, Set.
+E. Keyboard: E1 Key colours grid; E2 digit 1 red, A blue (stays with Shift), then Clear all; E3 the
+command printed under a number-row digit is readable.
+F. Crashes and dumpsys meminfo after A4.
+
+Report: send_message to session_0118g1MJ1Y3aD4nhAieRp6f8, first line "Build 398: X pass, Y fail,
+Z blocked", then one line per FAIL/BLOCKED. Full report under "Report build 398" in
+PHONE-TESTER-REQUEST.md on this branch.
