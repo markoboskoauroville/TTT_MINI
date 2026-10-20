@@ -49,6 +49,7 @@ import dev.patrickgold.florisboard.dictate.data.history.DictateHistorySource
 import dev.patrickgold.florisboard.dictate.data.history.DictateHistoryStore
 import dev.patrickgold.florisboard.dictate.provider.ChatRequest
 import dev.patrickgold.florisboard.dictate.llm.MaLocalLlm
+import dev.patrickgold.florisboard.dictate.llm.MaPhoneAnswer
 import dev.patrickgold.florisboard.dictate.llm.MaPhoneModels
 import dev.patrickgold.florisboard.dictate.provider.DictateApiException
 import dev.patrickgold.florisboard.dictate.provider.LocalModelCatalog
@@ -3845,18 +3846,22 @@ object DictateController {
     private suspend fun requestPhoneModel(instruction: String, input: String?, model: String): String {
         val m = MaPhoneModels.byChoice(model)
             ?: throw DictateApiException(DictateApiException.Kind.UNKNOWN, "No model on the phone called $model")
-        val (system, user) = if (input.isNullOrBlank()) {
+        val (rules, user) = if (input.isNullOrBlank()) {
             "" to MaRewordPrompt.forSending(instruction, null)
         } else {
             MaRewordPrompt.forSendingSplit(instruction, input)
         }
+        // The phone model does not stop by itself the way Claude does (phone test A4, build 398): it
+        // is told to stop at the end of the rewrite, and given about the text's own length to do it.
+        val system = if (input.isNullOrBlank()) rules else "$rules\n\n${MaPhoneAnswer.RULES}".trim()
+        val budget = MaPhoneAnswer.maxTokens(input ?: user)
         MaRewordPrompt.recordSent(model, if (system.isBlank()) user else "$system\n\n$user")
         val answer = try {
-            MaLocalLlm.complete(m, MaPhoneModels.chatPrompt(m, system, user), MaPhoneModels.maxTokens(user))
+            MaLocalLlm.complete(m, MaPhoneModels.chatPrompt(m, system, user), budget)
         } catch (e: MaLocalLlm.LocalModelException) {
             throw DictateApiException(DictateApiException.Kind.UNKNOWN, e.message, e)
         }
-        return MaPhoneModels.clean(answer.text)
+        return MaPhoneAnswer.fit(MaPhoneModels.clean(answer.text), hitCap = answer.generatedTokens >= budget)
     }
 
     /**
