@@ -51,3 +51,13 @@ F. Crashes and dumpsys meminfo after A4.
 Report: send_message to session_0118g1MJ1Y3aD4nhAieRp6f8, first line "Build 398: X pass, Y fail,
 Z blocked", then one line per FAIL/BLOCKED. Full report under "Report build 398" in
 PHONE-TESTER-REQUEST.md on this branch.
+
+## 20.10.2026 — build 399: short retest
+
+APK:    https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-399/ttt-mini-build-399.apk
+sha256: d99e8b10eab992c4da86b4498d5209f70e44a35ff76ca55525f304cae994a330 (46,323,203 bytes, main cda6161)
+
+R1 Prompts: radio buttons with full model names, no "Default" anywhere (screenshot). R2 A4 again on
+Qwen3 4B: stops at the end, no inventions, no cut mid-word; then Ctrl+F back to Claude Haiku 5.5.
+R3 space before a dictation after "C2:". R4 stopped download shows "Stopped at N %". R5 Clear all
+asks. R6 Ctrl+P output tokens close to the answer (thinking off). Report: "Build 399: X pass, Y fail".
