@@ -96,3 +96,6 @@ tools/glide-dict/dist/
 
 # The model on the phone (§191): llama.cpp source, fetched by tools/fetch-llama-cpp.sh.
 /app/src/main/cpp/llama.cpp/
+
+# Kotlin compiler session data, written by local Gradle builds
+.kotlin/
