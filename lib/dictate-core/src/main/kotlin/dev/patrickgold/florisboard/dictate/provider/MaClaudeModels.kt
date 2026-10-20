@@ -91,6 +91,16 @@ object MaClaudeModels {
         return null
     }
 
+    /**
+     * The model's name as Anthropic write it: `claude-haiku-5-5` → "Claude Haiku 5.5",
+     * `claude-sonnet-5` → "Claude Sonnet 5". An id that is not a Claude is returned as it is.
+     */
+    fun displayName(id: String): String {
+        val v = parse(id) ?: return id
+        val number = if (v.minor == 0) "${v.major}" else "${v.major}.${v.minor}"
+        return "Claude ${v.tier.replaceFirstChar { it.uppercase() }} $number"
+    }
+
     /** The tier an alias names, or null if [model] is not one of ours. */
     fun tierOfAlias(model: String): String? {
         val s = model.trim().lowercase()

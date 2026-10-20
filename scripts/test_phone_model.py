@@ -52,7 +52,12 @@ fetch = (ROOT / "tools/fetch-llama-cpp.sh").read_text()
 
 # ---------------------------------------------------------------- no "Default" model
 check("the chooser offers no Default", '"" to "Default"' not in prompts)
-check("the chooser says what is in use", '"In use: " + MaPromptModel.describe(' in prompts)
+# One radio button per model, each with the model's own name (Marko, 20.10.2026), so the chosen one
+# IS what is in use and no separate line is needed.
+check("the chooser is radio buttons", "selected = current == value" in prompts)
+check("Claude rows carry the model's own name", "MaClaudeModels.displayName(MaClaudeModels.resolve(alias, cached))" in prompts)
+check("phone rows carry the model's own name", '"${m.name} ($state)"' in prompts)
+check("no Default wording on screen", "MaPrompts.displayName(inst.name, builtInName)" in prompts)
 check("an empty model is named on sight", "if (stored.isBlank()) pref.set(current)" in prompts)
 check("and at start", "MaPromptModel.nameBlankModels()" in app)
 for f in ("MaProofread", "MaFlow", "MaSpellcheck"):

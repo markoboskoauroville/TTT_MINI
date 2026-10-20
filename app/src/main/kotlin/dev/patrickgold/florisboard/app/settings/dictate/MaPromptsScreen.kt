@@ -100,8 +100,8 @@ fun MaPromptsScreen() = FlorisScreen {
 
         Text(
             text = "Ctrl+P and Ctrl+F each send an instruction to the rewording model. Keep as " +
-                "many wordings as you like and tick the one in force. Default is the instruction " +
-                "built into the app \u2014 it cannot be edited, only duplicated.",
+                "many wordings as you like and tick the one in force. The one marked built in " +
+                "cannot be edited, only duplicated.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -139,6 +139,7 @@ fun MaPromptsScreen() = FlorisScreen {
         }
         PromptCategory(
             title = "Style wording",
+            builtInName = MaPhoneStyle.NAME,
             pref = prefs.dictate.maPhoneStylePrompt,
             shipped = MaPhoneStyle.INSTRUCTION,
             modelPref = prefs.dictate.maPhoneStyleModel,
@@ -148,6 +149,7 @@ fun MaPromptsScreen() = FlorisScreen {
 
         PromptCategory(
             title = "Ctrl + P \u2014 Proofread",
+            builtInName = MaProofread.NAME,
             pref = prefs.dictate.maProofreadPrompt,
             shipped = MaProofread.INSTRUCTION,
             modelPref = prefs.dictate.maProofreadModel,
@@ -157,6 +159,7 @@ fun MaPromptsScreen() = FlorisScreen {
 
         PromptCategory(
             title = "Ctrl + F \u2014 Better flow",
+            builtInName = MaFlow.NAME,
             pref = prefs.dictate.maFlowPrompt,
             shipped = MaFlow.INSTRUCTION,
             modelPref = prefs.dictate.maFlowModel,
@@ -191,6 +194,7 @@ fun MaPromptsScreen() = FlorisScreen {
         }
         PromptCategory(
             title = "Spell check wording",
+            builtInName = MaSpellcheck.NAME,
             pref = prefs.dictate.maSpellcheckPrompt,
             shipped = MaSpellcheck.INSTRUCTION,
             modelPref = prefs.dictate.maSpellcheckModel,
@@ -237,6 +241,8 @@ fun MaPromptsScreen() = FlorisScreen {
 @Composable
 private fun PromptCategory(
     title: String,
+    /** What the built-in wording is called on screen: the prompt's own name, never "Default". */
+    builtInName: String,
     pref: PreferenceData<String>,
     shipped: String,
     /** Which model this prompt runs on, always by name (MaPromptModel). */
@@ -281,7 +287,7 @@ private fun PromptCategory(
             Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = inst.name,
+                        text = MaPrompts.displayName(inst.name, builtInName),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
                     )
@@ -303,7 +309,7 @@ private fun PromptCategory(
             }
             IconButton(
                 onClick = {
-                    val name = MaPrompts.freeName(set.instances, inst.name)
+                    val name = MaPrompts.freeName(set.instances, MaPrompts.displayName(inst.name, builtInName))
                     val copy = MaPrompts.Instance(name, shown)
                     // The copy is added and opened, but NOT made active. Duplicating is the start of
                     // an experiment, and a key that changed what it does the moment you pressed
@@ -336,7 +342,7 @@ private fun PromptCategory(
 
     TextButton(
         onClick = {
-            val name = MaPrompts.freeName(set.instances, MaPrompts.DEFAULT_NAME)
+            val name = MaPrompts.freeName(set.instances, builtInName)
             val copy = MaPrompts.Instance(name, shipped)
             save(set.copy(instances = set.instances + copy))
             editing = copy
@@ -363,11 +369,12 @@ private fun PromptCategory(
     editing?.let { inst ->
         PromptEditor(
             instance = inst,
+            builtInName = builtInName,
             shipped = shipped,
             existing = set.instances,
             onDismiss = { editing = null },
             onDuplicate = {
-                val name = MaPrompts.freeName(set.instances, inst.name)
+                val name = MaPrompts.freeName(set.instances, MaPrompts.displayName(inst.name, builtInName))
                 val copy = MaPrompts.Instance(name, inst.text.ifBlank { shipped })
                 save(set.copy(instances = set.instances + copy))
                 editing = copy
@@ -389,7 +396,7 @@ private fun PromptCategory(
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
             title = { Text("Delete ${inst.name}?") },
-            text = { Text("The wording goes with it. Default cannot be deleted, so the key always has something to send.") },
+            text = { Text("The wording goes with it. The built-in wording cannot be deleted, so the key always has something to send.") },
             confirmButton = {
                 TextButton(onClick = {
                     val instances = set.instances.filterNot { it.name == inst.name }
@@ -418,13 +425,14 @@ private fun PromptCategory(
 @Composable
 private fun PromptEditor(
     instance: MaPrompts.Instance,
+    builtInName: String,
     shipped: String,
     existing: List<MaPrompts.Instance>,
     onDismiss: () -> Unit,
     onDuplicate: () -> Unit,
     onSave: (String, String) -> Unit,
 ) {
-    var name by remember(instance.name) { mutableStateOf(instance.name) }
+    var name by remember(instance.name) { mutableStateOf(MaPrompts.displayName(instance.name, builtInName)) }
     var text by remember(instance.name) { mutableStateOf(instance.text.ifBlank { shipped }) }
 
     val clash = !instance.locked &&
@@ -434,7 +442,7 @@ private fun PromptEditor(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(instance.name) },
+        title = { Text(MaPrompts.displayName(instance.name, builtInName)) },
         text = {
             Column {
                 if (instance.locked) {
@@ -602,8 +610,6 @@ private fun SentToClaudeSection() {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
     )
-
-    ClaudeTierChooser()
 
     LanguageRuleRow(
         name = "Language line",
@@ -814,38 +820,54 @@ private fun ModelChooser(pref: PreferenceData<String>) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val stored by pref.collectAsState()
-    val current = MaPromptModel.effective(stored)
+    val current = MaPromptModel.effective(stored).trim()
     LaunchedEffect(stored) {
         if (stored.isBlank()) pref.set(current)
     }
-    val options = listOf(
-        MaClaudeModels.alias("haiku") to "Haiku",
-        MaClaudeModels.alias("sonnet") to "Sonnet",
-        MaClaudeModels.alias("opus") to "Opus",
-    ) + MaPhoneModels.all.map { it.choice to "Phone: ${it.name.substringBefore(" Instruct")}" }
+    // ONE RADIO BUTTON PER MODEL, EACH WITH THE MODEL'S OWN NAME (Marko, 20.10.2026: "I need the
+    // radio button with the exact name of the model. That's all."). Bold text on a row of buttons
+    // was too faint to see which one was chosen, and "Haiku" is a family, not a model.
+    //
+    // A Claude row names the model its tier resolves to now ("Claude Haiku 5.5"); the stored choice
+    // is still the tier, so the next Haiku takes its place by itself and the name here follows.
+    val cached = MaProviders.rewordingAccount().cachedModels
+    val options: List<Pair<String, String>> = listOf("haiku", "sonnet", "opus").map { tier ->
+        val alias = MaClaudeModels.alias(tier)
+        alias to MaClaudeModels.displayName(MaClaudeModels.resolve(alias, cached))
+    } + MaPhoneModels.all.map { m ->
+        val state = if (MaPhoneModels.isInstalled(context, m)) "on this phone" else "on this phone, not downloaded"
+        m.choice to "${m.name} ($state)"
+    }
+    val known = options.any { it.first == current }
     Text(
-        text = "Model:",
+        text = "Model",
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = 16.dp, top = 4.dp),
     )
-    FlowRow(modifier = Modifier.padding(start = 8.dp)) {
-        for ((value, label) in options) {
-            TextButton(onClick = { scope.launch { pref.set(value) } }) {
-                Text(
-                    text = label,
-                    fontWeight = if (current.trim() == value) FontWeight.Bold else FontWeight.Normal,
-                )
-            }
+    val rows = if (known) options else options + (current to MaClaudeModels.displayName(current))
+    for ((value, label) in rows) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { scope.launch { pref.set(value) } }
+                .padding(start = 4.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RadioButton(
+                selected = current == value,
+                onClick = { scope.launch { pref.set(value) } },
+            )
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
         }
     }
     val phone = MaPhoneModels.byChoice(current)
-    val missing = phone != null && !MaPhoneModels.isInstalled(context, phone)
-    Text(
-        text = "In use: " + MaPromptModel.describe(context, current) +
-            if (missing) ". Download it above, or this prompt does nothing." else "",
-        style = MaterialTheme.typography.labelSmall,
-        color = if (missing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp),
-    )
+    if (phone != null && !MaPhoneModels.isInstalled(context, phone)) {
+        Text(
+            text = "${phone.name} is not downloaded: download it above, or this prompt does nothing.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+    }
 }

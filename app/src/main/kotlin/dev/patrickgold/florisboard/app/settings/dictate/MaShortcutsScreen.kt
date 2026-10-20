@@ -210,7 +210,7 @@ private fun PromptShortcut(
             // a line of text that is almost always the same, which is a line the eye stops reading.
             if (!active.locked) {
                 Text(
-                    text = active.name,
+                    text = MaPrompts.displayName(active.name, name),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )

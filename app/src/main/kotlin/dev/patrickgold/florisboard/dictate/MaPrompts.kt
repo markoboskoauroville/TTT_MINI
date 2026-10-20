@@ -134,6 +134,18 @@ object MaPrompts {
         return JSONObject().put("active", set.activeName).put("instances", arr).toString()
     }
 
+    /**
+     * The name shown for [name]: the built-in wording is called after its prompt ([builtIn], e.g.
+     * "Proofread"), never "Default" — he asked for that word to go everywhere. Copies made before
+     * this ("Default copy 2") read as "Proofread copy 2". The stored name is unchanged, so nothing
+     * has to be migrated and the checkmark stays where it was.
+     */
+    fun displayName(name: String, builtIn: String): String = when {
+        name == DEFAULT_NAME -> builtIn
+        name.startsWith("$DEFAULT_NAME ") -> builtIn + name.removePrefix(DEFAULT_NAME)
+        else -> name
+    }
+
     /** The wording in force in a stored value, or empty for the shipped one. */
     fun activeText(raw: String): String = parse(raw).activeText
 
