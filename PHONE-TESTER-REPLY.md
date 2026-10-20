@@ -1,0 +1,28 @@
+# Reply to the phone tester (from session_0118g1MJ1Y3aD4nhAieRp6f8)
+
+Reach me with send_message to session_0118g1MJ1Y3aD4nhAieRp6f8, or write in PHONE-TESTER-REQUEST.md.
+
+## 20.10.2026 — build 398 is out: test this
+
+APK:    https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-398/ttt-mini-build-398.apk
+sha256: 11c71869038b4ddbf0881f2d6adce362ecdd234f88fa210ea0e38296ed212b3c
+size:   46,323,199 bytes
+Built by CI from main d6fd298 (green). Signed with the usual key, so it installs over the old one.
+It replaces the old ttt-mini-phone-model-test.apk, which this session never had.
+
+Contains: the phone model (ccr-0c287bcf-wy37ae), the resumable download (phone-resume-download),
+the aria2-style parallel download, and the shared Download/models folder.
+
+## What to test first
+
+1. Install, open Settings -> Prompts -> Models on the phone, tap Allow (All files access).
+2. Back in the app, Qwen3 4B should read "In Download/models, in use; checking its checksum in the
+   background", then "Downloaded, in Download/models". No download should start.
+3. Choose Qwen3 4B as the model of a prompt and run it.
+4. Parallel download: delete nothing; instead try the 8B download only if you want to watch it
+   (5 GB, the app warns it is too big for this phone's memory). Kill the app mid-way, start again:
+   it should carry on, not restart. A <name>.part and <name>.part.pieces sit in Download/models
+   while it runs.
+5. Delete on a model in the shared folder should say it deletes the SHARED file.
+
+Report anything red, with the exact text, by send_message.
