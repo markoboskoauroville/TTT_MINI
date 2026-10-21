@@ -34,3 +34,15 @@ Installed over 1385 with `install -r`; the sha256 matched cf8b6f2b…4384b; vers
 
 Total spent: one Haiku request; about 24 MB of model download.
 By mistake, one tap opened "Clear history?" on the History screen. I pressed Cancel and his history is untouched.
+
+## REPORT, build 405 (21.10.2026, 18:05–18:10)
+
+Installed over 1403 with `install -r`; the sha256 matched 0aad3bf5…a747; versionCode now 1405. Tapping the new icon opens settings, headed "TTT mini 405".
+
+**Pixel 7, build 405: 6 pass, 1 fail, 2 blocked** (items 1–8 carried over from build 403: 405 changes only the icon, so I did not run them again)
+
+9. PASS for what this phone can show. The new icon in the app drawer (grid and search) matches exactly: a dark round ground, red A, gold B and cyan C on dark keys, a violet mic key and a green space bar below them, "v405" in light seven-segment digits.
+   - The launcher on this Pixel is **Nova Launcher**, not the Pixel launcher. Force-stopping nexuslauncher does not apply, and no cache was needed: the new icon appeared at once.
+   - Home screen: TTT mini is not on his home screen. I did not add it, so his layout stays as it is.
+   - Themed icon: NOT TESTABLE here. Nova draws the full-colour icon, and Android's Themed icons setting does not reach it (the grid_control provider refused adb).
+   - Notification icon while recording: BLOCKED. Recording needs Marko at the mic; I'll ask him and add it here.
