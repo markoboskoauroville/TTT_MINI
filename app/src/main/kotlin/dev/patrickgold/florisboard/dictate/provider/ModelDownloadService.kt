@@ -111,7 +111,7 @@ class ModelDownloadService : Service() {
         )
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_app_icon_monochrome)
+            .setSmallIcon(R.drawable.ic_notification_mic)
             .setContentTitle(title)
             .setContentText("$percent%")
             .setOngoing(true)

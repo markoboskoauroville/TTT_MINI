@@ -125,7 +125,7 @@ class MaRecordingService : Service() {
         return builder
             .setContentTitle(getString(R.string.app_name_full))
             .setContentText("Recording. This continues while you are in other apps.")
-            .setSmallIcon(R.drawable.ic_app_icon_monochrome)
+            .setSmallIcon(R.drawable.ic_notification_mic)
             .setOngoing(true)
             .setContentIntent(open)
             .addAction(

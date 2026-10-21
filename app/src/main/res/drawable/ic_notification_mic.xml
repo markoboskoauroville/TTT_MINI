@@ -1,9 +1,10 @@
 <!--
-  Monochrome layer for themed launcher icons (Android 13+) and the small notification icon.
+  The small notification icon (recording, model download). The themed launcher icon is generated
+  from design/make_app_icon.py.
 
   A plain microphone in the standard Material shape, which the system tints itself, so only the
   alpha of the path matters. Notification icons must be a simple single-colour vector, which is why
-  this stays a vector rather than reusing the Om mark drawn for the launcher foreground.
+  this stays a vector rather than reusing the keyboard drawn for the launcher icon.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"

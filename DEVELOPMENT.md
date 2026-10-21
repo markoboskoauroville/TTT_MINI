@@ -10910,3 +10910,19 @@ and dialogs that adjust them underneath, in the same order:
   top of the Learn my words screen.
 
 `scripts/test_switches_first.py` (68 checks) pins each of these orders.
+
+## §221 — The icon is the keyboard, lit
+
+Marko, 21.10.2026, with a screenshot of the keyboard: the app icon in the Mantra Shruti Box style,
+"instead of buttons of the Shruti box, there will be buttons of this keyboard … each button has
+different color … glowing nice style".
+
+- Dark keycaps on black; each legend lit in its own colour inside a halo, as the Shruti valves
+  glow and as Settings → Key colours lights the letters (G815): three T keys (red, gold, cyan) over
+  a violet microphone and a green space bar.
+- One source: `design/make_app_icon.py` writes the vector templates in `app/src/main/icon/` and an
+  SVG preview (`design/app_icon.svg`). Keycaps span 42 of the 72 mask (0.583, app-icon.md).
+- The build number is drawn under the keys (version-visible.md): `app/build.gradle.kts` writes the
+  real drawables into `build/generated/versionIcon` with `vN`, N = versionCode − 1000 = build-N.
+- The themed icon is the same keys in outline with filled legends. The notification icon stays the
+  plain microphone, now `ic_notification_mic`. The old bitmap foregrounds are gone.

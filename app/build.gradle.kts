@@ -42,6 +42,57 @@ val projectVersionNameSuffix = projectVersionName.substringAfter("-", "").let { 
     }
 }
 
+// THE BUILD NUMBER IN THE ICON (version-visible.md, as in MANTRA_SHRUTI_BOX): a vector drawable has no text, so
+// the number is drawn as seven-segment strokes under the keys. CI builds with versionCode 1000 + N, so N is the
+// number of the release (build-N). The templates are src/main/icon, written by design/make_app_icon.py, which
+// draws the same digits in its preview; the icon the app ships, and its themed twin, are generated here.
+val versionIconDir = layout.buildDirectory.dir("generated/versionIcon").get().asFile
+run {
+    val segments = mapOf(
+        'a' to "M0,0 H5", 'b' to "M5,0 V5", 'c' to "M5,5 V10", 'd' to "M0,10 H5",
+        'e' to "M0,5 V10", 'f' to "M0,0 V5", 'g' to "M0,5 H5"
+    )
+    val digits = mapOf(
+        '0' to "abcdef", '1' to "bc", '2' to "abged", '3' to "abgcd", '4' to "fgbc",
+        '5' to "afgcd", '6' to "afgedc", '7' to "abc", '8' to "abcdefg", '9' to "abcdfg"
+    )
+    val code = projectVersionCode.trim().toInt()
+    val text = "v" + (if (code > 1000) code - 1000 else code)
+    val scale = 0.85
+    val cell = 5.0
+    val gap = 2.2
+    val width = (text.length * cell + (text.length - 1) * gap) * scale
+    val left = 54.0 - width / 2
+    val top = 64.6
+    val paths = StringBuilder()
+    text.forEachIndexed { i, ch ->
+        val x = left + i * (cell + gap) * scale
+        val data = if (ch == 'v') "M0,4 L2.5,10 L5,4"
+            else digits[ch].orEmpty().map { segments.getValue(it) }.joinToString(" ")
+        val moved = Regex("([MLHV])([-0-9.]+)(,([-0-9.]+))?").replace(data) { m ->
+            val cmd = m.groupValues[1]
+            val a = m.groupValues[2].toDouble() * scale
+            val b = m.groupValues[4].takeIf { it.isNotEmpty() }?.toDouble()?.times(scale)
+            // Rounded by hand: a Double prints with a dot in every locale.
+            fun n(v: Double) = (Math.round(v * 100) / 100.0).toString()
+            when (cmd) {
+                "H" -> "H" + n(a + x)
+                "V" -> "V" + n(a + top)
+                else -> cmd + n(a + x) + "," + n((b ?: 0.0) + top)
+            }
+        }
+        paths.append("    <path android:strokeColor=\"#C9D1D9\" android:strokeWidth=\"1.5\" ")
+            .append("android:strokeLineCap=\"round\" android:strokeLineJoin=\"round\" ")
+            .append("android:pathData=\"").append(moved).append("\" />\n")
+    }
+    for (name in listOf("ic_app_icon_foreground", "ic_app_icon_monochrome")) {
+        val template = file("src/main/icon/$name.xml").readText()
+        val out = File(versionIconDir, "drawable/$name.xml")
+        out.parentFile.mkdirs()
+        out.writeText(template.replace("    <!--VERSION-->\n", "    <!-- v${text.drop(1)}, generated -->\n$paths"))
+    }
+}
+
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
@@ -107,6 +158,7 @@ configure<ApplicationExtension> {
         sourceSets {
             maybeCreate("main").apply {
                 assets.directories += "src/main/assets"
+                res.directories += versionIconDir.path
             }
         }
     }
