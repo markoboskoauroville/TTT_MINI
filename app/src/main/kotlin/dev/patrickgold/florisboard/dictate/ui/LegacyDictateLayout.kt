@@ -483,11 +483,12 @@ internal fun ThemedKey(
     // HIS COLOUR FOR THIS KEY (MaKeyColors), provided by the row through LocalMaKeyPaint. The label
     // follows by contrast and a press darkens the same hue. State colours a key draws itself — lit,
     // recording, the bucket ring — are drawn on top and still say what they always said.
+    // HIS COLOUR FOR THIS KEY'S LEGEND (MaKeyColors), provided by the row through LocalMaKeyPaint:
+    // the label and icon are lit, the key keeps the theme's colour, as on the G815. State colours a
+    // key draws itself (lit, recording, the bucket ring) are its own and still say what they said.
     val paint = LocalMaKeyPaint.current
-    val bg = paint?.let { Color(if (pressed) MaKeyColors.pressed(it) else it) }
-        ?: style.background(default = Color.White.copy(alpha = 0.08f))
-    val fg = paint?.let { if (MaKeyColors.wantsDarkText(it)) Color(0xFF111111) else Color.White }
-        ?: style.foreground(default = Color.White)
+    val bg = style.background(default = Color.White.copy(alpha = 0.08f))
+    val fg = paint?.let { Color(it) } ?: style.foreground(default = Color.White)
     Box(
         modifier = modifier
             .padding(horizontal = KeyMarginH, vertical = KeyMarginV)

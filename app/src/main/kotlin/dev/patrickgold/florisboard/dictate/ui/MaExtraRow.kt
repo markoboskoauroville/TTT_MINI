@@ -291,10 +291,10 @@ private fun MaRowKeyButton(
             FlorisImeUi.Attr.ShiftState to InputShiftState.UNSHIFTED.toString(),
         ),
     )
-    // His colour for this place on the row (MaKeyColors), with text that stays readable on it.
-    val background = paint?.let { Color(it) } ?: style.background(default = Color.White.copy(alpha = 0.08f))
-    val foreground = paint?.let { if (MaKeyColors.wantsDarkText(it)) Color(0xFF111111) else Color.White }
-        ?: style.foreground(default = Color.White)
+    // His colour for this place on the row (MaKeyColors) lights the digit, its corner mark and the
+    // command under it; the key itself keeps the theme's colour, as on the G815.
+    val background = style.background(default = Color.White.copy(alpha = 0.08f))
+    val foreground = paint?.let { Color(it) } ?: style.foreground(default = Color.White)
     // The whole command, small, under the digit: what the hold will type, read before holding.
     val preview = key.secondary?.let { MaNumericSecondary.preview(it) }
     val feedback = LocalInputFeedbackController.current

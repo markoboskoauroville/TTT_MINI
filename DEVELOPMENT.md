@@ -10873,3 +10873,16 @@ models on the phone, then each prompt's wording and model in the order of the sw
 spell check, Ctrl+P, Ctrl+F). `test_spellcheck_costs.py` fails the build if a switch moves below
 a model or wording list. Also in build 399's follow-up: radio buttons with exact model names and no
 "Default" anywhere (§192 follow-up, commit cda6161).
+
+---
+
+# §194 — Key colours light the letter, not the key
+
+Marko, 21.10.2026: "you understand me wrongly when I say color the buttons, I meant color the
+letters itself. So each letter and each symbol have its own color, similar as … Logitech G815."
+§189 painted the keycap. Now the keycap keeps the theme's colour everywhere (letters, number row,
+feature rows) and the colour lights the legend: the letter, symbol or icon, the corner mark and the
+command under a number-row digit. The palette is bright (each colour has a channel of at least 128)
+because it lights a letter on a dark key; the G815 itself shows nothing below about 45 of 255
+(MANTRA_MANIFEST `logitech-g815.md`). Settings → Key colours draws dark keycaps with lit letters,
+as the keyboard will. Stored colours are unchanged; a dim colour chosen before still works.

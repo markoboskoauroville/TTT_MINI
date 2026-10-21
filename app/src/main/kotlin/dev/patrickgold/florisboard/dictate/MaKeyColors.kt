@@ -14,7 +14,8 @@ import java.lang.Character
 import kotlin.collections.LinkedHashMap
 
 /**
- * A colour per key, like the Logitech G815: every key can wear its own.
+ * A colour per key's LETTER, like the Logitech G815: every letter and symbol lit in its own colour,
+ * the keycap left as the theme draws it (Marko, 21.10.2026: "color the letters itself").
  *
  * His ask (12.10.2026): all the keys on one grid in settings, tap one, give it a colour. The point
  * is finding things — the macro digits, the keys he reaches for most — by colour before reading.
@@ -40,26 +41,27 @@ object MaKeyColors {
     data class Swatch(val name: String, val argb: Int)
 
     /**
-     * The picker: G815-style saturated colours that stay readable with light and dark text, plus a
-     * few muted ones for keys that should be quietly marked rather than shout.
+     * The picker: bright colours, because they light a LETTER on a dark key, as the G815's LEDs do.
+     * A dim colour on a dark keycap is a letter he cannot read (the G815 itself shows nothing below
+     * about 45 of 255 per channel; MANTRA_MANIFEST logitech-g815.md). Sand is the Mantra ink.
      */
     val PALETTE: List<Swatch> = listOf(
-        Swatch("Red", 0xFFC0392B.toInt()),
-        Swatch("Orange", 0xFFE67E22.toInt()),
-        Swatch("Amber", 0xFFF1C40F.toInt()),
-        Swatch("Lime", 0xFF7CB342.toInt()),
-        Swatch("Green", 0xFF27AE60.toInt()),
-        Swatch("Teal", 0xFF16A085.toInt()),
-        Swatch("Cyan", 0xFF00ACC1.toInt()),
-        Swatch("Blue", 0xFF2E86DE.toInt()),
-        Swatch("Indigo", 0xFF3F51B5.toInt()),
-        Swatch("Violet", 0xFF8E44AD.toInt()),
-        Swatch("Magenta", 0xFFD81B60.toInt()),
-        Swatch("Pink", 0xFFF06292.toInt()),
-        Swatch("White", 0xFFECEFF1.toInt()),
-        Swatch("Grey", 0xFF78909C.toInt()),
-        Swatch("Brown", 0xFF795548.toInt()),
-        Swatch("Rust", 0xFF9B3B33.toInt()),
+        Swatch("Red", 0xFFFF5252.toInt()),
+        Swatch("Orange", 0xFFFF9100.toInt()),
+        Swatch("Amber", 0xFFFFD600.toInt()),
+        Swatch("Lime", 0xFFC6FF00.toInt()),
+        Swatch("Green", 0xFF00E676.toInt()),
+        Swatch("Teal", 0xFF1DE9B6.toInt()),
+        Swatch("Cyan", 0xFF00E5FF.toInt()),
+        Swatch("Blue", 0xFF448AFF.toInt()),
+        Swatch("Indigo", 0xFF8C9EFF.toInt()),
+        Swatch("Violet", 0xFFE040FB.toInt()),
+        Swatch("Magenta", 0xFFFF4081.toInt()),
+        Swatch("Pink", 0xFFFF80AB.toInt()),
+        Swatch("White", 0xFFFFFFFF.toInt()),
+        Swatch("Grey", 0xFFB0BEC5.toInt()),
+        Swatch("Sand", 0xFFF2DDB4.toInt()),
+        Swatch("Coral", 0xFFFF7043.toInt()),
     )
 
     /** The id of a main keyboard key from its code. Letters fold to lower case. */

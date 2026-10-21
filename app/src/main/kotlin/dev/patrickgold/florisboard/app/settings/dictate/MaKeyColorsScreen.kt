@@ -124,8 +124,8 @@ fun MaKeyColorsScreen() = FlorisScreen {
         }
 
         Text(
-            text = "Choose a colour, then tap keys to paint them. Tap a key again to clear it. " +
-                "Keys you leave alone keep the theme's colour.",
+            text = "Choose a colour, then tap keys: each letter or symbol lights in its colour, as " +
+                "on the G815. Tap a key again to clear it. Keys you leave alone keep the theme's colour.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -285,6 +285,12 @@ fun MaKeyColorsScreen() = FlorisScreen {
     }
 }
 
+/** The keycap on the grid: dark, like the keyboard's, so a lit letter reads as it will there. */
+private val KEYCAP = Color(0xFF1E2228)
+
+/** A letter with no colour of its own. */
+private val UNLIT = Color(0xFFD8D8D8)
+
 /** One key on the grid: its face, its colour if it has one, and the macro under a digit. */
 @Composable
 private fun GridKey(
@@ -295,12 +301,9 @@ private fun GridKey(
     modifier: Modifier,
     onTap: () -> Unit,
 ) {
-    val background = paint?.let { Color(it) } ?: MaterialTheme.colorScheme.surfaceVariant
-    val foreground = when {
-        paint == null -> MaterialTheme.colorScheme.onSurfaceVariant
-        MaKeyColors.wantsDarkText(paint) -> Color(0xFF111111)
-        else -> Color.White
-    }
+    // A dark keycap with the letter lit, as the keyboard and the G815 show it.
+    val background = KEYCAP
+    val foreground = paint?.let { Color(it) } ?: UNLIT
     Box(
         modifier = modifier
             .padding(2.dp)
@@ -345,12 +348,9 @@ private fun FeatureGridKey(
     modifier: Modifier,
     onTap: () -> Unit,
 ) {
-    val background = paint?.let { Color(it) } ?: MaterialTheme.colorScheme.surfaceVariant
-    val foreground = when {
-        paint == null -> MaterialTheme.colorScheme.onSurfaceVariant
-        MaKeyColors.wantsDarkText(paint) -> Color(0xFF111111)
-        else -> Color.White
-    }
+    // A dark keycap with the letter lit, as the keyboard and the G815 show it.
+    val background = KEYCAP
+    val foreground = paint?.let { Color(it) } ?: UNLIT
     Box(
         modifier = modifier
             .padding(2.dp)

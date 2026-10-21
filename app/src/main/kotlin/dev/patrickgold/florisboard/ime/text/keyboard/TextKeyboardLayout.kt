@@ -385,14 +385,13 @@ private fun TextKeyButton(
     val size = remember(key, desiredKey) {
         key.visibleBounds.size.toDpSize()
     }
-    // HIS COLOUR FOR THIS KEY, G815 style (MaKeyColors). Null leaves the theme's colour alone. The
-    // label and icon follow the colour so the face stays readable, and a press darkens the same
-    // hue rather than snapping back to the theme's pressed colour.
+    // HIS COLOUR FOR THIS KEY'S LETTER, G815 style (MaKeyColors). The keycap keeps the theme's
+    // colour and the legend is lit, as on his Logitech G815, where the light shines through the
+    // letter (Marko, 21.10.2026: "color the letters itself", not the key). Null leaves the legend
+    // the theme's colour.
     val maKeyColorsRaw by maPrefs.dictate.maKeyColors.collectAsState()
     val maKeyColors = remember(maKeyColorsRaw) { MaKeyColors.parse(maKeyColorsRaw) }
-    val maPainted = maKeyColors[MaKeyColors.idForCode(key.computedData.code)]
-    val maBackground = maPainted?.let { Color(if (key.isPressed) MaKeyColors.pressed(it) else it) }
-    val maForeground = maPainted?.let { if (MaKeyColors.wantsDarkText(it)) Color(0xFF111111) else Color.White }
+    val maForeground = maKeyColors[MaKeyColors.idForCode(key.computedData.code)]?.let { Color(it) }
     SnyggBox(
         FlorisImeUi.Key.elementName,
         attributes = attributes,
@@ -400,7 +399,6 @@ private fun TextKeyButton(
         modifier = Modifier
             .requiredSize(size)
             .absoluteOffset { key.visibleBounds.topLeft.toIntOffset() },
-        backgroundOverride = maBackground,
     ) {
         val isTelPadKey = key.computedData.type == KeyType.NUMERIC && evaluator.keyboard.mode == KeyboardMode.PHONE
         key.label?.let { label ->

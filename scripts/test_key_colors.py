@@ -53,8 +53,10 @@ check("the number row is by position", 'fun idForNumberRow(index: Int): String =
       "a colour on a label would jump when the set changes")
 check("a bad entry is skipped, never thrown", "?: continue" in kc)
 check("sixteen swatches", kc.count("Swatch(\"") == 16)
-check("text picks the better contrast", "(l + 0.05) / 0.05 > 1.05 / (l + 0.05)" in kc,
-      "a label the colour swallows is a key he cannot read")
+check("the palette is bright enough to light a letter on a dark key",
+      all(int(h[0:2], 16) >= 0x80 or int(h[2:4], 16) >= 0x80 or int(h[4:6], 16) >= 0x80
+          for h in re.findall(r'Swatch\("[A-Za-z]+", 0xFF([0-9A-Fa-f]{6})', kc)),
+      "a dim colour on a dark keycap is a letter he cannot read")
 
 # ---------------------------------------------------------------- the keyboard draws it
 check("SnyggBox takes a background override", "backgroundOverride: Color? = null" in box)
@@ -62,16 +64,21 @@ check("drawn inside the margin and the shape", "Modifier.background(backgroundOv
 check("text colour can follow", "colorOverride ?: style.foreground()" in text)
 check("icon tint can follow", "tintOverride ?: style.foreground()" in icon)
 check("main keys read the colours", "MaKeyColors.idForCode(key.computedData.code)" in tkl)
-check("main keys pass the background", "backgroundOverride = maBackground" in tkl)
+# G815: the LETTER is lit, the keycap keeps the theme (Marko, 21.10.2026: "color the letters itself").
+check("main keys keep the theme's keycap", "backgroundOverride" not in tkl)
+check("main keys light the legend", "val maForeground = maKeyColors[MaKeyColors.idForCode(key.computedData.code)]?.let { Color(it) }" in tkl)
 check("labels follow", tkl.count("colorOverride = maForeground") >= 2)
 check("icons follow", "tintOverride = maForeground" in tkl)
-check("a press still shows", "MaKeyColors.pressed(it)" in tkl)
+check("number row keeps the theme's keycap", "val background = style.background(" in row
+      and "val foreground = paint?.let { Color(it) }" in row)
 check("number row reads the colours", "colors[MaKeyColors.idForNumberRow(index)]" in row)
 
 # ---------------------------------------------------------------- the feature rows
 fr = code(APP / "dictate/ui/MaFeatureRow.kt")
 legacy = code(APP / "dictate/ui/LegacyDictateLayout.kt")
 check("ThemedKey reads the paint", "val paint = LocalMaKeyPaint.current" in legacy)
+check("feature keys light the legend, not the key", "val fg = paint?.let { Color(it) }" in legacy
+      and "val bg = style.background(" in legacy)
 check("ThemedKey keeps its OptIn", "@OptIn(ExperimentalFoundationApi::class)\n@Composable\ninternal fun ThemedKey(" in legacy,
       "the paint declaration must not sit between the annotation and the function")
 check("every feature key is wrapped", "LocalMaKeyPaint provides maKeyColors[MaKeyColors.idForFeature(maFeatureToken(button))]" in fr)
