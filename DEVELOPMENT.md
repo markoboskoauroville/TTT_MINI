@@ -10858,3 +10858,18 @@ Delete says it deletes the shared file.
 
 The Android SDK, NDK 29 and CMake 3.31.6 were installed in the sandbox and the whole app, llama.cpp
 included, was built with Gradle before anything was pushed.
+
+---
+
+# §193 — Switches first, models and wordings under them
+
+Marko, 21.10.2026, on build 399's Prompts screen: "Croatian spell check" and "Style after every
+dictation" sat below lists of models. "These switches which are basically disabling and enabling
+options should be at the top … What is global should be up." Written into MANTRA_MANIFEST as
+`mantra-design-language.md` §1.9, for every settings screen of every app.
+
+Here: both switches in one block at the top of Settings → Prompts (`FeatureSwitch`), then the
+models on the phone, then each prompt's wording and model in the order of the switches (style,
+spell check, Ctrl+P, Ctrl+F). `test_spellcheck_costs.py` fails the build if a switch moves below
+a model or wording list. Also in build 399's follow-up: radio buttons with exact model names and no
+"Default" anywhere (§192 follow-up, commit cda6161).

@@ -67,6 +67,16 @@ check("the override only for Anthropic", "modelOverride != null && account.provi
 check("each prompt has a chooser", prompts.count("modelPref = prefs.dictate.") == 4)
 check("spell check wording is editable", "pref = prefs.dictate.maSpellcheckPrompt" in prompts)
 
+# ---------------------------------------------------------------- switches first (Mantra §1.9)
+# Marko, 21.10.2026: on/off switches at the top of every settings screen, fine adjustments under.
+_first_switch = prompts.find("FeatureSwitch(")
+_first_detail = min(i for i in (prompts.find("MaPhoneModelSection()"), prompts.find("PromptCategory(\n")) if i >= 0)
+check("the switches come before any model or wording", 0 <= _first_switch < _first_detail,
+      "a switch buried under lists of models (build 399)")
+check("both switches are in the top block", prompts.count("FeatureSwitch(\n") == 2
+      and prompts.find("pref = prefs.dictate.maSpellcheckEnabled") < _first_detail
+      and prompts.find("pref = prefs.dictate.maPhoneStyleEnabled") < _first_detail)
+
 # ---------------------------------------------------------------- costs
 check("every answer reports its usage", "claudeUsageListener?.invoke(" in client)
 check("the app records it", "MaClaudeCost.record(model, input, output)" in app)

@@ -201,3 +201,4 @@ since been removed.
 - **§190** — Croatian spell check, a model per prompt, and what Claude costs
 - **§191** — The Mac's style model on the phone, and no more "Default"
 - **§192** — aria2 inside the app, and one copy of each model in Download/models
+- **§193** — Switches first, models and wordings under them

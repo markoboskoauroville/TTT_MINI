@@ -98,51 +98,57 @@ fun MaPromptsScreen() = FlorisScreen {
     content {
         val prefs by FlorisPreferenceStore
 
+        // THE SWITCHES FIRST, the fine adjustments under them (MANTRA_MANIFEST
+        // mantra-design-language.md §1.9, Marko 21.10.2026): "these switches which are basically
+        // disabling and enabling options should be at the top for quick access … What is global
+        // should be up." Both were found below lists of models in build 399. Their wordings and
+        // models follow further down, in the same order as the switches.
+        FeatureSwitch(
+            title = "Style after every dictation",
+            summary = "The Mac's rules, word for word: fixes misheard words, spelling and " +
+                "punctuation, removes repetitions and filler, keeps every fact. Croatian and " +
+                "English. When it has run, the Croatian spell check is not sent too.",
+            pref = prefs.dictate.maPhoneStyleEnabled,
+        )
+        FeatureSwitch(
+            title = "Croatian spell check",
+            summary = "After every Croatian dictation, before it is typed: puts back words the " +
+                "transcription invented or misheard, and fixes Croatian spelling. English " +
+                "dictations are left alone.",
+            pref = prefs.dictate.maSpellcheckEnabled,
+        )
+
+        Spacer(Modifier.height(12.dp))
         Text(
-            text = "Ctrl+P and Ctrl+F each send an instruction to the rewording model. Keep as " +
-                "many wordings as you like and tick the one in force. The one marked built in " +
-                "cannot be edited, only duplicated.",
+            text = "Each prompt below keeps as many wordings as you like; tick the one in force. " +
+                "The one marked built in cannot be edited, only duplicated. Its model is the " +
+                "radio button under it.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
 
-        // MODELS ON THE PHONE (§191), first: every prompt below can choose one.
+        // MODELS ON THE PHONE (§191): every prompt below can choose one.
         MaPhoneModelSection()
         Spacer(Modifier.height(20.dp))
 
-        // THE MAC'S STYLE PASS (MaPhoneStyle), after every dictation, before the spell check.
-        val styleOn by prefs.dictate.maPhoneStyleEnabled.collectAsState()
-        val styleScope = rememberCoroutineScope()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { styleScope.launch { prefs.dictate.maPhoneStyleEnabled.set(!styleOn) } }
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Style after every dictation", style = MaterialTheme.typography.titleSmall)
-                Text(
-                    text = "The Mac's rules, word for word: fixes misheard words, spelling and " +
-                        "punctuation, removes repetitions and filler, keeps every fact. Croatian and " +
-                        "English. Runs only when its model is downloaded; when it has run, the Croatian " +
-                        "spell check is not sent too.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(
-                checked = styleOn,
-                onCheckedChange = { on -> styleScope.launch { prefs.dictate.maPhoneStyleEnabled.set(on) } },
-            )
-        }
+        // In the order of the switches above: style, then the spell check, then the two keys.
         PromptCategory(
-            title = "Style wording",
+            title = "Style after every dictation \u2014 wording and model",
             builtInName = MaPhoneStyle.NAME,
             pref = prefs.dictate.maPhoneStylePrompt,
             shipped = MaPhoneStyle.INSTRUCTION,
             modelPref = prefs.dictate.maPhoneStyleModel,
+        )
+
+        Spacer(Modifier.height(20.dp))
+
+        PromptCategory(
+            title = "Croatian spell check \u2014 wording and model",
+            builtInName = MaSpellcheck.NAME,
+            pref = prefs.dictate.maSpellcheckPrompt,
+            shipped = MaSpellcheck.INSTRUCTION,
+            modelPref = prefs.dictate.maSpellcheckModel,
         )
 
         Spacer(Modifier.height(20.dp))
@@ -165,45 +171,10 @@ fun MaPromptsScreen() = FlorisScreen {
             modelPref = prefs.dictate.maFlowModel,
         )
 
-        // THE CROATIAN SPELL CHECK, a third prompt of the same shape. It runs by itself after every
-        // Croatian dictation rather than on a key, so it has a switch as well (MaSpellcheck).
         Spacer(Modifier.height(20.dp))
-        val spellOn by prefs.dictate.maSpellcheckEnabled.collectAsState()
-        val switchScope = rememberCoroutineScope()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { switchScope.launch { prefs.dictate.maSpellcheckEnabled.set(!spellOn) } }
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Croatian spell check", style = MaterialTheme.typography.titleSmall)
-                Text(
-                    text = "After every Croatian dictation, before it is typed: puts back words the " +
-                        "transcription invented or misheard, and fixes Croatian spelling. English " +
-                        "dictations are left alone.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(
-                checked = spellOn,
-                onCheckedChange = { on -> switchScope.launch { prefs.dictate.maSpellcheckEnabled.set(on) } },
-            )
-        }
-        PromptCategory(
-            title = "Spell check wording",
-            builtInName = MaSpellcheck.NAME,
-            pref = prefs.dictate.maSpellcheckPrompt,
-            shipped = MaSpellcheck.INSTRUCTION,
-            modelPref = prefs.dictate.maSpellcheckModel,
-        )
-
         // WHAT IS SENT, WORD FOR WORD. He asked to see the exact message and to change it. The
         // instruction above is only the first of four parts; the other three are shown and, where
         // they belong to this screen, editable here.
-        Spacer(Modifier.height(20.dp))
         SentToClaudeSection()
 
         // GRAMMAR CORRECTION (MANTRA). One voice, stated rather than chosen.
@@ -234,6 +205,33 @@ fun MaPromptsScreen() = FlorisScreen {
         )
 
         Spacer(Modifier.height(28.dp))
+    }
+}
+
+/**
+ * One feature's on/off switch, for the block at the top of the screen (§1.9 of the Mantra design
+ * language): the name, one line on what it does, and the switch. The whole row toggles.
+ */
+@Composable
+private fun FeatureSwitch(title: String, summary: String, pref: PreferenceData<Boolean>) {
+    val on by pref.collectAsState()
+    val scope = rememberCoroutineScope()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { scope.launch { pref.set(!on) } }
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(checked = on, onCheckedChange = { v -> scope.launch { pref.set(v) } })
     }
 }
 
