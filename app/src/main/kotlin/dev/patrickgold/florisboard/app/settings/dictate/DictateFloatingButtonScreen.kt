@@ -160,6 +160,56 @@ fun DictateFloatingButtonScreen() = FlorisScreen {
                 summaryOff = stringRes(R.string.dictate__floating_button_show_with_keyboard_summary_off),
             )
 
+            SwitchPreference(
+                prefs.dictate.floatingButtonSnapToEdge,
+                icon = Icons.Default.PushPin,
+                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_snap_title"),
+                title = stringRes(R.string.dictate__floating_button_snap_title),
+                summaryOn = stringRes(R.string.dictate__floating_button_snap_summary_on),
+                summaryOff = stringRes(R.string.dictate__floating_button_snap_summary_off),
+            )
+            SwitchPreference(
+                prefs.dictate.floatingButtonAutoDim,
+                icon = Icons.Default.BlurOn,
+                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_auto_dim_title"),
+                title = stringRes(R.string.dictate__floating_button_auto_dim_title),
+                summaryOn = stringRes(R.string.dictate__floating_button_auto_dim_summary_on),
+                summaryOff = stringRes(R.string.dictate__floating_button_auto_dim_summary_off),
+            )
+            SwitchPreference(
+                prefs.dictate.floatingButtonRememberPosition,
+                icon = Icons.Default.PinDrop,
+                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_remember_position_title"),
+                title = stringRes(R.string.dictate__floating_button_remember_position_title),
+                summaryOn = stringRes(R.string.dictate__floating_button_remember_position_summary_on),
+                summaryOff = stringRes(R.string.dictate__floating_button_remember_position_summary_off),
+            )
+            SwitchPreference(
+                prefs.dictate.floatingButtonHaptic,
+                icon = Icons.Default.Vibration,
+                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_haptic_title"),
+                title = stringRes(R.string.dictate__floating_button_haptic_title),
+                summaryOn = stringRes(R.string.dictate__floating_button_haptic_summary_on),
+                summaryOff = stringRes(R.string.dictate__floating_button_haptic_summary_off),
+            )
+            SwitchPreference(
+                prefs.dictate.floatingButtonUndoEnabled,
+                icon = Icons.AutoMirrored.Filled.Undo,
+                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_undo_title"),
+                title = stringRes(R.string.dictate__floating_button_undo_title),
+                summaryOn = stringRes(R.string.dictate__floating_button_undo_summary_on),
+                summaryOff = stringRes(R.string.dictate__floating_button_undo_summary_off),
+            )
+            SwitchPreference(
+                prefs.dictate.floatingButtonCopyToClipboard,
+                icon = Icons.Default.ContentCopy,
+                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_copy_to_clipboard_title"),
+                title = stringRes(R.string.dictate__floating_button_copy_to_clipboard_title),
+                summaryOn = stringRes(R.string.dictate__floating_button_copy_to_clipboard_summary_on),
+                summaryOff = stringRes(R.string.dictate__floating_button_copy_to_clipboard_summary_off),
+            )
+            // Every switch above, the look of the button (design, size, colour) below them
+            // (mantra-design-language.md §1.9).
             ListPreference(
                 prefs.dictate.floatingButtonDesign,
                 icon = Icons.Default.Brush,
@@ -210,14 +260,6 @@ fun DictateFloatingButtonScreen() = FlorisScreen {
                 },
             )
 
-            SwitchPreference(
-                prefs.dictate.floatingButtonSnapToEdge,
-                icon = Icons.Default.PushPin,
-                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_snap_title"),
-                title = stringRes(R.string.dictate__floating_button_snap_title),
-                summaryOn = stringRes(R.string.dictate__floating_button_snap_summary_on),
-                summaryOff = stringRes(R.string.dictate__floating_button_snap_summary_off),
-            )
 
             ColorPickerPreference(
                 prefs.dictate.floatingButtonColor,
@@ -231,50 +273,10 @@ fun DictateFloatingButtonScreen() = FlorisScreen {
                 enableAdvancedLayout = true,
             )
 
-            SwitchPreference(
-                prefs.dictate.floatingButtonAutoDim,
-                icon = Icons.Default.BlurOn,
-                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_auto_dim_title"),
-                title = stringRes(R.string.dictate__floating_button_auto_dim_title),
-                summaryOn = stringRes(R.string.dictate__floating_button_auto_dim_summary_on),
-                summaryOff = stringRes(R.string.dictate__floating_button_auto_dim_summary_off),
-            )
 
-            SwitchPreference(
-                prefs.dictate.floatingButtonRememberPosition,
-                icon = Icons.Default.PinDrop,
-                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_remember_position_title"),
-                title = stringRes(R.string.dictate__floating_button_remember_position_title),
-                summaryOn = stringRes(R.string.dictate__floating_button_remember_position_summary_on),
-                summaryOff = stringRes(R.string.dictate__floating_button_remember_position_summary_off),
-            )
 
-            SwitchPreference(
-                prefs.dictate.floatingButtonHaptic,
-                icon = Icons.Default.Vibration,
-                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_haptic_title"),
-                title = stringRes(R.string.dictate__floating_button_haptic_title),
-                summaryOn = stringRes(R.string.dictate__floating_button_haptic_summary_on),
-                summaryOff = stringRes(R.string.dictate__floating_button_haptic_summary_off),
-            )
 
-            SwitchPreference(
-                prefs.dictate.floatingButtonUndoEnabled,
-                icon = Icons.AutoMirrored.Filled.Undo,
-                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_undo_title"),
-                title = stringRes(R.string.dictate__floating_button_undo_title),
-                summaryOn = stringRes(R.string.dictate__floating_button_undo_summary_on),
-                summaryOff = stringRes(R.string.dictate__floating_button_undo_summary_off),
-            )
 
-            SwitchPreference(
-                prefs.dictate.floatingButtonCopyToClipboard,
-                icon = Icons.Default.ContentCopy,
-                modifier = Modifier.settingsSearchAnchor("dictate__floating_button_copy_to_clipboard_title"),
-                title = stringRes(R.string.dictate__floating_button_copy_to_clipboard_title),
-                summaryOn = stringRes(R.string.dictate__floating_button_copy_to_clipboard_summary_on),
-                summaryOff = stringRes(R.string.dictate__floating_button_copy_to_clipboard_summary_off),
-            )
         }
 
         if (showDisclosure) {

@@ -72,6 +72,26 @@ fun KeyboardScreen() = FlorisScreen {
             title = stringRes(R.string.pref__keyboard__utility_key_enabled__label),
             summary = stringRes(R.string.pref__keyboard__utility_key_enabled__summary),
         )
+        SwitchPreference(
+            prefs.keyboard.popupEnabled,
+            modifier = Modifier.settingsSearchAnchor("pref__keyboard__popup_enabled__label"),
+            title = stringRes(R.string.pref__keyboard__popup_enabled__label),
+            summary = stringRes(R.string.pref__keyboard__popup_enabled__summary),
+        )
+        SwitchPreference(
+            prefs.keyboard.mergeHintPopupsEnabled,
+            modifier = Modifier.settingsSearchAnchor("pref__keyboard__merge_hint_popups_enabled__label"),
+            title = stringRes(R.string.pref__keyboard__merge_hint_popups_enabled__label),
+            summary = stringRes(R.string.pref__keyboard__merge_hint_popups_enabled__summary),
+        )
+        SwitchPreference(
+            prefs.keyboard.spaceBarSwitchesToCharacters,
+            modifier = Modifier.settingsSearchAnchor("pref__keyboard__space_bar_switches_to_characters__label"),
+            title = stringRes(R.string.pref__keyboard__space_bar_switches_to_characters__label),
+            summary = stringRes(R.string.pref__keyboard__space_bar_switches_to_characters__summary),
+        )
+        // The on/off switches above, the lists and sliders that adjust them below
+        // (mantra-design-language.md §1.9, Marko 21.10.2026).
         ListPreference(
             prefs.keyboard.utilityKeyAction,
             modifier = Modifier.settingsSearchAnchor("pref__keyboard__utility_key_action__label"),
@@ -137,18 +157,6 @@ fun KeyboardScreen() = FlorisScreen {
                 title = stringRes(R.string.settings__input_feedback__title),
                 onClick = { navController.navigate(Routes.Settings.InputFeedback) },
             )
-            SwitchPreference(
-                prefs.keyboard.popupEnabled,
-                modifier = Modifier.settingsSearchAnchor("pref__keyboard__popup_enabled__label"),
-                title = stringRes(R.string.pref__keyboard__popup_enabled__label),
-                summary = stringRes(R.string.pref__keyboard__popup_enabled__summary),
-            )
-            SwitchPreference(
-                prefs.keyboard.mergeHintPopupsEnabled,
-                modifier = Modifier.settingsSearchAnchor("pref__keyboard__merge_hint_popups_enabled__label"),
-                title = stringRes(R.string.pref__keyboard__merge_hint_popups_enabled__label),
-                summary = stringRes(R.string.pref__keyboard__merge_hint_popups_enabled__summary),
-            )
             DialogSliderPreference(
                 prefs.keyboard.longPressDelay,
                 modifier = Modifier.settingsSearchAnchor("pref__keyboard__long_press_delay__label"),
@@ -157,12 +165,6 @@ fun KeyboardScreen() = FlorisScreen {
                 min = 100,
                 max = 700,
                 stepIncrement = 10,
-            )
-            SwitchPreference(
-                prefs.keyboard.spaceBarSwitchesToCharacters,
-                modifier = Modifier.settingsSearchAnchor("pref__keyboard__space_bar_switches_to_characters__label"),
-                title = stringRes(R.string.pref__keyboard__space_bar_switches_to_characters__label),
-                summary = stringRes(R.string.pref__keyboard__space_bar_switches_to_characters__summary),
             )
         }
     }

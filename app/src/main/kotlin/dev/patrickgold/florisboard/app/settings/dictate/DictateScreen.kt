@@ -220,24 +220,8 @@ fun DictateRecordingScreen() = FlorisScreen {
             title = stringRes(R.string.dictate__realtime_title),
             summary = stringRes(R.string.dictate__realtime_summary),
         )
-        // All long-form settings live behind one entry that opens a single dialog (#170).
-        val longformMode by prefs.dictate.longformMode.collectAsState()
-        val longformSeconds by prefs.dictate.longformAutoSplitSeconds.collectAsState()
-        var showLongformDialog by remember { mutableStateOf(false) }
-        Preference(
-            icon = Icons.Default.Segment,
-            modifier = Modifier.settingsSearchAnchor("dictate__longform_title"),
-            title = stringRes(R.string.dictate__longform_title),
-            summary = longformModeSummary(longformMode, longformSeconds),
-            onClick = { showLongformDialog = true },
-        )
-        if (showLongformDialog) {
-            LongformDialog(
-                mode = longformMode,
-                seconds = longformSeconds,
-                onDismiss = { showLongformDialog = false },
-            )
-        }
+        // THE SWITCHES FIRST, the settings that adjust them after (MANTRA_MANIFEST
+        // mantra-design-language.md §1.9, Marko 21.10.2026: "What is global should be up").
         SwitchPreference(
             prefs.dictate.useBluetoothMic,
             icon = Icons.Default.Bluetooth,
@@ -245,63 +229,12 @@ fun DictateRecordingScreen() = FlorisScreen {
             title = stringRes(R.string.dictate__bluetooth_mic_title),
             summary = stringRes(R.string.dictate__bluetooth_mic_summary),
         )
-        ListPreference(
-            prefs.dictate.audioInputSource,
-            icon = Icons.Default.GraphicEq,
-            modifier = Modifier.settingsSearchAnchor("dictate__audio_source_title"),
-            title = stringRes(R.string.dictate__audio_source_title),
-            entries = listPrefEntries {
-                entry(
-                    DictateAudioSource.DEFAULT,
-                    stringRes(R.string.dictate__audio_source_default),
-                    stringRes(R.string.dictate__audio_source_default_summary),
-                )
-                entry(
-                    DictateAudioSource.VOICE_RECOGNITION,
-                    stringRes(R.string.dictate__audio_source_voice_recognition),
-                    stringRes(R.string.dictate__audio_source_voice_recognition_summary),
-                )
-                entry(
-                    DictateAudioSource.UNPROCESSED,
-                    stringRes(R.string.dictate__audio_source_unprocessed),
-                    stringRes(R.string.dictate__audio_source_unprocessed_summary),
-                )
-                entry(
-                    DictateAudioSource.VOICE_COMMUNICATION,
-                    stringRes(R.string.dictate__audio_source_voice_communication),
-                    stringRes(R.string.dictate__audio_source_voice_communication_summary),
-                )
-            },
-        )
         SwitchPreference(
             prefs.dictate.keepScreenAwake,
             icon = Icons.Default.BrightnessHigh,
             modifier = Modifier.settingsSearchAnchor("dictate__keep_screen_awake_title"),
             title = stringRes(R.string.dictate__keep_screen_awake_title),
             summary = stringRes(R.string.dictate__keep_screen_awake_summary),
-        )
-        ListPreference(
-            prefs.dictate.recordingAnimation,
-            icon = Icons.Default.GraphicEq,
-            modifier = Modifier.settingsSearchAnchor("dictate__recording_animation_title"),
-            title = stringRes(R.string.dictate__recording_animation_title),
-            entries = listPrefEntries {
-                entry(
-                    key = DictateRecordingAnimation.STATIC,
-                    label = stringRes(R.string.dictate__recording_animation_static_label),
-                    description = stringRes(R.string.dictate__recording_animation_static_description),
-                )
-                entry(
-                    key = DictateRecordingAnimation.PULSE,
-                    label = stringRes(R.string.dictate__recording_animation_pulse_label),
-                    description = stringRes(R.string.dictate__recording_animation_pulse_description),
-                )
-                entry(
-                    key = DictateRecordingAnimation.LEVEL,
-                    label = stringRes(R.string.dictate__recording_animation_level_label),
-                    description = stringRes(R.string.dictate__recording_animation_level_description),
-                )
-            },
         )
         SwitchPreference(
             prefs.dictate.skipSilentRecordings,
@@ -345,6 +278,75 @@ fun DictateRecordingScreen() = FlorisScreen {
             title = stringRes(R.string.dictate__instant_recording_skip_numeric_title),
             summary = stringRes(R.string.dictate__instant_recording_skip_numeric_summary),
             enabledIf = { prefs.dictate.instantRecording.isTrue() },
+        )
+        // All long-form settings live behind one entry that opens a single dialog (#170).
+        val longformMode by prefs.dictate.longformMode.collectAsState()
+        val longformSeconds by prefs.dictate.longformAutoSplitSeconds.collectAsState()
+        var showLongformDialog by remember { mutableStateOf(false) }
+        Preference(
+            icon = Icons.Default.Segment,
+            modifier = Modifier.settingsSearchAnchor("dictate__longform_title"),
+            title = stringRes(R.string.dictate__longform_title),
+            summary = longformModeSummary(longformMode, longformSeconds),
+            onClick = { showLongformDialog = true },
+        )
+        if (showLongformDialog) {
+            LongformDialog(
+                mode = longformMode,
+                seconds = longformSeconds,
+                onDismiss = { showLongformDialog = false },
+            )
+        }
+        ListPreference(
+            prefs.dictate.audioInputSource,
+            icon = Icons.Default.GraphicEq,
+            modifier = Modifier.settingsSearchAnchor("dictate__audio_source_title"),
+            title = stringRes(R.string.dictate__audio_source_title),
+            entries = listPrefEntries {
+                entry(
+                    DictateAudioSource.DEFAULT,
+                    stringRes(R.string.dictate__audio_source_default),
+                    stringRes(R.string.dictate__audio_source_default_summary),
+                )
+                entry(
+                    DictateAudioSource.VOICE_RECOGNITION,
+                    stringRes(R.string.dictate__audio_source_voice_recognition),
+                    stringRes(R.string.dictate__audio_source_voice_recognition_summary),
+                )
+                entry(
+                    DictateAudioSource.UNPROCESSED,
+                    stringRes(R.string.dictate__audio_source_unprocessed),
+                    stringRes(R.string.dictate__audio_source_unprocessed_summary),
+                )
+                entry(
+                    DictateAudioSource.VOICE_COMMUNICATION,
+                    stringRes(R.string.dictate__audio_source_voice_communication),
+                    stringRes(R.string.dictate__audio_source_voice_communication_summary),
+                )
+            },
+        )
+        ListPreference(
+            prefs.dictate.recordingAnimation,
+            icon = Icons.Default.GraphicEq,
+            modifier = Modifier.settingsSearchAnchor("dictate__recording_animation_title"),
+            title = stringRes(R.string.dictate__recording_animation_title),
+            entries = listPrefEntries {
+                entry(
+                    key = DictateRecordingAnimation.STATIC,
+                    label = stringRes(R.string.dictate__recording_animation_static_label),
+                    description = stringRes(R.string.dictate__recording_animation_static_description),
+                )
+                entry(
+                    key = DictateRecordingAnimation.PULSE,
+                    label = stringRes(R.string.dictate__recording_animation_pulse_label),
+                    description = stringRes(R.string.dictate__recording_animation_pulse_description),
+                )
+                entry(
+                    key = DictateRecordingAnimation.LEVEL,
+                    label = stringRes(R.string.dictate__recording_animation_level_label),
+                    description = stringRes(R.string.dictate__recording_animation_level_description),
+                )
+            },
         )
         // Inform the user once, when they switch instant recording on, that it disables the
         // interrupted-recording recovery (mutually exclusive — issue #120).
@@ -398,6 +400,28 @@ fun DictateOutputScreen() = FlorisScreen {
             title = stringRes(R.string.dictate__instant_output_title),
             summary = stringRes(R.string.dictate__instant_output_summary),
         )
+        SwitchPreference(
+            prefs.dictate.resendButton,
+            icon = Icons.Default.Replay,
+            modifier = Modifier.settingsSearchAnchor("dictate__resend_button_title"),
+            title = stringRes(R.string.dictate__resend_button_title),
+            summary = stringRes(R.string.dictate__resend_button_summary),
+        )
+        SwitchPreference(
+            prefs.dictate.hapticFeedback,
+            icon = Icons.Default.Vibration,
+            modifier = Modifier.settingsSearchAnchor("dictate__haptic_feedback_title"),
+            title = stringRes(R.string.dictate__haptic_feedback_title),
+            summary = stringRes(R.string.dictate__haptic_feedback_summary),
+        )
+        SwitchPreference(
+            prefs.dictate.rememberLastDictation,
+            icon = Icons.Default.History,
+            modifier = Modifier.settingsSearchAnchor("dictate__remember_last_dictation_title"),
+            title = stringRes(R.string.dictate__remember_last_dictation_title),
+            summary = stringRes(R.string.dictate__remember_last_dictation_summary),
+        )
+        // Switches above, sliders below (mantra-design-language.md §1.9).
         DialogSliderPreference(
             prefs.dictate.outputSpeed,
             icon = Icons.Default.Speed,
@@ -421,27 +445,6 @@ fun DictateOutputScreen() = FlorisScreen {
             min = 0,
             max = 100,
             stepIncrement = 5,
-        )
-        SwitchPreference(
-            prefs.dictate.resendButton,
-            icon = Icons.Default.Replay,
-            modifier = Modifier.settingsSearchAnchor("dictate__resend_button_title"),
-            title = stringRes(R.string.dictate__resend_button_title),
-            summary = stringRes(R.string.dictate__resend_button_summary),
-        )
-        SwitchPreference(
-            prefs.dictate.hapticFeedback,
-            icon = Icons.Default.Vibration,
-            modifier = Modifier.settingsSearchAnchor("dictate__haptic_feedback_title"),
-            title = stringRes(R.string.dictate__haptic_feedback_title),
-            summary = stringRes(R.string.dictate__haptic_feedback_summary),
-        )
-        SwitchPreference(
-            prefs.dictate.rememberLastDictation,
-            icon = Icons.Default.History,
-            modifier = Modifier.settingsSearchAnchor("dictate__remember_last_dictation_title"),
-            title = stringRes(R.string.dictate__remember_last_dictation_title),
-            summary = stringRes(R.string.dictate__remember_last_dictation_summary),
         )
     }
 }

@@ -105,6 +105,32 @@ fun TypingScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__correction__title)) {
+            SwitchPreference(
+                prefs.correction.autoCapitalization,
+                modifier = Modifier.settingsSearchAnchor("pref__correction__auto_capitalization__label"),
+                title = stringRes(R.string.pref__correction__auto_capitalization__label),
+                summary = stringRes(R.string.pref__correction__auto_capitalization__summary),
+            )
+            val isAutoSpacePunctuationEnabled by prefs.correction.autoSpacePunctuation.collectAsState()
+            SwitchPreference(
+                prefs.correction.autoSpacePunctuation,
+                icon = Icons.Default.SpaceBar,
+                modifier = Modifier.settingsSearchAnchor("pref__correction__auto_space_punctuation__label"),
+                title = stringRes(R.string.pref__correction__auto_space_punctuation__label),
+                summary = stringRes(R.string.pref__correction__auto_space_punctuation__summary),
+            )
+            SwitchPreference(
+                prefs.correction.rememberCapsLockState,
+                modifier = Modifier.settingsSearchAnchor("pref__correction__remember_caps_lock_state__label"),
+                title = stringRes(R.string.pref__correction__remember_caps_lock_state__label),
+                summary = stringRes(R.string.pref__correction__remember_caps_lock_state__summary),
+            )
+            SwitchPreference(
+                prefs.correction.doubleSpacePeriod,
+                modifier = Modifier.settingsSearchAnchor("pref__correction__double_space_period__label"),
+                title = stringRes(R.string.pref__correction__double_space_period__label),
+                summary = stringRes(R.string.pref__correction__double_space_period__summary),
+            )
             // Under correction, because that is what it is: undoing a guess the recogniser makes
             // about every dictation being prose.
             ListPreference(
@@ -141,20 +167,6 @@ fun TypingScreen() = FlorisScreen {
                     )
                 },
             )
-            SwitchPreference(
-                prefs.correction.autoCapitalization,
-                modifier = Modifier.settingsSearchAnchor("pref__correction__auto_capitalization__label"),
-                title = stringRes(R.string.pref__correction__auto_capitalization__label),
-                summary = stringRes(R.string.pref__correction__auto_capitalization__summary),
-            )
-            val isAutoSpacePunctuationEnabled by prefs.correction.autoSpacePunctuation.collectAsState()
-            SwitchPreference(
-                prefs.correction.autoSpacePunctuation,
-                icon = Icons.Default.SpaceBar,
-                modifier = Modifier.settingsSearchAnchor("pref__correction__auto_space_punctuation__label"),
-                title = stringRes(R.string.pref__correction__auto_space_punctuation__label),
-                summary = stringRes(R.string.pref__correction__auto_space_punctuation__summary),
-            )
             if (isAutoSpacePunctuationEnabled) {
                 Card(modifier = Modifier.padding(8.dp)) {
                     Column(modifier = Modifier.padding(8.dp)) {
@@ -172,18 +184,6 @@ fun TypingScreen() = FlorisScreen {
                     }
                 }
             }
-            SwitchPreference(
-                prefs.correction.rememberCapsLockState,
-                modifier = Modifier.settingsSearchAnchor("pref__correction__remember_caps_lock_state__label"),
-                title = stringRes(R.string.pref__correction__remember_caps_lock_state__label),
-                summary = stringRes(R.string.pref__correction__remember_caps_lock_state__summary),
-            )
-            SwitchPreference(
-                prefs.correction.doubleSpacePeriod,
-                modifier = Modifier.settingsSearchAnchor("pref__correction__double_space_period__label"),
-                title = stringRes(R.string.pref__correction__double_space_period__label),
-                summary = stringRes(R.string.pref__correction__double_space_period__summary),
-            )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__spelling__title)) {

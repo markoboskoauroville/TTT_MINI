@@ -57,6 +57,19 @@ fun GesturesScreen() = FlorisScreen {
         // subtype: four whole-keyboard swipes on a keyboard whose words arrive by voice, where every
         // one of them is a way to trigger something by accident mid-sentence. The space bar gestures
         // stay, because those are aimed at one key and do the one thing worth doing there.
+        // Talk to Type: the swipe-to-symbol switch, at the top of the screen with the other on/off
+        // switches (mantra-design-language.md §1.9, Marko 21.10.2026); the two thresholds that tune
+        // it stay at the end of the screen, under "Other".
+        // The command and arrow bars switch is gone with the bars themselves. A switch that
+        // turns nothing on is worse than a missing one: it teaches that settings do not work.
+        SwitchPreference(
+            prefs.gestures.maSwipeToSymbol,
+            title = "Swipe to symbol",
+            summary = "Swipe from a key toward one of its printed symbols to type it, " +
+                "instead of long pressing. Up types the hint, left, right and down type the " +
+                "first three extras. Tune the two thresholds below if a flick reads as a tap.",
+        )
+
         PreferenceGroup(title = "Volume keys") {
             // Which taught term volume down presses.
             //
@@ -154,18 +167,6 @@ fun GesturesScreen() = FlorisScreen {
                 modifier = Modifier.settingsSearchAnchor("pref__gestures__delete_key_long_press__label"),
                 title = stringRes(R.string.pref__gestures__delete_key_long_press__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "deleteLongPress"),
-            )
-            // Talk to Type: the swipe-to-symbol switch, placed directly above the two
-            // thresholds that govern how far and how fast a swipe must be, since turning it on
-            // and then tuning those two is one continuous task rather than three separate ones.
-            // The command and arrow bars switch is gone with the bars themselves. A switch that
-            // turns nothing on is worse than a missing one: it teaches that settings do not work.
-            SwitchPreference(
-                prefs.gestures.maSwipeToSymbol,
-                title = "Swipe to symbol",
-                summary = "Swipe from a key toward one of its printed symbols to type it, " +
-                    "instead of long pressing. Up types the hint, left, right and down type the " +
-                    "first three extras. Tune the two thresholds below if a flick reads as a tap.",
             )
             DialogSliderPreference(
                 prefs.gestures.swipeVelocityThreshold,

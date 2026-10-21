@@ -134,6 +134,19 @@ fun MaMagicScreen() = FlorisScreen {
 
         )
 
+        // Both switches first, the explanation and the list after (mantra-design-language.md §1.9).
+        SwitchPreference(
+
+            prefs.dictate.maVoiceCommands,
+
+            title = "Voice commands",
+
+            summary = "Say \"press send\" on its own and the finger presses send instead of typing " +
+                "the words. Two words only — press, and the name of the button. A longer sentence " +
+                "is always text, and if nothing on screen answers to that name the words are " +
+                "typed as usual, so nothing is lost. Works in Croatian too: pritisni, stisni, klikni.",
+
+        )
         Spacer(Modifier.height(8.dp))
 
         // How it works, in his words rather than Android's. Somebody who knows what the finger is
@@ -151,18 +164,6 @@ fun MaMagicScreen() = FlorisScreen {
 
         Spacer(Modifier.height(8.dp))
 
-        SwitchPreference(
-
-            prefs.dictate.maVoiceCommands,
-
-            title = "Voice commands",
-
-            summary = "Say \"press send\" on its own and the finger presses send instead of typing " +
-                "the words. Two words only — press, and the name of the button. A longer sentence " +
-                "is always text, and if nothing on screen answers to that name the words are " +
-                "typed as usual, so nothing is lost. Works in Croatian too: pritisni, stisni, klikni.",
-
-        )
 
         Spacer(Modifier.height(8.dp))
 

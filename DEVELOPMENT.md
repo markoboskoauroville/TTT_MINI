@@ -10886,3 +10886,27 @@ command under a number-row digit. The palette is bright (each colour has a chann
 because it lights a letter on a dark key; the G815 itself shows nothing below about 45 of 255
 (MANTRA_MANIFEST `logitech-g815.md`). Settings → Key colours draws dark keycaps with lit letters,
 as the keyboard will. Stored colours are unchanged; a dim colour chosen before still works.
+
+---
+
+# §195 — Switches first on every settings screen
+
+Marko, 21.10.2026: yes, every screen follows §193's rule (MANTRA_MANIFEST
+mantra-design-language.md §1.9). An audit of every screen reachable from settings found eight that
+broke it; each now has its on/off switches together at the top and the lists, sliders, pickers
+and dialogs that adjust them underneath, in the same order:
+
+- Recording: Bluetooth mic, keep screen awake, skip silent recordings, trim silent gaps, instant
+  recording moved above Longform, audio source and animation.
+- Output: resend button, haptics, remember last dictation above the two sliders.
+- Magic finger: Voice commands beside "Show the magic finger row", before the explanation.
+- Floating button: all seven switches above design, size and colour.
+- Gestures: Swipe to symbol at the top (its two thresholds stay under Other).
+- Clipboard: clipboard history beside the internal clipboard; in the history group the six
+  switches above the four sliders.
+- Keyboard: popups, merged hint popups, space bar returns to letters beside the utility key.
+- Typing and Smartbar: the switches in a group above that group's lists.
+- Learn my words: its switch was only on a layout screen with no settings entry; it is now at the
+  top of the Learn my words screen.
+
+`scripts/test_switches_first.py` (68 checks) pins each of these orders.

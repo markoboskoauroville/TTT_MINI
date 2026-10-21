@@ -203,3 +203,4 @@ since been removed.
 - **§192** — aria2 inside the app, and one copy of each model in Download/models
 - **§193** — Switches first, models and wordings under them
 - **§194** — Key colours light the letter, not the key
+- **§195** — Switches first on every settings screen

@@ -45,6 +45,14 @@ fun ClipboardScreen() = FlorisScreen {
             title = stringRes(R.string.pref__clipboard__use_internal_clipboard__label),
             summary = stringRes(R.string.pref__clipboard__use_internal_clipboard__summary),
         )
+        // Both on/off switches first: the internal clipboard and its history. The sync choices and
+        // the history's sizes come under them (mantra-design-language.md §1.9, 21.10.2026).
+        SwitchPreference(
+            prefs.clipboard.historyEnabled,
+            modifier = Modifier.settingsSearchAnchor("pref__clipboard__enable_clipboard_history__label"),
+            title = stringRes(R.string.pref__clipboard__enable_clipboard_history__label),
+            summary = stringRes(R.string.pref__clipboard__enable_clipboard_history__summary),
+        )
         ListPreference(
             prefs.clipboard.syncToFloris,
             modifier = Modifier.settingsSearchAnchor("pref__clipboard__sync_from_system_clipboard__label"),
@@ -70,10 +78,42 @@ fun ClipboardScreen() = FlorisScreen {
 
         PreferenceGroup(title = stringRes(R.string.pref__clipboard__group_clipboard_history__label)) {
             SwitchPreference(
-                prefs.clipboard.historyEnabled,
-                modifier = Modifier.settingsSearchAnchor("pref__clipboard__enable_clipboard_history__label"),
-                title = stringRes(R.string.pref__clipboard__enable_clipboard_history__label),
-                summary = stringRes(R.string.pref__clipboard__enable_clipboard_history__summary),
+                prefs.clipboard.historyAutoCleanOldEnabled,
+                modifier = Modifier.settingsSearchAnchor("pref__clipboard__clean_up_old__label"),
+                title = stringRes(R.string.pref__clipboard__clean_up_old__label),
+                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
+            )
+            SwitchPreference(
+                prefs.clipboard.historyAutoCleanSensitiveEnabled,
+                modifier = Modifier.settingsSearchAnchor("pref__clipboard__auto_clean_sensitive__label"),
+                title = stringRes(R.string.pref__clipboard__auto_clean_sensitive__label),
+                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
+                visibleIf = { AndroidVersion.ATLEAST_API33_T },
+            )
+            SwitchPreference(
+                prefs.clipboard.historySizeLimitEnabled,
+                modifier = Modifier.settingsSearchAnchor("pref__clipboard__limit_history_size__label"),
+                title = stringRes(R.string.pref__clipboard__limit_history_size__label),
+                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
+            )
+            SwitchPreference(
+                prefs.clipboard.historyHideOnPaste,
+                modifier = Modifier.settingsSearchAnchor("pref__clipboard__history_hide_on_paste__label"),
+                title = stringRes(R.string.pref__clipboard__history_hide_on_paste__label),
+                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true }
+            )
+            SwitchPreference(
+                prefs.clipboard.historyHideOnNextTextField,
+                modifier = Modifier.settingsSearchAnchor("pref__clipboard__history_hide_on_next_text_field__label"),
+                title = stringRes(R.string.pref__clipboard__history_hide_on_next_text_field__label),
+                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true }
+            )
+            SwitchPreference(
+                prefs.clipboard.clearPrimaryClipAffectsHistoryIfUnpinned,
+                modifier = Modifier.settingsSearchAnchor("pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label"),
+                title = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label),
+                summary = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary),
+                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
             )
             DialogSliderPreference(
                 primaryPref = prefs.clipboard.historyNumGridColumnsPortrait,
@@ -94,12 +134,6 @@ fun ClipboardScreen() = FlorisScreen {
                 stepIncrement = 1,
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
             )
-            SwitchPreference(
-                prefs.clipboard.historyAutoCleanOldEnabled,
-                modifier = Modifier.settingsSearchAnchor("pref__clipboard__clean_up_old__label"),
-                title = stringRes(R.string.pref__clipboard__clean_up_old__label),
-                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
-            )
             DialogSliderPreference(
                 prefs.clipboard.historyAutoCleanOldAfter,
                 modifier = Modifier.settingsSearchAnchor("pref__clipboard__clean_up_after__label"),
@@ -109,13 +143,6 @@ fun ClipboardScreen() = FlorisScreen {
                 max = 120,
                 stepIncrement = 5,
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true && prefs.clipboard.historyAutoCleanOldEnabled isEqualTo true },
-            )
-            SwitchPreference(
-                prefs.clipboard.historyAutoCleanSensitiveEnabled,
-                modifier = Modifier.settingsSearchAnchor("pref__clipboard__auto_clean_sensitive__label"),
-                title = stringRes(R.string.pref__clipboard__auto_clean_sensitive__label),
-                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
-                visibleIf = { AndroidVersion.ATLEAST_API33_T },
             )
             DialogSliderPreference(
                 prefs.clipboard.historyAutoCleanSensitiveAfter,
@@ -128,12 +155,6 @@ fun ClipboardScreen() = FlorisScreen {
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true && prefs.clipboard.historyAutoCleanSensitiveEnabled isEqualTo true },
                 visibleIf = { AndroidVersion.ATLEAST_API33_T },
             )
-            SwitchPreference(
-                prefs.clipboard.historySizeLimitEnabled,
-                modifier = Modifier.settingsSearchAnchor("pref__clipboard__limit_history_size__label"),
-                title = stringRes(R.string.pref__clipboard__limit_history_size__label),
-                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
-            )
             DialogSliderPreference(
                 prefs.clipboard.historySizeLimit,
                 modifier = Modifier.settingsSearchAnchor("pref__clipboard__max_history_size__label"),
@@ -145,26 +166,7 @@ fun ClipboardScreen() = FlorisScreen {
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true && prefs.clipboard.historySizeLimitEnabled isEqualTo true },
             )
 
-            SwitchPreference(
-                prefs.clipboard.historyHideOnPaste,
-                modifier = Modifier.settingsSearchAnchor("pref__clipboard__history_hide_on_paste__label"),
-                title = stringRes(R.string.pref__clipboard__history_hide_on_paste__label),
-                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true }
-            )
-            SwitchPreference(
-                prefs.clipboard.historyHideOnNextTextField,
-                modifier = Modifier.settingsSearchAnchor("pref__clipboard__history_hide_on_next_text_field__label"),
-                title = stringRes(R.string.pref__clipboard__history_hide_on_next_text_field__label),
-                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true }
-            )
 
-            SwitchPreference(
-                prefs.clipboard.clearPrimaryClipAffectsHistoryIfUnpinned,
-                modifier = Modifier.settingsSearchAnchor("pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label"),
-                title = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label),
-                summary = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary),
-                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
-            )
         }
     }
 }
