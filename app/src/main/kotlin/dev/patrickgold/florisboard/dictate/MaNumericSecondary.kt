@@ -105,18 +105,17 @@ object MaNumericSecondary {
      * reads what will be typed before he holds it.
      *
      * Special keys become their glyphs ({Enter} → ⏎) and line breaks become ⏎, so a two-line snippet
-     * reads as one line. Null when there is nothing the corner does not already say: an empty slot,
-     * or a slot of a single character, where the line would only repeat the corner.
+     * reads as one line. Null only for an empty slot: with the corner mark gone (21.10.2026) the
+     * bottom line is the only place a key says what it types, so a single character is shown too.
      */
     fun preview(value: String): String? {
         val trimmed = value.trim()
         if (trimmed.isEmpty()) return null
-        if (trimmed.codePointCount(0, trimmed.length) == 1) return null
         val withGlyphs = ANY_TOKEN.replace(trimmed) { m ->
             SPECIAL_KEYS.firstOrNull { it.token.equals(m.value, ignoreCase = true) }?.glyph ?: m.value
         }
         val oneLine = withGlyphs.replace("\n", "\u23ce").replace(Regex("[ \\t]+"), " ")
-        return oneLine.takeIf { it.isNotBlank() && it != hint(value) }
+        return oneLine.takeIf { it.isNotBlank() }
     }
 
     private val ANY_TOKEN = Regex("\\{[A-Za-z0-9+]+\\}")

@@ -89,8 +89,10 @@ check("with the keyboard's own glyphs", "MaButtonGlyph(button, macroSlots, tintO
 # ---------------------------------------------------------------- the third line
 check("the command is printed under the digit", "MaNumericSecondary.preview(it)" in row)
 check("two small lines at most", "maxLines = 2" in row)
-check("the digit is lifted to make room", "BiasAlignment(0f, -0.8f)" in row)
-check("preview skips what the corner already says", "it != hint(value)" in ns)
+check("the digit sits at the top, bigger", "Modifier.align(Alignment.TopCenter)" in row and "20.sp" in row)
+# The corner mark is gone (21.10.2026): the bottom line is the only place, so one character shows too.
+check("no corner mark on the number row", "MaNumericSecondary.hint(" not in row)
+check("a single character is shown at the bottom too", "codePointCount(0, trimmed.length) == 1" not in ns)
 check("special keys shown as glyphs", "SPECIAL_KEYS.firstOrNull { it.token.equals(m.value, ignoreCase = true) }?.glyph" in ns)
 
 # ---------------------------------------------------------------- the settings screen

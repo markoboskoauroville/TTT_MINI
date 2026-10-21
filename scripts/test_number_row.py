@@ -94,8 +94,9 @@ check("the hint takes a whole code point", "offsetByCodePoints(start, 1)" in cor
 row = code(SRC / "dictate/ui/MaExtraRow.kt")
 check("the hold types the slot in one commit", "editorInstance.commitText(text)" in row,
       "one key event per character, which autocorrect can rewrite word by word")
-check("the corner prints only the first character", "MaNumericSecondary.hint(it)" in row,
-      "a sentence crammed into a corner")
+# 21.10.2026: the corner mark is gone; the whole command is printed under the digit instead.
+check("the whole command is printed under the digit", "MaNumericSecondary.preview(it)" in row
+      and "MaNumericSecondary.hint(" not in row, "a sentence crammed into a corner")
 
 # ---------------------------------------------------------------- special keys (10.10.2026)
 #

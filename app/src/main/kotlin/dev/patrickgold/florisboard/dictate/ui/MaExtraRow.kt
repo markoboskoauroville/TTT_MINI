@@ -350,17 +350,18 @@ private fun MaRowKeyButton(
         Text(
             text = key.label,
             color = foreground,
-            // Sized like a letter key rather than shrunk to fit a crowd, because ten keys across is
-            // exactly what the row below manages at full size.
-            // A little smaller and lifted when the command is printed below, so the two never touch
-            // on a row only one key high.
-            fontSize = if (preview != null) 15.sp else 17.sp,
+            // Bigger, now that the corner mark is gone (Marko, 21.10.2026: "The top sign should go
+            // and then this number can be bigger"). Lifted to the top when the command is printed
+            // under it, so the two never touch on a row one key high.
+            fontSize = if (preview != null) 20.sp else 22.sp,
+            lineHeight = if (preview != null) 21.sp else 24.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = if (preview != null) Modifier.align(BiasAlignment(0f, -0.8f)) else Modifier,
+            modifier = if (preview != null) Modifier.align(Alignment.TopCenter).padding(top = 1.dp) else Modifier,
         )
-        // THE THIRD LINE: the command itself, as much as fits in two small lines. His ask: the
-        // corner shows one character and he could not tell which macro was behind which digit.
+        // THE COMMAND, AT THE BOTTOM, WHOLE: as much of it as fits in two small lines. The corner
+        // mark that showed only its first character is gone (Marko, 21.10.2026: "Every macro button
+        // is at the bottom … top shows only one character, bottom shows everything").
         preview?.let { line ->
             Text(
                 text = line,
@@ -373,25 +374,6 @@ private fun MaRowKeyButton(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(start = 2.dp, end = 2.dp, bottom = 2.dp),
-            )
-        }
-        // The second symbol, small, in the corner, exactly where the letter keys print theirs.
-        //
-        // Printed rather than left to be discovered: a long press that types something is invisible
-        // until it is found by accident, and the letters below already teach that a corner mark
-        // means hold this. Dimmed so the digit stays the thing being read.
-        // Only the first character of it: a slot can hold a whole sentence now, and a corner holds
-        // one glyph. The hold types the rest.
-        key.secondary?.let { MaNumericSecondary.hint(it) }?.let { hint ->
-            Text(
-                text = hint,
-                color = foreground.copy(alpha = 0.55f),
-                fontSize = 11.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(end = 5.dp, top = 1.dp),
             )
         }
     }
