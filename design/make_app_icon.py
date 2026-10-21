@@ -5,8 +5,9 @@ this app into the same style ... instead of buttons of the Shruti box, there wil
 keyboard with this specific feature that each button has different color ... glowing nice style").
 
 The keyboard as it looks: dark keycaps on a black ground, the LEGEND of each key lit in its own colour
-(the G815 look of Settings -> Key colours), each in a halo as the Shruti valves glow. Three T keys
-(Talk To Type) over a microphone key and the space bar.
+(the G815 look of Settings -> Key colours), each in a halo as the Shruti valves glow. A, B and C
+(Marko: "don't put ttt, put abc") over a microphone key and the space bar. The letters are drawn as
+lit tubes: a coloured stroke with a pale core.
 
 Writes, from the one list of shapes below:
   app/src/main/icon/ic_app_icon_foreground.xml   template, Gradle draws the build number under it
@@ -25,9 +26,9 @@ CAP_EDGE = "#2C323E"
 
 # x, y, w, h, glyph, colour
 KEYS = [
-    (33.3, 34.3, 12.4, 14.4, "T", "#FF4D5E"),   # red, as the number keys in his screenshot
-    (48.8, 34.3, 12.4, 14.4, "T", "#FFC24D"),   # gold
-    (64.3, 34.3, 12.4, 14.4, "T", "#4DD6E8"),   # cyan, the TTT mini colour
+    (33.3, 34.3, 12.4, 14.4, "A", "#FF4D5E"),   # red, as the number keys in his screenshot
+    (48.8, 34.3, 12.4, 14.4, "B", "#FFC24D"),   # gold
+    (64.3, 34.3, 12.4, 14.4, "C", "#4DD6E8"),   # cyan, the TTT mini colour
     (33.3, 51.0, 12.4, 10.0, "mic", "#B98CFF"), # violet
     (48.8, 51.0, 27.9, 10.0, "space", "#5CE68A"),  # green
 ]
@@ -46,11 +47,20 @@ def rrect(x, y, w, h, r):
 def glyph(kind, x, y, w, h):
     """(path, filled) for the legend; stroked legends are drawn at stroke width 1.6."""
     cx, cy = x + w / 2, y + h / 2
-    if kind == "T":
-        bw, t, s = 7.0, 1.9, 2.0
-        top, bottom = y + 3.4, y + h - 3.0
-        return (f"M{f(cx - bw / 2)},{f(top)} H{f(cx + bw / 2)} V{f(top + t)} H{f(cx + s / 2)} "
-                f"V{f(bottom)} H{f(cx - s / 2)} V{f(top + t)} H{f(cx - bw / 2)} Z"), True
+    top, bottom = y + 3.3, y + h - 3.3
+    mid = (top + bottom) / 2
+    if kind == "A":
+        return (f"M{f(cx - 3.1)},{f(bottom)} L{f(cx)},{f(top)} L{f(cx + 3.1)},{f(bottom)} "
+                f"M{f(cx - 1.9)},{f(mid + 1.2)} H{f(cx + 1.9)}"), "neon"
+    if kind == "B":
+        x0 = cx - 2.6
+        r1, r2 = (mid - top) / 2, (bottom - mid) / 2
+        return (f"M{f(x0)},{f(top)} V{f(bottom)} H{f(x0 + 2.9)} A{f(r2)},{f(r2)} 0 0 0 {f(x0 + 2.9)},{f(mid)} H{f(x0)} "
+                f"M{f(x0)},{f(top)} H{f(x0 + 2.7)} A{f(r1)},{f(r1)} 0 0 1 {f(x0 + 2.7)},{f(mid)}"), "neon"
+    if kind == "C":
+        rx, ry, dx = 3.2, (bottom - top) / 2, 2.7
+        dy = ry * (1 - (dx / rx) ** 2) ** 0.5
+        return (f"M{f(cx + dx)},{f(mid - dy)} A{f(rx)},{f(ry)} 0 1 0 {f(cx + dx)},{f(mid + dy)}"), "neon"
     if kind == "mic":
         # the capsule filled, the cradle and stand stroked: two paths
         cap = rrect(cx - 1.4, y + 1.8, 2.8, 4.4, 1.4)
@@ -82,7 +92,7 @@ def vd_foreground():
     for x, y, w, h, kind, col in KEYS:
         cx, cy = x + w / 2, y + h / 2
         r = min(w, 16) * 0.62
-        sy = h / min(w, 16) * 1.05 if kind == "T" else 0.8
+        sy = h / min(w, 16) * 1.05 if kind in ("A", "B", "C") else 0.8
         sx = 1.0 if kind != "space" else 2.0
         c = col[1:]
         out.append(f'    <group android:pivotX="{f(cx)}" android:pivotY="{f(cy)}" android:scaleX="{f(sx)}" android:scaleY="{f(sy)}">')
@@ -99,7 +109,12 @@ def vd_foreground():
     for x, y, w, h, kind, col in KEYS:
         light = lighten(col, 0.75)
         for d, filled in parts(kind, x, y, w, h):
-            if filled:
+            if filled == "neon":
+                out.append(f'    <path android:pathData="{d}" android:strokeColor="{col}" android:strokeWidth="2.3" '
+                           f'android:strokeLineCap="round" android:strokeLineJoin="round" />')
+                out.append(f'    <path android:pathData="{d}" android:strokeColor="{lighten(col, 0.85)}" android:strokeWidth="0.9" '
+                           f'android:strokeLineCap="round" android:strokeLineJoin="round" />')
+            elif filled:
                 out.append(f'    <path android:pathData="{d}" android:strokeColor="{col}" android:strokeWidth="0.5">')
                 out.append('        <aapt:attr name="android:fillColor">')
                 out.append(f'            <gradient android:type="linear" android:startX="{f(x)}" android:startY="0" android:endX="{f(x + w)}" android:endY="0">')
@@ -121,7 +136,10 @@ def vd_monochrome():
         out.append(f'    <path android:pathData="{rrect(x, y, w, h, 2.2)}" android:fillColor="#00000000" '
                    f'android:strokeColor="#FFFFFF" android:strokeWidth="0.6" />')
         for d, filled in parts(kind, x, y, w, h):
-            if filled:
+            if filled == "neon":
+                out.append(f'    <path android:pathData="{d}" android:strokeColor="#FFFFFF" android:strokeWidth="2.1" '
+                           f'android:strokeLineCap="round" android:strokeLineJoin="round" />')
+            elif filled:
                 out.append(f'    <path android:pathData="{d}" android:fillColor="#FFFFFF" />')
             else:
                 out.append(f'    <path android:pathData="{d}" android:strokeColor="#FFFFFF" android:strokeWidth="1.6" '
@@ -163,7 +181,7 @@ def svg(version="v403", background="#000000", mono=False):
         for i, (x, y, w, h, kind, col) in enumerate(KEYS):
             cx, cy = x + w / 2, y + h / 2
             r = min(w, 16) * 0.62
-            sy = h / min(w, 16) * 1.05 if kind == "T" else 0.8
+            sy = h / min(w, 16) * 1.05 if kind in ("A", "B", "C") else 0.8
             sx = 1.0 if kind != "space" else 2.0
             defs.append(f'<radialGradient id="h{i}" cx="{f(cx)}" cy="{f(cy)}" r="{f(r)}" gradientUnits="userSpaceOnUse">'
                         f'<stop offset="0" stop-color="{col}" stop-opacity="0.7"/><stop offset="0.45" stop-color="{col}" stop-opacity="0.35"/>'
@@ -176,7 +194,14 @@ def svg(version="v403", background="#000000", mono=False):
             defs.append(f'<linearGradient id="g{i}" x1="{f(x)}" y1="0" x2="{f(x + w)}" y2="0" gradientUnits="userSpaceOnUse">'
                         f'<stop offset="0.2" stop-color="{col}"/><stop offset="0.5" stop-color="{light}"/><stop offset="0.8" stop-color="{col}"/></linearGradient>')
         for d, filled in parts(kind, x, y, w, h):
-            if filled:
+            if filled == "neon":
+                rl = 'stroke-linecap="round" stroke-linejoin="round" fill="none"'
+                if mono:
+                    body.append(f'<path d="{d}" stroke="#fff" stroke-width="2.1" {rl}/>')
+                else:
+                    body.append(f'<path d="{d}" stroke="{col}" stroke-width="2.3" {rl}/>')
+                    body.append(f'<path d="{d}" stroke="{lighten(col, 0.85)}" stroke-width="0.9" {rl}/>')
+            elif filled:
                 body.append(f'<path d="{d}" fill="#fff"/>' if mono else
                             f'<path d="{d}" fill="url(#g{i})" stroke="{col}" stroke-width="0.5"/>')
             else:

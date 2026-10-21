@@ -10918,7 +10918,7 @@ Marko, 21.10.2026, with a screenshot of the keyboard: the app icon in the Mantra
 different color … glowing nice style".
 
 - Dark keycaps on black; each legend lit in its own colour inside a halo, as the Shruti valves
-  glow and as Settings → Key colours lights the letters (G815): three T keys (red, gold, cyan) over
+  glow and as Settings → Key colours lights the letters (G815): A, B and C (red, gold, cyan), lit tubes, over
   a violet microphone and a green space bar.
 - One source: `design/make_app_icon.py` writes the vector templates in `app/src/main/icon/` and an
   SVG preview (`design/app_icon.svg`). Keycaps span 42 of the 72 mask (0.583, app-icon.md).
