@@ -61,3 +61,11 @@ R1 Prompts: radio buttons with full model names, no "Default" anywhere (screensh
 Qwen3 4B: stops at the end, no inventions, no cut mid-word; then Ctrl+F back to Claude Haiku 5.5.
 R3 space before a dictation after "C2:". R4 stopped download shows "Stopped at N %". R5 Clear all
 asks. R6 Ctrl+P output tokens close to the answer (thinking off). Report: "Build 399: X pass, Y fail".
+
+## 21.10.2026 — build 400 replaces 399 for the retest
+
+APK:    https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-400/ttt-mini-build-400.apk
+sha256: 6557cb981632ea5a2d0759c961d14299d154e8762ddcb967107f5e063b6ac29a (46,323,199 bytes, main 95d9783)
+
+R0 (new): Settings → Prompts starts with the two switches (Style after every dictation, Croatian
+spell check); screenshot. R1–R6 as for 399. Report: "Build 400: X pass, Y fail".
