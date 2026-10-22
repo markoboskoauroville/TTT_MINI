@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>TTT · Talk to Type</title>
+<meta name="description" content="TTT, Talk to Type Advanced Keyboard: an Android keyboard you speak to, in Croatian and English, with Croatian letters, colours, rows you arrange and a reader.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Spectral:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0D1117; --bg2:#141a23; --line2:rgba(255,255,255,.08); --ink:#E6EDF3; --ink2:#9AA6B2; --ink3:#6E7781;
+  --a:#3FB950; --b:#F2CC60; --c:#58C4DC; --r:#FF7B72}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 Inter,system-ui,sans-serif; overflow-x:hidden}
+a{color:var(--c)}
+.wrap{max-width:1080px; margin:0 auto; padding:0 16px}
+section{padding:64px 0}
+.eyebrow{font:500 12px "IBM Plex Mono",monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--a); margin-bottom:10px}
+h1{font:400 clamp(40px,7vw,70px)/1.05 Spectral,Georgia,serif; margin:0 0 16px}
+h1 em,h2 em{font-style:normal; color:var(--b)}
+h2{font:400 clamp(30px,4.5vw,44px)/1.15 Spectral,Georgia,serif; margin:0 0 16px}
+.lede{font-size:19px; color:var(--ink2); max-width:40em}
+.btn{display:inline-block; font:600 16px Inter,sans-serif; text-decoration:none; color:#0D1117; background:var(--a); border-radius:999px; padding:14px 26px; box-shadow:0 0 28px rgba(63,185,80,.35)}
+.btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line2); box-shadow:none}
+.links{display:flex; gap:12px; flex-wrap:wrap; margin-top:24px}
+.hero{padding:0 0 40px}
+.hero .shot{display:block; width:100%; max-height:78vh; object-fit:cover; object-position:center 40%; margin:0 0 36px;
+  -webkit-mask-image:linear-gradient(180deg,#000 82%,transparent); mask-image:linear-gradient(180deg,#000 82%,transparent)}
+.keys{display:flex; gap:8px; margin:0 0 18px}
+.keys span{font:600 22px "IBM Plex Mono",monospace; width:44px; height:44px; display:grid; place-items:center; border-radius:10px; background:var(--bg2); border:1px solid var(--line2)}
+.feats{display:grid; gap:22px; margin-top:30px}
+.feat{display:grid; grid-template-columns:minmax(0,300px) minmax(0,1fr); gap:28px; align-items:center; background:var(--bg2); border:1px solid var(--line2); border-radius:18px; padding:20px}
+.feat.wide{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+.feat figure{margin:0}
+.feat img{width:100%; display:block; border-radius:12px; border:1px solid var(--line2)}
+.feat:not(.wide) img{max-height:560px; object-fit:cover; object-position:top}
+.feat h3{margin:0 0 8px; font-size:22px}
+.feat p{margin:0; color:var(--ink2); font-size:16.5px}
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; margin-top:26px}
+.card{background:var(--bg2); border:1px solid var(--line2); border-radius:16px; padding:20px}
+.card h3{margin:0 0 6px; font-size:17px}
+.card p{margin:0; color:var(--ink2); font-size:15px}
+.get{text-align:center}
+.note{font-size:13.5px; color:var(--ink3)}
+footer{padding:40px 0 60px; color:var(--ink3); font-size:13.5px; border-top:1px solid var(--line2)}
+@media (max-width:760px){
+  section{padding:46px 0}
+  .feat,.feat.wide{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <img class="shot" src="img/hero.jpg" alt="A man on a café veranda in Pondicherry speaks into his phone and TTT types his words" width="1376" height="768">
+  <div class="wrap">
+    <div class="keys" aria-hidden="true"><span style="color:var(--r)">T</span><span style="color:var(--b)">T</span><span style="color:var(--c)">T</span></div>
+    <div class="eyebrow">TTT · Talk to Type Advanced Keyboard · Android</div>
+    <h1>Talk, and it <em>types</em></h1>
+    <p class="lede">A keyboard you speak to. Press ● H and speak Croatian, press ● E and speak English: your words are written where the cursor is, in any app. Around the voice, a full keyboard made to be arranged your way.</p>
+    <div class="links"><a class="btn" href="#get">Get TTT</a><a class="btn ghost" href="#features">See what it does</a></div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="eyebrow">What it does</div>
+    <h2>Made for a person who <em>writes by voice</em></h2>
+    <p class="lede">It was made by a filmmaker who dictates all day, in two languages, on his phone. Every screen below is the real app.</p>
+    <div class="feats">
+<div class="feat"><figure><img src="img/keyboard.jpg" alt="Speak, and it types" loading="lazy"></figure><div><h3>Speak, and it types</h3><p>Two keys on the bottom row record: ● H for Croatian, ● E for English. The key you press is the language, so there is nothing to set first and nothing to check after. Your words land at the cursor in any app.</p></div></div>
+<div class="feat wide"><figure><img src="img/popup-c.jpg" alt="Croatian letters, your way" loading="lazy"></figure><div><h3>Croatian letters, your way</h3><p>Hold c and you get č and ć, hold d for đ, s for š, z for ž. Nothing else pops up to get in your way. Any letter can carry more pop-ups: you add them yourself.</p></div></div>
+<div class="feat"><figure><img src="img/set-idcard.jpg" alt="Pop-up Configuration" loading="lazy"></figure><div><h3>Pop-up Configuration</h3><p>Every letter on one grid with its pop-ups printed under it. Press a letter and its ID card opens: the key big at the top, Pop-up 1, Pop-up 2, and a + for as many as you like.</p></div></div>
+<div class="feat"><figure><img src="img/set-colors.jpg" alt="Coloring the Buttons" loading="lazy"></figure><div><h3>Coloring the Buttons</h3><p>Paint the letters themselves, like a Logitech G815: choose a colour, tap the keys. You find the keys you use most by colour before you read them.</p></div></div>
+<div class="feat"><figure><img src="img/set-feature.jpg" alt="Rows you arrange" loading="lazy"></figure><div><h3>Rows you arrange</h3><p>Up to six rows of feature keys above the letters, each with its own name. Drag the keys into the order your thumb wants; F1 to F6 show and hide a row from the keyboard.</p></div></div>
+<div class="feat wide"><figure><img src="img/row-copy.jpg" alt="The copy row" loading="lazy"></figure><div><h3>The copy row</h3><p>Select all, paste, copy, cut, clipboard history and two paste helpers, one tap each, right above the keys.</p></div></div>
+<div class="feat wide"><figure><img src="img/row-cursor.jpg" alt="A cursor pad" loading="lazy"></figure><div><h3>A cursor pad</h3><p>One row turns into a touchpad: slide along it to move the cursor exactly where you want it, letter by letter.</p></div></div>
+<div class="feat"><figure><img src="img/set-numrow.jpg" alt="Number row that types whole phrases" loading="lazy"></figure><div><h3>Number row that types whole phrases</h3><p>Each digit can carry a snippet: a symbol, a word, a whole sentence, typed with one long press.</p></div></div>
+<div class="feat"><figure><img src="img/set-reader.jpg" alt="It reads to you" loading="lazy"></figure><div><h3>It reads to you</h3><p>The speaker key reads what is on the screen aloud, with the current word lit in a subtitle row, on the spacebar, or full screen. Speed and text size are yours.</p></div></div>
+<div class="feat"><figure><img src="img/set-prompts.jpg" alt="Proofread and spell check" loading="lazy"></figure><div><h3>Proofread and spell check</h3><p>Ctrl+P proofreads, Ctrl+F reformats, and every Croatian dictation is checked for spelling before it is typed. You keep every wording of every prompt.</p></div></div>
+<div class="feat"><figure><img src="img/set-switch.jpg" alt="Everything in one switchboard" loading="lazy"></figure><div><h3>Everything in one switchboard</h3><p>The keys, the number row, the feature rows, the suggestion row, the copy row, the reader: one screen, one switch each.</p></div></div>
+<div class="feat wide"><figure><img src="img/symbols.jpg" alt="Symbols, two pages" loading="lazy"></figure><div><h3>Symbols, two pages</h3><p>All the punctuation and symbols on two pages, one tap away from the letters.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="more">
+  <div class="wrap">
+    <div class="eyebrow">And more</div>
+    <h2>Small things that <em>save the day</em></h2>
+    <div class="cards">
+<div class="card"><h3>Word prediction that learns you</h3><p>It learns the words you write, in Croatian and English separately. When you correct a word, it learns that it was a typo and offers what you meant next time; recent words rank above old ones.</p></div>
+<div class="card"><h3>Volume keys</h3><p>Hold volume up to record, hold volume down to press send. A quick tap still changes the volume.</p></div>
+<div class="card"><h3>Magic finger</h3><p>One key presses a button on the screen for you, like Send, found by its name.</p></div>
+<div class="card"><h3>History</h3><p>Every transcription is kept with its audio, and a recording cut short is saved, never lost.</p></div>
+<div class="card"><h3>Profiles</h3><p>Whole configurations saved by name and swapped in one tap.</p></div>
+<div class="card"><h3>Your keys, your data</h3><p>You bring your own AssemblyAI and Anthropic keys, imported from a file, never typed. Nothing is learned in incognito fields.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="get" class="get">
+  <div class="wrap">
+    <div class="eyebrow">Get TTT</div>
+    <h2>Start <em>talking</em></h2>
+    <p class="lede" style="margin:0 auto 26px">For Android 8 and newer. Install it, turn it on as your keyboard, import your speech key from a file, and press ● H or ● E.</p>
+    <a class="btn" href="https://github.com/markoboskoauroville/TTT_MINI/releases/latest" target="_blank" rel="noopener">Download the latest version</a>
+    <p class="note" style="margin-top:14px">Free and open source (Apache 2.0), built on Dictate and FlorisBoard. Speech to text uses your own AssemblyAI key; proofreading your own Anthropic key. If it helps you, put something in the bowl below.</p>
+  </div>
+</section>
+
+<!-- THE MANTRA PAYMENT GATEWAY, the donation bowl (MANTRA_MANIFEST modules/donation-bowl.md, payment-links.md).
+     Step 1, on the page: only the title and the Tibetan bowl (a photoreal Nano Banana Pro render).
+     Step 2, after a tap: the bowl rings (a singing bowl synthesised in the browser, nothing downloaded), fades away, and
+     the giving panel takes its place: a "Give with Revolut" button, his Revolut QR code, a way back to the bowl.
+     Paste this block into the page; put tibetan-bowl.jpg and revolut-qr.png in the page's img/ folder.
+     Self-contained: its own styles (scoped to .mantra-bowl) and script; no library, no tracking. -->
+<section class="mantra-bowl" data-revolut="https://revolut.me/mbosko0612" aria-label="Support Marko Mantra">
+  <style>
+    .mantra-bowl { --brass: #f3c97a; --glow: rgba(255, 196, 120, .45); --card: #292c2f; text-align: center; padding: 64px 16px; }
+    .mantra-bowl h2 { margin: 0 0 26px; }
+    .mantra-bowl .stage { position: relative; display: grid; place-items: center; min-height: 380px; }
+    .mantra-bowl .stage > * { grid-area: 1 / 1; transition: opacity .9s ease, transform .9s ease; }
+    .mantra-bowl .bowl { background: none; border: 0; padding: 0; cursor: pointer; position: relative; color: inherit; font: inherit; -webkit-tap-highlight-color: transparent; }
+    .mantra-bowl .bowl:focus-visible { outline: 2px solid var(--brass); outline-offset: 8px; border-radius: 24px; }
+    .mantra-bowl .bowl img { width: min(360px, 82vw); height: auto; display: block; border-radius: 24px; transition: transform .4s ease, filter .4s ease; }
+    .mantra-bowl .hint { display: block; margin-top: 16px; font-size: 15px; letter-spacing: .06em; opacity: .75; }
+    .mantra-bowl .bowl:hover img { transform: translateY(-3px); filter: brightness(1.08); }
+    .mantra-bowl .ring { position: absolute; left: 50%; top: 36%; width: 60%; aspect-ratio: 3 / 1; border: 2px solid var(--glow); border-radius: 50%;
+      transform: translate(-50%, -50%) scale(.6); opacity: 0; pointer-events: none; }
+    .mantra-bowl.ringing .ring { animation: mantra-bowl-ring 2.4s ease-out forwards; }
+    .mantra-bowl.ringing .ring.r2 { animation-delay: .5s; }
+    .mantra-bowl.ringing .ring.r3 { animation-delay: 1s; }
+    @keyframes mantra-bowl-ring { 0% { opacity: .9; transform: translate(-50%, -50%) scale(.6); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(2.2); } }
+    /* step 2: the bowl gives way to the panel */
+    .mantra-bowl.giving .bowl { opacity: 0; transform: scale(.94); pointer-events: none; }
+    .mantra-bowl .panel { opacity: 0; transform: translateY(14px); pointer-events: none; width: min(420px, 92vw); }
+    .mantra-bowl.giving .panel { opacity: 1; transform: none; pointer-events: auto; transition-delay: .35s; }
+    .mantra-bowl .give { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 18px 22px; border-radius: 999px;
+      background: linear-gradient(90deg, #f3c97a, #fff0c4, #f3c97a); color: #1a1206; font-weight: 700; font-size: 17px; text-decoration: none;
+      box-shadow: 0 0 30px var(--glow); box-sizing: border-box; }
+    .mantra-bowl .qr { margin: 22px auto 0; background: var(--card); border-radius: 22px; padding: 22px; width: min(260px, 70vw); box-sizing: border-box; }
+    .mantra-bowl .qr img { width: 100%; height: auto; display: block; }
+    .mantra-bowl .small { font-size: 14px; opacity: .7; margin: 14px 0 0; }
+    .mantra-bowl .back { background: none; border: 0; color: inherit; opacity: .6; font-size: 14px; margin-top: 18px; cursor: pointer; text-decoration: underline; }
+    @media (prefers-reduced-motion: reduce) { .mantra-bowl.ringing .ring { animation: none; } .mantra-bowl .stage > * { transition: none; } }
+  </style>
+  <h2>Put something in the bowl</h2>
+  <div class="stage">
+    <button type="button" class="bowl" aria-label="Ring the bowl to give">
+      <span class="ring"></span><span class="ring r2"></span><span class="ring r3"></span>
+      <img src="img/tibetan-bowl.jpg" alt="A Tibetan singing bowl on a red cushion, coins inside" width="900" height="900">
+      <span class="hint">Click on the bowl to donate</span>
+    </button>
+    <div class="panel" aria-hidden="true">
+      <a class="give" href="https://revolut.me/mbosko0612" target="_blank" rel="noopener">Give with Revolut →</a>
+      <p class="small">Any amount, by card or Revolut. No Revolut account needed. It goes straight to Marko.</p>
+      <div class="qr"><img src="img/revolut-qr.png" alt="Revolut QR code for @mbosko0612" width="620" height="760"></div>
+      <p class="small">On a computer? Scan it with your phone.</p>
+      <button type="button" class="back">back to the bowl</button>
+    </div>
+  </div>
+  <script>
+  (() => {
+    const box = document.currentScript.closest('.mantra-bowl');
+    const bowl = box.querySelector('.bowl'), panel = box.querySelector('.panel');
+    box.querySelector('.give').href = box.dataset.revolut;
+    // A singing bowl's voice: a low fundamental with inharmonic partials (about 1, 2.76, 5.4, 8.9 times), each a pair a
+    // few tenths of a hertz apart so the tone beats, a soft strike and a long fading hum.
+    function ring() {
+      const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return;
+      const ac = new Ctx(), now = ac.currentTime, out = ac.createGain();
+      out.gain.value = 0.32; out.connect(ac.destination);
+      [[1, 1, 9], [2.76, .5, 6], [5.4, .25, 4], [8.93, .12, 2.5]].forEach(([k, amp, dur]) => {
+        [0, 0.6].forEach(detune => {
+          const o = ac.createOscillator(), g = ac.createGain();
+          o.type = 'sine'; o.frequency.value = 196 * k + detune;
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(amp / 2, now + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+          o.connect(g); g.connect(out); o.start(now); o.stop(now + dur + 0.1);
+        });
+      });
+      setTimeout(() => ac.close(), 10000);
+    }
+    bowl.addEventListener('click', () => {
+      ring();
+      box.classList.remove('ringing'); void box.offsetWidth; box.classList.add('ringing');
+      // the bowl sounds first, then gives way to the panel
+      setTimeout(() => { box.classList.add('giving'); panel.setAttribute('aria-hidden', 'false'); bowl.setAttribute('aria-hidden', 'true'); }, 1300);
+    });
+    box.querySelector('.back').addEventListener('click', () => {
+      box.classList.remove('giving', 'ringing'); panel.setAttribute('aria-hidden', 'true'); bowl.removeAttribute('aria-hidden');
+    });
+  })();
+  </script>
+</section>
+
+
+<footer>
+  <div class="wrap">
+    <p>TTT, Talk to Type Advanced Keyboard, by Marko Boško, Mantra Productions · <a href="https://markobosko.pages.dev/#/kod">more of my tools</a> · <a href="https://github.com/markoboskoauroville/TTT_MINI">source code</a></p>
+    <p>Built on Dictate by DevEmperor and FlorisBoard, Apache License 2.0. Logitech and G815 are trademarks of their owners.</p>
+  </div>
+</footer>
+<script src="https://speechifykeys.pages.dev/speechify-keys.js" defer></script>
+</body>
+</html>
