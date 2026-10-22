@@ -39,4 +39,4 @@ Every request word for word, saved and pushed before any code (MANTRA_MANIFEST r
 
 1. A post in the same style as the Shruti Box and DJ Mantra posts (plain, English then Croatian, the page link), written in Facebook in his Chrome and not sent: he posts it.
 
-**Status:** asked.
+**Status:** composed 22.10.2026 in Create post on his profile (Chrome, auroville.community): plain text, English then Croatian, the link talktotype.pages.dev, the hero picture attached. Not posted; audience "Only me" left for him.
