@@ -22,3 +22,13 @@ Every request word for word, saved and pushed before any code (MANTRA_MANIFEST r
 2. A word he types and then corrects is learnt as a typo: the correction goes into the prediction.
 
 **Status:** built 22.10.2026. GitHub measured: FlorisBoard most starred (8.7k, this app's base, weak prediction), AnySoftKeyboard most forked (951), HeliBoard strongest learner (6.4k) but GPL-3.0, which cannot go into this Apache-2.0 app; its learning is AOSP LatinIME's (Apache-2.0), and two of its ideas were written fresh in Kotlin: (a) correction learning: the text before the cursor is watched; a finished word cut back and retyped close to it (Damerau–Levenshtein 1–3) is a typo → it is unlearned from the counts, never offered again, and when he types it the correction is the first suggestion (in his case); kept per language; (b) the forgetting curve: within a tier, count × 0.5^(days/30), floor 0.15. Also fixed: deleted characters no longer go into the sentence being learned (`teh` deleted + `the` used to learn `tehthe`). scripts/test_corrections.sh runs 22 cases on the Mac with Gradle's own Kotlin compiler. First build failed on a gate test that matched an exact line (fixed); build 410 green and installed on the Pixel 22.10.2026. Learning from real typing needs Marko's thumbs (adb text bypasses the keyboard).
+
+## 22.10.2026: TTT, "Talk to Type Advanced Keyboard", gets its product page
+
+> "now start building product page for TTT Mini and rename it to only TTT, which means "Talk to Type". Call it "Talk to Type Advanced Keyboard". Then make many screenshots through ADB and explain and ask for donations. One more product and push it also to my biography page. Build it please, same principle. Third product" (Marko, 22.10.2026)
+
+1. The app is renamed TTT (Talk to Type); the product is "Talk to Type Advanced Keyboard".
+2. A product page like Shruti Box and DJ Mantra: many real screenshots taken over adb, each feature explained, "Download the latest version", the Tibetan bowl for donations, the app icon as favicon.
+3. Linked from the biography's Kod tab (product-pages-on-the-bio.md).
+
+**Status:** asked.
