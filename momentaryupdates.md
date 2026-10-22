@@ -32,3 +32,11 @@ Every request word for word, saved and pushed before any code (MANTRA_MANIFEST r
 3. Linked from the biography's Kod tab (product-pages-on-the-bio.md).
 
 **Status:** done 22.10.2026. App renamed TTT (launcher), full name "TTT · Talk to Type Advanced Keyboard", release titles "TTT build N" (APK file name unchanged). Page live at https://talktotype.pages.dev (site/build.py): hero from Gemini on the Pixel (Pondicherry café veranda), 12 real screenshots over adb (keyboard, č ć pop-up on the keyboard itself, ID card, colours, feature rows, copy row, cursor pad, number row, reader, prompts, switchboard, symbols), six more features, Download the latest version, the Tibetan bowl, favicon = app icon. Biography Kod card now TTT · Talk to Type → talktotype.pages.dev. Seen on the Pixel: holding c on the keyboard shows č ć only.
+
+## 22.10.2026: the Facebook post about TTT
+
+> "please inside the chrome open the facebook and make a post about this keyboard" (Marko, 22.10.2026)
+
+1. A post in the same style as the Shruti Box and DJ Mantra posts (plain, English then Croatian, the page link), written in Facebook in his Chrome and not sent: he posts it.
+
+**Status:** asked.
