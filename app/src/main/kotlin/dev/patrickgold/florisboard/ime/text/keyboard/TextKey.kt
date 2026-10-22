@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.text.keyboard
 
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.MaPopups
 import dev.patrickgold.florisboard.ime.keyboard.AbstractKeyData
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.Key
@@ -31,6 +32,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.lib.lowercase
+import dev.patrickgold.florisboard.lib.uppercase
 
 /** ASCII period. Named because it decides both this key's popup and its face. */
 private const val KEY_CODE_PERIOD = 46
@@ -135,7 +137,25 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
                     computedPopups.clear()
                     computedPopups.main = TextKeyData(code = KEY_CODE_COMMA, label = ",")
                 }
-                if (computed.type == KeyType.CHARACTER) {
+                // A letter offers his pop-ups and nothing else (MaPopups): no accents from the
+                // mappings, no symbol or number hint. Cleared and rebuilt here, after every merge, for
+                // the same reason as the dot key: this key's popup is decided in one place.
+                if (computed.type == KeyType.CHARACTER && keyboardMode == KeyboardMode.CHARACTERS &&
+                    MaPopups.decides(computed.label)) {
+                    computedPopups.clear()
+                    val locale = evaluator.subtype.primaryLocale
+                    val upper = evaluator.state.isUppercase
+                    MaPopups.forLabel(computed.label).forEach { text ->
+                        val shown = if (upper) text.uppercase(locale) else text.lowercase(locale)
+                        computedPopups.relevant.add(
+                            if (MaPopups.isSingle(shown)) {
+                                TextKeyData(code = shown.codePointAt(0), label = shown)
+                            } else {
+                                MultiTextKeyData(codePoints = shown.codePoints().toArray(), label = shown)
+                            }
+                        )
+                    }
+                } else if (computed.type == KeyType.CHARACTER) {
                     addComputedHints(computed.code, evaluator, extendedPopups, extendedPopupsDefault)
                 }
             }

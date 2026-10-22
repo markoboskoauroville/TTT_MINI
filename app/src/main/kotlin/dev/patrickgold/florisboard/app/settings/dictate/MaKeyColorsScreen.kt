@@ -81,7 +81,7 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState as collectPrefAsSt
  */
 @Composable
 fun MaKeyColorsScreen() = FlorisScreen {
-    title = "Key colours"
+    title = "Coloring the Buttons"
 
     content {
         val prefs by FlorisPreferenceStore

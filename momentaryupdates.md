@@ -12,7 +12,7 @@ Every request word for word, saved and pushed before any code (MANTRA_MANIFEST r
 4. In Pop-up Configuration, a long press on a key opens its ID card: the key drawn big at the top (the card's "photo"), then Pop-up 1, and under it a + that adds more pop-ups.
 5. Tested on the Pixel 7 (attached by wireless adb).
 
-**Status:** asked.
+**Status:** built 22.10.2026: MaPopups (a letter offers exactly its list, the default č ć / đ / š / ž, no accents and no symbol or number hints on letters), Settings → "Coloring the Buttons" (renamed) and "Pop-up Configuration" (the letter grid, a long press or tap opens the ID card: the key big, Pop-up 1 …, ✕ per pop-up, + to add, Save). scripts/test_popups.py 14 checks. Found on the Pixel: with the Launchkey plugged in, Android hides the on-screen keyboard (the Launchkey also announces a USB typing keyboard).
 
 ## 22.10.2026: SwiftKey-quality prediction that learns from his typing and his corrections
 

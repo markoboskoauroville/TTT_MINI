@@ -41,7 +41,9 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     // nobody types, and he asked for it as a new feature because from where he sits it did not exist.
     NUMBER_ROW("number_row", "Number row", "What each digit carries on a long press"),
     // Beside the number row: the colours are most of all for telling its macro digits apart.
-    KEY_COLORS("key_colors", "Key colours", "Every key on one grid, each in its own colour"),
+    // Renamed from "Key colours" (Marko, 22.10.2026), beside its twin that reuses its grid.
+    KEY_COLORS("key_colors", "Coloring the Buttons", "Every key on one grid, each in its own colour"),
+    POPUPS("popups", "Pop-up Configuration", "What a long press on each letter offers"),
     CLOUD_READER("cloud_reader", "Claude.ai reader", "Chats it read, kept so you can read them again"),
     COPY_ROW("copy_row", "Copy row", "The clipboard row, shown in the transcription view"),
     PROFILES("profiles", "Profiles", "Whole configurations, saved by name and swapped in one tap"),
@@ -96,6 +98,7 @@ object MaSettingsOrder {
         MaSettingsEntry.READER,
         MaSettingsEntry.NUMBER_ROW,
         MaSettingsEntry.KEY_COLORS,
+        MaSettingsEntry.POPUPS,
         MaSettingsEntry.CLOUD_READER,
         MaSettingsEntry.COPY_ROW,
         MaSettingsEntry.PROFILES,

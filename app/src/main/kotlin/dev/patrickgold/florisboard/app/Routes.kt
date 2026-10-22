@@ -71,6 +71,7 @@ import dev.patrickgold.florisboard.app.settings.dictate.MaCopyRowScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaProfilesScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPromptsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaKeyColorsScreen
+import dev.patrickgold.florisboard.app.settings.dictate.MaPopupsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaClaudeCostScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaPermissionsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.MaCloudLogScreen
@@ -221,6 +222,10 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictate/key-colors")
         object MaKeyColors
+
+        @Serializable
+        @Deeplink("settings/dictate/popups")
+        object MaPopups
 
         @Serializable
         @Deeplink("settings/dictate/claude-costs")
@@ -482,6 +487,7 @@ object Routes {
             composableWithDeepLink(Settings.MaProfiles::class) { MaProfilesScreen() }
             composableWithDeepLink(Settings.MaPrompts::class) { MaPromptsScreen() }
             composableWithDeepLink(Settings.MaKeyColors::class) { MaKeyColorsScreen() }
+            composableWithDeepLink(Settings.MaPopups::class) { MaPopupsScreen() }
             composableWithDeepLink(Settings.MaClaudeCosts::class) { MaClaudeCostScreen() }
             composableWithDeepLink(Settings.MaPermissions::class) { MaPermissionsScreen() }
             composableWithDeepLink(Settings.MaPredictions::class) { MaPredictionsScreen() }

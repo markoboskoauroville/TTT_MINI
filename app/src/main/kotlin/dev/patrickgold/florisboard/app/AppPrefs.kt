@@ -27,6 +27,7 @@ import dev.patrickgold.florisboard.dictate.DictateFloatingButtonDesign
 import dev.patrickgold.florisboard.dictate.llm.MaPhoneModels
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.dictate.MaNumericSecondary
+import dev.patrickgold.florisboard.dictate.MaPopups
 import dev.patrickgold.florisboard.dictate.MaFeatureOrder
 import dev.patrickgold.florisboard.dictate.audio.DictateAudioSource
 import dev.patrickgold.florisboard.dictate.DictateFloatingButtonSize
@@ -838,6 +839,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val maKeyColors = string(
             key = "dictate__ma_key_colors",
             default = "",
+        )
+        // What a long press on each letter offers, `c\tč\tć` per line. See MaPopups. The default is
+        // the five Croatian letters; every other letter starts with none.
+        val maPopups = string(
+            key = "dictate__ma_popups",
+            default = MaPopups.DEFAULT,
         )
         // Personal word prediction: counts of what follows what, learned from this phone only and
         // never sent anywhere. On, because the words it exists to learn are the ones no shipped

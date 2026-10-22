@@ -27,6 +27,7 @@ import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.MaBucketUndo
 import dev.patrickgold.florisboard.dictate.MaClipCapture
 import dev.patrickgold.florisboard.dictate.MaFlow
+import dev.patrickgold.florisboard.dictate.MaPopups
 import dev.patrickgold.florisboard.dictate.MaProofread
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
@@ -183,6 +184,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             prefs.dictate.maExtraRow.asFlow().collectLatestIn(scope) {
                 updateActiveEvaluators {
                     keyboardCache.clear(KeyboardMode.CHARACTERS)
+                }
+            }
+            // His long-press pop-ups (Settings → Pop-up Configuration): held in memory for the keys
+            // to read, and every key recomputed so the next long press offers the new list.
+            prefs.dictate.maPopups.asFlow().collectLatestIn(scope) {
+                MaPopups.current = MaPopups.parse(it)
+                updateActiveEvaluators {
+                    keyboardCache.clear()
                 }
             }
             prefs.keyboard.hintedNumberRowEnabled.asFlow().collectLatestIn(scope) {
