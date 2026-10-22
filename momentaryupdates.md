@@ -1,0 +1,24 @@
+# TTT Mini: momentary updates
+
+Every request word for word, saved and pushed before any code (MANTRA_MANIFEST requests-saved-first).
+
+## 22.10.2026: Croatian long-press letters; POP-UP CONFIGURATION with a key's ID card
+
+> "After you do everything, quickly jump to my application TTT Mini and fix the pop-up of the letters when I long press. I want to see just creation letters popping up. I'm missing Croatian letters. This keyboard is Croatian and English in letters only. Secondary pop up can also be adjusted in settings, so there will be many empty buttons for the secondary pop up in normal letters. For C, D, and S we have special characters in Croatian and other languages, but what is empty can be again configured in settings. Plus other buttons can be added, not only one. So we're going to reuse the part of TTT mini for coloring the buttons because the whole layout is there and you need to write these settings. Rename it to "Coloring the Buttons" and "Pop-up Configuration". In that pop-up configuration I have all the keys. So when I long press on the key, it opens up the additional setting menu where there is like an ID card for that key. Then there will be a big key at the top. That's nice UI design. It's like an ID card has a picture of the person. Now this ID card has the picture of the key itself. Then there will be pop-up one, and under pop-up one will be + icon, and then I can add more pop-ups. Then I can customize my keyboard with pop-ups as much as I like. Thank you. And you can test the keyboard on my phone, which is attached already, so just continue testing." (Marko, 22.10.2026)
+
+1. A long press shows only the Croatian letters (č ć đ š ž on c, d, s, z); the keyboard is Croatian and English letters only.
+2. Every key's long-press pop-ups are configurable; keys with none are empty until he fills them, and a key can have several.
+3. The settings screen that colours the buttons (its whole keyboard layout reused) becomes two: "Coloring the Buttons" and "Pop-up Configuration".
+4. In Pop-up Configuration, a long press on a key opens its ID card: the key drawn big at the top (the card's "photo"), then Pop-up 1, and under it a + that adds more pop-ups.
+5. Tested on the Pixel 7 (attached by wireless adb).
+
+**Status:** asked.
+
+## 22.10.2026: SwiftKey-quality prediction that learns from his typing and his corrections
+
+> "Also update my engine in the keyboard for storing and predicting words. We want a SwiftKey quality, so you need to find the best algorithm open source on GitHub. Find the keyboard with most forks and most popular, and get its keys words prediction algorithm which learns from my own typing. Also, if I type something and correct it, that means this application needs to understand that it was wrong typed and I'm correcting. It needs to understand that and write correction in the prediction algorithm." (Marko, 22.10.2026)
+
+1. The word store and prediction rebuilt from the best open-source keyboard on GitHub (the most popular, most forked), its prediction that learns from his own typing.
+2. A word he types and then corrects is learnt as a typo: the correction goes into the prediction.
+
+**Status:** asked.
