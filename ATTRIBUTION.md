@@ -38,3 +38,12 @@ Bigram data derives from the Leipzig Corpora Collection (CC BY).
 ## Licence
 
 Apache License 2.0, unchanged from upstream. See LICENSE and NOTICE.
+
+## AOSP LatinIME (ideas, 22.10.2026)
+
+The personal model's correction learning and recency weighting (`dictate/nlp/MaCorrections.kt`)
+follow two ideas from the Android Open Source Project's LatinIME keyboard, Apache License 2.0: a
+word the user corrects is unlearned from the user history, and a word's weight decays with the time
+since it was last used (LatinIME's forgetting curve). No LatinIME code was copied; the Kotlin is
+written for this app. HeliBoard (GPL-3.0), which carries the same LatinIME learning today, was read
+for comparison only and nothing of it is included.

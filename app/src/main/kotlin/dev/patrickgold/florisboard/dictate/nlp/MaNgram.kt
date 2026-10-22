@@ -69,6 +69,45 @@ object MaNgram {
         models.getOrPut(language) { MaNgramModel() }
     }
 
+    // His corrections and when he last wrote each word, one of each per language like the models
+    // (MaCorrections.kt: what he corrects is learned as a typo; recent words outrank old ones).
+    private val corrections = mutableMapOf<String, MaCorrectionStore>()
+    private val recency = mutableMapOf<String, MaRecency>()
+    private val watcher = MaCorrectionWatcher()
+
+    private fun correctionsFor(language: String): MaCorrectionStore = synchronized(modelsLock) {
+        corrections.getOrPut(language) { MaCorrectionStore() }
+    }
+
+    private fun recencyFor(language: String): MaRecency = synchronized(modelsLock) {
+        recency.getOrPut(language) { MaRecency() }
+    }
+
+    private fun today(): Int = MaRecency.today(System.currentTimeMillis())
+
+    /**
+     * The text before the cursor after every change in the field, from the editor. Sees a word
+     * typed, cut back into and typed again differently; such a pair is a typo and its correction.
+     */
+    fun observeText(textBefore: String, isIncognito: Boolean) {
+        if (isIncognito) return
+        val found = watcher.observe(textBefore) ?: return
+        val prefs by FlorisPreferenceStore
+        if (!prefs.dictate.maNgramEnabled.get()) return
+        val language = active()
+        scope.launch {
+            correctionsFor(language).record(found.typo, found.fixed)
+            modelFor(language).unlearn(found.typo)
+            MaLog.add("ngram", "learned a correction: ${found.typo} → ${found.fixed}")
+            scheduleSave()
+        }
+    }
+
+    /** A character deleted before the cursor: it is not part of the sentence being collected. */
+    fun onDelete() {
+        synchronized(pendingLock) { if (pending.isNotEmpty()) pending.setLength(pending.length - 1) }
+    }
+
     /**
      * The model for the language being written.
      *
@@ -110,6 +149,12 @@ object MaNgram {
             val target = File(context.filesDir, "ma_ngram_$language.tsv")
             synchronized(modelsLock) { files[language] = target }
             scope.launch { modelFor(language).load(target) }
+            scope.launch {
+                runCatching { File(context.filesDir, "ma_corrections_$language.tsv").takeIf { it.exists() }?.readText() }
+                    .getOrNull()?.let { correctionsFor(language).parse(it) }
+                runCatching { File(context.filesDir, "ma_recency_$language.tsv").takeIf { it.exists() }?.readText() }
+                    .getOrNull()?.let { recencyFor(language).parse(it) }
+            }
         }
         // The old single mixed file, removed once.
         //
@@ -233,6 +278,8 @@ object MaNgram {
                 }
             }
             modelFor(badge).learn(text)
+            val day = today()
+            MaNgramModel.tokenize(text).forEach { recencyFor(badge).touch(it, day) }
             scheduleSave()
         }
     }
@@ -329,12 +376,32 @@ object MaNgram {
         val context = if (derived) textBeforeCursor.dropLast(trailing.length) else textBeforeCursor
         // Only this language's model. Never the other one, not even to fill an empty row: an English
         // word offered while writing Croatian is not a weaker suggestion, it is a wrong one.
-        val active = modelFor(active())
-        val personal = if (active.totalWords >= MIN_WORDS_BEFORE_PREDICTING) {
+        val language = active()
+        val active = modelFor(language)
+        val fixes = correctionsFor(language)
+        val recent = recencyFor(language)
+        val day = today()
+        val predicted = if (active.totalWords >= MIN_WORDS_BEFORE_PREDICTING) {
             val (two, one) = active.contextOf(context)
-            active.predict(previousTwo = two, previousOne = one, prefix = word)
+            active.predict(
+                previousTwo = two,
+                previousOne = one,
+                prefix = word,
+                weight = { recent.weight(it, day) },
+                skip = { fixes.isTypo(it) },
+            )
         } else {
             emptyList()
+        }
+        // A word he has corrected before: what he meant comes first, in the case he is typing.
+        // Ahead of the totalWords gate, because one correction is already certain knowledge.
+        val fix = if (word.isNotEmpty()) fixes.fixFor(word) else null
+        val personal = if (fix != null) {
+            val shown = MaCorrectionStore.matchCase(word, fix)
+            listOf(MaNgramSuggestion(word = shown, count = 1, tier = MaNgramModel.TIER_TRIGRAM + 1)) +
+                predicted.filter { !it.word.equals(shown, ignoreCase = true) }.take(PREDICT_LIMIT - 1)
+        } else {
+            predicted
         }
         if (personal.size >= PREDICT_LIMIT) return personal
         // The shipped Croatian list fills what is left, and only then.
@@ -374,6 +441,7 @@ object MaNgram {
             // Every model, not the active one. He switches language mid-sentence, so the one that
             // just learned something may not be the one in front of him by the time this runs.
             for (language in LANGUAGES) {
+                saveExtras(language)
                 val m = modelFor(language)
                 if (!m.isDirty) continue
                 m.prune()
@@ -382,11 +450,21 @@ object MaNgram {
         }
     }
 
+    /** The corrections and recency files, beside the model's, when either has changed. */
+    private fun saveExtras(language: String) {
+        val dir = synchronized(modelsLock) { files[language] }?.parentFile ?: return
+        runCatching {
+            correctionsFor(language).takeIf { it.isDirty }?.let { File(dir, "ma_corrections_$language.tsv").writeText(it.serialize()) }
+            recencyFor(language).takeIf { it.isDirty }?.let { File(dir, "ma_recency_$language.tsv").writeText(it.serialize()) }
+        }
+    }
+
     /** Writes immediately, for when the keyboard is going away and the delay would not finish. */
     fun flush() {
         saveJob?.cancel()
         scope.launch {
             for (language in LANGUAGES) {
+                saveExtras(language)
                 val m = modelFor(language)
                 if (m.isDirty) synchronized(modelsLock) { files[language] }?.let { m.save(it) }
             }
@@ -401,7 +479,10 @@ object MaNgram {
             // count go to zero, and still be offered his own words the moment he pressed the badge.
             for (language in LANGUAGES) {
                 modelFor(language).clear()
+                correctionsFor(language).clear()
+                recencyFor(language).clear()
                 synchronized(modelsLock) { files[language] }?.delete()
+                saveExtras(language)
             }
         }
     }
@@ -540,6 +621,9 @@ object MaNgram {
     /** Forgets one language only, leaving the other standing. */
     fun forget(language: String) {
         modelFor(language).clear()
+        correctionsFor(language).clear()
+        recencyFor(language).clear()
         synchronized(modelsLock) { files[language] }?.delete()
+        saveExtras(language)
     }
 }
