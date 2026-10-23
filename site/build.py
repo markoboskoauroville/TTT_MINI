@@ -143,7 +143,7 @@ footer{{padding:40px 0 60px; color:var(--ink3); font-size:13.5px; border-top:1px
     <div class="eyebrow">Get TTT</div>
     <h2>Start <em>talking</em></h2>
     <p class="lede" style="margin:0 auto 26px">For Android 8 and newer. Install it, turn it on as your keyboard, import your speech key from a file, and press ● H or ● E.</p>
-    <a class="btn" href="{DOWNLOAD}" target="_blank" rel="noopener">Download the latest version</a>
+    <a class="btn" href="{DOWNLOAD}" target="_blank" rel="noopener" data-dl-app="ttt">Download the latest version</a>
     <p class="note" style="margin-top:14px">Free and open source (Apache 2.0), built on Dictate and FlorisBoard. Speech to text uses your own AssemblyAI key; proofreading your own Anthropic key. If it helps you, put something in the bowl below.</p>
   </div>
 </section>
@@ -157,6 +157,7 @@ footer{{padding:40px 0 60px; color:var(--ink3); font-size:13.5px; border-top:1px
   </div>
 </footer>
 <script src="https://speechifykeys.pages.dev/speechify-keys.js" defer></script>
+<script src="https://mantra-downloads.marko-bosko-925.workers.dev/counter.js" defer></script>
 </body>
 </html>
 """
