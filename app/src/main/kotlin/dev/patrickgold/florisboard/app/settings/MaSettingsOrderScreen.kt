@@ -97,6 +97,8 @@ val MaSettingsEntry.icon: ImageVector
         MaSettingsEntry.NUMBER_ROW -> Icons.Default.Tag
         // ColorLens, already resolved elsewhere in this app.
         MaSettingsEntry.KEY_COLORS -> Icons.Default.ColorLens
+        // Tag, already resolved in this file: a pop-up is a label a key carries.
+        MaSettingsEntry.POPUPS -> Icons.Default.Tag
         MaSettingsEntry.CLOUD_READER -> Icons.AutoMirrored.Filled.VolumeUp
         MaSettingsEntry.COPY_ROW -> Icons.Default.ContentPasteGo
         MaSettingsEntry.PROFILES -> Icons.Default.Folder
@@ -137,6 +139,7 @@ val MaSettingsEntry.route: Any
         MaSettingsEntry.READER -> Routes.Settings.MaReader
         MaSettingsEntry.NUMBER_ROW -> Routes.Settings.MaNumberRow
         MaSettingsEntry.KEY_COLORS -> Routes.Settings.MaKeyColors
+        MaSettingsEntry.POPUPS -> Routes.Settings.MaPopups
         MaSettingsEntry.CLOUD_READER -> Routes.Settings.MaCloudLog
         MaSettingsEntry.COPY_ROW -> Routes.Settings.MaCopyRow
         MaSettingsEntry.PROFILES -> Routes.Settings.MaProfiles

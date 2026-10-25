@@ -169,6 +169,8 @@ class MaNgramModel {
         previousOne: String?,
         prefix: String,
         limit: Int = 3,
+        weight: (String) -> Double = { 1.0 },
+        skip: (String) -> Boolean = { false },
     ): List<MaNgramSuggestion> {
         if (limit <= 0) return emptyList()
         val needle = prefix.lowercase()
@@ -182,7 +184,11 @@ class MaNgramModel {
                     .filter { needle.isEmpty() || it.key.startsWith(needle, ignoreCase = true) }
                     // A word cannot usefully predict itself as the word being typed.
                     .filter { !it.key.equals(prefix, ignoreCase = true) }
-                    .sortedByDescending { it.value }
+                    // A word he corrected away is never offered back (MaCorrections).
+                    .filter { !skip(it.key) }
+                    // Within a tier, the count weighed by how recently he wrote the word: the
+                    // forgetting curve (MaRecency). Tier still decides first.
+                    .sortedByDescending { it.value * weight(it.key) }
                 for (entry in ranked) {
                     if (out.size >= limit) return
                     val existing = out[entry.key.lowercase()]
@@ -208,6 +214,26 @@ class MaNgramModel {
             }
         }
         return out.values.toList()
+    }
+
+    /**
+     * Takes one sighting of [word] back out of the counts: he wrote it and then corrected it, so it
+     * was a typo, not a word (after AOSP LatinIME, which unlearns a reverted word). One count only,
+     * so a real word he once corrected in one place survives elsewhere.
+     */
+    fun unlearn(word: String) {
+        if (word.isBlank()) return
+        lock.write {
+            fun drop(row: MutableMap<String, Int>) {
+                val key = row.keys.firstOrNull { it.equals(word, ignoreCase = true) } ?: return
+                val n = (row[key] ?: 0) - 1
+                if (n <= 0) row.remove(key) else row[key] = n
+            }
+            drop(unigrams)
+            bigrams.values.forEach { drop(it) }
+            trigrams.values.forEach { drop(it) }
+            isDirty = true
+        }
     }
 
     /** The last two words before the cursor, for [predict]. Either may be null near the start. */

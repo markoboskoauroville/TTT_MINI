@@ -119,7 +119,10 @@ def code(path: Path) -> str:
 ngram = code(SRC / "dictate/nlp/MaNgram.kt")
 check("there are two models", "private val models = mutableMapOf<String, MaNgramModel>()" in ngram, "still one")
 check("the badge chooses", "MaLanguage.active()" in ngram, "deaf to the language key")
-check("predict reads only the active model", "val active = modelFor(active())" in ngram, "reads both")
+# Since 22.10.2026 the language is named once (it also picks the corrections and recency of that language).
+check("predict reads only the active model",
+      "val active = modelFor(active())" in ngram
+      or ("val language = active()" in ngram and "val active = modelFor(language)" in ngram), "reads both")
 # The variable was renamed `badge` when the language gate landed; the claim is unchanged and still
 # the one that matters — read OUTSIDE the coroutine, so a badge press between the commit and the save
 # cannot file the sentence under the wrong language.

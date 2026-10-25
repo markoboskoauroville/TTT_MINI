@@ -3,7 +3,7 @@
          override it with the old fork name, so a phone set to Croatian or German showed
          "Dictate" on the launcher no matter what this file said. They have been removed and
          this is marked untranslatable so they cannot come back through a translation import. -->
-    <string name="app_name" translatable="false">TTT mini</string>
+    <string name="app_name" translatable="false">TTT</string>
 
     <string name="key__phone_pause" comment="Label for the Pause key in the telephone keyboard layout">Pause</string>
     <string name="key__phone_wait" comment="Label for the Wait key in the telephone keyboard layout">Wait</string>
@@ -768,7 +768,7 @@
     <string name="about__feedback__title" comment="Preference title">Feedback &amp; support</string>
     <string name="about__feedback__summary" comment="Preference summary">Send an email with questions, bugs or ideas</string>
     <string name="about__feedback__email" translatable="false">contact@devemperor.net</string>
-    <string name="about__feedback__subject" comment="Default subject line of the feedback email" translatable="false">TTT mini</string>
+    <string name="about__feedback__subject" comment="Default subject line of the feedback email" translatable="false">TTT</string>
     <string name="about__privacy_policy__title" comment="Preference title">Privacy policy</string>
     <string name="about__privacy_policy__summary" comment="Preference summary">The privacy policy for this project</string>
     <string name="about__project_license__title" comment="Preference title">Project license</string>
@@ -919,7 +919,7 @@
     <string name="ma__scroll_pages">Pages to scroll</string>
     <string name="ma__scroll_none">Nothing on this screen scrolls</string>
     <string name="ma__magic_scan_close">Close</string>
-    <string name="ma__accessibility_needed">Turn on TTT mini here so it can press buttons for you</string>
+    <string name="ma__accessibility_needed">Turn on TTT here so it can press buttons for you</string>
     <string name="ma__clip_clear_empty">Empty the C buckets, all already empty</string>
     <string name="dictate__legacy_action_all_clear">Select all and delete</string>
     <string name="dictate__legacy_action_space">Space</string>
@@ -1393,7 +1393,7 @@
     <!-- Dictate floating button / accessibility service (issue #88) -->
     <string name="dictate__accessibility_service_label" comment="Name of the Dictate accessibility service, shown in the system accessibility settings list">Dictate floating button</string>
     <string name="dictate__accessibility_service_summary" comment="Short one-line summary of the accessibility service in the system settings">Show a floating button to dictate into any text field.</string>
-    <string name="dictate__accessibility_service_description" comment="Full disclosure shown in the system accessibility settings explaining what the service does and why">TTT mini uses this service for the floating dictation button, the TAB key that returns you to the last app, and the magic key that presses a button on screen for you. It reads the labels of the controls in front of you, the way a screen reader does, so it can find the button you asked for and place your dictated text at the cursor. It does not collect, store or share what is on your screen.</string>
+    <string name="dictate__accessibility_service_description" comment="Full disclosure shown in the system accessibility settings explaining what the service does and why">TTT uses this service for the floating dictation button, the TAB key that returns you to the last app, and the magic key that presses a button on screen for you. It reads the labels of the controls in front of you, the way a screen reader does, so it can find the button you asked for and place your dictated text at the cursor. It does not collect, store or share what is on your screen.</string>
     <string name="dictate__overlay_notification_channel" comment="Name of the notification channel for the floating-button recording notification">Floating dictation button</string>
     <string name="dictate__overlay_notification_recording" comment="Text of the ongoing notification shown while the floating button is recording">Recording — tap the floating button to transcribe</string>
     <string name="dictate__overlay_notification_working" comment="Text shown in the notification while the floating-button dictation is being transcribed">Transcribing…</string>

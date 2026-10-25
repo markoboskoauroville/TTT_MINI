@@ -141,6 +141,9 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         } else {
             super.handleSelectionUpdate(oldSelection, newSelection, composing)
         }
+        // The personal model watches the text for a word typed, cut back and typed again: a typo and
+        // its correction (MaCorrections). Only observes.
+        MaNgram.observeText(activeContent.textBeforeSelection.toString(), keyboardManager.activeState.isIncognitoMode)
     }
 
     override fun determineComposingEnabled(): Boolean {
@@ -491,6 +494,9 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         }
         autoSpace.setInactive()
         phantomSpace.setInactive()
+        // A deleted character is not part of the sentence the personal model is collecting: without
+        // this, `teh` deleted and `the` typed was learned as the word `tehthe`.
+        if (unit == OperationUnit.CHARACTERS && content.selection.isCursorMode) MaNgram.onDelete()
         return if (content.selection.isSelectionMode) {
             commitText("")
         } else runBlocking {

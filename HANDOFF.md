@@ -1,6 +1,15 @@
 # TTT mini — the finished state
 
-**Build 390.** A dictation keyboard for Marko Boško.
+**Build 413 (22.10.2026).** Renamed **TTT, Talk to Type Advanced Keyboard** (launcher name "TTT"; repo and package
+unchanged; APK file still ttt-mini-build-N.apk). A dictation keyboard for Marko Boško.
+
+**New on 22.10.2026:** a letter's long press offers only his pop-ups (MaPopups; default č ć / đ / š / ž; Settings →
+Pop-up Configuration with a key's ID card), Key colours renamed Coloring the Buttons; the personal model learns from
+corrections (MaCorrections: a typo cut back and retyped is unlearned and its fix offered first; recent words outrank
+old ones, after AOSP LatinIME); deleted letters no longer learned. Tests on the Mac: scripts/test_popups.py,
+scripts/test_corrections.sh (Gradle's own Kotlin compiler, no kotlinc). Product page: https://talktotype.pages.dev
+(site/build.py, Cloudflare Pages "talktotype"), linked from the biography. Not yet tried by his thumbs: the correction
+learning.
 
 **Repo:** `markoboskoauroville/TTT_MINI` (Apache-2.0) · **Package:** `com.mantraproductions.tttlight`
 > **The artefact link above rots.** CI keeps the two newest releases, so a build named here is
