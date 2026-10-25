@@ -83,9 +83,10 @@ for wrong, right in [("Amina", "Emina"), ("Fever", "Fiverr"), ("You Cloud", "Cla
     check(f"seed {wrong} -> {right}", f'"{wrong}" to "{right}"' in rules)
 
 # The wrong word leaves the personal model.
-check("MaNgram.unlearn exists", "fun unlearn(word: String, language: String)" in ngram)
-check("the model can forget one word", "fun forget(word: String): Boolean" in model)
-check("settle unlearns", "MaNgram.unlearn(" in corr)
+check("MaNgram.learnFix exists", "fun learnFix(wrong: String, right: String, language: String)" in ngram)
+check("a one-word fix joins the typing correction store", "correctionsFor(language).record(wrongWords[0], rightWords[0])" in ngram)
+check("the wrong words are unlearned", "modelFor(language).unlearn(w)" in ngram)
+check("settle hands every fix to the typing side", "MaNgram.learnFix(s.wrong, s.right, p.language)" in corr)
 
 # Settings.
 check("pref on", re.search(r'maCorrectionsEnabled = boolean\(\s*key = "dictate__ma_corrections_enabled",\s*default = true', prefs) is not None)

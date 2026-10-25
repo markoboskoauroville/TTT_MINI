@@ -628,11 +628,24 @@ object MaNgram {
     }
 
     /**
-     * Takes [word] out of [language]'s model: he corrected it away (MaDictationCorrections), so it is not
-     * a word to offer him. Learned again only if he writes it again himself.
+     * A fix he made in a dictation (MaDictationCorrections), handed to the typing side as well.
+     *
+     * One word for one word goes into the same correction store as a typo retyped on the keys
+     * ([observeText]): typing the wrong word offers the right one first, and the wrong one is no
+     * longer suggested. Longer swaps only take the wrong words out of the counts, except words that
+     * are also part of the right form ("Mantra production" to "Mantra Productions" keeps "Mantra").
      */
-    fun unlearn(word: String, language: String) {
-        if (word.isBlank()) return
-        if (modelFor(language).forget(word)) scheduleSave()
+    fun learnFix(wrong: String, right: String, language: String) {
+        val wrongWords = wrong.split(' ').filter { it.isNotBlank() }
+        val rightWords = right.split(' ').filter { it.isNotBlank() }
+        if (wrongWords.isEmpty() || rightWords.isEmpty()) return
+        scope.launch {
+            if (wrongWords.size == 1 && rightWords.size == 1) {
+                correctionsFor(language).record(wrongWords[0], rightWords[0])
+            }
+            val keep = rightWords.map { it.lowercase() }.toSet()
+            for (w in wrongWords) if (w.lowercase() !in keep) modelFor(language).unlearn(w)
+            scheduleSave()
+        }
     }
 }

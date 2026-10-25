@@ -126,12 +126,9 @@ object MaDictationCorrections {
         for (s in swaps) next = MaCorrectionRules.record(next, s, p.language)
         _rules.value = next
         save()
-        // The wrong words leave the personal model, so they stop being offered. Only words that are
-        // not also part of the right form: "Mantra production" to "Mantra Productions" keeps "Mantra".
-        for (s in swaps) {
-            val keep = s.right.split(' ').map { it.lowercase() }.toSet()
-            for (w in s.wrong.split(' ')) if (w.lowercase() !in keep) MaNgram.unlearn(w, p.language)
-        }
+        // The typing side learns it too: the wrong words leave the personal model, and a one-word
+        // fix is offered first when he types the wrong word (MaNgram.learnFix).
+        for (s in swaps) MaNgram.learnFix(s.wrong, s.right, p.language)
         MaLog.add("corrections", "learned ${swaps.size} from the last dictation")
     }
 

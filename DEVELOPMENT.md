@@ -10930,8 +10930,9 @@ different color … glowing nice style".
 ## §222 — It learns from his corrections
 
 Marko, 25.10.2026: "please confirm whether my application is tracking my corrections and also … correcting
-the suggestion towards them". It was not. The personal model learned every committed word, the wrong ones
-included, and nothing knew that "Amina" had become "Emina". Now:
+the suggestion towards them". Typing already
+learned a typo retyped on the keys (22.10.2026); dictation did not, and nothing knew that a dictated
+"Amina" had become "Emina". Now (`MaDictationCorrections`, `MaCorrectionRules`):
 
 - **Watched.** Each dictation into the keyboard's own field is remembered with where it went in
   (`MaDictationCorrections.noteDictation`, read before the commit). Not in password fields, not in incognito.
@@ -10944,13 +10945,16 @@ included, and nothing knew that "Amina" had become "Emina". Now:
   A different fix of the same word starts the count again; fixing a rule's output back switches the rule off.
 - **Used.** Rules in use are applied to every new dictation, whole words, any case, the longest first, never
   doubling a form already right ("DaVinci Resolve" stays). Their right forms join his word list for the
-  speech model's prompt. The wrong word is taken out of the personal model (`MaNgram.unlearn`).
+  speech model's prompt. The typing side learns it too (`MaNgram.learnFix`): the wrong words leave the
+  personal model, and a one-word fix joins the store the keys already learn typos into (22.10.2026,
+  `MaCorrectionWatcher` / `MaCorrectionStore`), so typing the wrong word offers the right one first.
 - **His.** Settings → My corrections: the switch first, then "Add a fix" and "Add my replace list" (his
   ALWAYS REPLACE list, 26 fixes; "Cloud" on its own left out because it is Claude only when it means the
   AI), then the rules in use, being counted, and switched off, each with its own switch and Delete.
 - Local and free: one file, `ma_dictation_corrections.tsv`; the log says how many were learned, never which.
-- Not covered: fixes to text typed on the keys (only dictations are watched), and a fix to the very last word
-  of a dictation with nothing after it to anchor it (a full stop is enough).
+- Typed text is the typing side's (a typo retyped on the keys, 22.10.2026); this watches dictations. Not
+  covered: a fix to the very last word of a dictation with nothing after it to anchor it (a full stop is
+  enough).
 
 Tests: `MaCorrectionRulesTest` (kotest, 23 cases), `scripts/test_dictation_corrections.py` (34 checks).
 
