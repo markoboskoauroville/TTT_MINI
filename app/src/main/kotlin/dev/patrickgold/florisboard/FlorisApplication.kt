@@ -29,6 +29,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.data.prefs.DictateLegacyMigrator
 import dev.patrickgold.florisboard.dictate.MaLog
+import dev.patrickgold.florisboard.dictate.nlp.MaDictationCorrections
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
@@ -163,6 +164,7 @@ class FlorisApplication : Application() {
             DictateLegacyMigrator.applyActionRowV20IfNeeded()
             MaLog.initialize(this@FlorisApplication)
             MaNgram.initialize(this@FlorisApplication)
+            MaDictationCorrections.initialize(this@FlorisApplication)
             // After initialize, which loads whatever the model already knows, so the backfill adds
             // to it rather than racing the load and being overwritten by it.
             MaNgram.backfillFromHistory(this@FlorisApplication)

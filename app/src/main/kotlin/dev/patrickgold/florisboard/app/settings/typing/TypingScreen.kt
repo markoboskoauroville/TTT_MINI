@@ -95,13 +95,6 @@ fun TypingScreen() = FlorisScreen {
                 summary = stringRes(R.string.pref__suggestion__api30_inline_suggestions_enabled__summary),
                 visibleIf = { AndroidVersion.ATLEAST_API30_R },
             )
-            ListPreference(
-                prefs.suggestion.incognitoMode,
-                icon = ImageVector.vectorResource(id = R.drawable.ic_incognito),
-                modifier = Modifier.settingsSearchAnchor("pref__suggestion__incognito_mode__label"),
-                title = stringRes(R.string.pref__suggestion__incognito_mode__label),
-                entries = enumDisplayEntriesOf(IncognitoMode::class),
-            )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__correction__title)) {
@@ -184,6 +177,18 @@ fun TypingScreen() = FlorisScreen {
                     }
                 }
             }
+        }
+
+        // Incognito is a choice of three, not a switch: under every switch on this screen, so the
+        // Corrections switches are not pushed below it (switches first, phone test build 403).
+        PreferenceGroup(title = stringRes(R.string.pref__suggestion__incognito_mode__label)) {
+            ListPreference(
+                prefs.suggestion.incognitoMode,
+                icon = ImageVector.vectorResource(id = R.drawable.ic_incognito),
+                modifier = Modifier.settingsSearchAnchor("pref__suggestion__incognito_mode__label"),
+                title = stringRes(R.string.pref__suggestion__incognito_mode__label),
+                entries = enumDisplayEntriesOf(IncognitoMode::class),
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__spelling__title)) {

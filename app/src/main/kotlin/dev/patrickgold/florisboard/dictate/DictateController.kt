@@ -71,6 +71,7 @@ import dev.patrickgold.florisboard.dictate.overlay.AccessibilitySink
 import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.recognition.RecognitionSink
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
+import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.util.AppVersionUtils
 import kotlinx.coroutines.CancellationException
@@ -96,6 +97,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import dev.patrickgold.florisboard.dictate.audio.MaEncoder
 import dev.patrickgold.florisboard.dictate.audio.MaResample
+import dev.patrickgold.florisboard.dictate.nlp.MaDictationCorrections
 import dev.patrickgold.florisboard.dictate.provider.MaKeyRing
 import dev.patrickgold.florisboard.dictate.provider.MaKeys
 import androidx.compose.runtime.getValue
@@ -2656,6 +2658,13 @@ object DictateController {
      * the dictation was started from the floating button (issue #88) and must inject into another app.
      * This single seam keeps the rest of the engine editor-agnostic.
      */
+    private fun editor(context: Context) = context.applicationContext.editorInstance().value
+
+    /** Learns from the last dictation in the keyboard's field (MaDictationCorrections.settle). */
+    private fun settleCorrections(context: Context) {
+        runCatching { MaDictationCorrections.settle(editor(context).activeInfo) }
+    }
+
     private fun sink(context: Context): DictationSink = when (outputTarget) {
         OutputTarget.IME -> ImeDictationSink(context)
         OutputTarget.OVERLAY -> AccessibilitySink()
@@ -2713,6 +2722,10 @@ object DictateController {
                 }
             }
         }
+        // HIS CORRECTIONS (MaDictationCorrections): first, whatever he fixed in the last dictation is learned,
+        // before this one moves the field on; then the fixes he has taught are made in this one.
+        if (outputTarget == OutputTarget.IME) settleCorrections(context)
+        body = MaDictationCorrections.apply(body)
         val sink = sink(context)
         // A live prompt that worked on the whole field replaces it. commitText already replaces a
         // selection, so selecting everything first turns the insert into the rewrite that was asked
@@ -2725,6 +2738,9 @@ object DictateController {
         // "C2:Do you…". Only when the field ends on a word or punctuation and the dictation starts
         // with a letter or digit; never after a space, a line break or an opening bracket.
         if (MaDictationSpace.needsLeadingSpace(sink.charBeforeCursor(), body.firstOrNull())) body = " $body"
+        // Where it starts, read before it is written: after, the field's copy may not have caught up.
+        val watchStart = if (outputTarget == OutputTarget.IME) editor(context).activeContent.selection.start else -1
+        val watchBefore = if (outputTarget == OutputTarget.IME) editor(context).activeContent.textBeforeSelection else ""
         var committed: Boolean
         // System voice input (#67) returns the whole result at once — no typewriter animation, which only
         // makes sense when we're the one typing into a visible field.
@@ -2737,6 +2753,10 @@ object DictateController {
                 if (!sink.commitText(ch.toString())) committed = false
                 delay(perChar)
             }
+        }
+        if (committed && watchStart >= 0) {
+            val state = context.keyboardManager().value.activeState
+            MaDictationCorrections.noteDictation(body, watchStart, watchBefore, editor(context).activeInfo, state.isIncognitoMode)
         }
         // No auto-enter on an empty result (e.g. silence): don't fire a stray newline into the field (#124).
         if (prefs.dictate.autoEnter.get()) {
@@ -3603,6 +3623,9 @@ object DictateController {
             return
         }
 
+        // What he corrected by hand is learned now; what the prompt is about to change is not his.
+        settleCorrections(appContext)
+        MaDictationCorrections.drop()
         _state.value = UiState.Rewording(prompt.name ?: appContext.getString(R.string.dictate__status_rewording))
         // Store the job so the stop button can abort this reword mid-generation (issue #192).
         rewordJob = scope.launch {
@@ -4012,7 +4035,11 @@ object DictateController {
      * names/jargon are spelled correctly even with the predefined punctuation prompt or with none.
      */
     private fun transcriptionStylePrompt(): String? =
-        DictatePromptDefaults.appendCustomWords(transcriptionStyleBasePrompt(), prefs.dictate.customWords.get())
+        DictatePromptDefaults.appendCustomWords(
+            transcriptionStyleBasePrompt(),
+            // His own words, then the right forms of the corrections he taught (MaDictationCorrections).
+            (listOf(prefs.dictate.customWords.get()) + MaDictationCorrections.glossary()).filter { it.isNotBlank() }.joinToString(", "),
+        )
 
     /**
      * The style prompt WITHOUT the appended custom-words glossary — the predefined per-language sentence or

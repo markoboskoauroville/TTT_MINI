@@ -42,33 +42,33 @@ fun SmartbarScreen() = FlorisScreen {
             title = stringRes(R.string.pref__smartbar__enabled__label),
             summary = stringRes(R.string.pref__smartbar__enabled__summary),
         )
-        ListPreference(
-            listPref = prefs.smartbar.layout,
-            modifier = Modifier.settingsSearchAnchor("pref__smartbar__layout__label"),
-            title = stringRes(R.string.pref__smartbar__layout__label),
-            entries = enumDisplayEntriesOf(SmartbarLayout::class),
+        SwitchPreference(
+            prefs.smartbar.flipToggles,
+            modifier = Modifier.settingsSearchAnchor("pref__smartbar__flip_toggles__label"),
+            title = stringRes(R.string.pref__smartbar__flip_toggles__label),
+            summary = stringRes(R.string.pref__smartbar__flip_toggles__summary),
             enabledIf = { prefs.smartbar.enabled isEqualTo true },
+            visibleIf = {
+                prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED ||
+                    prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED
+            },
+        )
+        SwitchPreference(
+            prefs.smartbar.sharedActionsAutoExpandCollapse,
+            modifier = Modifier.settingsSearchAnchor("pref__smartbar__shared_actions_auto_expand_collapse__label"),
+            title = stringRes(R.string.pref__smartbar__shared_actions_auto_expand_collapse__label),
+            summary = "[Since v0.4.1] Always enabled due to UX issues",
+            enabledIf = { false },
+            visibleIf = { prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED },
         )
 
         PreferenceGroup(title = stringRes(R.string.pref__smartbar__group_layout_specific__label)) {
-            SwitchPreference(
-                prefs.smartbar.flipToggles,
-                modifier = Modifier.settingsSearchAnchor("pref__smartbar__flip_toggles__label"),
-                title = stringRes(R.string.pref__smartbar__flip_toggles__label),
-                summary = stringRes(R.string.pref__smartbar__flip_toggles__summary),
+            ListPreference(
+                listPref = prefs.smartbar.layout,
+                modifier = Modifier.settingsSearchAnchor("pref__smartbar__layout__label"),
+                title = stringRes(R.string.pref__smartbar__layout__label),
+                entries = enumDisplayEntriesOf(SmartbarLayout::class),
                 enabledIf = { prefs.smartbar.enabled isEqualTo true },
-                visibleIf = {
-                    prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED ||
-                        prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED
-                },
-            )
-            SwitchPreference(
-                prefs.smartbar.sharedActionsAutoExpandCollapse,
-                modifier = Modifier.settingsSearchAnchor("pref__smartbar__shared_actions_auto_expand_collapse__label"),
-                title = stringRes(R.string.pref__smartbar__shared_actions_auto_expand_collapse__label),
-                summary = "[Since v0.4.1] Always enabled due to UX issues",
-                enabledIf = { false },
-                visibleIf = { prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED },
             )
             ListPreference(
                 prefs.suggestion.displayMode,

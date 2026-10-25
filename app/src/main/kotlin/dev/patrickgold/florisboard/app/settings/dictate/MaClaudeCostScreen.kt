@@ -147,7 +147,7 @@ fun MaClaudeCostScreen() = FlorisScreen {
         Text(
             text = "Today ${usd(MaClaudeCost.spentSince(entries, dayStart))}   ·   " +
                 "This month ${usd(MaClaudeCost.spentSince(entries, monthStart))}   ·   " +
-                "${entries.size} requests logged",
+                "${entries.size} " + (if (entries.size == 1) "request" else "requests") + " logged",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
@@ -194,7 +194,16 @@ fun MaClaudeCostScreen() = FlorisScreen {
     }
 }
 
-/** Dollars to four decimals under a cent, two above, so a $0.0003 proofread is not shown as $0.00. */
-private fun usd(value: Double): String =
-    if (kotlin.math.abs(value) < 0.01) "$" + "%.4f".format(Locale.ROOT, value)
-    else "$" + "%.2f".format(Locale.ROOT, value)
+/**
+ * Dollars to two decimals from a cent up, four under a cent, six under a hundredth of a cent. A Haiku
+ * 5.5 proofread costs about $0.00004 and was shown as $0.0000 (phone test, build 403).
+ */
+private fun usd(value: Double): String {
+    val a = kotlin.math.abs(value)
+    val digits = when {
+        a == 0.0 || a >= 0.01 -> 2
+        a >= 0.0001 -> 4
+        else -> 6
+    }
+    return "$" + "%.${digits}f".format(Locale.ROOT, value)
+}

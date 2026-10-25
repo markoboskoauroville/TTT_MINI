@@ -10926,3 +10926,35 @@ different color … glowing nice style".
   real drawables into `build/generated/versionIcon` with `vN`, N = versionCode − 1000 = build-N.
 - The themed icon is the same keys in outline with filled legends. The notification icon stays the
   plain microphone, now `ic_notification_mic`. The old bitmap foregrounds are gone.
+
+## §222 — It learns from his corrections
+
+Marko, 25.10.2026: "please confirm whether my application is tracking my corrections and also … correcting
+the suggestion towards them". It was not. The personal model learned every committed word, the wrong ones
+included, and nothing knew that "Amina" had become "Emina". Now:
+
+- **Watched.** Each dictation into the keyboard's own field is remembered with where it went in
+  (`MaDictationCorrections.noteDictation`, read before the commit). Not in password fields, not in incognito.
+- **Compared.** When the next dictation arrives, before Ctrl+P / Ctrl+F rewrite the text, and when the field
+  closes (`onFinishInput`, not when the keyboard merely hides), that stretch of the field is read again and
+  compared word by word (`MaCorrectionRules.diff`, longest common subsequence). One to three words replaced by
+  one to three words, inside unchanged text, is a correction; more than half changed is a rewrite and teaches
+  nothing. A capital added to a word mid-sentence counts ("emina" → "Emina"); punctuation does not.
+- **Counted.** Fixed once is counted; fixed the same way twice it is in use (`ACTIVE_AT = 2`), per language.
+  A different fix of the same word starts the count again; fixing a rule's output back switches the rule off.
+- **Used.** Rules in use are applied to every new dictation, whole words, any case, the longest first, never
+  doubling a form already right ("DaVinci Resolve" stays). Their right forms join his word list for the
+  speech model's prompt. The wrong word is taken out of the personal model (`MaNgram.unlearn`).
+- **His.** Settings → My corrections: the switch first, then "Add a fix" and "Add my replace list" (his
+  ALWAYS REPLACE list, 26 fixes; "Cloud" on its own left out because it is Claude only when it means the
+  AI), then the rules in use, being counted, and switched off, each with its own switch and Delete.
+- Local and free: one file, `ma_dictation_corrections.tsv`; the log says how many were learned, never which.
+- Not covered: fixes to text typed on the keys (only dictations are watched), and a fix to the very last word
+  of a dictation with nothing after it to anchor it (a full stop is enough).
+
+Tests: `MaCorrectionRulesTest` (kotest, 23 cases), `scripts/test_dictation_corrections.py` (34 checks).
+
+Also from the Pixel 7 report on build 403: Smartbar and Typing put their switches first (Layout and Incognito
+moved under them); a cost under a hundredth of a cent shows six decimals ($0.000040, not $0.0000); "1
+request"; the "Sent to Claude" block no longer names the account's model as if every key used it; the
+download bar's track is faint, so 0 % no longer looks nearly full.

@@ -169,9 +169,13 @@ fun MaPhoneModelSection() {
                     )
                 }
                 if (downloading) {
+                    // A faint track: the theme's own track colour is nearly as bright as the bar,
+                    // so at 0 % it read as a bar almost full (phone test, build 403).
                     LinearProgressIndicator(
-                        progress = { state.percent / 100f },
+                        progress = { (state.percent / 100f).coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp, end = 8.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
                     )
                 }
             }

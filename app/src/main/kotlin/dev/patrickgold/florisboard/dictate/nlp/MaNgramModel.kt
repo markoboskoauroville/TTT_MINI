@@ -249,6 +249,27 @@ class MaNgramModel {
         }
     }
 
+    /**
+     * Forgets one word in every spelling of its case: its count, and every row it starts or ends.
+     * Returns whether anything was there to forget.
+     */
+    fun forget(word: String): Boolean {
+        val lower = word.lowercase()
+        return lock.write {
+            val doomed = unigrams.keys.filter { it.lowercase() == lower }.toSet()
+            if (doomed.isEmpty()) return@write false
+            unigrams.keys.removeAll(doomed)
+            bigrams.remove(lower)
+            for (row in bigrams.values) row.keys.removeAll(doomed)
+            bigrams.entries.removeAll { it.value.isEmpty() }
+            trigrams.keys.removeAll { key -> key.split('\u0000').any { it == lower } }
+            for (row in trigrams.values) row.keys.removeAll(doomed)
+            trigrams.entries.removeAll { it.value.isEmpty() }
+            isDirty = true
+            true
+        }
+    }
+
     /** Forgets everything. */
     fun clear() {
         lock.write {

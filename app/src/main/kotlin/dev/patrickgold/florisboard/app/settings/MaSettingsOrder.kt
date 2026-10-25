@@ -33,6 +33,8 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     PROMPTS("prompts", "Prompts", "Ctrl+P, Ctrl+F and the Croatian spell check: wording and model"),
     // Beside Prompts: what those prompts cost.
     CLAUDE_COSTS("claude_costs", "Claude costs", "What each request cost, and an estimate of what is left"),
+    // Beside them: the fixes the keyboard learned from his own corrections, and his replace list.
+    CORRECTIONS("corrections", "My corrections", "Words you fix, fixed for you next time"),
     VOICE_FORMAT("voice_format", "Voice formatting", "Marks you can speak, and how to say them"),
     READER("reader", "Reader", "The voice that reads the screen aloud"),
     // Beside the reader, because it is the reader's memory. A chat he listened to and can go back to.
@@ -92,6 +94,7 @@ object MaSettingsOrder {
         MaSettingsEntry.SHORTCUTS,
         MaSettingsEntry.PROMPTS,
         MaSettingsEntry.CLAUDE_COSTS,
+        MaSettingsEntry.CORRECTIONS,
         MaSettingsEntry.VOICE_FORMAT,
         MaSettingsEntry.READER,
         MaSettingsEntry.NUMBER_ROW,

@@ -62,8 +62,14 @@ SCREENS = [
     ("typing/TypingScreen.kt", "fun TypingScreen",
      ["autoCapitalization", "autoSpacePunctuation", "rememberCapsLockState", "doubleSpacePeriod"],
      "prefs.dictate.maTextCase"),
+    # build 403: Incognito (a list) sat between the Suggestions and the Corrections switches.
+    ("typing/TypingScreen.kt", "fun TypingScreen",
+     ["api30InlineSuggestionsEnabled", "doubleSpacePeriod"], "prefs.suggestion.incognitoMode"),
     ("smartbar/SmartbarScreen.kt", "fun SmartbarScreen", ["flipToggles"], "prefs.suggestion.displayMode"),
+    # build 403: Layout (a list) sat between "Enable Smartbar" and "Flip toggle buttons".
+    ("smartbar/SmartbarScreen.kt", "fun SmartbarScreen", ["enabled,", "flipToggles"], "listPref = prefs.smartbar.layout"),
     ("dictate/MaVocabularyScreen.kt", "fun MaVocabularyScreen", ["maNgramEnabled"], "LaunchedEffect(Unit)"),
+    ("dictate/MaCorrectionsScreen.kt", "fun MaCorrectionsScreen", ["maCorrectionsEnabled"], "Add a fix"),
     ("dictate/MaPromptsScreen.kt", "fun MaPromptsScreen", ["maPhoneStyleEnabled", "maSpellcheckEnabled"],
      "MaPhoneModelSection()"),
 ]

@@ -57,6 +57,7 @@ import dev.patrickgold.florisboard.dictate.MaLog
 import dev.patrickgold.florisboard.ime.text.keyboard.MaCursorPad
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
 import dev.patrickgold.florisboard.dictate.MaVolumeKeys
+import dev.patrickgold.florisboard.dictate.nlp.MaDictationCorrections
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -573,6 +574,9 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onFinishInput() {
         flogInfo { "(no args)" }
+        // His corrections to the last dictation are read now, while this field is still the one
+        // connected. Not when only the keyboard hides: he may bring it back to fix the same text.
+        MaDictationCorrections.settle(editorInstance.activeInfo)
         super.onFinishInput()
         editorInstance.handleFinishInput()
         NlpInlineAutofill.clearInlineSuggestions()

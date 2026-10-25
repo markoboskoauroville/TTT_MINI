@@ -542,4 +542,13 @@ object MaNgram {
         modelFor(language).clear()
         synchronized(modelsLock) { files[language] }?.delete()
     }
+
+    /**
+     * Takes [word] out of [language]'s model: he corrected it away (MaDictationCorrections), so it is not
+     * a word to offer him. Learned again only if he writes it again himself.
+     */
+    fun unlearn(word: String, language: String) {
+        if (word.isBlank()) return
+        if (modelFor(language).forget(word)) scheduleSave()
+    }
 }

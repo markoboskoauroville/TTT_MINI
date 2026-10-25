@@ -497,20 +497,19 @@ private fun PromptEditor(
     )
 }
 
-/** The model Ctrl+P and Ctrl+F go to, as a line he can read: what is set, and what it means. */
+/**
+ * Which model the message goes to, as a line he can read.
+ *
+ * It used to name the rewording account's model, `claude-haiku-latest`, while Ctrl+F was set to
+ * Sonnet on the chooser above (phone test, build 403): true of the account, false of the key. Each
+ * prompt goes to the model ticked under it, so the line says that, and names the model that
+ * actually answered last, by its real name.
+ */
 private fun rewordingModelLine(): String {
-    val account = MaProviders.rewordingAccount()
-    val preset = MaProviders.presetFor(account)
-    val set = MaClaudeModels.upgradeOldDefault(account.chatModel.ifBlank { preset.defaultChatModel.orEmpty() })
-    val tier = MaClaudeModels.tierOfAlias(set)
     val ran = OpenAiCompatibleClient.lastClaudeModel
     return buildString {
-        append("Model: ").append(set.ifBlank { "not set" })
-        if (tier != null) {
-            append(" \u2014 the newest ").append(tier.replaceFirstChar { it.uppercase() })
-            append(" on Anthropic's model list, looked up by the app")
-        }
-        if (ran != null) append("\nLast answered by: ").append(ran)
+        append("Each prompt is sent to the model ticked under it above.")
+        if (ran != null) append("\nLast answered by: ").append(MaClaudeModels.displayName(ran))
     }
 }
 
@@ -736,8 +735,8 @@ private fun ClaudeTierChooser() {
         "sonnet" to "Newest Sonnet \u2014 better Croatian grammar, about 20\u00D7 the price",
         "opus" to "Newest Opus \u2014 most careful, about 40\u00D7 the price",
     )
-    for ((tier, label) in choices) {
-        val alias = MaClaudeModels.alias(tier)
+    for ((choice, label) in choices) {
+        val alias = MaClaudeModels.alias(choice)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -829,8 +828,8 @@ private fun ModelChooser(pref: PreferenceData<String>) {
     // A Claude row names the model its tier resolves to now ("Claude Haiku 5.5"); the stored choice
     // is still the tier, so the next Haiku takes its place by itself and the name here follows.
     val cached = MaProviders.rewordingAccount().cachedModels
-    val options: List<Pair<String, String>> = listOf("haiku", "sonnet", "opus").map { tier ->
-        val alias = MaClaudeModels.alias(tier)
+    val options: List<Pair<String, String>> = listOf("haiku", "sonnet", "opus").map { family ->
+        val alias = MaClaudeModels.alias(family)
         alias to MaClaudeModels.displayName(MaClaudeModels.resolve(alias, cached))
     } + MaPhoneModels.all.map { m ->
         val state = if (MaPhoneModels.isInstalled(context, m)) "on this phone" else "on this phone, not downloaded"

@@ -846,6 +846,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__ma_ngram_enabled",
             default = true,
         )
+        // Learn from my corrections (MaDictationCorrections): a word he fixes in a dictation, fixed the same way
+        // twice, is fixed for him from then on. On: it is local, free, and every rule can be switched
+        // off on its own screen.
+        val maCorrectionsEnabled = boolean(
+            key = "dictate__ma_corrections_enabled",
+            default = true,
+        )
         // The copy and paste row, shared by both views. On, because it is the row that made the
         // transcribe view worth using and the keyboard view had no equivalent worth keeping.
         val maEditRow = boolean(
