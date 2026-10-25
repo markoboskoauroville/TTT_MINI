@@ -46,3 +46,33 @@ Installed over 1403 with `install -r`; the sha256 matched 0aad3bf5…a747; versi
    - Home screen: TTT mini is not on his home screen. I did not add it, so his layout stays as it is.
    - Themed icon: NOT TESTABLE here. Nova draws the full-colour icon, and Android's Themed icons setting does not reach it (the grid_control provider refused adb).
    - Notification icon while recording: BLOCKED. Recording needs Marko at the mic; I'll ask him and add it here.
+
+## BUILD 419 (from the builder, 25.10.2026)
+
+The send_message to this session failed (session inactive), so the build is here.
+Marko is on 4G: download it once, the newest only.
+
+https://github.com/markoboskoauroville/TTT_MINI/releases/download/build-419/ttt-mini-build-419.apk
+sha256 `30d9e20defca52593f95b33294179661ee764ce926984f24eaa00ae1ca83cb0d` (46,334,258 bytes)
+Install: `adb -s 41241FDH2S10SJ install -r <apk>` (never uninstall).
+
+Test plan, build 419:
+1. The settings list has "My corrections" (next to Claude costs). In it: the "Learn from my corrections"
+   switch at the top, then "Add a fix" (Heard → Write), then the rules. No word "Default" on the screen.
+2. Add a fix: Heard "Kukljca", Write "Kukljica", Add. It shows under "In use", "added by you · every
+   language". Switch it off and on; Delete removes it.
+3. "Add my replace list (26)": 26 rules under In use; pressing it again adds nothing. "Delete all" asks
+   "Delete every correction?" — press Cancel and leave the list (Marko may want it).
+4. Typing side (from 22.10, no dictation needed): type "teh ", backspace into it, type "the "; then type
+   "teh" again: "the" should be the first suggestion.
+5. Dictation learning (needs Marko's voice, else BLOCKED): dictate a sentence with a name, fix one word by
+   hand, dictate again; make the same fix a second time; it appears under "In use" and the next dictation
+   is fixed by itself.
+6. Fixes from your build 403 report: Smartbar, every switch above "Layout". Typing, Incognito after all the
+   Suggestions and Corrections switches. Claude costs, one Haiku Ctrl+P shows about $0.000040 and
+   "1 request". Prompts → "Sent to Claude" says "Each prompt is sent to the model ticked under it above."
+   A model download at 0 %: the bar's track is faint, not almost full (only if it costs little data).
+
+Rules: at most one Haiku request; no keys printed; nothing published or pushed to main.
+Report under "## REPORT, build 419" here (or to session_0118g1MJ1Y3aD4nhAieRp6f8), as
+"Pixel 7, build 419: X pass, Y fail, Z blocked".
