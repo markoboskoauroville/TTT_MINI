@@ -6,7 +6,8 @@ screenshots through ADB and explain and ask for donations ... same principle").
 
     python3 site/build.py
 
-Screenshots in public/img were taken over adb on the Pixel 7 (build 410), with no private text or keys on them.
+Screenshots in public/img were taken over adb on the Pixel 7 (build 410), with no private text or keys on them;
+set-switch.jpg and set-predict.jpg on the Nothing Phone (build 423, 27.10.2026).
 The donation bowl is MANTRA_MANIFEST's kit, pasted in at build time. Deploy: Cloudflare Pages project "talktotype".
 """
 from pathlib import Path
@@ -27,12 +28,13 @@ FEATURES = [
     ("Number row that types whole phrases", "Each digit can carry a snippet: a symbol, a word, a whole sentence, typed with one long press.", "set-numrow.jpg", False),
     ("It reads to you", "The speaker key reads what is on the screen aloud, with the current word lit in a subtitle row, on the spacebar, or full screen. Speed and text size are yours.", "set-reader.jpg", False),
     ("Proofread and spell check", "Ctrl+P proofreads, Ctrl+F reformats, and every Croatian dictation is checked for spelling before it is typed. You keep every wording of every prompt.", "set-prompts.jpg", False),
-    ("Everything in one switchboard", "The keys, the number row, the feature rows, the suggestion row, the copy row, the reader: one screen, one switch each.", "set-switch.jpg", False),
+    ("Everything in one switchboard", "The keys, the number row, the feature rows, the copy row, the reader: one screen, one switch each. The prediction row is always there, so no key ever jumps.", "set-switch.jpg", False),
+    ("Auto prediction", "Word prediction in the language you are typing, Croatian or English, whatever the dictation key says. When the guesses are wrong, the AI key asks Claude for five words, on the model you choose: Haiku, Sonnet or Opus. Your corrections and the words it learned are on the same screen.", "set-predict.jpg", False),
     ("Symbols, two pages", "All the punctuation and symbols on two pages, one tap away from the letters.", "symbols.jpg", True),
 ]
 
 MORE = [
-    ("Word prediction that learns you", "It learns the words you write, in Croatian and English separately. When you correct a word, it learns that it was a typo and offers what you meant next time; recent words rank above old ones."),
+    ("Word prediction that learns you", "It learns the words you write, in Croatian and English separately. When you correct a word, it learns that it was a typo and offers what you meant next time; recent words rank above old ones. A word you fix in a dictation twice is fixed for you from then on."),
     ("Volume keys", "Hold volume up to record, hold volume down to press send. A quick tap still changes the volume."),
     ("Magic finger", "One key presses a button on the screen for you, like Send, found by its name."),
     ("History", "Every transcription is kept with its audio, and a recording cut short is saved, never lost."),

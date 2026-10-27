@@ -81,7 +81,8 @@ footer{padding:40px 0 60px; color:var(--ink3); font-size:13.5px; border-top:1px 
 <div class="feat"><figure><img src="img/set-numrow.jpg" alt="Number row that types whole phrases" loading="lazy"></figure><div><h3>Number row that types whole phrases</h3><p>Each digit can carry a snippet: a symbol, a word, a whole sentence, typed with one long press.</p></div></div>
 <div class="feat"><figure><img src="img/set-reader.jpg" alt="It reads to you" loading="lazy"></figure><div><h3>It reads to you</h3><p>The speaker key reads what is on the screen aloud, with the current word lit in a subtitle row, on the spacebar, or full screen. Speed and text size are yours.</p></div></div>
 <div class="feat"><figure><img src="img/set-prompts.jpg" alt="Proofread and spell check" loading="lazy"></figure><div><h3>Proofread and spell check</h3><p>Ctrl+P proofreads, Ctrl+F reformats, and every Croatian dictation is checked for spelling before it is typed. You keep every wording of every prompt.</p></div></div>
-<div class="feat"><figure><img src="img/set-switch.jpg" alt="Everything in one switchboard" loading="lazy"></figure><div><h3>Everything in one switchboard</h3><p>The keys, the number row, the feature rows, the suggestion row, the copy row, the reader: one screen, one switch each.</p></div></div>
+<div class="feat"><figure><img src="img/set-switch.jpg" alt="Everything in one switchboard" loading="lazy"></figure><div><h3>Everything in one switchboard</h3><p>The keys, the number row, the feature rows, the copy row, the reader: one screen, one switch each. The prediction row is always there, so no key ever jumps.</p></div></div>
+<div class="feat"><figure><img src="img/set-predict.jpg" alt="Auto prediction" loading="lazy"></figure><div><h3>Auto prediction</h3><p>Word prediction in the language you are typing, Croatian or English, whatever the dictation key says. When the guesses are wrong, the AI key asks Claude for five words, on the model you choose: Haiku, Sonnet or Opus. Your corrections and the words it learned are on the same screen.</p></div></div>
 <div class="feat wide"><figure><img src="img/symbols.jpg" alt="Symbols, two pages" loading="lazy"></figure><div><h3>Symbols, two pages</h3><p>All the punctuation and symbols on two pages, one tap away from the letters.</p></div></div>
     </div>
   </div>
@@ -92,7 +93,7 @@ footer{padding:40px 0 60px; color:var(--ink3); font-size:13.5px; border-top:1px 
     <div class="eyebrow">And more</div>
     <h2>Small things that <em>save the day</em></h2>
     <div class="cards">
-<div class="card"><h3>Word prediction that learns you</h3><p>It learns the words you write, in Croatian and English separately. When you correct a word, it learns that it was a typo and offers what you meant next time; recent words rank above old ones.</p></div>
+<div class="card"><h3>Word prediction that learns you</h3><p>It learns the words you write, in Croatian and English separately. When you correct a word, it learns that it was a typo and offers what you meant next time; recent words rank above old ones. A word you fix in a dictation twice is fixed for you from then on.</p></div>
 <div class="card"><h3>Volume keys</h3><p>Hold volume up to record, hold volume down to press send. A quick tap still changes the volume.</p></div>
 <div class="card"><h3>Magic finger</h3><p>One key presses a button on the screen for you, like Send, found by its name.</p></div>
 <div class="card"><h3>History</h3><p>Every transcription is kept with its audio, and a recording cut short is saved, never lost.</p></div>
@@ -122,7 +123,7 @@ footer{padding:40px 0 60px; color:var(--ink3); font-size:13.5px; border-top:1px 
   <style>
     .mantra-bowl { --brass: #f3c97a; --glow: rgba(255, 196, 120, .45); --card: #292c2f; text-align: center; padding: 64px 16px; }
     .mantra-bowl h2 { margin: 0 0 26px; }
-    .mantra-bowl .stage { position: relative; display: grid; place-items: center; min-height: 380px; }
+    .mantra-bowl .stage { position: relative; display: grid; place-items: center; min-height: 380px; aspect-ratio: auto; background: none; overflow: visible; border-radius: 0; }
     .mantra-bowl .stage > * { grid-area: 1 / 1; transition: opacity .9s ease, transform .9s ease; }
     .mantra-bowl .bowl { background: none; border: 0; padding: 0; cursor: pointer; position: relative; color: inherit; font: inherit; -webkit-tap-highlight-color: transparent; }
     .mantra-bowl .bowl:focus-visible { outline: 2px solid var(--brass); outline-offset: 8px; border-radius: 24px; }
