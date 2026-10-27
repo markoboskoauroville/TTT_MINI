@@ -865,6 +865,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // and the Claude model it asks. Stored as a tier alias, so the newest of the tier is used
         // without an update; the Anthropic key in the app pays for it. Haiku: the cheapest, and a
         // list of five words gains nothing from a bigger model.
+        // Auto prediction (27.10.2026): the row stays on screen, dark when it has nothing to say, unless
+        // he asks for the old behaviour of coming and going with its content.
+        val maPredictRowAutoHide = boolean(
+            key = "dictate__ma_predict_row_auto_hide",
+            default = false,
+        )
+        // Suggestions in the language he is typing, English or not English (MaTypingLanguage).
+        val maDetectTypingLanguage = boolean(
+            key = "dictate__ma_detect_typing_language",
+            default = true,
+        )
         val maAiPredictKey = boolean(
             key = "dictate__ma_ai_predict_key",
             default = true,

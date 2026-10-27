@@ -65,6 +65,9 @@ object MaNgram {
     /** The language being written right now: the badge, which is the one control he touches. */
     private fun active(): String = MaLanguage.active()
 
+    /** Whether [language]'s personal model knows [word] (MaTypingLanguage reads this). */
+    fun knowsIn(language: String, word: String): Boolean = modelFor(language).knows(word)
+
     private fun modelFor(language: String): MaNgramModel = synchronized(modelsLock) {
         models.getOrPut(language) { MaNgramModel() }
     }
@@ -242,7 +245,9 @@ object MaNgram {
         // The language at the moment of writing, captured here rather than inside the coroutine: he
         // may press the badge between the commit and the save, and the sentence belongs to the
         // language it was written in.
-        val badge = active()
+        // The language the sentence is written in (MaTypingLanguage: detected from its words when that
+        // is on, else the badge). Named `badge` still, because below it plays the badge's part.
+        val badge = MaTypingLanguage.ofSentence(text)
         scope.launch {
             // EVERY WORD GOES THROUGH THE GATE, AND ALMOST NONE OF THEM COST ANYTHING.
             //
@@ -375,8 +380,9 @@ object MaNgram {
         // previous one — predicting what follows `other` while he is still writing `other`.
         val context = if (derived) textBeforeCursor.dropLast(trailing.length) else textBeforeCursor
         // Only this language's model. Never the other one, not even to fill an empty row: an English
-        // word offered while writing Croatian is not a weaker suggestion, it is a wrong one.
-        val language = active()
+        // word offered while writing Croatian is not a weaker suggestion, it is a wrong one. The
+        // language is the one he is TYPING (MaTypingLanguage), not only the badge (27.10.2026).
+        val language = MaTypingLanguage.of(textBeforeCursor)
         val active = modelFor(language)
         val fixes = correctionsFor(language)
         val recent = recencyFor(language)
@@ -416,7 +422,7 @@ object MaNgram {
         // this exists for. A fresh install should suggest Croatian on the first word, not after
         // three hundred.
         if (word.isEmpty()) return personal
-        if (MaLanguage.active() != MaLanguage.HR) return personal
+        if (language != MaLanguage.HR) return personal
         val appCtx = appContext ?: return personal
         val already = personal.mapTo(HashSet()) { it.word.lowercase() }
         return personal + MaBaseDictionary.suggest(

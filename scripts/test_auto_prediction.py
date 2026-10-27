@@ -69,7 +69,18 @@ check("no switch for the row anywhere in settings",
       all("prefs.suggestion.enabled," not in code(f) and "prefs.smartbar.enabled," not in code(f)
           for f in SETTINGS.rglob("*.kt") if "/search/" not in str(f)))
 vis = code(SRC / "ime/smartbar/MaSmartbarVisibility.kt")
-check("the row always has its place", re.search(r"return true\s*\}\s*$", vis) is not None)
+check("the row keeps its place unless he turns auto-hide on", "if (!autoHide) return true" in vis)
+check("auto-hide is off unless he turns it on",
+      re.search(r'maPredictRowAutoHide = boolean\(\s*key = "dictate__ma_predict_row_auto_hide",\s*default = false', code(SRC / "app/AppPrefs.kt")) is not None)
+check("right after the model: auto-hide, then the language",
+      0 <= screen.find("PredictionModelChooser(enabled") < screen.find("prefs.dictate.maPredictRowAutoHide")
+      < screen.find("prefs.dictate.maDetectTypingLanguage") < screen.find("prefs.dictate.maAiPredictKey,"))
+nlp = code(SRC / "ime/nlp/NlpManager.kt")
+check("suggestions use the typing language", "val typing = MaTypingLanguage.of(content.textBeforeSelection)" in nlp)
+check("the shipped dictionary of that language", "getSuggestionProvider(shippedSubtype ?: subtype)" in nlp)
+check("both dictionaries preloaded", "all.forEach { preload(it) }" in nlp)
+check("detection is on unless he turns it off",
+      re.search(r'maDetectTypingLanguage = boolean\(\s*key = "dictate__ma_detect_typing_language",\s*default = true', code(SRC / "app/AppPrefs.kt")) is not None)
 bar = code(SRC / "ime/smartbar/Smartbar.kt")
 check("the curtain is gone", "val maSuggestionsShown = true" in bar)
 check("the Smartbar is always drawn", "val smartbarEnabled = true" in bar)

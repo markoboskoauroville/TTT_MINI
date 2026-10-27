@@ -121,12 +121,14 @@ check("there are two models", "private val models = mutableMapOf<String, MaNgram
 check("the badge chooses", "MaLanguage.active()" in ngram, "deaf to the language key")
 # Since 22.10.2026 the language is named once (it also picks the corrections and recency of that language).
 check("predict reads only the active model",
-      "val active = modelFor(active())" in ngram
-      or ("val language = active()" in ngram and "val active = modelFor(language)" in ngram), "reads both")
+      "val language = MaTypingLanguage.of(textBeforeCursor)" in ngram and "val active = modelFor(language)" in ngram, "reads both")
 # The variable was renamed `badge` when the language gate landed; the claim is unchanged and still
 # the one that matters — read OUTSIDE the coroutine, so a badge press between the commit and the save
 # cannot file the sentence under the wrong language.
-check("the language is captured before the coroutine", "val badge = active()" in ngram,
+# 27.10.2026: the sentence's language is the one it is written in (MaTypingLanguage.ofSentence),
+# which is the badge when detection is off. Still read before the coroutine.
+check("the language is captured before the coroutine",
+      "val badge = MaTypingLanguage.ofSentence(text)\n        scope.launch {" in ngram,
       "a badge press between commit and save would file the sentence under the wrong language")
 check("the mixed file is removed once", "LEGACY_FILE_NAME" in ngram, "the old mixed counts survive")
 check("the backfill routes by entry language", "entry.language" in ngram, "rebuilt mixed again")
@@ -138,7 +140,8 @@ check("the AI prompt names the language more than once", ai.count("append(langua
 check("and forbids the other one", "Never answer in another language" in ai, "will follow the text instead")
 
 row = code(SRC / "ime/smartbar/CandidatesRow.kt")
-check("the row asks by the badge", 'MaLanguage.active() == MaLanguage.HR' in row, "asks by the subtype instead")
+# 27.10.2026: by the language he is typing, which is the badge when detection is off; never the subtype.
+check("the row asks by the typing language", 'MaTypingLanguage.of(before) == MaLanguage.HR' in row, "asks by the subtype instead")
 
 print(f"ngram split, test 1: {checks} checks, {len(failures)} failed ({walked} turns walked)")
 for f in failures:

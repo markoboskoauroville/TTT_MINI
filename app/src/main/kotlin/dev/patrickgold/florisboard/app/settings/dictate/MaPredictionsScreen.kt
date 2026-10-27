@@ -88,8 +88,21 @@ fun MaPredictionsScreen() = FlorisScreen {
         PredictionModelChooser(enabled = aiKeyOn)
 
         // ---------------------------------------------------------------- on and off
-        // No switch for the row itself: it is always on screen and can never be hidden (27.10.2026).
+        // Right after the model, his order (27.10.2026): the row's own behaviour, then the language.
         Spacer(Modifier.height(12.dp))
+        SwitchPreference(
+            prefs.dictate.maPredictRowAutoHide,
+            title = stringRes(R.string.pref__ma_predict_row_auto_hide__label),
+            summary = "Off: the prediction row is always on screen, dark when there is nothing in it, " +
+                "so no key moves. On: the row comes and goes with its words.",
+        )
+        SwitchPreference(
+            prefs.dictate.maDetectTypingLanguage,
+            title = stringRes(R.string.pref__ma_detect_typing_language__label),
+            summary = "Suggestions in the language you are typing: English, or Croatian for anything " +
+                "that is not English. Read from your last few words; the HR/ENG key still sets the " +
+                "dictation language. Off: suggestions follow the HR/ENG key.",
+        )
         SwitchPreference(
             prefs.dictate.maAiPredictKey,
             title = stringRes(R.string.pref__ma_ai_predict_key__label),
@@ -166,8 +179,8 @@ fun MaPredictionsScreen() = FlorisScreen {
         )
 
         Text(
-            text = "Suggestions follow the HR/ENG key, the same one that sets the transcription " +
-                "language. One choice for both, so they cannot disagree.",
+            text = "The HR/ENG key sets the dictation language. Suggestions follow the language you type " +
+                "when \"Detect typing language\" is on, and the HR/ENG key when it is off.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),

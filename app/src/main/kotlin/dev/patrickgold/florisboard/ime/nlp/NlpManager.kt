@@ -25,7 +25,7 @@ import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.core.Subtype
-import dev.patrickgold.florisboard.dictate.MaLanguage
+import dev.patrickgold.florisboard.dictate.nlp.MaTypingLanguage
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
@@ -107,6 +107,11 @@ class NlpManager(context: Context) {
         }
         subtypeManager.activeSubtypeFlow.collectLatestIn(scope) { subtype ->
             preload(subtype)
+        }
+        // Every installed language's dictionary is ready, because the typing language can move the
+        // suggestions to the other one mid-sentence (MaTypingLanguage).
+        subtypeManager.subtypesFlow.collectLatestIn(scope) { all ->
+            all.forEach { preload(it) }
         }
     }
 
@@ -210,6 +215,13 @@ class NlpManager(context: Context) {
             return
         }
         val reqTime = SystemClock.uptimeMillis()
+        // THE LANGUAGE HE IS TYPING (27.10.2026: "if I'm typing something that is not English, it
+        // should give me Croatian suggestions"). Read from the words before the cursor when that is
+        // on, else the badge. The shipped dictionary is the one of the installed subtype in that
+        // language; the keyboard's own subtype, its layout and the transcription are not touched.
+        val typing = MaTypingLanguage.of(content.textBeforeSelection)
+        val shippedSubtype = if (subtype.primaryLocale.language.lowercase() == typing) subtype
+            else subtypeManager.subtypes.firstOrNull { it.primaryLocale.language.lowercase() == typing }
         scope.launch {
             val emojiSuggestions = when {
                 prefs.emoji.suggestionEnabled.get() -> {
@@ -228,8 +240,8 @@ class NlpManager(context: Context) {
                     emptyList()
                 }
                 else -> {
-                    getSuggestionProvider(subtype).suggest(
-                        subtype = subtype,
+                    getSuggestionProvider(shippedSubtype ?: subtype).suggest(
+                        subtype = shippedSubtype ?: subtype,
                         content = content,
                         maxCandidateCount = 8,
                         allowPossiblyOffensive = true,
@@ -274,9 +286,8 @@ class NlpManager(context: Context) {
             //
             // What is left when it is dropped is his own Croatian model, which is the thing that
             // learns as he writes. That is the honest state of it, and it fills.
-            val badge = MaLanguage.active()
-            val providerLanguage = subtype.primaryLocale.language.lowercase()
-            val providerAgrees = providerLanguage == badge
+            // The typing language decides now (MaTypingLanguage); with detection off it is the badge.
+            val providerAgrees = shippedSubtype != null
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < reqTime) {
                     internalSuggestions = reqTime to buildList {

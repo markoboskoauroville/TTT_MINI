@@ -2037,6 +2037,8 @@
   <string name="dictate__snippet_nothing" comment="Toast when there was nothing to save">Nothing to save. Select some text, or copy it first.</string>
     <string name="settings__ma_predictions__title">Auto prediction</string>
     <string name="settings__ma_predict_model__title">AI key model</string>
+    <string name="pref__ma_predict_row_auto_hide__label">Auto-hide the prediction row</string>
+    <string name="pref__ma_detect_typing_language__label">Detect typing language</string>
     <string name="settings__ma_corrections__title">My corrections</string>
     <string name="pref__ma_ai_predict_key__label">AI key in the row</string>
     <string name="pref__ma_next_word__label">Next-word prediction</string>

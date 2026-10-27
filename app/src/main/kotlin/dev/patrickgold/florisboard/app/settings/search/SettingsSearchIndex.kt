@@ -224,6 +224,8 @@ object SettingsSearchIndex {
         SettingsSearchEntry(R.string.pref__smartbar__group_layout_specific__label, R.string.settings__smartbar__title, Routes.Settings.Smartbar),
         SettingsSearchEntry(R.string.settings__ma_predictions__title, R.string.settings__ma_predictions__title, Routes.Settings.MaPredictions),
         SettingsSearchEntry(R.string.settings__ma_predict_model__title, R.string.settings__ma_predictions__title, Routes.Settings.MaPredictions),
+        SettingsSearchEntry(R.string.pref__ma_predict_row_auto_hide__label, R.string.settings__ma_predictions__title, Routes.Settings.MaPredictions),
+        SettingsSearchEntry(R.string.pref__ma_detect_typing_language__label, R.string.settings__ma_predictions__title, Routes.Settings.MaPredictions),
         SettingsSearchEntry(R.string.pref__ma_ai_predict_key__label, R.string.settings__ma_predictions__title, Routes.Settings.MaPredictions),
         SettingsSearchEntry(R.string.pref__ma_ngram_enabled__label, R.string.settings__ma_predictions__title, Routes.Settings.MaPredictions),
         SettingsSearchEntry(R.string.pref__ma_corrections_enabled__label, R.string.settings__ma_predictions__title, Routes.Settings.MaPredictions),

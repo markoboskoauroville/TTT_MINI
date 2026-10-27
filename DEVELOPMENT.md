@@ -11019,3 +11019,24 @@ prediction row always stays on screen. It should never be hidden."
   Multilingual typing, Inline suggestions); the key line says whether an Anthropic key is loaded; the new
   items are in settings search; the AI words clear the moment the text before the cursor changes (typed,
   deleted, emptied), and an answer that arrives after he typed on is dropped; the AI key's label is centred.
+
+## §226 — Auto-hide as a choice, and suggestions in the language he types
+
+Marko, 27.10.2026: "The prediction row is always on screen. It can be black when there is no text, but
+having it come up and down is annoying. So auto hiding should be a setting … I would like the app to detect
+whether I'm typing in English or another language … just English or not English. If I'm typing something
+that is not English, it should give me Croatian suggestions."
+
+- **Auto-hide the prediction row** (`maPredictRowAutoHide`, off): right after the model on Auto prediction.
+  Off, the row is always there and dark when empty (`maSmartbarHasContent` returns true); on, the old
+  coming and going with its content.
+- **Detect typing language** (`maDetectTypingLanguage`, on), next to it. `MaTypingLanguage` reads the last
+  eight finished words before the cursor: č ć ž š đ settle it; English small words against Croatian ones
+  (words both languages have, like i, a, to, on, count for neither); a word only one personal model knows;
+  a word neither knows leans Croatian a little, so "not English" is Croatian but one typo in an English
+  sentence is not. No evidence keeps the last answer; a new field starts from the badge. It moves only the
+  SUGGESTIONS: the personal model asked and learned into, the shipped dictionary (the installed subtype of
+  that language, both preloaded), the Croatian base list and the AI key's language. The badge, the
+  keyboard layout and the dictation language stay where the HR/ENG key put them. Off: the badge, as before.
+
+Tests: `MaTypingLanguageTest` (kotest, 11 cases), `scripts/test_auto_prediction.py`.

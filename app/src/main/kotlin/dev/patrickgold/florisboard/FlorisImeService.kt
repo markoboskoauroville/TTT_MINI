@@ -58,6 +58,7 @@ import dev.patrickgold.florisboard.ime.text.keyboard.MaCursorPad
 import dev.patrickgold.florisboard.dictate.MaMagicTargets
 import dev.patrickgold.florisboard.dictate.MaVolumeKeys
 import dev.patrickgold.florisboard.dictate.nlp.MaDictationCorrections
+import dev.patrickgold.florisboard.dictate.nlp.MaTypingLanguage
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -440,6 +441,8 @@ class FlorisImeService : LifecycleInputMethodService() {
         if (info == null) return
         val editorInfo = FlorisEditorInfo.wrap(info)
         editorInstance.handleStartInput(editorInfo)
+        // A new field starts from the badge, not from the language of the last field (MaTypingLanguage).
+        if (!restarting) MaTypingLanguage.reset()
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {

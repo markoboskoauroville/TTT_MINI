@@ -65,6 +65,7 @@ import org.florisboard.lib.snygg.ui.SnyggColumn
 import org.florisboard.lib.snygg.ui.SnyggIcon
 import dev.patrickgold.florisboard.dictate.MaLanguage
 import dev.patrickgold.florisboard.dictate.nlp.MaAiPredict
+import dev.patrickgold.florisboard.dictate.nlp.MaTypingLanguage
 import dev.patrickgold.florisboard.dictate.nlp.MaNgram
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
@@ -321,7 +322,9 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                                     // key moves the subtype as well — but the badge is the control he
                                     // presses and the one the personal model is now split by, so it is
                                     // the single source the whole prediction stack reads.
-                                    language = if (MaLanguage.active() == MaLanguage.HR) "Croatian" else "English",
+                                    // 27.10.2026: the language he is typing (MaTypingLanguage), which is
+                                // the badge when detection is off.
+                                language = if (MaTypingLanguage.of(before) == MaLanguage.HR) "Croatian" else "English",
                                 ),
                             )
                             MaAiPredict.busy.value = false

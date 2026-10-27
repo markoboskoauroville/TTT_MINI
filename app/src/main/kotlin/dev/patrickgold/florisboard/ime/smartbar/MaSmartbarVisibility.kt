@@ -83,9 +83,15 @@ fun maSmartbarHasContent(): Boolean {
     // reasons the Smartbar appears still reads as a list and the missing one is visible.
     val promptStripShowing = false
 
-    // ALWAYS. Marko, 27.10.2026: "the prediction row always stays on screen. It should never be hidden."
-    // The reasons above no longer decide; the row keeps its place and its height with or without
-    // words in it, so no key moves while he types. Both callers (the drawing and the height) still
-    // ask here, so they cannot disagree.
-    return true
+    // The row stays on screen, dark when it has nothing to say (Marko, 27.10.2026: "The prediction
+    // row is always on screen. It can be black when there is no text, but having it come up and down
+    // is annoying."). Coming and going with its content is a setting now, off unless he turns it on
+    // (Settings → Auto prediction). Read before deciding, like everything above.
+    val autoHide by prefs.dictate.maPredictRowAutoHide.collectAsState()
+    if (!autoHide) return true
+    return alwaysOn ||
+        candidates.isNotEmpty() ||
+        inlineSuggestions.isNotEmpty() ||
+        dictateState !is DictateController.UiState.Idle ||
+        promptStripShowing
 }
