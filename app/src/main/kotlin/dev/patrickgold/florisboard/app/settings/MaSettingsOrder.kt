@@ -60,7 +60,8 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     VOCABULARY("vocabulary", "Learn my words", "Teach the keyboard the names you dictate"),
     BUCKETS("buckets", "Paste timing", "How long each step waits, for the buckets, AP and AC"),
     RECORDING("recording", "Recording", null),
-    PREDICTIONS("predictions", "Word predictions", "The suggestion row, and the language it follows"),
+    // Every setting about the suggestion row, the AI key's model and Learn my words (27.10.2026).
+    PREDICTIONS("predictions", "Auto prediction", "The suggestion row, the AI key's model, the words it learned"),
     MAPPINGS("mappings", "Custom mappings", null),
     OUTPUT("output", "Output", null),
     HISTORY("history", "History", "Every transcription, with its audio"),
@@ -152,7 +153,10 @@ object MaSettingsOrder {
         //
         // KEYS stays filtered: it is a section inside PERMISSIONS now, and an entry that opens the
         // same screen from two places is two doors to one room.
-        return all.filterNot { it == MaSettingsEntry.KEYS }
+        //
+        // VOCABULARY likewise: "Teach it from my dictations" is inside Auto prediction now, and
+        // everything about prediction is behind that one entry (27.10.2026).
+        return all.filterNot { it == MaSettingsEntry.KEYS || it == MaSettingsEntry.VOCABULARY }
     }
 
     fun serialize(order: List<MaSettingsEntry>): String = order.joinToString(",") { it.id }

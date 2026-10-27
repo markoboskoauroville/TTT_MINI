@@ -28,6 +28,7 @@ SCREEN_ROUTE = {
     "InputFeedbackScreen": "Routes.Settings.InputFeedback",
     "SmartbarScreen": "Routes.Settings.Smartbar",
     "TypingScreen": "Routes.Settings.Typing",
+    "MaPredictionsScreen": "Routes.Settings.MaPredictions",
     "DictionaryScreen": "Routes.Settings.Dictionary",
     "GesturesScreen": "Routes.Settings.Gestures",
     "ClipboardScreen": "Routes.Settings.Clipboard",

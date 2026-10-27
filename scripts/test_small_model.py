@@ -80,9 +80,16 @@ check("the preset is the fallback, not the source", 0 <= _named < _preset,
 
 # Every cheap-model caller must go through the one path. If a second appeared, the rule would hold in
 # one place and not the other.
-check("one cheap path", ctrl.count("cheapest = true") == 1,
-      "a second caller could pick its own model")
+# 27.10.2026: two callers now, both on the cheap path. Word prediction may name a Claude model he
+# chose on Settings → Auto prediction; that choice starts at the newest Haiku and can only be one of
+# the three Claude tiers offered there.
+check("two cheap paths, no more", ctrl.count("cheapest = true") == 2,
+      "a third caller could pick its own model")
 check("and the AI features use it", "askCheapModel" in ctrl, "prediction would use the chat model")
+check("prediction asks the chosen model", "modelOverride = prefs.dictate.maPredictModel.get()" in ctrl)
+_prefs = code(SRC / "app/AppPrefs.kt")
+check("the chosen model starts at Haiku",
+      re.search(r'maPredictModel = string\(\s*key = "dictate__ma_predict_model",\s*default = MaClaudeModels\.DEFAULT', _prefs) is not None)
 
 # ---------------------------------------------------------------- keys before permissions
 perms = code(SRC / "app/settings/dictate/MaPermissionsScreen.kt")

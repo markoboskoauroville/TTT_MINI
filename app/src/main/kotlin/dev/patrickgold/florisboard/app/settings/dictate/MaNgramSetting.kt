@@ -47,14 +47,20 @@ import kotlinx.coroutines.launch
  * number that climbs is the difference between "not working" and "not ready".
  */
 @Composable
-fun MaNgramSetting() {
+fun MaNgramSetting(
+    /**
+     * False on Auto prediction, where the switch sits with the other switches at the top (design
+     * language §1.9) and this shows only what was learned and the ways to forget it.
+     */
+    showSwitch: Boolean = true,
+) {
     val prefs by FlorisPreferenceStore
     val scope = rememberCoroutineScope()
     val enabled by prefs.dictate.maNgramEnabled.collectAsState()
     var forgotten by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Row(
+        if (showSwitch) Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {

@@ -115,6 +115,8 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
     // Read once per composition instead of a synchronous pref get() per candidate on every keystroke
     // (the candidates row recomposes on each character — issue: typing jank).
     val longPressDelay by prefs.keyboard.longPressDelay.collectAsState()
+    // The AI key can be switched off under Settings → Auto prediction.
+    val aiKeyShown by prefs.dictate.maAiPredictKey.collectAsState()
 
     SnyggRow(
         elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
@@ -274,46 +276,48 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
         // Pressed once, it asks; pressed again while its words are showing, it puts the ordinary
         // guesses back. Nothing else clears it — typing does, on the next prediction, because the
         // words would no longer be about the word being typed.
-        SnyggText(
-            elementName = FlorisImeUi.SmartbarCandidateWord.elementName,
-            text = if (aiBusy) "\u2026" else "AI",
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .fillMaxHeight()
-                .wrapContentWidth()
-                .padding(horizontal = 12.dp)
-                .clickable(enabled = !aiBusy) {
-                    if (aiWords.isNotEmpty()) {
-                        MaAiPredict.clear()
-                        return@clickable
-                    }
-                    val content = editorInstance.activeContent
-                    val before = content.textBeforeSelection.toString()
-                    val current = content.currentWordText.toString()
-                    MaAiPredict.remember(before)
-                    MaAiPredict.busy.value = true
-                    scope.launch {
-                        val reply = DictateController.askCheapModel(
-                            MaAiPredict.prompt(
-                                before = before,
-                                current = current,
-                                // The badge, not the subtype. The two are linked today — the EN/HR
-                                // key moves the subtype as well — but the badge is the control he
-                                // presses and the one the personal model is now split by, so it is
-                                // the single source the whole prediction stack reads.
-                                language = if (MaLanguage.active() == MaLanguage.HR) "Croatian" else "English",
-                            ),
-                        )
-                        MaAiPredict.busy.value = false
-                        // Nothing back, or nothing usable, leaves the row exactly as it was. There
-                        // is no failure worth a message here: he can see the words did not change,
-                        // and the guesses he already had are still under his thumb.
-                        MaAiPredict.words.value = reply
-                            ?.let { MaAiPredict.readWords(it, current) }
-                            .orEmpty()
-                    }
-                },
-        )
+        if (aiKeyShown) {
+            SnyggText(
+                elementName = FlorisImeUi.SmartbarCandidateWord.elementName,
+                text = if (aiBusy) "\u2026" else "AI",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .wrapContentWidth()
+                    .padding(horizontal = 12.dp)
+                    .clickable(enabled = !aiBusy) {
+                        if (aiWords.isNotEmpty()) {
+                            MaAiPredict.clear()
+                            return@clickable
+                        }
+                        val content = editorInstance.activeContent
+                        val before = content.textBeforeSelection.toString()
+                        val current = content.currentWordText.toString()
+                        MaAiPredict.remember(before)
+                        MaAiPredict.busy.value = true
+                        scope.launch {
+                            val reply = DictateController.askPredictionModel(
+                                MaAiPredict.prompt(
+                                    before = before,
+                                    current = current,
+                                    // The badge, not the subtype. The two are linked today — the EN/HR
+                                    // key moves the subtype as well — but the badge is the control he
+                                    // presses and the one the personal model is now split by, so it is
+                                    // the single source the whole prediction stack reads.
+                                    language = if (MaLanguage.active() == MaLanguage.HR) "Croatian" else "English",
+                                ),
+                            )
+                            MaAiPredict.busy.value = false
+                            // Nothing back, or nothing usable, leaves the row exactly as it was. There
+                            // is no failure worth a message here: he can see the words did not change,
+                            // and the guesses he already had are still under his thumb.
+                            MaAiPredict.words.value = reply
+                                ?.let { MaAiPredict.readWords(it, current) }
+                                .orEmpty()
+                        }
+                    },
+            )
+        }
     }
 }
 

@@ -49,7 +49,6 @@ import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
-import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.stringRes
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
@@ -60,43 +59,8 @@ fun TypingScreen() = FlorisScreen {
     val navController = LocalNavController.current
 
     content {
-        PreferenceGroup(title = stringRes(R.string.pref__suggestion__title)) {
-            SwitchPreference(
-                prefs.suggestion.enabled,
-                modifier = Modifier.settingsSearchAnchor("pref__suggestion__enabled__label"),
-                title = stringRes(R.string.pref__suggestion__enabled__label),
-                summary = stringRes(R.string.pref__suggestion__enabled__summary),
-            )
-            SwitchPreference(
-                prefs.suggestion.autoCorrect,
-                modifier = Modifier.settingsSearchAnchor("pref__suggestion__auto_correct__label"),
-                title = stringRes(R.string.pref__suggestion__auto_correct__label),
-                summary = stringRes(R.string.pref__suggestion__auto_correct__summary),
-                enabledIf = { prefs.suggestion.enabled isEqualTo true },
-            )
-            SwitchPreference(
-                prefs.suggestion.multilingualTyping,
-                modifier = Modifier.settingsSearchAnchor("pref__suggestion__multilingual_typing__label"),
-                title = stringRes(R.string.pref__suggestion__multilingual_typing__label),
-                summary = stringRes(R.string.pref__suggestion__multilingual_typing__summary),
-                enabledIf = { prefs.suggestion.enabled isEqualTo true },
-            )
-            SwitchPreference(
-                prefs.suggestion.nextWordPrediction,
-                modifier = Modifier.settingsSearchAnchor("pref__suggestion__next_word_prediction__label"),
-                title = stringRes(R.string.pref__suggestion__next_word_prediction__label),
-                summary = stringRes(R.string.pref__suggestion__next_word_prediction__summary),
-                enabledIf = { prefs.suggestion.enabled isEqualTo true },
-            )
-            SwitchPreference(
-                prefs.suggestion.api30InlineSuggestionsEnabled,
-                modifier = Modifier.settingsSearchAnchor("pref__suggestion__api30_inline_suggestions_enabled__label"),
-                title = stringRes(R.string.pref__suggestion__api30_inline_suggestions_enabled__label),
-                summary = stringRes(R.string.pref__suggestion__api30_inline_suggestions_enabled__summary),
-                visibleIf = { AndroidVersion.ATLEAST_API30_R },
-            )
-        }
-
+        // The Suggestions group moved to Settings → Auto prediction (27.10.2026): everything about
+        // the suggestion row is on that one screen.
         PreferenceGroup(title = stringRes(R.string.pref__correction__title)) {
             SwitchPreference(
                 prefs.correction.autoCapitalization,

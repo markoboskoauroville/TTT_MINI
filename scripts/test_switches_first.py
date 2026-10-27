@@ -62,13 +62,18 @@ SCREENS = [
     ("typing/TypingScreen.kt", "fun TypingScreen",
      ["autoCapitalization", "autoSpacePunctuation", "rememberCapsLockState", "doubleSpacePeriod"],
      "prefs.dictate.maTextCase"),
-    # build 403: Incognito (a list) sat between the Suggestions and the Corrections switches.
-    ("typing/TypingScreen.kt", "fun TypingScreen",
-     ["api30InlineSuggestionsEnabled", "doubleSpacePeriod"], "prefs.suggestion.incognitoMode"),
-    ("smartbar/SmartbarScreen.kt", "fun SmartbarScreen", ["flipToggles"], "prefs.suggestion.displayMode"),
+    # build 403: Incognito (a list) sat between the Suggestions and the Corrections switches. The
+    # Suggestions moved to Auto prediction (27.10.2026).
+    ("typing/TypingScreen.kt", "fun TypingScreen", ["doubleSpacePeriod"], "prefs.suggestion.incognitoMode"),
+    ("smartbar/SmartbarScreen.kt", "fun SmartbarScreen", ["flipToggles"], "prefs.smartbar.extendedActionsPlacement"),
     # build 403: Layout (a list) sat between "Enable Smartbar" and "Flip toggle buttons".
     ("smartbar/SmartbarScreen.kt", "fun SmartbarScreen", ["enabled,", "flipToggles"], "listPref = prefs.smartbar.layout"),
-    ("dictate/MaVocabularyScreen.kt", "fun MaVocabularyScreen", ["maNgramEnabled"], "LaunchedEffect(Unit)"),
+    # Auto prediction (27.10.2026): every prediction switch above the display mode, the AI model and
+    # what was learned. Learn my words' switch lives here, not on its old screen.
+    ("dictate/MaPredictionsScreen.kt", "fun MaPredictionsScreen",
+     ["prefs.suggestion.enabled", "nextWordPrediction", "autoCorrect", "multilingualTyping", "maNgramEnabled",
+      "maAiPredictKey", "api30InlineSuggestionsEnabled"], "prefs.suggestion.displayMode"),
+    ("dictate/MaPredictionsScreen.kt", "fun MaPredictionsScreen", ["maAiPredictKey"], "PredictionModelChooser("),
     ("dictate/MaCorrectionsScreen.kt", "fun MaCorrectionsScreen", ["maCorrectionsEnabled"], "Add a fix"),
     ("dictate/MaPromptsScreen.kt", "fun MaPromptsScreen", ["maPhoneStyleEnabled", "maSpellcheckEnabled"],
      "MaPhoneModelSection()"),

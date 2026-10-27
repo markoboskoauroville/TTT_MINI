@@ -586,7 +586,7 @@ object MaNgram {
             onMessage("Nothing waiting")
             return
         }
-        val reply = DictateController.askCheapModel(MaWordLanguage.prompt(words))
+        val reply = DictateController.askPredictionModel(MaWordLanguage.prompt(words))
         if (reply == null) {
             onMessage("No answer \u2014 check the key and the network")
             return

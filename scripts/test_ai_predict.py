@@ -101,7 +101,10 @@ def code(path: Path) -> str:
 
 row = code(SRC / "ime/smartbar/CandidatesRow.kt")
 check("the key is asked for, not automatic", "MaAiPredict.busy.value = true" in row, "fires by itself")
-check("it reuses the cheap ask", "DictateController.askCheapModel(" in row, "a second provider path")
+# 27.10.2026: the AI key asks the model chosen on Settings → Auto prediction (Haiku unless he picks
+# another), through the same provider path.
+check("it asks the prediction model", "DictateController.askPredictionModel(" in row, "a second provider path")
+check("the AI key can be switched off", "if (aiKeyShown)" in row and "maAiPredictKey" in row)
 check("a pick teaches the local model", "MaNgram.learn(" in row, "the database never learns")
 check("only an AI pick teaches it", "if (aiWords.isNotEmpty())" in row, "teaching the model its own output back")
 check("the overlay clears on a pick", "MaAiPredict.clear()" in row, "stale words survive the commit")

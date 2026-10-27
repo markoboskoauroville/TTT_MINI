@@ -10962,3 +10962,26 @@ Also from the Pixel 7 report on build 403: Smartbar and Typing put their switche
 moved under them); a cost under a hundredth of a cent shows six decimals ($0.000040, not $0.0000); "1
 request"; the "Sent to Claude" block no longer names the account's model as if every key used it; the
 download bar's track is faint, so 0 % no longer looks nearly full.
+
+## §223 — Auto prediction: one entry for everything about the suggestion row
+
+Marko, 27.10.2026: "Everything related to it should be under the auto prediction menu entry, including the
+AI model we are using … model switching and all the other settings related to word prediction should be
+under that one menu item only."
+
+It was on five screens. Now all on Settings → **Auto prediction** (the entry once called Word predictions,
+renamed to his word for it), switches first:
+
+- the switches: show the suggestion row, next-word prediction, auto-correct, multilingual typing, Learn my
+  words, the AI key in the row (new, `maAiPredictKey`, on), inline suggestions (Android 11+);
+- how the words show (the display mode, from Smartbar);
+- **AI key model** (new, `maPredictModel`): a radio list with the real names (Claude Haiku 5.5, Sonnet 5.5,
+  Opus 5.5), stored as the tier so the newest is used; starts at Haiku. It is paid with the Anthropic key
+  loaded in the app, and the screen says whether one is loaded (never the key). `askPredictionModel`
+  serves the AI key and the sorting of new words into a language; other jobs keep `askCheapModel`;
+- what was learned, per language, with forget (MaNgramSetting, from the Dictate screen), and "Teach it
+  from my dictations" (the old Learn my words screen, now without its own settings entry).
+
+Taken off Typing (the Suggestions group), Smartbar (display mode), Dictate (Learn my words) and the
+settings list (Learn my words). The search index points the moved settings at the new screen.
+`scripts/test_auto_prediction.py` fails the build if a prediction setting appears on any other screen.

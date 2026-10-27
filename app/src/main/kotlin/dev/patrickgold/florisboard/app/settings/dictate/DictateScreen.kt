@@ -504,7 +504,7 @@ fun DictateLayoutScreen() = FlorisScreen {
             // which is worse than a missing one.
             EnterLongPressCharsSetting()
             MaNumericSecondarySetting()
-            MaNgramSetting()
+            // Learn my words moved to Settings → Auto prediction (27.10.2026).
         }
     }
 }

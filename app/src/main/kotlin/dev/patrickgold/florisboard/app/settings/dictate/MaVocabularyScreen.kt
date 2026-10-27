@@ -39,9 +39,7 @@ import dev.patrickgold.florisboard.dictate.MaVocabulary
 import dev.patrickgold.florisboard.dictate.data.history.DictateHistoryStore
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
-import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -67,22 +65,14 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun MaVocabularyScreen() = FlorisScreen {
-    title = "Learn my words"
+    title = "Teach it from my dictations"
 
     content {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
 
-        // THE SWITCH FIRST (mantra-design-language.md §1.9, Marko 21.10.2026). This screen is
-        // called "Learn my words" and the switch that turns learning on lived only on a layout
-        // screen with no entry in the settings list; it is here, at the top, now.
-        val prefs by FlorisPreferenceStore
-        SwitchPreference(
-            prefs.dictate.maNgramEnabled,
-            title = "Learn my words",
-            summary = "Suggests from what you have written on this phone, including names and " +
-                "words no dictionary has. Stays on the device and is never sent anywhere.",
-        )
+        // The Learn my words switch is on Settings → Auto prediction, with every other prediction
+        // switch (27.10.2026); this screen is reached from there.
 
         var candidates by remember { mutableStateOf<List<MaVocabulary.Candidate>?>(null) }
         val chosen = remember { mutableStateListOf<String>() }

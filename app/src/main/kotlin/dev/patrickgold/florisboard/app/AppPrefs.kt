@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.app
 
+import dev.patrickgold.florisboard.dictate.provider.MaClaudeModels
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -859,6 +860,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val maCorrectionsEnabled = boolean(
             key = "dictate__ma_corrections_enabled",
             default = true,
+        )
+        // AUTO PREDICTION (Settings → Auto prediction): the AI key at the end of the suggestion row,
+        // and the Claude model it asks. Stored as a tier alias, so the newest of the tier is used
+        // without an update; the Anthropic key in the app pays for it. Haiku: the cheapest, and a
+        // list of five words gains nothing from a bigger model.
+        val maAiPredictKey = boolean(
+            key = "dictate__ma_ai_predict_key",
+            default = true,
+        )
+        val maPredictModel = string(
+            key = "dictate__ma_predict_model",
+            default = MaClaudeModels.DEFAULT,
         )
         // The copy and paste row, shared by both views. On, because it is the row that made the
         // transcribe view worth using and the keyboard view had no equivalent worth keeping.

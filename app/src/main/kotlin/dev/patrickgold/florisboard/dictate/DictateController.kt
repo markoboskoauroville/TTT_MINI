@@ -3939,6 +3939,20 @@ object DictateController {
         requestRewordRaw(prompt, cheapest = true)
     }.getOrNull()
 
+    /**
+     * Word prediction (the AI key, and sorting new words into a language): the model chosen under
+     * Settings → Auto prediction, with the Anthropic key loaded in the app. Any other rewording
+     * provider still gets its smallest model, as [askCheapModel] does.
+     */
+    suspend fun askPredictionModel(prompt: String): String? = runCatching {
+        requestRewordRaw(
+            prompt,
+            cheapest = true,
+            modelOverride = prefs.dictate.maPredictModel.get().ifBlank { null },
+            purpose = "Suggestion",
+        )
+    }.getOrNull()
+
     private suspend fun requestRewordRaw(
         userContent: String,
         reasoning: DictateReasoningEffort? = null,
@@ -3974,7 +3988,8 @@ object DictateController {
         //
         // So the small model is NAMED, per provider, and the preset default is the fallback rather
         // than the source. Anthropic gets haiku by name.
-        val model = if (!cheapest && modelOverride != null && account.providerId == MaRoles.REWORDING) {
+        // A model chosen for the job wins, for Anthropic only: the choosers offer Claude models.
+        val model = if (modelOverride != null && account.providerId == MaRoles.REWORDING) {
             modelOverride
         } else if (cheapest) {
             MaSmallModel.forProvider(account.providerId)

@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.settings.search.settingsSearchAnchor
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
-import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -62,6 +61,7 @@ fun SmartbarScreen() = FlorisScreen {
             visibleIf = { prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED },
         )
 
+        // How the suggestions are shown moved to Settings → Auto prediction (27.10.2026).
         PreferenceGroup(title = stringRes(R.string.pref__smartbar__group_layout_specific__label)) {
             ListPreference(
                 listPref = prefs.smartbar.layout,
@@ -69,14 +69,6 @@ fun SmartbarScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__smartbar__layout__label),
                 entries = enumDisplayEntriesOf(SmartbarLayout::class),
                 enabledIf = { prefs.smartbar.enabled isEqualTo true },
-            )
-            ListPreference(
-                prefs.suggestion.displayMode,
-                modifier = Modifier.settingsSearchAnchor("pref__suggestion__display_mode__label"),
-                title = stringRes(R.string.pref__suggestion__display_mode__label),
-                entries = enumDisplayEntriesOf(CandidatesDisplayMode::class),
-                enabledIf = { prefs.smartbar.enabled isEqualTo true },
-                visibleIf = { prefs.smartbar.layout isNotEqualTo SmartbarLayout.ACTIONS_ONLY },
             )
             // TODO: schedule to remove this preference in the future, but keep it for now so users
             //  know why the setting is not available anymore. Also force enable it for UI display.
