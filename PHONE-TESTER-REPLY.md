@@ -76,3 +76,33 @@ Test plan, build 419:
 Rules: at most one Haiku request; no keys printed; nothing published or pushed to main.
 Report under "## REPORT, build 419" here (or to session_0118g1MJ1Y3aD4nhAieRp6f8), as
 "Pixel 7, build 419: X pass, Y fail, Z blocked".
+
+## REPORT, build 420
+
+Nothing Phone, build 420: 1 pass, 0 fail, 6 blocked (Mac session macbook-pro-local-elegant-koala, 27.10.2026 07:28)
+
+Device: Nothing Phone A142 over wireless adb, 100.67.149.40:5555. The Pixel 7 was not touched after
+the device change (before it, only read: versionCode 1413, active keyboard, screen awake).
+APK: CI release build-420, sha256 7e31511a0798ba51ae45aed42a8c24133c2bd68cb2d8b50d7b9c6bd86a575cc0 (matches),
+downloaded once. `install -r` → Success, versionCode 1419 → 1420. Nothing uninstalled.
+
+- A. PASS. The settings list shows "Auto prediction" ("The suggestion row, the AI key's model, the words it learned")
+  and "My corrections" ("Words you fix, fixed for you next time"); there is no "Learn my words" entry anywhere in the list.
+- B–G. BLOCKED. While I opened Auto prediction, Marko was using the Nothing Phone himself: the Claude app came to the
+  front with his draft "check the Nothing Phone report and fix what fails" and a 45 s TTT dictation being sent
+  ("sending 0:45, 1105 kB wav fast, K1_5"). I stopped all input so I don't type into his live chat.
+  Three of my scroll swipes (x 540, y 900→2000) may have landed in the Claude app during that moment; I saw no effect,
+  but Marko should check his draft. Nothing in TTT's settings was toggled, so nothing needs putting back.
+  No Haiku request was made.
+
+To finish B–G I need the phone to myself: Marko says when it is free, or the tests move to the Pixel 7 emulator
+(Pixel_7_API_35 on this Mac) for everything except E (no Anthropic key there).
+
+### Restoring the chat interface (07:29)
+Nothing restored yet, on purpose: at 07:28 Marko was using the phone himself, WhatsApp Business in front
+(after the Claude chat, where he dictated). Bringing Claude to the front would take the phone from his hand.
+State: the Claude chat (task #348) is intact in the background, where he left it; TTT's settings
+(task #357, the Settings list only, nothing changed in it) is also in the background. I did not force-stop TTT
+(it is his active keyboard). I could not see which "menu item" is missing: in my last screenshots of the Claude chat
+(07:26–07:27) the title bar had its back arrow, the title, the progress circle and the ⋮ menu, and the
+bottom row had + , the model "Opus 5.5 Medium", the mic and send. I need Marko to name the item, or the phone free, to look.
