@@ -16,6 +16,10 @@
 
 package dev.patrickgold.florisboard.ime.smartbar
 
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -117,6 +121,17 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
     val longPressDelay by prefs.keyboard.longPressDelay.collectAsState()
     // The AI key can be switched off under Settings → Auto prediction.
     val aiKeyShown by prefs.dictate.maAiPredictKey.collectAsState()
+    // The AI words are for the text they were asked about, and go the moment it changes: a letter
+    // typed, one deleted, the field emptied or the cursor moved. Picking one, or pressing the key
+    // again, clears them too (below).
+    LaunchedEffect(editorInstance) {
+        editorInstance.activeContentFlow
+            .map { it.textBeforeSelection.toString() }
+            .distinctUntilChanged()
+            .collect { before ->
+                if (MaAiPredict.words.value.isNotEmpty() && !MaAiPredict.stillFor(before)) MaAiPredict.clear()
+            }
+    }
 
     SnyggRow(
         elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
@@ -284,6 +299,8 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .fillMaxHeight()
                     .wrapContentWidth()
+                    // Centred in the row like the words (build 421: it sat small and high).
+                    .wrapContentHeight(Alignment.CenterVertically)
                     .padding(horizontal = 12.dp)
                     .clickable(enabled = !aiBusy) {
                         if (aiWords.isNotEmpty()) {
@@ -308,6 +325,11 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                                 ),
                             )
                             MaAiPredict.busy.value = false
+                            // He typed on while it was asked: the answer is about text that is gone.
+                            if (!MaAiPredict.stillFor(editorInstance.activeContent.textBeforeSelection.toString())) {
+                                MaAiPredict.clear()
+                                return@launch
+                            }
                             // Nothing back, or nothing usable, leaves the row exactly as it was. There
                             // is no failure worth a message here: he can see the words did not change,
                             // and the guesses he already had are still under his thumb.

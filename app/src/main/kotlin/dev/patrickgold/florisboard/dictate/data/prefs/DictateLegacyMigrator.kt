@@ -728,6 +728,18 @@ object DictateLegacyMigrator {
      * (27.10.2026: "it should be there, but it is missing" — it was near the bottom of his list).
      * After this the order is his again: moving it anywhere else sticks.
      */
+    /**
+     * The prediction row is never hidden (Marko, 27.10.2026). Every start, not once: anything that
+     * turned it off before this build (the Sg key, a hold on the badge, Enable Smartbar, Display
+     * suggestions, a restored profile) is turned back on. Nothing in the app can turn them off now.
+     */
+    suspend fun keepPredictionRowOn() {
+        val prefs by FlorisPreferenceStore
+        if (!prefs.suggestion.enabled.get()) prefs.suggestion.enabled.set(true)
+        if (!prefs.smartbar.enabled.get()) prefs.smartbar.enabled.set(true)
+        if (!prefs.dictate.maSuggestionsShown.get()) prefs.dictate.maSuggestionsShown.set(true)
+    }
+
     suspend fun movePredictionsBesidePromptsIfNeeded() {
         val prefs by FlorisPreferenceStore
         if (prefs.dictate.maPredictionsMovedV1.get()) return

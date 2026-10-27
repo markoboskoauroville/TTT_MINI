@@ -34,7 +34,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.dictate.nlp.MaCorrectionRules
 import dev.patrickgold.florisboard.dictate.nlp.MaDictationCorrections
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import org.florisboard.lib.compose.stringRes
 
 /**
  * My corrections: the fixes the keyboard learned from him, and his own replace list.
@@ -45,7 +47,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
  */
 @Composable
 fun MaCorrectionsScreen() = FlorisScreen {
-    title = "My corrections"
+    title = stringRes(R.string.settings__ma_corrections__title)
 
     content {
         val rules by MaDictationCorrections.rules.collectAsState()

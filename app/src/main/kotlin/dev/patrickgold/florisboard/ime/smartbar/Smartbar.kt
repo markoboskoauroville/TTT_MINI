@@ -110,7 +110,9 @@ private val NoAnimationTween = tween<Float>(0)
 fun Smartbar() {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
-    val smartbarEnabled by prefs.smartbar.enabled.collectAsState()
+    // Always shown: the prediction row lives in it and must never be hidden (27.10.2026). The old
+    // "Enable Smartbar" setting and the key that toggled it no longer exist.
+    val smartbarEnabled = true
     val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.collectAsState()
 
     AnimatedVisibility(
@@ -197,7 +199,10 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     } else {
         nlpManager.activeCandidatesFlow.collectAsState().value
     }
-    val maSuggestionsShown by prefs.dictate.maSuggestionsShown.collectAsState()
+    // The row is never drawn away any more (Marko, 27.10.2026: "the prediction row always stays on screen. It should never be hidden."). The
+    // curtain (the Sg key, a hold on the badge) is gone; kept as a named true so the two places that
+    // read it below still say what used to be decided there.
+    val maSuggestionsShown = true
     val subtypeManager by context.subtypeManager()
     val scope = rememberCoroutineScope()
 

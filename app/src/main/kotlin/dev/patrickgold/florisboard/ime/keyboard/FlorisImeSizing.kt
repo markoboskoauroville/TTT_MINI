@@ -82,7 +82,8 @@ object FlorisImeSizing {
     @Composable
     fun smartbarRowCountAsState(): State<Int> {
         val prefs by FlorisPreferenceStore
-        val smartbarEnabled by prefs.smartbar.enabled.collectAsState()
+        // Always on: the prediction row is in it and is never hidden (27.10.2026).
+        val smartbarEnabled = true
         val smartbarLayout by prefs.smartbar.layout.collectAsState()
         val extendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.collectAsState()
         val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.collectAsState()
@@ -153,7 +154,8 @@ object FlorisImeSizing {
     @Composable
     fun smartbarLayoutRowCountAsState(): State<Int> {
         val prefs by FlorisPreferenceStore
-        val smartbarEnabled by prefs.smartbar.enabled.collectAsState()
+        // Always on: the prediction row is in it and is never hidden (27.10.2026).
+        val smartbarEnabled = true
         val smartbarLayout by prefs.smartbar.layout.collectAsState()
         val extendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.collectAsState()
         return remember {
@@ -202,7 +204,8 @@ object FlorisImeSizing {
     fun panelUiHeight(): Dp {
         val prefs by FlorisPreferenceStore
         val rowCount by rowCountAsState()
-        val smartbarEnabled by prefs.smartbar.enabled.collectAsState()
+        // Always on: the prediction row is in it and is never hidden (27.10.2026).
+        val smartbarEnabled = true
         // The prompt row is gone with the Little Man, so nothing reserves height for it any more.
         //
         // This is the half of a deletion that is easy to miss and obvious on the phone: the row

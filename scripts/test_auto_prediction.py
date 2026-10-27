@@ -38,7 +38,7 @@ screen = code(SETTINGS / "dictate/MaPredictionsScreen.kt")
 
 # Every prediction setting is on the one screen ...
 PREFS = [
-    "prefs.suggestion.enabled", "prefs.suggestion.nextWordPrediction", "prefs.suggestion.autoCorrect",
+    "prefs.suggestion.nextWordPrediction", "prefs.suggestion.autoCorrect",
     "prefs.suggestion.multilingualTyping", "prefs.suggestion.api30InlineSuggestionsEnabled",
     "prefs.suggestion.displayMode", "prefs.dictate.maNgramEnabled", "prefs.dictate.maAiPredictKey",
     "prefs.dictate.maPredictModel", "prefs.dictate.maCorrectionsEnabled",
@@ -60,8 +60,39 @@ for path in SETTINGS.rglob("*.kt"):
         check(f"{p} not on {rel}", p not in t, "a prediction setting outside Auto prediction")
     check(f"MaNgramSetting not on {rel}", "MaNgramSetting(" not in t)
 
+# ---------------------------------------------------------------- never hidden (27.10.2026)
 sw = code(SETTINGS / "dictate/MaSwitchboardScreen.kt")
-check("the switchboard row opens Auto prediction", "Routes.Settings.MaPredictions" in sw)
+check("no switch for the row on the switchboard", "prefs.suggestion.enabled" not in sw)
+check("the switchboard does not list it",
+      "filterNot { it == Entry.SUGGESTIONS }" in code(SETTINGS / "dictate/MaSwitchboardOrder.kt"))
+check("no switch for the row anywhere in settings",
+      all("prefs.suggestion.enabled," not in code(f) and "prefs.smartbar.enabled," not in code(f)
+          for f in SETTINGS.rglob("*.kt") if "/search/" not in str(f)))
+vis = code(SRC / "ime/smartbar/MaSmartbarVisibility.kt")
+check("the row always has its place", re.search(r"return true\s*\}\s*$", vis) is not None)
+bar = code(SRC / "ime/smartbar/Smartbar.kt")
+check("the curtain is gone", "val maSuggestionsShown = true" in bar)
+check("the Smartbar is always drawn", "val smartbarEnabled = true" in bar)
+siz = code(SRC / "ime/keyboard/FlorisImeSizing.kt")
+check("its height always counted", "prefs.smartbar.enabled" not in siz and siz.count("val smartbarEnabled = true") == 3)
+km = code(SRC / "ime/keyboard/KeyboardManager.kt")
+check("the toggle key cannot hide it", "prefs.smartbar.enabled.let { it.set(!it.get()) }" not in km)
+check("the badge hold cannot hide it",
+      "maSuggestionsShown.set(!prefs.dictate.maSuggestionsShown.get())" not in code(SRC / "dictate/MaLanguage.kt"))
+mig = code(SRC / "dictate/data/prefs/DictateLegacyMigrator.kt")
+check("turned back on at every start", "fun keepPredictionRowOn()" in mig and
+      "DictateLegacyMigrator.keepPredictionRowOn()" in code(SRC / "FlorisApplication.kt"))
+
+# ---------------------------------------------------------------- the model first (27.10.2026)
+check("the model chooser comes before every switch",
+      0 <= screen.find("PredictionModelChooser(enabled") < screen.find("SwitchPreference("))
+
+# ---------------------------------------------------------------- the AI words go with the text
+row = code(SRC / "ime/smartbar/CandidatesRow.kt")
+ai = code(SRC / "dictate/nlp/MaAiPredict.kt")
+check("the words know what they were asked for", "fun stillFor(before: String)" in ai)
+check("they clear when the text changes", "!MaAiPredict.stillFor(before)) MaAiPredict.clear()" in row)
+check("a late answer for gone text is dropped", "if (!MaAiPredict.stillFor(editorInstance.activeContent" in row)
 
 # The entry: named as he names it, the only one about prediction.
 order = code(SETTINGS / "MaSettingsOrder.kt")
@@ -93,9 +124,12 @@ check("sorting new words into a language asks it", "DictateController.askPredict
 
 # Search finds the moved settings on their new screen.
 index = (SETTINGS / "search/SettingsSearchIndex.kt").read_text()
-for key in ["enabled", "auto_correct", "multilingual_typing", "next_word_prediction", "display_mode"]:
+for key in ["pref__ma_auto_correct__label", "pref__ma_multilingual__label", "pref__ma_next_word__label",
+            "pref__ma_inline__label", "pref__suggestion__display_mode__label", "settings__ma_predict_model__title",
+            "pref__ma_ai_predict_key__label", "pref__ma_ngram_enabled__label", "pref__ma_corrections_enabled__label"]:
     check(f"search: {key} -> Auto prediction",
-          re.search(r"pref__suggestion__" + key + r"__label, R\.string\.settings__ma_predictions__title, Routes\.Settings\.MaPredictions", index) is not None)
+          f"SettingsSearchEntry(R.string.{key}, R.string.settings__ma_predictions__title, Routes.Settings.MaPredictions" in index)
+check("search: My corrections", "SettingsSearchEntry(R.string.settings__ma_corrections__title, R.string.settings__ma_predictions__title, Routes.Settings.MaDictationCorrections)" in index)
 
 # The one-time move up beside Prompts (he could not find it near the bottom of his stored order).
 check("the move exists", "fun withPredictionsBesidePrompts(raw: String): String" in order)

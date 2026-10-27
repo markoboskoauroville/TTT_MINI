@@ -2036,4 +2036,13 @@
   <string name="dictate__snippet_saved" comment="Toast after saving a snippet">Snippet saved. Tap the clipboard key to reuse it.</string>
   <string name="dictate__snippet_nothing" comment="Toast when there was nothing to save">Nothing to save. Select some text, or copy it first.</string>
     <string name="settings__ma_predictions__title">Auto prediction</string>
+    <string name="settings__ma_predict_model__title">AI key model</string>
+    <string name="settings__ma_corrections__title">My corrections</string>
+    <string name="pref__ma_ai_predict_key__label">AI key in the row</string>
+    <string name="pref__ma_next_word__label">Next-word prediction</string>
+    <string name="pref__ma_auto_correct__label">Auto-correct</string>
+    <string name="pref__ma_multilingual__label">Multilingual typing</string>
+    <string name="pref__ma_ngram_enabled__label">Learn my words</string>
+    <string name="pref__ma_corrections_enabled__label">Learn from my corrections</string>
+    <string name="pref__ma_inline__label">Inline suggestions</string>
 </resources>

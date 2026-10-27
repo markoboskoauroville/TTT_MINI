@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Numbers
-import androidx.compose.material.icons.filled.Spellcheck
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -142,8 +141,8 @@ private fun MaSwitchRowFor(entry: MaSwitchboardOrder.Entry, lifted: Boolean) {
             MaSwitchRow("Number row", Icons.Default.Numbers, prefs.dictate.maExtraRow, Routes.Settings.MaNumberRow, modifier)
         MaSwitchboardOrder.Entry.FEATURE_ROW ->
             MaSwitchRow("Feature row", Icons.Default.DragHandle, prefs.dictate.maFeatureRowShown, Routes.Settings.MaFeatureRow, modifier)
-        MaSwitchboardOrder.Entry.SUGGESTIONS ->
-            MaSwitchRow("Suggestion row", Icons.Default.Spellcheck, prefs.suggestion.enabled, Routes.Settings.MaPredictions, modifier)
+        // Never listed (MaSwitchboardOrder.parse drops it): the prediction row cannot be switched off.
+        MaSwitchboardOrder.Entry.SUGGESTIONS -> Unit
         // The copy row, and the same switch key 3 presses on the feature row. The glyph is the one
         // that key draws, so the row and the key are recognisable as one thing.
         MaSwitchboardOrder.Entry.READER_ROW ->

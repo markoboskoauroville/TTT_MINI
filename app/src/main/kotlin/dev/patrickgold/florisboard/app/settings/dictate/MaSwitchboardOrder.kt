@@ -71,7 +71,9 @@ object MaSwitchboardOrder {
         val kept = raw.split(',')
             .mapNotNull { byId[it.trim()] }
             .distinct()
-        return kept + Entry.entries.filter { it !in kept }
+        // SUGGESTIONS is not offered: the prediction row is never hidden (27.10.2026), so it has no
+        // switch. Kept in the enum so a stored order holding it still parses.
+        return (kept + Entry.entries.filter { it !in kept }).filterNot { it == Entry.SUGGESTIONS }
     }
 
     fun serialize(order: List<Entry>): String = order.joinToString(",") { it.id }

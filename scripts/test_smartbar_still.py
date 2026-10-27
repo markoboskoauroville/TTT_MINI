@@ -121,10 +121,10 @@ order_src = code(SRC / "dictate/MaFeatureOrder.kt")
 row_src = code(SRC / "dictate/ui/MaFeatureRow.kt")
 check("there is a key for it", 'SUGGESTIONS("suggestions"' in order_src, "switchable only in theory")
 check("the key is drawn", "MaFeatureKey.SUGGESTIONS ->" in row_src, "in the catalogue, not on the keyboard")
-check("it toggles the same preference", "maSuggestionsShown.set(!shown)" in row_src,
-      "a second idea of whether the row is showing")
-check("it wears the ring", "ring = if (shown) onGreen else MaSwitcherRingOff" in row_src,
-      "no way to tell whether it is on before pressing")
+# 27.10.2026: the row is never hidden ("It should never be hidden"). The Sg key no longer turns it
+# off: it stays ringed, and a press only makes sure the row is on.
+check("the key never hides the row", "maSuggestionsShown.set(true)" in row_src and "maSuggestionsShown.set(!shown)" not in row_src)
+check("it is always ringed", "ring = onGreen," in row_src)
 
 # ---------------------------------------------------------------- the ONE exception
 #

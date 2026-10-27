@@ -182,10 +182,10 @@ object MaLanguage {
      * is a gesture nobody performs by accident.
      */
     fun toggleSuggestions() {
+        // The row is never hidden now (27.10.2026: "It should never be hidden"). A hold on the badge
+        // only makes sure it is showing, for an install that had drawn it away before.
         val prefs by FlorisPreferenceStore
-        scope.launch {
-            prefs.dictate.maSuggestionsShown.set(!prefs.dictate.maSuggestionsShown.get())
-        }
+        scope.launch { prefs.dictate.maSuggestionsShown.set(true) }
     }
 
     fun cycleMode(context: Context) {

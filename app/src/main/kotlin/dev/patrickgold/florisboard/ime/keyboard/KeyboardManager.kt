@@ -1382,8 +1382,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             KeyCode.SYSTEM_PREV_INPUT_METHOD -> FlorisImeService.switchToPrevInputMethod()
             KeyCode.SYSTEM_NEXT_INPUT_METHOD -> FlorisImeService.switchToNextInputMethod()
+            // The Smartbar holds the prediction row, which is never hidden (27.10.2026): this key no
+            // longer hides it, it only makes sure it is on.
             KeyCode.TOGGLE_SMARTBAR_VISIBILITY -> scope.launch {
-                prefs.smartbar.enabled.let { it.set(!it.get()) }
+                prefs.smartbar.enabled.set(true)
             }
             KeyCode.TOGGLE_ACTIONS_OVERFLOW -> {
                 activeState.isActionsOverflowVisible = !activeState.isActionsOverflowVisible

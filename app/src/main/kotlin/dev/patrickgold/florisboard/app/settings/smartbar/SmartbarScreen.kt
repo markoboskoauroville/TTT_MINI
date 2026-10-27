@@ -35,18 +35,12 @@ fun SmartbarScreen() = FlorisScreen {
     title = stringRes(R.string.settings__smartbar__title)
 
     content {
-        SwitchPreference(
-            prefs.smartbar.enabled,
-            modifier = Modifier.settingsSearchAnchor("pref__smartbar__enabled__label"),
-            title = stringRes(R.string.pref__smartbar__enabled__label),
-            summary = stringRes(R.string.pref__smartbar__enabled__summary),
-        )
+        // No "Enable Smartbar": it holds the prediction row, which is never hidden (27.10.2026).
         SwitchPreference(
             prefs.smartbar.flipToggles,
             modifier = Modifier.settingsSearchAnchor("pref__smartbar__flip_toggles__label"),
             title = stringRes(R.string.pref__smartbar__flip_toggles__label),
             summary = stringRes(R.string.pref__smartbar__flip_toggles__summary),
-            enabledIf = { prefs.smartbar.enabled isEqualTo true },
             visibleIf = {
                 prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED ||
                     prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED
@@ -68,7 +62,6 @@ fun SmartbarScreen() = FlorisScreen {
                 modifier = Modifier.settingsSearchAnchor("pref__smartbar__layout__label"),
                 title = stringRes(R.string.pref__smartbar__layout__label),
                 entries = enumDisplayEntriesOf(SmartbarLayout::class),
-                enabledIf = { prefs.smartbar.enabled isEqualTo true },
             )
             // TODO: schedule to remove this preference in the future, but keep it for now so users
             //  know why the setting is not available anymore. Also force enable it for UI display.
@@ -80,7 +73,6 @@ fun SmartbarScreen() = FlorisScreen {
                 modifier = Modifier.settingsSearchAnchor("pref__smartbar__extended_actions_placement__label"),
                 title = stringRes(R.string.pref__smartbar__extended_actions_placement__label),
                 entries = enumDisplayEntriesOf(ExtendedActionsPlacement::class),
-                enabledIf = { prefs.smartbar.enabled isEqualTo true },
                 visibleIf = { prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED },
             )
         }

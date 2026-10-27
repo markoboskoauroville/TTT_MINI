@@ -10999,3 +10999,23 @@ prediction too; and Auto prediction "should be there, but it is missing … the 
 - **Where he looks.** It was the last entry of all, under twenty others. DEFAULT now puts it after Claude
   costs, and a one-time migration (`movePredictionsBesidePromptsIfNeeded`, `maPredictionsMovedV1`) moves it
   there in his stored order; after that the order is his again.
+
+## §225 — The model on top, and a prediction row that is never hidden
+
+Marko, 27.10.2026: "At the top, I want to have the radio buttons for the models. I need the settings so the
+prediction row always stays on screen. It should never be hidden."
+
+- **Auto prediction order:** the AI key model (Claude Haiku 5.5 / Sonnet 5.5 / Opus 5.5) first, then the
+  switches, then the display mode, what was learned, My corrections and Teach it. His named exception to
+  switches-first, for this screen.
+- **Never hidden.** Every way the row could go is gone: "Show the suggestion row" (Auto prediction), the
+  Suggestion row switch (Switchboard), "Enable Smartbar" (Smartbar), the Smartbar toggle key, the Sg key and
+  a hold on the language badge (both now only make sure it is on), and the row vanishing when it had no
+  words (`maSmartbarHasContent` is always true; the drawing and the height still ask it together).
+  `keepPredictionRowOn` switches the three stored flags back on at every start, so an older install or a
+  restored profile comes back with the row. The recorder still borrows the row while recording, the one
+  exception he asked for earlier.
+- **From the build 421 phone test:** plain names on the switches (Next-word prediction, Auto-correct,
+  Multilingual typing, Inline suggestions); the key line says whether an Anthropic key is loaded; the new
+  items are in settings search; the AI words clear the moment the text before the cursor changes (typed,
+  deleted, emptied), and an answer that arrives after he typed on is dropped; the AI key's label is centred.

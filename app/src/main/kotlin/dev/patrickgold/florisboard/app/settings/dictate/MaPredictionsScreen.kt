@@ -81,60 +81,58 @@ fun MaPredictionsScreen() = FlorisScreen {
         val prefs by FlorisPreferenceStore
         val navController = LocalNavController.current
 
+        // ---------------------------------------------------------------- the model, first
+        // His order (27.10.2026): "At the top, I want to have the radio buttons for the models."
+        // The one exception to switches-first, named by him for this screen.
+        val aiKeyOn by prefs.dictate.maAiPredictKey.collectAsState()
+        PredictionModelChooser(enabled = aiKeyOn)
+
         // ---------------------------------------------------------------- on and off
+        // No switch for the row itself: it is always on screen and can never be hidden (27.10.2026).
+        Spacer(Modifier.height(12.dp))
         SwitchPreference(
-            prefs.suggestion.enabled,
-            modifier = Modifier.settingsSearchAnchor("pref__suggestion__enabled__label"),
-            title = stringRes(R.string.pref__suggestion__enabled__label),
-            summary = "On, the row is always there and keeps its height, so no key moves while you type.",
+            prefs.dictate.maAiPredictKey,
+            title = stringRes(R.string.pref__ma_ai_predict_key__label),
+            summary = "The last key of the row asks the model above for five words when the guesses " +
+                "are wrong. The word you pick is taught to Learn my words. Each press is one request.",
         )
         SwitchPreference(
             prefs.suggestion.nextWordPrediction,
             modifier = Modifier.settingsSearchAnchor("pref__suggestion__next_word_prediction__label"),
-            title = stringRes(R.string.pref__suggestion__next_word_prediction__label),
-            summary = stringRes(R.string.pref__suggestion__next_word_prediction__summary),
-            enabledIf = { prefs.suggestion.enabled isEqualTo true },
+            title = stringRes(R.string.pref__ma_next_word__label),
+            summary = "Offers the next word as soon as you finish one.",
         )
         SwitchPreference(
             prefs.suggestion.autoCorrect,
             modifier = Modifier.settingsSearchAnchor("pref__suggestion__auto_correct__label"),
-            title = stringRes(R.string.pref__suggestion__auto_correct__label),
+            title = stringRes(R.string.pref__ma_auto_correct__label),
             summary = stringRes(R.string.pref__suggestion__auto_correct__summary),
-            enabledIf = { prefs.suggestion.enabled isEqualTo true },
         )
         SwitchPreference(
             prefs.suggestion.multilingualTyping,
             modifier = Modifier.settingsSearchAnchor("pref__suggestion__multilingual_typing__label"),
-            title = stringRes(R.string.pref__suggestion__multilingual_typing__label),
+            title = stringRes(R.string.pref__ma_multilingual__label),
             summary = stringRes(R.string.pref__suggestion__multilingual_typing__summary),
-            enabledIf = { prefs.suggestion.enabled isEqualTo true },
         )
         SwitchPreference(
             prefs.dictate.maNgramEnabled,
-            title = "Learn my words",
+            title = stringRes(R.string.pref__ma_ngram_enabled__label),
             summary = "Suggests from what you have written on this phone, including names and words " +
                 "no dictionary has, and learns a typo you correct. Never leaves the phone; nothing " +
                 "is learned in incognito mode.",
         )
         SwitchPreference(
             prefs.dictate.maCorrectionsEnabled,
-            title = "Learn from my corrections",
+            title = stringRes(R.string.pref__ma_corrections_enabled__label),
             summary = "A word you fix in a dictation, fixed the same way twice, is fixed for you " +
                 "from then on, and the wrong word stops being suggested. Your own fixes are under " +
                 "My corrections below.",
         )
         SwitchPreference(
-            prefs.dictate.maAiPredictKey,
-            title = "AI key in the row",
-            summary = "The last key of the row asks Claude for five words when the guesses are " +
-                "wrong. The word you pick is taught to Learn my words. Each press is one request.",
-            enabledIf = { prefs.suggestion.enabled isEqualTo true },
-        )
-        SwitchPreference(
             prefs.suggestion.api30InlineSuggestionsEnabled,
             modifier = Modifier.settingsSearchAnchor("pref__suggestion__api30_inline_suggestions_enabled__label"),
-            title = stringRes(R.string.pref__suggestion__api30_inline_suggestions_enabled__label),
-            summary = stringRes(R.string.pref__suggestion__api30_inline_suggestions_enabled__summary),
+            title = stringRes(R.string.pref__ma_inline__label),
+            summary = "Passwords and addresses your phone offers to fill in, shown in the row.",
             visibleIf = { AndroidVersion.ATLEAST_API30_R },
         )
 
@@ -145,12 +143,7 @@ fun MaPredictionsScreen() = FlorisScreen {
             modifier = Modifier.settingsSearchAnchor("pref__suggestion__display_mode__label"),
             title = stringRes(R.string.pref__suggestion__display_mode__label),
             entries = enumDisplayEntriesOf(CandidatesDisplayMode::class),
-            enabledIf = { prefs.suggestion.enabled isEqualTo true },
         )
-
-        // ---------------------------------------------------------------- the AI key's model
-        val aiKeyOn by prefs.dictate.maAiPredictKey.collectAsState()
-        PredictionModelChooser(enabled = aiKeyOn)
 
         // ---------------------------------------------------------------- what was learned
         Text(
@@ -161,7 +154,7 @@ fun MaPredictionsScreen() = FlorisScreen {
         MaNgramSetting(showSwitch = false)
         val rules by MaDictationCorrections.rules.collectAsState()
         Preference(
-            title = "My corrections",
+            title = stringRes(R.string.settings__ma_corrections__title),
             summary = "Words you enter to be replaced (heard → write), and the fixes learned from " +
                 "your corrections: ${rules.count { it.isActive }} in use.",
             onClick = { navController.navigate(Routes.Settings.MaDictationCorrections) },
@@ -201,13 +194,14 @@ private fun PredictionModelChooser(enabled: Boolean) {
     )
 
     Text(
-        text = "AI key model",
+        text = stringRes(R.string.settings__ma_predict_model__title),
         style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
     )
     Text(
-        text = if (hasKey) "Paid with the Anthropic key loaded in the app (API keys and permissions)."
-        else "No Anthropic key loaded. Add one under API keys and permissions; until then the AI key does nothing.",
+        // Says whether a key IS loaded (phone test, build 421: it only said what pays). Never the key.
+        text = if (hasKey) "Anthropic key: loaded. The AI key is paid with it."
+        else "Anthropic key: none loaded. Add one under API keys and permissions; until then the AI key does nothing.",
         style = MaterialTheme.typography.bodySmall,
         color = if (hasKey) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),

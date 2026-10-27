@@ -52,9 +52,18 @@ object MaAiPredict {
     var context: String = ""
         private set
 
+    /**
+     * The text before the cursor when the key was pressed. The words belong to that text only: the
+     * moment it changes (a letter typed, one deleted, the field emptied), they are cleared. Phone
+     * test, build 421: they stayed in the row through backspace, space and an emptied field.
+     */
+    var askedAt: String? = null
+        private set
+
     fun clear() {
         words.value = emptyList()
         busy.value = false
+        askedAt = null
     }
 
     /**
@@ -123,7 +132,11 @@ object MaAiPredict {
     /** Remembers the context a set of suggestions was asked in, so a pick can be taught with it. */
     fun remember(before: String) {
         context = before.takeLast(200)
+        askedAt = before
     }
+
+    /** Whether words asked at [askedAt] still belong where the cursor is, with [before] before it. */
+    fun stillFor(before: String): Boolean = askedAt != null && askedAt == before
 
     /**
      * What to teach the local model when he picks one.
