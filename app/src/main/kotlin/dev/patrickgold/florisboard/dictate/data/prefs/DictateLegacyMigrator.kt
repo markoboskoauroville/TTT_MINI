@@ -27,6 +27,7 @@ import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.dictate.MaKeyImport
 import dev.patrickgold.florisboard.dictate.data.prompts.PromptsDatabaseHelper
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.settings.MaSettingsOrder
 import dev.patrickgold.florisboard.ime.theme.extCoreTheme
 import dev.patrickgold.florisboard.dictate.DictateLanguages
 import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
@@ -720,6 +721,20 @@ object DictateLegacyMigrator {
             prefs.dictate.legacyActionRow.set(deduped.joinToString(","))
         }
         prefs.dictate.maActionRowV20Applied.set(true)
+    }
+
+    /**
+     * Auto prediction up beside Prompts and Claude costs in his stored settings order, once
+     * (27.10.2026: "it should be there, but it is missing" — it was near the bottom of his list).
+     * After this the order is his again: moving it anywhere else sticks.
+     */
+    suspend fun movePredictionsBesidePromptsIfNeeded() {
+        val prefs by FlorisPreferenceStore
+        if (prefs.dictate.maPredictionsMovedV1.get()) return
+        val raw = prefs.dictate.maSettingsOrder.get()
+        val next = MaSettingsOrder.withPredictionsBesidePrompts(raw)
+        if (next != raw) prefs.dictate.maSettingsOrder.set(next)
+        prefs.dictate.maPredictionsMovedV1.set(true)
     }
 
     suspend fun migratePromptsLayoutToRowIfNeeded() {

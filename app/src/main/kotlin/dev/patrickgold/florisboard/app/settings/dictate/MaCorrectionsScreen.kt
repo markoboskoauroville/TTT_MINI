@@ -32,16 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.nlp.MaCorrectionRules
 import dev.patrickgold.florisboard.dictate.nlp.MaDictationCorrections
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 
 /**
  * My corrections: the fixes the keyboard learned from him, and his own replace list.
  *
- * The switch first (MANTRA_MANIFEST design language §1.9), then adding a rule, then the rules: in use
+ * Reached from Settings → Auto prediction, where its switch is. Adding a rule first, then the rules: in use
  * first, then the ones still being counted, then the ones switched off. Each has its own switch and
  * its own delete, because a rule learned wrongly must cost one tap, never the whole list.
  */
@@ -50,17 +48,10 @@ fun MaCorrectionsScreen() = FlorisScreen {
     title = "My corrections"
 
     content {
-        val prefs by FlorisPreferenceStore
         val rules by MaDictationCorrections.rules.collectAsState()
 
-        SwitchPreference(
-            prefs.dictate.maCorrectionsEnabled,
-            title = "Learn from my corrections",
-            summary = "When you fix a word in a dictation, the keyboard notices. Fixed the same way " +
-                "${MaCorrectionRules.ACTIVE_AT} times, it is fixed for you in every new dictation, " +
-                "the right word goes to the speech model's word list, and the wrong one stops being " +
-                "suggested. Stays on this phone and costs nothing.",
-        )
+        // The switch is on Auto prediction, with every other prediction switch (27.10.2026); this
+        // screen is reached from there.
 
         // ---------------------------------------------------------------- add one
         Text(

@@ -10985,3 +10985,17 @@ renamed to his word for it), switches first:
 Taken off Typing (the Suggestions group), Smartbar (display mode), Dictate (Learn my words) and the
 settings list (Learn my words). The search index points the moved settings at the new screen.
 `scripts/test_auto_prediction.py` fails the build if a prediction setting appears on any other screen.
+
+## §224 — Auto prediction gets My corrections, a big A, and a place he can find
+
+Marko, 27.10.2026: My corrections, "for when I manually enter the word to be replaced", goes under Auto
+prediction too; and Auto prediction "should be there, but it is missing … the icon can be a big A".
+
+- **My corrections inside Auto prediction.** Its switch ("Learn from my corrections") joins the switches at
+  the top; the screen itself (heard → write, and the learned fixes) opens from a row there, with how many
+  are in use. It has no settings entry of its own: a stored order holding `corrections` puts Auto
+  prediction in its place.
+- **The big A.** The entry's icon is `FontDownload` (an A in a square), already resolved in this app.
+- **Where he looks.** It was the last entry of all, under twenty others. DEFAULT now puts it after Claude
+  costs, and a one-time migration (`movePredictionsBesidePromptsIfNeeded`, `maPredictionsMovedV1`) moves it
+  there in his stored order; after that the order is his again.

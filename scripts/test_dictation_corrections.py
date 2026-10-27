@@ -90,12 +90,17 @@ check("settle hands every fix to the typing side", "MaNgram.learnFix(s.wrong, s.
 
 # Settings.
 check("pref on", re.search(r'maCorrectionsEnabled = boolean\(\s*key = "dictate__ma_corrections_enabled",\s*default = true', prefs) is not None)
-check("screen: switch first", 0 <= screen.find("maCorrectionsEnabled") < screen.find("Add a fix"))
+# 27.10.2026: the screen sits inside Auto prediction, and its switch is there with the others.
+check("screen: its switch is on Auto prediction", "maCorrectionsEnabled" not in screen and
+      "prefs.dictate.maCorrectionsEnabled" in code(APP / "app/settings/dictate/MaPredictionsScreen.kt"))
+check("Auto prediction opens it", "Routes.Settings.MaDictationCorrections" in code(APP / "app/settings/dictate/MaPredictionsScreen.kt"))
 check("screen: per-rule switch and delete", "MaDictationCorrections.setEnabled(rule" in screen and "MaDictationCorrections.delete(rule)" in screen)
 check("screen: delete all asks first", "Delete every correction?" in screen)
 check("screen: no 'Default' anywhere", "Default" not in screen and "default" not in screen.replace("FontWeight", ""))
 check("route", "object MaDictationCorrections" in routes and "MaCorrectionsScreen()" in routes)
-check("settings entry", 'CORRECTIONS("corrections", "My corrections"' in order and "MaSettingsEntry.CORRECTIONS," in order)
+check("no settings entry of its own", "it == MaSettingsEntry.CORRECTIONS" in order)
+check("a stored 'corrections' puts Auto prediction in its place",
+      "if (it == MaSettingsEntry.CORRECTIONS) MaSettingsEntry.PREDICTIONS else it" in order)
 
 print(f"corrections, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:

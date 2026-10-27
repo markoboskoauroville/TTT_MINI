@@ -911,6 +911,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__ma_opening_view",
             default = "keyboard",
         )
+        /** Auto prediction moved beside Prompts in the stored order, once (27.10.2026). */
+        val maPredictionsMovedV1 = boolean(
+            key = "dictate__ma_predictions_moved_v1",
+            default = false,
+        )
         /** The Mantra settings list order, as comma separated ids. See MaSettingsOrder. */
         val maSettingsOrder = string(
             key = "dictate__ma_settings_order",

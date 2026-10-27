@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -33,6 +34,7 @@ import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.app.settings.search.settingsSearchAnchor
 import dev.patrickgold.florisboard.dictate.MaProviders
+import dev.patrickgold.florisboard.dictate.nlp.MaDictationCorrections
 import dev.patrickgold.florisboard.dictate.provider.MaClaudeModels
 import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -49,7 +51,8 @@ import org.florisboard.lib.compose.stringRes
  *
  * Marko, 27.10.2026: "everything related to it should be under the auto prediction menu entry,
  * including the AI model we are using … model switching and all the other settings related to word
- * prediction should be under that one menu item only." It was on five: the row and next-word
+ * prediction should be under that one menu item only." And the same day: My corrections, "for when I
+ * manually enter the word to be replaced", goes under it too. It was on five: the row and next-word
  * prediction under Typing, the display mode under Smartbar, Learn my words under Dictate and on its
  * own entry, and the AI key's model nowhere (it was always the cheapest Claude).
  *
@@ -114,6 +117,13 @@ fun MaPredictionsScreen() = FlorisScreen {
                 "is learned in incognito mode.",
         )
         SwitchPreference(
+            prefs.dictate.maCorrectionsEnabled,
+            title = "Learn from my corrections",
+            summary = "A word you fix in a dictation, fixed the same way twice, is fixed for you " +
+                "from then on, and the wrong word stops being suggested. Your own fixes are under " +
+                "My corrections below.",
+        )
+        SwitchPreference(
             prefs.dictate.maAiPredictKey,
             title = "AI key in the row",
             summary = "The last key of the row asks Claude for five words when the guesses are " +
@@ -149,6 +159,13 @@ fun MaPredictionsScreen() = FlorisScreen {
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp),
         )
         MaNgramSetting(showSwitch = false)
+        val rules by MaDictationCorrections.rules.collectAsState()
+        Preference(
+            title = "My corrections",
+            summary = "Words you enter to be replaced (heard → write), and the fixes learned from " +
+                "your corrections: ${rules.count { it.isActive }} in use.",
+            onClick = { navController.navigate(Routes.Settings.MaDictationCorrections) },
+        )
         Preference(
             title = "Teach it from my dictations",
             summary = "Adds the names and words from your dictation history to the keyboard's dictionary.",

@@ -41,7 +41,7 @@ PREFS = [
     "prefs.suggestion.enabled", "prefs.suggestion.nextWordPrediction", "prefs.suggestion.autoCorrect",
     "prefs.suggestion.multilingualTyping", "prefs.suggestion.api30InlineSuggestionsEnabled",
     "prefs.suggestion.displayMode", "prefs.dictate.maNgramEnabled", "prefs.dictate.maAiPredictKey",
-    "prefs.dictate.maPredictModel",
+    "prefs.dictate.maPredictModel", "prefs.dictate.maCorrectionsEnabled",
 ]
 for p in PREFS:
     check(f"{p} on Auto prediction", p in screen)
@@ -67,6 +67,11 @@ check("the switchboard row opens Auto prediction", "Routes.Settings.MaPrediction
 order = code(SETTINGS / "MaSettingsOrder.kt")
 check("the entry is called Auto prediction", 'PREDICTIONS("predictions", "Auto prediction"' in order)
 check("Learn my words has no entry of its own", "it == MaSettingsEntry.VOCABULARY" in order)
+check("My corrections has no entry of its own", "it == MaSettingsEntry.CORRECTIONS" in order)
+check("My corrections is reached from it", "Routes.Settings.MaDictationCorrections" in screen)
+check("the big A icon", "MaSettingsEntry.PREDICTIONS -> Icons.Default.FontDownload" in code(SETTINGS / "MaSettingsOrderScreen.kt"))
+check("beside Prompts and its costs",
+      re.search(r"MaSettingsEntry\.CLAUDE_COSTS,\s*MaSettingsEntry\.PREDICTIONS,", order[order.find("val DEFAULT"):]) is not None)
 strings = (ROOT / "app/src/main/res/values/strings.xml").read_text()
 check("the title string", '<string name="settings__ma_predictions__title">Auto prediction</string>' in strings)
 check("the screen uses it", "R.string.settings__ma_predictions__title" in screen)
@@ -91,6 +96,27 @@ index = (SETTINGS / "search/SettingsSearchIndex.kt").read_text()
 for key in ["enabled", "auto_correct", "multilingual_typing", "next_word_prediction", "display_mode"]:
     check(f"search: {key} -> Auto prediction",
           re.search(r"pref__suggestion__" + key + r"__label, R\.string\.settings__ma_predictions__title, Routes\.Settings\.MaPredictions", index) is not None)
+
+# The one-time move up beside Prompts (he could not find it near the bottom of his stored order).
+check("the move exists", "fun withPredictionsBesidePrompts(raw: String): String" in order)
+mig = code(SRC / "dictate/data/prefs/DictateLegacyMigrator.kt")
+check("it runs once", "maPredictionsMovedV1.get()) return" in mig and "maPredictionsMovedV1.set(true)" in mig)
+check("it runs at start", "DictateLegacyMigrator.movePredictionsBesidePromptsIfNeeded()" in code(SRC / "FlorisApplication.kt"))
+
+
+def move(raw: str) -> str:  # the same steps as withPredictionsBesidePrompts
+    ids = [i.strip() for i in raw.split(",") if i.strip() and i.strip() not in ("predictions", "corrections")]
+    anchor = next((a for a in ("claude_costs", "prompts") if a in ids), None)
+    if anchor is None:
+        return raw
+    ids.insert(ids.index(anchor) + 1, "predictions")
+    return ",".join(ids)
+
+
+check("after Claude costs", move("a,prompts,claude_costs,b,vocabulary,predictions") == "a,prompts,claude_costs,predictions,b,vocabulary")
+check("after Prompts without costs", move("prompts,x,predictions") == "prompts,predictions,x")
+check("corrections folds in", move("prompts,claude_costs,corrections,x,predictions") == "prompts,claude_costs,predictions,x")
+check("nothing to anchor: unchanged", move("x,y,predictions") == "x,y,predictions")
 
 print(f"auto prediction, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:

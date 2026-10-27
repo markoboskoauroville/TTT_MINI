@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.FontDownload
 import androidx.compose.material.icons.filled.Spellcheck
 import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.TouchApp
@@ -106,7 +107,8 @@ val MaSettingsEntry.icon: ImageVector
         MaSettingsEntry.VOCABULARY -> Icons.Default.Spellcheck
         MaSettingsEntry.BUCKETS -> Icons.Default.ContentPasteGo
         MaSettingsEntry.RECORDING -> Icons.Default.Mic
-        MaSettingsEntry.PREDICTIONS -> Icons.Default.Spellcheck
+        // A big A, as he asked (27.10.2026). FontDownload is already resolved in this app (theme icons).
+        MaSettingsEntry.PREDICTIONS -> Icons.Default.FontDownload
         MaSettingsEntry.MAPPINGS -> Icons.Default.Spellcheck
         MaSettingsEntry.OUTPUT -> Icons.Default.Keyboard
         MaSettingsEntry.HISTORY -> Icons.Default.History

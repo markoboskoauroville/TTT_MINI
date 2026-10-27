@@ -162,6 +162,7 @@ class FlorisApplication : Application() {
             DictateLegacyMigrator.applyDashboardV18IfNeeded()
             DictateLegacyMigrator.applyActionRowV19IfNeeded()
             DictateLegacyMigrator.applyActionRowV20IfNeeded()
+            DictateLegacyMigrator.movePredictionsBesidePromptsIfNeeded()
             MaLog.initialize(this@FlorisApplication)
             MaNgram.initialize(this@FlorisApplication)
             MaDictationCorrections.initialize(this@FlorisApplication)

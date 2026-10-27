@@ -33,7 +33,8 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     PROMPTS("prompts", "Prompts", "Ctrl+P, Ctrl+F and the Croatian spell check: wording and model"),
     // Beside Prompts: what those prompts cost.
     CLAUDE_COSTS("claude_costs", "Claude costs", "What each request cost, and an estimate of what is left"),
-    // Beside them: the fixes the keyboard learned from his own corrections, and his replace list.
+    // Beside them, once: the fixes learned from his corrections. Inside Auto prediction since
+    // 27.10.2026; kept so a stored order holding "corrections" puts Auto prediction in its place.
     CORRECTIONS("corrections", "My corrections", "Words you fix, fixed for you next time"),
     VOICE_FORMAT("voice_format", "Voice formatting", "Marks you can speak, and how to say them"),
     READER("reader", "Reader", "The voice that reads the screen aloud"),
@@ -61,7 +62,7 @@ enum class MaSettingsEntry(val id: String, val title: String, val summary: Strin
     BUCKETS("buckets", "Paste timing", "How long each step waits, for the buckets, AP and AC"),
     RECORDING("recording", "Recording", null),
     // Every setting about the suggestion row, the AI key's model and Learn my words (27.10.2026).
-    PREDICTIONS("predictions", "Auto prediction", "The suggestion row, the AI key's model, the words it learned"),
+    PREDICTIONS("predictions", "Auto prediction", "Word prediction, the AI key's model, your corrections"),
     MAPPINGS("mappings", "Custom mappings", null),
     OUTPUT("output", "Output", null),
     HISTORY("history", "History", "Every transcription, with its audio"),
@@ -97,7 +98,9 @@ object MaSettingsOrder {
         MaSettingsEntry.SHORTCUTS,
         MaSettingsEntry.PROMPTS,
         MaSettingsEntry.CLAUDE_COSTS,
-        MaSettingsEntry.CORRECTIONS,
+        // Beside Prompts and its costs, where he looked for it (27.10.2026: "it should be there, but
+        // it is missing" — it was the last entry of all, under twenty others).
+        MaSettingsEntry.PREDICTIONS,
         MaSettingsEntry.VOICE_FORMAT,
         MaSettingsEntry.READER,
         MaSettingsEntry.NUMBER_ROW,
@@ -113,7 +116,7 @@ object MaSettingsOrder {
         MaSettingsEntry.HISTORY,
         MaSettingsEntry.RECOVERED,
         MaSettingsEntry.VOCABULARY,
-        MaSettingsEntry.PREDICTIONS,
+        MaSettingsEntry.CORRECTIONS,
     )
 
     val DEFAULT_RAW: String = serialize(DEFAULT)
@@ -134,6 +137,10 @@ object MaSettingsOrder {
         val wanted = raw.orEmpty()
             .split(',')
             .mapNotNull { MaSettingsEntry.byId(it.trim()) }
+            // My corrections went inside Auto prediction (27.10.2026). Where he had it, Auto
+            // prediction now stands: it is where he looks for corrections, and it moves Auto
+            // prediction up from the bottom of the list, where he could not find it.
+            .map { if (it == MaSettingsEntry.CORRECTIONS) MaSettingsEntry.PREDICTIONS else it }
             .distinct()
         val all = wanted.toMutableList()
         DEFAULT.forEachIndexed { index, entry ->
@@ -156,10 +163,25 @@ object MaSettingsOrder {
         //
         // VOCABULARY likewise: "Teach it from my dictations" is inside Auto prediction now, and
         // everything about prediction is behind that one entry (27.10.2026).
-        return all.filterNot { it == MaSettingsEntry.KEYS || it == MaSettingsEntry.VOCABULARY }
+        return all.filterNot {
+            it == MaSettingsEntry.KEYS || it == MaSettingsEntry.VOCABULARY || it == MaSettingsEntry.CORRECTIONS
+        }
     }
 
     fun serialize(order: List<MaSettingsEntry>): String = order.joinToString(",") { it.id }
+
+    /**
+     * [raw] with Auto prediction moved to just after Claude costs (or Prompts, when costs is not in
+     * it). Run once, by DictateLegacyMigrator: 27.10.2026 he could not find it, because it was below
+     * twenty entries, and he named where it belongs, with the prompts and the corrections.
+     */
+    fun withPredictionsBesidePrompts(raw: String): String {
+        val ids = raw.split(',').map { it.trim() }.filter { it.isNotEmpty() && it != "predictions" && it != "corrections" }
+        val anchor = listOf("claude_costs", "prompts").firstOrNull { it in ids } ?: return raw
+        val out = ids.toMutableList()
+        out.add(out.indexOf(anchor) + 1, "predictions")
+        return out.joinToString(",")
+    }
 
     /** Moves the entry at [from] to [to], shifting the rest. A move, not a swap. */
     fun move(order: List<MaSettingsEntry>, from: Int, to: Int): List<MaSettingsEntry> {

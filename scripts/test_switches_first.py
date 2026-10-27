@@ -72,9 +72,8 @@ SCREENS = [
     # what was learned. Learn my words' switch lives here, not on its old screen.
     ("dictate/MaPredictionsScreen.kt", "fun MaPredictionsScreen",
      ["prefs.suggestion.enabled", "nextWordPrediction", "autoCorrect", "multilingualTyping", "maNgramEnabled",
-      "maAiPredictKey", "api30InlineSuggestionsEnabled"], "prefs.suggestion.displayMode"),
+      "maCorrectionsEnabled", "maAiPredictKey", "api30InlineSuggestionsEnabled"], "prefs.suggestion.displayMode"),
     ("dictate/MaPredictionsScreen.kt", "fun MaPredictionsScreen", ["maAiPredictKey"], "PredictionModelChooser("),
-    ("dictate/MaCorrectionsScreen.kt", "fun MaCorrectionsScreen", ["maCorrectionsEnabled"], "Add a fix"),
     ("dictate/MaPromptsScreen.kt", "fun MaPromptsScreen", ["maPhoneStyleEnabled", "maSpellcheckEnabled"],
      "MaPhoneModelSection()"),
 ]
