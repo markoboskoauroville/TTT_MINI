@@ -140,3 +140,34 @@ Restored: TTT settings closed; the Claude chat back in front, scrolled to the ne
 Settings as before: AI key on, Haiku, My corrections empty. Spent: one Haiku request.
 My slip: one BACK too many left TTT at 07:49 and some scroll swipes went to the Claude chat (scroll only, nothing typed);
 scrolled back to the bottom at 07:55.
+
+## REPORT, build 423
+
+Nothing Phone, build 423: 6 pass, 1 fail, 0 blocked (Mac session, 27.10.2026 11:58–12:06)
+
+Install: build-423 sha256 matched, downloaded once, `install -r` → Success, 1421 → 1423. Pixel 7 not touched.
+(The phone had dropped off Tailscale; Marko reconnected it.)
+
+- A. PASS. Order exactly as planned: AI key model on top with "Anthropic key: loaded. The AI key is paid with it.", then
+  Auto-hide (off), Detect typing language (on), AI key in the row, Next-word prediction, Auto-correct, Multilingual typing,
+  Learn my words, Learn from my corrections, Inline suggestions, display mode, Learned on this phone, My corrections,
+  Teach it from my dictations. No "Default", no "Show the suggestion row". Note: Claude Sonnet 5.5 was selected, not Haiku
+  (I had left Haiku at 07:52 on 421; it was changed since). Left on Sonnet.
+- B. PASS. Switchboard: no suggestion row switch. Smartbar: no Enable Smartbar. Long press on the badge: the row stays.
+  Empty field with auto-hide off: dark row with the badge and AI key. Auto-hide on: the empty row goes blank and the keys
+  do not move; switched back off. The Sg key is not on his feature row, so that part was not tried.
+- C. PASS. Badge HR + "Can you send the " → test, real, message, first, company. Badge HR + "Dobro jutro kako si " → šta, i,
+  kako. Badge ENG + "Dobro jutro kako si " → šta, i, kako. Badge ENG + "I think that the " → transfer, interface, command,
+  first. Badge and layout never changed by themselves. Badge put back on HR.
+- D. FAIL (small, cause found). One press after "hel" (Haiku): five words hello, help, held, helpful, helmet; label centred.
+  One more letter → the AI words are gone at once. But the first word showed as "ello": when new words arrive the row
+  keeps its old scroll position, so the first word sits half under the ENG badge until you scroll back. Same cause as
+  421's "o". Fix: scroll the row back to its start whenever its words are replaced.
+- E. PASS. "Detect typing", "Auto-hide", "AI key model" find Auto prediction; "My corrections" finds My corrections and
+  Learn from my corrections.
+- F. PASS. "teh ", backspace, "the ", then "teh" → "the" is the bold main choice (shown in the middle: tehran | the | teh).
+  With adb-injected keys auto-correct did not change "teh " on space.
+- G. Letter rows are shown in TTT's settings search field now (in 421 they were not).
+
+Restored: TTT settings closed; the home screen in front, as Marko had it. Settings as before: Sonnet, auto-hide off,
+Detect typing language on, AI key on, badge HR. One Haiku request spent.
