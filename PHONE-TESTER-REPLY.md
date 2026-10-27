@@ -97,3 +97,12 @@ downloaded once. `install -r` → Success, versionCode 1419 → 1420. Nothing un
 
 To finish B–G I need the phone to myself: Marko says when it is free, or the tests move to the Pixel 7 emulator
 (Pixel_7_API_35 on this Mac) for everything except E (no Anthropic key there).
+
+### Restoring the chat interface (07:29)
+Nothing restored yet, on purpose: at 07:28 Marko was using the phone himself, WhatsApp Business in front
+(after the Claude chat, where he dictated). Bringing Claude to the front would take the phone from his hand.
+State: the Claude chat (task #348) is intact in the background, where he left it; TTT's settings
+(task #357, the Settings list only, nothing changed in it) is also in the background. I did not force-stop TTT
+(it is his active keyboard). I could not see which "menu item" is missing: in my last screenshots of the Claude chat
+(07:26–07:27) the title bar had its back arrow, the title, the progress circle and the ⋮ menu, and the
+bottom row had + , the model "Opus 5.5 Medium", the mic and send. I need Marko to name the item, or the phone free, to look.
