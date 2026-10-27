@@ -106,3 +106,37 @@ State: the Claude chat (task #348) is intact in the background, where he left it
 (it is his active keyboard). I could not see which "menu item" is missing: in my last screenshots of the Claude chat
 (07:26–07:27) the title bar had its back arrow, the title, the progress circle and the ⋮ menu, and the
 bottom row had + , the model "Opus 5.5 Medium", the mic and send. I need Marko to name the item, or the phone free, to look.
+
+## REPORT, build 421
+
+Nothing Phone, build 421: 4 pass, 3 fail, 0 blocked (Mac session, 27.10.2026 07:40–07:55)
+
+Install: build-421 sha256 matched, downloaded once, `install -r` → Success, 1420 → 1421. Pixel 7 not touched.
+
+- A. PASS. "Auto prediction" right after "Claude costs", with an "A" icon in a filled square (same size as the other icons,
+  not bigger). No "My corrections" entry, no "Learn my words" entry.
+- B. FAIL (small). Order right: 8 switches, display mode, AI key model (Haiku 5.5 selected / Sonnet 5.5 / Opus 5.5),
+  Learned on this phone (per-language counts), My corrections row ("0 in use"), Teach it from my dictations. No "Default".
+  Fails: (1) the key line ("Paid with the Anthropic key loaded in the app …") does not say whether a key IS loaded.
+  (2) Three switches keep FlorisBoard names: "Display suggestions", "Next-word suggestions", "System autofill suggestions"
+  (plan: Show the suggestion row, Next-word prediction, Inline suggestions).
+- C. PASS. Typing has no Suggestions group; Smartbar has no display mode; Output (old home of Learn my words) has none.
+  Side finding: settings search does not find Learn my words, Learn from my corrections, AI key in the row, AI key model,
+  My corrections (missing from SettingsSearchIndex).
+- D. PASS. Switch off → the AI key is gone from the row; switched back on.
+- E. FAIL. Sonnet picked, left, returned: kept; set back to Haiku. One AI press on "hel": Claude costs logs
+  "Suggestion, claude-haiku-5-5, 125 in / 17 out, $0.000021". Fails: (1) the first of the five words first showed as "o"
+  (only the ending of "hello"), then "hello". (2) The five AI words then STICK: after backspace, space, and in an emptied
+  field typing "teh", the row still shows hello / help / held / helpful / helicopter. No "1 request" wording seen.
+  The AI key label sits small and high in the corner, not centred like the words.
+- F. PASS. No switch on the screen, "Add a fix" first; Kukljca → Kukljica appeared under "In use (1)"; deleted with its own
+  Delete. Delete all and "Add my replace list" not pressed.
+- G. FAIL, caused by E's stuck row: after "teh ", backspace, "the ", typing "teh" showed the stuck AI words, not "the".
+  Retest after the fix. (adb-injected keys: auto-correct did not change "teh " on space.)
+
+Also seen: in TTT's own settings search field the keyboard shows no letter rows, only the suggestion and feature rows.
+
+Restored: TTT settings closed; the Claude chat back in front, scrolled to the newest message, his draft untouched.
+Settings as before: AI key on, Haiku, My corrections empty. Spent: one Haiku request.
+My slip: one BACK too many left TTT at 07:49 and some scroll swipes went to the Claude chat (scroll only, nothing typed);
+scrolled back to the bottom at 07:55.
