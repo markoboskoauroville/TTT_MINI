@@ -171,3 +171,29 @@ Install: build-423 sha256 matched, downloaded once, `install -r` → Success, 14
 
 Restored: TTT settings closed; the home screen in front, as Marko had it. Settings as before: Sonnet, auto-hide off,
 Detect typing language on, AI key on, badge HR. One Haiku request spent.
+
+## REPORT, build 425
+
+Nothing Phone 2a (A142), Wi-Fi debugging at 192.168.1.102:34339 (found by mDNS; Tailscale 100.67.149.40 was offline).
+APK downloaded once, sha256 3396cc8c…4206a matched, `install -r`, versionCode 1425. Tester: tttmini (Mac), 28.10.2026.
+
+**Nothing Phone, build 425: 4 pass, 1 fail, 0 blocked.**
+
+- A. pass. Auto prediction: My corrections first ("1 in use"), then AI key model ("Anthropic key: loaded"), then the switches.
+- B. pass. Copied "Mantra425" in a new Keep note; with the field empty the row shows "copied Mantra425", in the vertical
+  middle, level with ENG (both centred at y≈2005 of 2412).
+- C. fail (half). Tap on the copied line pasted "Mantra425" at the cursor and the line left the row: pass. Copying the
+  **same** text again (Copy from the long-press menu; Ctrl+V confirmed the clipboard held it) did **not** bring the line
+  back, field empty. Copying a **different** text ("Mantra426") brought it back at once. So the "used" flag is keyed on the
+  text, not on the clip event: reset it on every OnPrimaryClipChangedListener call (or key it on the clip's timestamp,
+  ClipDescription.getTimestamp()).
+- D. pass. Model was Sonnet; set Haiku, one request. "hel" + AI → hello | help | hell | held | helped, "hello" first and
+  whole, row scrolled to its start. One more letter ("l") cleared them (the row went back to the local "hello").
+- E. pass. Empty field: the row stays, dark, ENG only. Key rows at the same y in every capture (empty, words, AI words,
+  copied line): no jump.
+
+Side note (cosmetic): the ENG badge has a lighter grey box behind it in some states (copied line, local words) and none in
+others (AI words, empty row).
+
+Restored: model back to Sonnet (checked); test note emptied and discarded by Keep; clipboard put back to "Exsoon" (what
+it held before); TTT settings closed; Claude app in front, as Marko had it. One Haiku request spent.
