@@ -163,6 +163,15 @@ check("after Prompts without costs", move("prompts,x,predictions") == "prompts,p
 check("corrections folds in", move("prompts,claude_costs,corrections,x,predictions") == "prompts,claude_costs,predictions,x")
 check("nothing to anchor: unchanged", move("x,y,predictions") == "x,y,predictions")
 
+# ---------------------------------------------------------------- the copied line (28.10.2026)
+strip = code(SRC / "dictate/ui/MaBucketStrip.kt")
+cp = strip[strip.find('val full = clip?.stringRepresentation()'):strip.find('text = "copied"')]
+check("the copied line fills the row's height, so it is centred", ".fillMaxHeight()" in cp)
+check("a tap pastes it at the cursor", "currentInputConnection()?.commitText(full, 1)" in cp)
+check("never selects the field away", "selectAll" not in cp)
+check("the row scrolls back to its first word", "LaunchedEffect(candidates) { rowScroll.scrollTo(0) }" in row
+      and "florisHorizontalScroll(state = rowScroll" in row)
+
 print(f"auto prediction, test 1: {checks} checks, {len(failures)} failed")
 for f in failures:
     print("  FAIL ", f)

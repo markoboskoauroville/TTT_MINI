@@ -100,10 +100,24 @@ fun MaBucketStrip(modifier: Modifier = Modifier) {
     // the clipboard is merely the last thing that happened.
     if (filled.isEmpty()) {
         val clip by clipboardManager.primaryClipFlow.collectFlowAsState()
-        val text = clip?.stringRepresentation()?.trim().orEmpty().replace('\n', ' ')
+        val full = clip?.stringRepresentation().orEmpty()
+        val text = full.trim().replace('\n', ' ')
         if (text.isNotEmpty()) {
             Row(
-                modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                modifier = modifier
+                    // The full height of the row, so the line sits in its vertical middle (Marko,
+                    // 28.10.2026: it hung at the top of the strip, above the HR badge's line).
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    // A TAP PASTES IT where the cursor is (Marko, 28.10.2026: "I press on it and it
+                    // pastes into the chat or wherever I am"). Inserted at the cursor, replacing only
+                    // a selection, never the whole field: unlike a bucket, the clipboard is not
+                    // emptied and nothing he wrote is selected away. The text as copied, line
+                    // breaks included; only the preview is flattened to one line.
+                    .clickable {
+                        FlorisImeService.currentInputConnection()?.commitText(full, 1)
+                    }
+                    .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -128,6 +142,8 @@ fun MaBucketStrip(modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
+            // Full height, so the buckets sit in the row's vertical middle too.
+            .fillMaxHeight()
             .horizontalScroll(rememberScrollState()),
         verticalAlignment = Alignment.CenterVertically,
     ) {

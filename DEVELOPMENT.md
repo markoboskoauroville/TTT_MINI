@@ -11040,3 +11040,15 @@ that is not English, it should give me Croatian suggestions."
   keyboard layout and the dictation language stay where the HR/ENG key put them. Off: the badge, as before.
 
 Tests: `MaTypingLanguageTest` (kotest, 11 cases), `scripts/test_auto_prediction.py`.
+
+## §227 — The copied line: centred, and a tap pastes it
+
+Marko, 28.10.2026, with a screenshot of WhatsApp: the "copied https://…" line in the prediction row "should
+be in the vertical middle … not at the top", and "I press on it and it pastes into the chat or wherever I
+am".
+
+- The line (and the bucket legend) fill the row's height, so `CenterVertically` puts them in the middle.
+- A tap commits the clipboard's text at the cursor, line breaks included, replacing only a selection. Not
+  the buckets' select-all paste: the clipboard is not emptied and nothing he wrote is selected away.
+- From the build 423 phone test: the suggestion row scrolls back to its first word whenever the words
+  change, so the first AI word no longer sits half under the badge ("ello").

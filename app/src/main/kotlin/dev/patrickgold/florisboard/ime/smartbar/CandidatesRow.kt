@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.smartbar
 
+import androidx.compose.foundation.rememberScrollState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -122,6 +123,10 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
     val longPressDelay by prefs.keyboard.longPressDelay.collectAsState()
     // The AI key can be switched off under Settings → Auto prediction.
     val aiKeyShown by prefs.dictate.maAiPredictKey.collectAsState()
+    // Back to the start whenever the words change. The row kept its old scroll position, so new
+    // words began half under the badge: "hello" read as "ello" (phone tests, builds 421 and 423).
+    val rowScroll = rememberScrollState()
+    LaunchedEffect(candidates) { rowScroll.scrollTo(0) }
     // The AI words are for the text they were asked about, and go the moment it changes: a letter
     // typed, one deleted, the field emptied or the cursor moved. Picking one, or pressing the key
     // again, clears them too (below).
@@ -161,7 +166,7 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                 )
             }
             .conditional(displayMode == CandidatesDisplayMode.DYNAMIC_SCROLLABLE && candidates.size > 1) {
-                florisHorizontalScroll(scrollbarHeight = CandidatesRowScrollbarHeight)
+                florisHorizontalScroll(state = rowScroll, scrollbarHeight = CandidatesRowScrollbarHeight)
             },
         horizontalArrangement = if (candidates.size > 1) {
             Arrangement.Start
