@@ -95,6 +95,8 @@ check("turned back on at every start", "fun keepPredictionRowOn()" in mig and
       "DictateLegacyMigrator.keepPredictionRowOn()" in code(SRC / "FlorisApplication.kt"))
 
 # ---------------------------------------------------------------- the model first (27.10.2026)
+check("My corrections first, then the model (28.10.2026)",
+      0 <= screen.find("Routes.Settings.MaDictationCorrections") < screen.find("PredictionModelChooser(enabled"))
 check("the model chooser comes before every switch",
       0 <= screen.find("PredictionModelChooser(enabled") < screen.find("SwitchPreference("))
 
@@ -169,6 +171,7 @@ cp = strip[strip.find('val full = clip?.stringRepresentation()'):strip.find('tex
 check("the copied line fills the row's height, so it is centred", ".fillMaxHeight()" in cp)
 check("a tap pastes it at the cursor", "currentInputConnection()?.commitText(full, 1)" in cp)
 check("never selects the field away", "selectAll" not in cp)
+check("pasted, it leaves the row", "stamp != pasted" in strip and "MaCopiedLine.pasted.value = stamp" in strip)
 check("the row scrolls back to its first word", "LaunchedEffect(candidates) { rowScroll.scrollTo(0) }" in row
       and "florisHorizontalScroll(state = rowScroll" in row)
 

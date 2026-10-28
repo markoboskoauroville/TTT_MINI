@@ -11052,3 +11052,12 @@ am".
   the buckets' select-all paste: the clipboard is not emptied and nothing he wrote is selected away.
 - From the build 423 phone test: the suggestion row scrolls back to its first word whenever the words
   change, so the first AI word no longer sits half under the badge ("ello").
+
+## §228 — Pasted, the copied line goes; My corrections first
+
+Marko, 28.10.2026: "once it is pasted, it disappears from the screen" and "please put my corrections at the
+top of the … autocorrection menu, so i can always reach it first".
+
+- A tap on the copied line pastes it and the line leaves the row (`MaCopiedLine`, the copy's timestamp), so a
+  new copy, even of the same text, shows again. The clipboard is untouched.
+- Auto prediction: the My corrections row is first, then the model radio buttons, then the switches.

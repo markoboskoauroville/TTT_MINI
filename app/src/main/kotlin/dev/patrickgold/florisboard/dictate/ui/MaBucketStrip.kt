@@ -102,7 +102,12 @@ fun MaBucketStrip(modifier: Modifier = Modifier) {
         val clip by clipboardManager.primaryClipFlow.collectFlowAsState()
         val full = clip?.stringRepresentation().orEmpty()
         val text = full.trim().replace('\n', ' ')
-        if (text.isNotEmpty()) {
+        // Pasted, it leaves the row (Marko, 28.10.2026: "once it is pasted, it disappears from the
+        // screen"), until the next copy, even of the same text: the copy's time tells them apart.
+        // The clipboard itself is untouched.
+        val pasted by MaCopiedLine.pasted
+        val stamp = clip?.creationTimestampMs
+        if (text.isNotEmpty() && stamp != pasted) {
             Row(
                 modifier = modifier
                     // The full height of the row, so the line sits in its vertical middle (Marko,
@@ -115,7 +120,9 @@ fun MaBucketStrip(modifier: Modifier = Modifier) {
                     // emptied and nothing he wrote is selected away. The text as copied, line
                     // breaks included; only the preview is flattened to one line.
                     .clickable {
-                        FlorisImeService.currentInputConnection()?.commitText(full, 1)
+                        if (FlorisImeService.currentInputConnection()?.commitText(full, 1) == true) {
+                            MaCopiedLine.pasted.value = stamp
+                        }
                     }
                     .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -259,4 +266,9 @@ fun maBucketStripHasContent(): Boolean {
     val clipboardManager by context.clipboardManager()
     val clip by clipboardManager.primaryClipFlow.collectFlowAsState()
     return !clip?.stringRepresentation()?.trim().isNullOrEmpty()
+}
+
+/** When the copy last pasted from the strip was made, so the strip stops showing that copy. */
+object MaCopiedLine {
+    val pasted = androidx.compose.runtime.mutableStateOf<Long?>(null)
 }

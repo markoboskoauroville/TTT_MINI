@@ -81,9 +81,20 @@ fun MaPredictionsScreen() = FlorisScreen {
         val prefs by FlorisPreferenceStore
         val navController = LocalNavController.current
 
-        // ---------------------------------------------------------------- the model, first
+        // ---------------------------------------------------------------- My corrections, first
+        // His order (28.10.2026): "please put my corrections at the top … so i can always reach it
+        // first". Then the model, which he put at the top the day before.
+        val rules by MaDictationCorrections.rules.collectAsState()
+        Preference(
+            title = stringRes(R.string.settings__ma_corrections__title),
+            summary = "Words you enter to be replaced (heard → write), and the fixes learned from " +
+                "your corrections: ${rules.count { it.isActive }} in use.",
+            onClick = { navController.navigate(Routes.Settings.MaDictationCorrections) },
+        )
+
+        // ---------------------------------------------------------------- the model
         // His order (27.10.2026): "At the top, I want to have the radio buttons for the models."
-        // The one exception to switches-first, named by him for this screen.
+        // Exceptions to switches-first, named by him for this screen.
         val aiKeyOn by prefs.dictate.maAiPredictKey.collectAsState()
         PredictionModelChooser(enabled = aiKeyOn)
 
@@ -165,13 +176,6 @@ fun MaPredictionsScreen() = FlorisScreen {
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp),
         )
         MaNgramSetting(showSwitch = false)
-        val rules by MaDictationCorrections.rules.collectAsState()
-        Preference(
-            title = stringRes(R.string.settings__ma_corrections__title),
-            summary = "Words you enter to be replaced (heard → write), and the fixes learned from " +
-                "your corrections: ${rules.count { it.isActive }} in use.",
-            onClick = { navController.navigate(Routes.Settings.MaDictationCorrections) },
-        )
         Preference(
             title = "Teach it from my dictations",
             summary = "Adds the names and words from your dictation history to the keyboard's dictionary.",
